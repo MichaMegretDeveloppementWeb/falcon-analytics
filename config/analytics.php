@@ -17,6 +17,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Log channel
+    |--------------------------------------------------------------------------
+    |
+    | Channel for the package's own logs (ingestion and download errors). An
+    | empty value falls back to the application's default channel.
+    |
+    */
+
+    'log_channel' => env('ANALYTICS_LOG_CHANNEL'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Host integration callbacks
     |--------------------------------------------------------------------------
     |
@@ -82,7 +94,12 @@ return [
     */
 
     'geoip' => [
-        'database_path' => env('ANALYTICS_GEOIP_DATABASE'),
+        // Local City database used to resolve localities. An empty env value
+        // falls back to the storage path where analytics:geoip:download writes.
+        'database_path' => env('ANALYTICS_GEOIP_DATABASE') ?: storage_path('app/analytics/dbip-city.mmdb'),
+
+        // Free DB-IP City Lite source ({month} is replaced with YYYY-MM).
+        'download_url' => env('ANALYTICS_GEOIP_URL', 'https://download.db-ip.com/free/dbip-city-lite-{month}.mmdb.gz'),
     ],
 
 ];
