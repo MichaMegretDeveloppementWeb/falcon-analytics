@@ -1,0 +1,39 @@
+{
+    "name": "falcon/analytics",
+    "description": "First-party, privacy-aware web analytics for Laravel admin spaces.",
+    "type": "library",
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "Micha Megret"
+        }
+    ],
+    "require": {
+        "php": "^8.4",
+        "illuminate/support": "^13.0",
+        "illuminate/console": "^13.0",
+        "illuminate/database": "^13.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Falcon\\Analytics\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Falcon\\Analytics\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Falcon\\Analytics\\AnalyticsServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
