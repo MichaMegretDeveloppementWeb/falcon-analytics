@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Falcon\Analytics;
 
 use Falcon\Analytics\Console\InstallCommand;
+use Falcon\Analytics\Support\GeoResolver;
 use Illuminate\Support\ServiceProvider;
 
 final class AnalyticsServiceProvider extends ServiceProvider
@@ -14,6 +15,10 @@ final class AnalyticsServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(__DIR__.'/../config/analytics.php', 'analytics');
 
         $this->app->singleton(Analytics::class);
+
+        $this->app->singleton(GeoResolver::class, fn (): GeoResolver => new GeoResolver(
+            config('analytics.geoip.database_path') ?: null,
+        ));
     }
 
     public function boot(): void
