@@ -1,0 +1,60 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Falcon\Analytics\Repositories;
+
+use Carbon\CarbonImmutable;
+use Falcon\Analytics\DTOs\IngestionContext;
+use Falcon\Analytics\Models\Session;
+use Falcon\Analytics\Models\Visitor;
+
+final readonly class SessionWriteRepository
+{
+    public function start(Visitor $visitor, IngestionContext $context, CarbonImmutable $startedAt): Session
+    {
+        return Session::create([
+            'visitor_id' => $visitor->id,
+            'started_at' => $startedAt,
+            'last_activity_at' => $startedAt,
+            'ip' => $context->ip,
+            'country' => $context->country,
+            'region' => $context->region,
+            'city' => $context->city,
+            'latitude' => $context->latitude,
+            'longitude' => $context->longitude,
+            'device_type' => $context->deviceType,
+            'device_brand' => $context->deviceBrand,
+            'device_model' => $context->deviceModel,
+            'browser' => $context->browser,
+            'browser_version' => $context->browserVersion,
+            'os' => $context->os,
+            'os_version' => $context->osVersion,
+            'is_bot' => $context->isBot,
+            'referrer' => $context->referrer,
+            'source' => $context->source,
+            'utm_source' => $context->utmSource,
+            'utm_medium' => $context->utmMedium,
+            'utm_campaign' => $context->utmCampaign,
+            'utm_content' => $context->utmContent,
+            'utm_term' => $context->utmTerm,
+            'landing_route' => $context->landingRoute,
+            'landing_url' => $context->landingUrl,
+            'subject_type' => $context->subjectType,
+            'subject_id' => $context->subjectId,
+            'pageview_count' => 0,
+            'event_count' => 0,
+        ]);
+    }
+
+    /**
+     * Atomically bump the activity timestamp and the counters. The timestamp is
+     * carried by the pageview increment so last_activity_at always advances, even
+     * for a click-only batch.
+     */
+    public function recordActivity(Session $session, CarbonImmutable $lastActivityAt, int $pageviewDelta, int $eventDelta): void
+    {
+        $session->increment('pageview_count', $pageviewDelta, ['last_activity_at' => $lastActivityAt]);
+        $session->increment('event_count', $eventDelta);
+    }
+}
