@@ -12,6 +12,8 @@ final class AnalyticsServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__.'/../config/analytics.php', 'analytics');
+
+        $this->app->singleton(Analytics::class);
     }
 
     public function boot(): void
