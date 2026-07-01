@@ -98,7 +98,7 @@ final class Analytics
     {
         foreach ($this->guards('subject_guards') as $guard) {
             if (auth()->guard($guard)->check()) {
-                return ['type' => $guard, 'id' => auth()->guard($guard)->id()];
+                return ['type' => $guard, 'id' => (int) auth()->guard($guard)->id()];
             }
         }
 

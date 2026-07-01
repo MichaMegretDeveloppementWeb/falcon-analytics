@@ -36,8 +36,10 @@ final class EnsureAnalyticsAccepts
 
     /**
      * A forged cross-site beacon always carries an Origin (browsers set it on
-     * cross-origin POST), so a mismatched host is rejected. A missing Origin and
-     * Referer is allowed: it cannot be a browser cross-site forgery.
+     * cross-origin POST), so a mismatched host is rejected. A present but
+     * unparseable Origin/Referer (e.g. "null" from a sandboxed iframe) is also
+     * dropped. Only a fully absent Origin AND Referer is allowed, since that
+     * cannot be a browser cross-site forgery.
      */
     private function isSameOrigin(Request $request): bool
     {
@@ -50,7 +52,7 @@ final class EnsureAnalyticsAccepts
         $sourceHost = parse_url($source, PHP_URL_HOST);
 
         if ($sourceHost === null) {
-            return true;
+            return false;
         }
 
         $normalise = fn (string $host): string => (string) preg_replace('/^www\./i', '', strtolower($host));

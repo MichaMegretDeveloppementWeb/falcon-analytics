@@ -6,7 +6,7 @@ namespace Falcon\Analytics\Services;
 
 use Falcon\Analytics\DTOs\Acquisition;
 
-final class SourceResolver
+final readonly class SourceResolver
 {
     /** @var list<string> */
     private const SEARCH_ENGINES = ['google', 'bing', 'yahoo', 'duckduckgo', 'ecosia', 'qwant', 'baidu', 'yandex'];

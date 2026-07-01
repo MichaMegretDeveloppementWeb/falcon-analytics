@@ -7,7 +7,7 @@ namespace Falcon\Analytics\Support;
 use DeviceDetector\DeviceDetector;
 use Falcon\Analytics\DTOs\DeviceInfo;
 
-final class UserAgentParser
+final readonly class UserAgentParser
 {
     public function parse(?string $userAgent): DeviceInfo
     {
