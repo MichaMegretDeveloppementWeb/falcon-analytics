@@ -25,7 +25,7 @@ return new class extends Migration
             $table->string('type', 20);            // pageview | click | custom
             $table->string('name', 120)->nullable(); // data-track-event, funnel join key
             $table->string('route', 191)->nullable();
-            $table->string('url', 1024)->nullable();
+            $table->string('url', 2048)->nullable();
             $table->string('target_selector', 255)->nullable();
             $table->string('target_text', 255)->nullable();
             $table->json('props')->nullable();

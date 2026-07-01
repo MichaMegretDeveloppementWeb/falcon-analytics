@@ -41,7 +41,7 @@ return new class extends Migration
             $table->boolean('is_bot')->default(false);
 
             // Acquisition.
-            $table->string('referrer', 1024)->nullable();
+            $table->string('referrer', 2048)->nullable();
             $table->string('source', 60)->nullable();
             $table->string('utm_source', 150)->nullable();
             $table->string('utm_medium', 150)->nullable();
@@ -50,7 +50,7 @@ return new class extends Migration
             $table->string('utm_term', 150)->nullable();
 
             $table->string('landing_route', 191)->nullable();
-            $table->string('landing_url', 1024)->nullable();
+            $table->string('landing_url', 2048)->nullable();
 
             // Logical reference to the host subject when identified.
             $table->string('subject_type', 32)->nullable();
@@ -61,6 +61,8 @@ return new class extends Migration
 
             // Sweep and "active now": WHERE ended_at IS NULL AND last_activity_at ...
             $table->index('last_activity_at', 'fa_sessions_last_activity_idx');
+            // Ingestion hot path: open-session lookup by visitor ordered by activity.
+            $table->index(['visitor_id', 'last_activity_at'], 'fa_sessions_visitor_activity_idx');
             $table->index(['subject_type', 'subject_id'], 'fa_sessions_subject_idx');
             // Further query-specific indexes (started_at, geo, source) are added
             // in the aggregation lot, justified by their rollup queries and a

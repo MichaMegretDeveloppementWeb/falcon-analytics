@@ -13,6 +13,15 @@
     return;
   }
 
+  // Server-side limits (keep in sync with IngestBatchRequest): truncate here so
+  // one oversized field can never 422 the whole batch, and cap the batch size.
+  var MAX_URL = 2048;
+  var MAX_NAME = 120;
+  var MAX_TEXT = 120;
+  var MAX_SELECTOR = 255;
+  var MAX_BATCH = 100;
+  var MAX_BUFFER = 500; // drop oldest beyond this if the endpoint is unreachable
+
   var buffer = [];
   var flushTimer = null;
   var FLUSH_MS = cfg.flush || 5000;
@@ -22,11 +31,18 @@
     return Date.now();
   }
 
+  function cap(value, max) {
+    return typeof value === 'string' && value.length > max ? value.slice(0, max) : value;
+  }
+
   function baseEvent(type) {
-    return { type: type, ts: now(), route: cfg.route || null, url: location.href };
+    return { type: type, ts: now(), route: cfg.route || null, url: cap(location.href, MAX_URL) };
   }
 
   function queue(event) {
+    if (buffer.length >= MAX_BUFFER) {
+      buffer.shift();
+    }
     buffer.push(event);
     if (!flushTimer) {
       flushTimer = setTimeout(flush, FLUSH_MS);
@@ -42,13 +58,13 @@
       return;
     }
 
-    var payload = JSON.stringify({
-      sent_at: now(),
-      referrer: document.referrer || null,
-      events: buffer.splice(0, buffer.length),
-    });
+    var referrer = cap(document.referrer, MAX_URL) || null;
 
-    send(payload);
+    // Chunk into batches the server accepts (events max is MAX_BATCH).
+    while (buffer.length) {
+      var chunk = buffer.splice(0, MAX_BATCH);
+      send(JSON.stringify({ sent_at: now(), referrer: referrer, events: chunk }));
+    }
   }
 
   function send(payload) {
@@ -80,30 +96,47 @@
     });
   }
 
+  function has(object, key) {
+    return Object.prototype.hasOwnProperty.call(object, key);
+  }
+
+  function isActionable(el) {
+    return (
+      el.tagName === 'A' ||
+      el.tagName === 'BUTTON' ||
+      el.getAttribute('role') === 'button' ||
+      el.hasAttribute('data-track-event')
+    );
+  }
+
   /**
-   * Walk from the clicked node up the tree, collecting the first event name,
-   * value and section, plus every data-track-prop-*. Stops (and ignores the
-   * click) as soon as a data-track-ignore is found.
+   * Single walk from the clicked node up the tree: collects the first event
+   * name/value/section, every data-track-prop-*, and the nearest actionable
+   * ancestor. Stops (and ignores the click) on data-track-ignore.
    */
-  function readTracking(node) {
+  function inspect(node) {
     var name = null;
     var value = null;
     var section = null;
     var props = null;
+    var actionable = null;
     var el = node;
 
     while (el && el.nodeType === 1) {
       if (el.hasAttribute('data-track-ignore')) {
         return { ignored: true };
       }
+      if (!actionable && isActionable(el)) {
+        actionable = el;
+      }
 
       var data = el.dataset || {};
       if (name === null && data.trackEvent) {
-        name = data.trackEvent;
+        name = cap(data.trackEvent, MAX_NAME);
       }
       if (value === null && data.trackValue != null && data.trackValue !== '') {
-        var parsed = parseFloat(data.trackValue);
-        if (!isNaN(parsed)) {
+        var parsed = Number(data.trackValue);
+        if (Number.isFinite(parsed)) {
           value = parsed;
         }
       }
@@ -111,10 +144,12 @@
         section = data.trackSection;
       }
       for (var key in data) {
-        if (key.indexOf('trackProp') === 0 && key.length > 9) {
+        // data-track-prop-<name> -> dataset key trackProp<Name>; require the
+        // camel boundary so data-track-property etc. don't over-match.
+        if (key.indexOf('trackProp') === 0 && key.length > 9 && key.charAt(9) >= 'A' && key.charAt(9) <= 'Z') {
           var prop = toSnake(key.charAt(9).toLowerCase() + key.slice(10));
           props = props || {};
-          if (!(prop in props)) {
+          if (!has(props, prop)) {
             props[prop] = data[key];
           }
         }
@@ -125,38 +160,23 @@
 
     if (section) {
       props = props || {};
-      if (!('section' in props)) {
+      if (!has(props, 'section')) {
         props.section = section;
       }
     }
 
-    return { ignored: false, name: name, value: value, props: props };
-  }
-
-  function closestActionable(el) {
-    while (el && el.nodeType === 1) {
-      if (
-        el.tagName === 'A' ||
-        el.tagName === 'BUTTON' ||
-        el.getAttribute('role') === 'button' ||
-        el.hasAttribute('data-track-event')
-      ) {
-        return el;
-      }
-      el = el.parentElement;
-    }
-    return null;
+    return { ignored: false, name: name, value: value, props: props, actionable: actionable };
   }
 
   function selectorFor(el) {
     if (el.id) {
-      return ('#' + el.id).slice(0, 255);
+      return ('#' + el.id).slice(0, MAX_SELECTOR);
     }
     var selector = el.tagName.toLowerCase();
     if (typeof el.className === 'string' && el.className.trim()) {
       selector += '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.');
     }
-    return selector.slice(0, 255);
+    return selector.slice(0, MAX_SELECTOR);
   }
 
   function onClick(e) {
@@ -168,27 +188,27 @@
       return;
     }
 
-    var tracking = readTracking(node);
-    if (tracking.ignored) {
+    var found = inspect(node);
+    if (found.ignored) {
       return;
     }
 
     var event = baseEvent('click');
-    if (tracking.name) {
-      event.name = tracking.name;
+    if (found.name) {
+      event.name = found.name;
     }
-    if (tracking.value != null) {
-      event.value = tracking.value;
+    if (found.value != null) {
+      event.value = found.value;
     }
-    if (tracking.props) {
-      event.props = tracking.props;
+    if (found.props) {
+      event.props = found.props;
     }
 
-    var actionable = closestActionable(node);
-    if (actionable) {
-      event.selector = selectorFor(actionable);
-      var text = (actionable.innerText || actionable.textContent || '').trim();
-      event.text = text ? text.slice(0, 120) : null;
+    if (found.actionable) {
+      event.selector = selectorFor(found.actionable);
+      // textContent (not innerText) avoids a synchronous layout reflow on click.
+      var text = (found.actionable.textContent || '').trim();
+      event.text = text ? text.slice(0, MAX_TEXT) : null;
     }
 
     queue(event);
@@ -203,8 +223,9 @@
   // Page view on load.
   queue(baseEvent('pageview'));
 
-  // Delegated, passive click capture.
-  document.addEventListener('click', onClick, { passive: true, capture: true });
+  // Delegated click capture. Capture phase so app handlers calling
+  // stopPropagation can't swallow it; not passive (passive is a no-op for click).
+  document.addEventListener('click', onClick, true);
 
   // Visibility-gated heartbeat keeps last_activity_at accurate for passive reading.
   setInterval(function () {
