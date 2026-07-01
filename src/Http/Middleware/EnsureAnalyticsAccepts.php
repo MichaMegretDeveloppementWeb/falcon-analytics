@@ -48,14 +48,13 @@ final class EnsureAnalyticsAccepts
         }
 
         $sourceHost = parse_url($source, PHP_URL_HOST);
-        $appHost = parse_url((string) config('app.url'), PHP_URL_HOST);
 
-        if ($sourceHost === null || $appHost === null) {
+        if ($sourceHost === null) {
             return true;
         }
 
         $normalise = fn (string $host): string => (string) preg_replace('/^www\./i', '', strtolower($host));
 
-        return $normalise($sourceHost) === $normalise($appHost);
+        return $normalise($sourceHost) === $normalise($request->getHost());
     }
 }

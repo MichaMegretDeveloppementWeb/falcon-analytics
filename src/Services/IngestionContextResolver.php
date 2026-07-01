@@ -31,8 +31,7 @@ final readonly class IngestionContextResolver
         $device = $this->userAgent->parse($request->userAgent());
 
         $landing = $batch->events[0] ?? null;
-        $appHost = parse_url((string) config('app.url'), PHP_URL_HOST) ?: null;
-        $acquisition = $this->source->resolve($landing?->url, $batch->referrer, $appHost);
+        $acquisition = $this->source->resolve($landing?->url, $batch->referrer, $request->getHost());
 
         return new IngestionContext(
             visitorUuid: $uuid,
