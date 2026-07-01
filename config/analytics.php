@@ -87,10 +87,18 @@ return [
     */
 
     'dashboard' => [
+        // What appears in the URL for every dashboard page (e.g. /admin/analytics).
         'route_prefix' => 'admin/analytics',
-        'middleware' => ['web'],
-        // null renders the dashboard inside the package layout; set a host
-        // layout name (e.g. 'layouts.admin') to nest it in the host chrome.
+
+        // Prefix for the route NAMES: 'analytics' -> route('analytics.overview').
+        'route_name' => 'analytics',
+
+        // Middleware protecting the dashboard. The default suits a single-guard
+        // app; override to match the project (e.g. ['web', 'auth:admin']).
+        'middleware' => ['web', 'auth'],
+
+        // Blade layout the pages extend. null uses the package's own shell; set a
+        // host layout name (e.g. 'layouts.admin') to nest it in the host chrome.
         'layout' => null,
     ],
 

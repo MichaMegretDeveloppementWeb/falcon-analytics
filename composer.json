@@ -10,6 +10,7 @@
     ],
     "require": {
         "php": "^8.4",
+        "falcon/ui-kit": "^2.1",
         "geoip2/geoip2": "^3.0",
         "laravel/framework": "^13.0",
         "matomo/device-detector": "^6.0"
