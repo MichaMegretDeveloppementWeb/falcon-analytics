@@ -6,6 +6,7 @@ namespace Falcon\Analytics;
 
 use Falcon\Analytics\Console\GeoipDownloadCommand;
 use Falcon\Analytics\Console\InstallCommand;
+use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Support\GeoResolver;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
@@ -21,6 +22,17 @@ final class AnalyticsServiceProvider extends ServiceProvider
         $this->app->singleton(GeoResolver::class, fn (): GeoResolver => new GeoResolver(
             config('analytics.geoip.database_path') ?: null,
         ));
+
+        $this->app->singleton(FunnelRegistry::class, function (): FunnelRegistry {
+            $registry = new FunnelRegistry;
+            $path = config('analytics.funnels_path') ?: base_path('app/Analytics/funnels.php');
+
+            if (is_string($path) && is_file($path)) {
+                $registry->load($path);
+            }
+
+            return $registry;
+        });
     }
 
     public function boot(): void
