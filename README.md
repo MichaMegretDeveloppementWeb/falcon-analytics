@@ -38,25 +38,29 @@ and require it through a `vcs` repository entry (same model as `falcon/ui-kit`).
 
 ## Host integration
 
-The package never touches your application code. You wire it through four points.
+The package never touches your application code. Installation is minimal: a few
+env values plus the `@analyticsScripts` directive.
 
-### 1. Callbacks (in a service provider, not in config)
+### 1. Identity (declarative, zero code)
 
-Closures cannot live in a cached config file, so they are registered on the
-`Analytics` manager from a service provider (e.g. `AppServiceProvider::boot`):
+Set three env values so the package knows your guards and consent cookie
+(`analytics:install` scaffolds these keys). The subject type is the guard name:
+
+```dotenv
+ANALYTICS_SUBJECT_GUARDS=client,lessor       # authenticated users tracked as subjects
+ANALYTICS_EXCLUDE_GUARDS=admin               # internal staff, never stored
+ANALYTICS_CONSENT_COOKIE=consent_marketing   # cookie whose "1" grants the persistent id
+```
+
+For logic these settings cannot express, register closures on the `Analytics`
+manager from a service provider (they take precedence):
 
 ```php
 use Falcon\Analytics\Facades\Analytics;
 
-Analytics::resolveSubjectUsing(fn () => auth('client')->check()
-    ? ['type' => 'client', 'id' => auth('client')->id()]
-    : (auth('lessor')->check()
-        ? ['type' => 'lessor', 'id' => auth('lessor')->id()]
-        : null));
-
-Analytics::consentUsing(fn () => request()->cookie('consent_marketing') === '1');
-
-Analytics::excludeUsing(fn () => auth('admin')->check());
+Analytics::resolveSubjectUsing(fn () => ...); // ['type' => string, 'id' => int] | null
+Analytics::consentUsing(fn () => ...);        // bool
+Analytics::excludeUsing(fn () => ...);        // bool
 ```
 
 ### 2. Collector script
