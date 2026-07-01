@@ -10,8 +10,8 @@ use Livewire\Attributes\Url;
 use Livewire\WithPagination;
 
 /**
- * Paginated session explorer: every non-bot session in the selected period,
- * newest first, searchable by IP or locality.
+ * Session explorer: engagement stats for the period plus a paginated, filterable
+ * list of every non-bot session, each row linking to its detail.
  */
 final class SessionsPage extends DashboardComponent
 {
@@ -19,6 +19,12 @@ final class SessionsPage extends DashboardComponent
 
     #[Url]
     public string $search = '';
+
+    #[Url]
+    public string $device = '';
+
+    #[Url]
+    public string $source = '';
 
     public function updatedPeriod(): void
     {
@@ -35,12 +41,26 @@ final class SessionsPage extends DashboardComponent
         $this->resetPage();
     }
 
+    public function updatedDevice(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedSource(): void
+    {
+        $this->resetPage();
+    }
+
     public function render(DashboardReadRepository $repository): View
     {
         $period = $this->currentPeriod();
+        $subjectType = $this->subjectType();
 
         return view('analytics::livewire.dashboard.sessions', [
-            'sessions' => $repository->paginateSessions($period, $this->subjectType(), $this->search, null, null),
+            'range' => $period,
+            'headline' => $repository->headline($period, $subjectType),
+            'sessions' => $repository->paginateSessions($period, $subjectType, $this->search, $this->device ?: null, $this->source ?: null),
+            'filterOptions' => $repository->sessionFilterOptions($period, $subjectType),
             ...$this->filterData(),
         ])->layout($this->layoutName(), ['title' => __('Sessions').' · '.__('Analytics')]);
     }

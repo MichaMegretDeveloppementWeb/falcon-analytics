@@ -41,6 +41,7 @@ final class AnalyticsServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'analytics');
         $this->loadRoutesFrom(__DIR__.'/../routes/analytics.php');
 
+        Blade::anonymousComponentNamespace('analytics::components', 'analytics');
         Blade::directive('analyticsScripts', fn (): string => '<?php echo \Falcon\Analytics\View\Collector::render(); ?>');
 
         if ($this->app->runningInConsole()) {

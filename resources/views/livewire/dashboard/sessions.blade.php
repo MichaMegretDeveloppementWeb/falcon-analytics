@@ -1,10 +1,37 @@
 @php
     use Illuminate\Support\Str;
 
+    $formatSeconds = function (float $seconds): string {
+        $total = (int) round($seconds);
+        $minutes = intdiv($total, 60);
+
+        return $minutes > 0
+            ? trim($minutes.' min '.($total % 60 > 0 ? ($total % 60).' s' : ''))
+            : $total.' s';
+    };
+
+    $deltaLabel = function ($metric): ?string {
+        if (! $metric->hasBaseline() || $metric->changePercent() == 0.0) {
+            return null;
+        }
+
+        return ($metric->changePercent() > 0 ? '+' : '').number_format($metric->changePercent(), 0, ',', ' ').' %';
+    };
+
     $sessionsTotal = number_format($sessions->total(), 0, ',', ' ');
     $sessionsCount = $sessions->total() <= 1
         ? __(':count session', ['count' => $sessionsTotal])
         : __(':count sessions', ['count' => $sessionsTotal]);
+
+    $deviceOptions = ['' => __('Tous les appareils')];
+    foreach ($filterOptions['devices'] as $deviceType) {
+        $deviceOptions[$deviceType] = Str::title($deviceType);
+    }
+
+    $sourceOptions = ['' => __('Toutes les sources')];
+    foreach ($filterOptions['sources'] as $sourceName) {
+        $sourceOptions[$sourceName] = Str::headline($sourceName);
+    }
 @endphp
 
 <div class="space-y-6">
@@ -13,13 +40,30 @@
         @include('analytics::livewire.dashboard.partials.filters')
     </x-ui.page-header>
 
-    <div class="flex items-center gap-3">
+    {{-- Engagement stats --}}
+    <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <x-ui.stat-card :label="__('Sessions')" :value="number_format($headline['sessions']->current, 0, ',', ' ')" icon="cursor-arrow-rays"
+            :trend="$deltaLabel($headline['sessions'])" :trendUp="$headline['sessions']->increased()" />
+        <x-ui.stat-card :label="__('Durée moy. session')" :value="$formatSeconds($headline['avgSeconds']->current)" icon="clock"
+            :trend="$deltaLabel($headline['avgSeconds'])" :trendUp="$headline['avgSeconds']->increased()" />
+        <x-ui.stat-card :label="__('Pages par session')" :value="number_format($headline['pagesPerSession']->current, 1, ',', ' ')" icon="rectangle-stack"
+            :trend="$deltaLabel($headline['pagesPerSession'])" :trendUp="$headline['pagesPerSession']->increased()" />
+        <x-ui.stat-card :label="__('Taux de rebond')" :value="number_format($headline['bounceRate']->current, 1, ',', ' ').' %'" icon="arrow-uturn-left"
+            :trend="$deltaLabel($headline['bounceRate'])" :trendUp="! $headline['bounceRate']->increased()" />
+    </div>
+
+    {{-- Toolbar --}}
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div class="w-full sm:max-w-xs">
             <x-ui.search-input wire:model.live.debounce.300ms="search" :placeholder="__('Rechercher une IP ou une ville')" class="w-full" />
         </div>
-        <div wire:loading.flex class="items-center gap-x-1.5 text-[12px] text-muted">
-            <x-ui.icon name="arrow-path" class="h-3.5 w-3.5 animate-spin" />
-            {{ __('Chargement...') }}
+        <div class="flex items-center gap-2">
+            @if (count($deviceOptions) > 1)
+                <div class="w-40"><x-ui.select wire:model.live="device" :options="$deviceOptions" /></div>
+            @endif
+            @if (count($sourceOptions) > 1)
+                <div class="w-40"><x-ui.select wire:model.live="source" :options="$sourceOptions" /></div>
+            @endif
         </div>
     </div>
 
@@ -48,13 +92,14 @@
                             ? trim($minutes.' min '.($seconds % 60 > 0 ? ($seconds % 60).' s' : ''))
                             : $seconds.' s';
                     @endphp
-                    <x-ui.table.row wire:key="session-{{ $session->id }}">
+                    <x-ui.table.row
+                        wire:key="session-{{ $session->id }}"
+                        onclick="window.location='{{ route('analytics.sessions.show', $session) }}'"
+                        class="cursor-pointer">
                         <x-ui.table.cell :first="true" variant="primary">
                             <div class="flex flex-col">
                                 @if ($session->subject_type)
-                                    <span class="text-[13px] font-medium text-primary">
-                                        {{ Str::headline($session->subject_type) }} #{{ $session->subject_id }}
-                                    </span>
+                                    <span class="text-[13px] font-medium text-primary">{{ Str::headline($session->subject_type) }} #{{ $session->subject_id }}</span>
                                 @else
                                     <span class="text-[13px] text-secondary">{{ __('Anonyme') }}</span>
                                 @endif
