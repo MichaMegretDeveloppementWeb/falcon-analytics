@@ -25,7 +25,7 @@ return [
     |
     */
 
-    'log_channel' => env('ANALYTICS_LOG_CHANNEL'),
+    'log_channel' => null,
 
     /*
     |--------------------------------------------------------------------------
@@ -37,9 +37,9 @@ return [
     |
     */
 
-    'endpoint' => env('ANALYTICS_ENDPOINT', '__analytics'),
+    'endpoint' => '__analytics',
 
-    'throttle' => env('ANALYTICS_THROTTLE', '120,1'),
+    'throttle' => '120,1',
 
     'exclude_ips' => [],
 
@@ -59,13 +59,13 @@ return [
 
     'identity' => [
         // Guards whose authenticated user is the tracked subject (type = guard name).
-        'subject_guards' => array_values(array_filter(array_map('trim', explode(',', (string) env('ANALYTICS_SUBJECT_GUARDS', ''))))),
+        'subject_guards' => ['web'],
 
         // Guards whose authenticated user is excluded entirely (internal staff).
-        'exclude_guards' => array_values(array_filter(array_map('trim', explode(',', (string) env('ANALYTICS_EXCLUDE_GUARDS', ''))))),
+        'exclude_guards' => [],
 
-        // Cookie whose value "1" means consent for the persistent visitor id.
-        'consent_cookie' => env('ANALYTICS_CONSENT_COOKIE'),
+        // Cookie whose value "1" grants the persistent visitor id (null = always session-scoped).
+        'consent_cookie' => null,
     ],
 
     /*
@@ -75,7 +75,7 @@ return [
     */
 
     'dashboard' => [
-        'route_prefix' => env('ANALYTICS_ROUTE_PREFIX', 'admin/analytics'),
+        'route_prefix' => 'admin/analytics',
         'middleware' => ['web'],
         // null renders the dashboard inside the package layout; set a host
         // layout name (e.g. 'layouts.admin') to nest it in the host chrome.
@@ -125,7 +125,7 @@ return [
         'database_path' => env('ANALYTICS_GEOIP_DATABASE') ?: storage_path('app/analytics/dbip-city.mmdb'),
 
         // Free DB-IP City Lite source ({month} is replaced with YYYY-MM).
-        'download_url' => env('ANALYTICS_GEOIP_URL', 'https://download.db-ip.com/free/dbip-city-lite-{month}.mmdb.gz'),
+        'download_url' => 'https://download.db-ip.com/free/dbip-city-lite-{month}.mmdb.gz',
     ],
 
 ];
