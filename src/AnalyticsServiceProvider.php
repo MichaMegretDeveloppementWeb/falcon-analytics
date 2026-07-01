@@ -7,6 +7,7 @@ namespace Falcon\Analytics;
 use Falcon\Analytics\Console\GeoipDownloadCommand;
 use Falcon\Analytics\Console\InstallCommand;
 use Falcon\Analytics\Support\GeoResolver;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 
 final class AnalyticsServiceProvider extends ServiceProvider
@@ -26,6 +27,8 @@ final class AnalyticsServiceProvider extends ServiceProvider
     {
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadRoutesFrom(__DIR__.'/../routes/analytics.php');
+
+        Blade::directive('analyticsScripts', fn (): string => '<?php echo \Falcon\Analytics\View\Collector::render(); ?>');
 
         if ($this->app->runningInConsole()) {
             $this->publishes([

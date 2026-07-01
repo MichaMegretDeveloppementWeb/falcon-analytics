@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Falcon\Analytics\Http\Controllers\CollectorScriptController;
 use Falcon\Analytics\Http\Controllers\IngestController;
 use Falcon\Analytics\Http\Middleware\EnsureAnalyticsAccepts;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -21,3 +22,7 @@ Route::post('/'.ltrim((string) config('analytics.endpoint'), '/'), IngestControl
         'throttle:'.config('analytics.throttle'),
     ])
     ->name('analytics.ingest');
+
+// Cached collector script, served as a static asset (no session or cookies).
+Route::get('/'.ltrim((string) config('analytics.endpoint'), '/').'.js', CollectorScriptController::class)
+    ->name('analytics.script');
