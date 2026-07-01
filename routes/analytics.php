@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Falcon\Analytics\Http\Controllers\CollectorScriptController;
 use Falcon\Analytics\Http\Controllers\IngestController;
 use Falcon\Analytics\Http\Middleware\EnsureAnalyticsAccepts;
+use Falcon\Analytics\Livewire\Dashboard\FunnelsPage;
 use Falcon\Analytics\Livewire\Dashboard\OverviewPage;
 use Falcon\Analytics\Livewire\Dashboard\SessionsPage;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -40,5 +41,6 @@ Route::prefix((string) ($dashboard['route_prefix'] ?? 'admin/analytics'))
     ->name(($dashboard['route_name'] ?? 'analytics').'.')
     ->group(function (): void {
         Route::livewire('/', OverviewPage::class)->name('overview');
+        Route::livewire('/funnels', FunnelsPage::class)->name('funnels');
         Route::livewire('/sessions', SessionsPage::class)->name('sessions');
     });
