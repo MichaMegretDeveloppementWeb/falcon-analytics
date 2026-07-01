@@ -19,6 +19,8 @@ use Illuminate\Support\Facades\DB;
 
 final readonly class IngestEventsAction
 {
+    private const MAX_PROPS = 30;
+
     public function __construct(
         private VisitorWriteRepository $visitors,
         private SessionReadRepository $sessionReads,
@@ -28,24 +30,23 @@ final readonly class IngestEventsAction
 
     public function execute(IngestionContext $context, IncomingBatch $batch): void
     {
-        DB::transaction(function () use ($context, $batch): void {
-            $now = CarbonImmutable::now();
+        $now = CarbonImmutable::now();
 
-            // Trivial lookup by unique key: kept inline in the orchestration.
-            $visitor = Visitor::query()->where('uuid', $context->visitorUuid)->first();
+        // Resolved outside the transaction: firstOrCreate is race-safe, and a
+        // conflicting insert must not poison the transaction below.
+        $visitor = $this->visitors->resolve($context->visitorUuid, $now, $this->subject($context));
 
-            if ($visitor === null) {
-                $visitor = $this->visitors->create($context->visitorUuid, $now, $this->subject($context));
-            } else {
-                $this->visitors->markSeen($visitor, $now, $this->subject($context));
-            }
+        DB::transaction(function () use ($context, $batch, $visitor, $now): void {
+            // Serialize concurrent beacons for this visitor so two tabs cannot each
+            // start a session (which would duplicate sessions and inflate counts).
+            $locked = $visitor->newQuery()->whereKey($visitor->getKey())->lockForUpdate()->firstOrFail();
 
             $timeout = (int) config('analytics.session.timeout_minutes');
-            $session = $this->sessionReads->findOpenForVisitor($visitor->id, $now->subMinutes($timeout));
+            $session = $this->sessionReads->findOpenForVisitor($locked->id, $now->subMinutes($timeout));
 
             if ($session === null) {
-                $session = $this->sessions->start($visitor, $context, $now);
-                $this->visitors->incrementSessionCount($visitor);
+                $session = $this->sessions->start($locked, $context, $now);
+                $this->visitors->incrementSessionCount($locked);
             }
 
             // Heartbeats keep the session alive but are never stored as rows.
@@ -54,7 +55,7 @@ final readonly class IngestEventsAction
                 fn (IncomingEvent $event): bool => $event->type !== EventType::Heartbeat,
             ));
 
-            $this->events->insertBatch($this->rows($session, $visitor, $context, $storable));
+            $this->events->insertBatch($this->rows($session, $locked, $context, $storable));
 
             $pageviews = count(array_filter(
                 $storable,
@@ -96,11 +97,37 @@ final readonly class IngestEventsAction
             'url' => $event->url,
             'target_selector' => $event->targetSelector,
             'target_text' => $event->targetText,
-            'props' => $event->props !== null ? json_encode($event->props) : null,
+            'props' => $this->encodeProps($event->props),
             'value' => $event->value,
             'subject_type' => $context->subjectType,
             'subject_id' => $context->subjectId,
         ], $events);
+    }
+
+    /**
+     * Keep only scalar values and cap the key count so a hostile client cannot
+     * amplify storage; JSON_INVALID_UTF8_SUBSTITUTE keeps bad bytes from failing
+     * the encode (which would otherwise write a literal false into the column).
+     *
+     * @param  array<string, mixed>|null  $props
+     */
+    private function encodeProps(?array $props): ?string
+    {
+        if ($props === null) {
+            return null;
+        }
+
+        $clean = [];
+        foreach ($props as $key => $value) {
+            if (count($clean) >= self::MAX_PROPS) {
+                break;
+            }
+            if ($value === null || is_scalar($value)) {
+                $clean[(string) $key] = $value;
+            }
+        }
+
+        return $clean === [] ? null : json_encode($clean, JSON_INVALID_UTF8_SUBSTITUTE);
     }
 
     /**

@@ -8,6 +8,7 @@ use Carbon\CarbonImmutable;
 use Falcon\Analytics\DTOs\IngestionContext;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
+use Illuminate\Support\Facades\DB;
 
 final readonly class SessionWriteRepository
 {
@@ -48,13 +49,22 @@ final readonly class SessionWriteRepository
     }
 
     /**
-     * Atomically bump the activity timestamp and the counters. The timestamp is
-     * carried by the pageview increment so last_activity_at always advances, even
-     * for a click-only batch.
+     * Atomically increment the counters, then advance the activity timestamp
+     * forward only: an out-of-order deferred batch (an older one committing last)
+     * must never regress last_activity_at, which the session closure relies on.
      */
     public function recordActivity(Session $session, CarbonImmutable $lastActivityAt, int $pageviewDelta, int $eventDelta): void
     {
-        $session->increment('pageview_count', $pageviewDelta, ['last_activity_at' => $lastActivityAt]);
-        $session->increment('event_count', $eventDelta);
+        $session->newQuery()
+            ->whereKey($session->getKey())
+            ->update([
+                'pageview_count' => DB::raw('pageview_count + '.$pageviewDelta),
+                'event_count' => DB::raw('event_count + '.$eventDelta),
+            ]);
+
+        $session->newQuery()
+            ->whereKey($session->getKey())
+            ->where('last_activity_at', '<', $lastActivityAt)
+            ->update(['last_activity_at' => $lastActivityAt]);
     }
 }

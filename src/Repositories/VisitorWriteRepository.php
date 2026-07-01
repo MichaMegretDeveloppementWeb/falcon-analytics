@@ -46,4 +46,31 @@ final readonly class VisitorWriteRepository
     {
         $visitor->increment('session_count');
     }
+
+    /**
+     * Race-safe find-or-create by uuid: firstOrCreate re-queries on a concurrent
+     * unique-key violation, so two beacons with the same fresh uuid can't lose a
+     * batch. Existing visitors get their last-seen refreshed and subject stitched.
+     *
+     * @param  array{type: string, id: int}|null  $subject
+     */
+    public function resolve(string $uuid, CarbonImmutable $seenAt, ?array $subject): Visitor
+    {
+        $visitor = Visitor::firstOrCreate(
+            ['uuid' => $uuid],
+            [
+                'first_seen_at' => $seenAt,
+                'last_seen_at' => $seenAt,
+                'session_count' => 0,
+                'subject_type' => $subject['type'] ?? null,
+                'subject_id' => $subject['id'] ?? null,
+            ],
+        );
+
+        if (! $visitor->wasRecentlyCreated) {
+            $this->markSeen($visitor, $seenAt, $subject);
+        }
+
+        return $visitor;
+    }
 }
