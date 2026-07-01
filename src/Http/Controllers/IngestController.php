@@ -8,6 +8,8 @@ use Falcon\Analytics\Actions\IngestEventsAction;
 use Falcon\Analytics\Http\Requests\IngestBatchRequest;
 use Falcon\Analytics\Services\IngestionContextResolver;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 use function Illuminate\Support\defer;
 
@@ -26,7 +28,17 @@ final class IngestController
         $batch = $request->toBatch();
         $context = $resolver->resolve($request, $batch);
 
-        defer(fn () => $action->execute($context, $batch));
+        // Deferred so the beacon returns immediately; analytics must never surface
+        // an error, so a persistence failure is logged and swallowed.
+        defer(function () use ($action, $context, $batch): void {
+            try {
+                $action->execute($context, $batch);
+            } catch (Throwable $e) {
+                Log::channel(config('analytics.log_channel'))->error('Analytics ingestion failed.', [
+                    'exception' => $e,
+                ]);
+            }
+        });
 
         return response()->noContent();
     }
