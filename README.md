@@ -41,19 +41,21 @@ and require it through a `vcs` repository entry (same model as `falcon/ui-kit`).
 The package never touches your application code. Installation is minimal: a few
 env values plus the `@analyticsScripts` directive.
 
-### 1. Identity (declarative, zero code)
+### 1. Identity
 
-Set three env values so the package knows your guards and consent cookie
-(`analytics:install` scaffolds these keys). The subject type is the guard name:
+Publish the config and set your guards and consent cookie in `config/analytics.php`
+(the defaults suit a standard Laravel app). The subject type is the guard name:
 
-```dotenv
-ANALYTICS_SUBJECT_GUARDS=client,lessor       # authenticated users tracked as subjects
-ANALYTICS_EXCLUDE_GUARDS=admin               # internal staff, never stored
-ANALYTICS_CONSENT_COOKIE=consent_marketing   # cookie whose "1" grants the persistent id
+```php
+'identity' => [
+    'subject_guards' => ['client', 'lessor'], // authenticated users tracked as subjects
+    'exclude_guards' => ['admin'],            // internal staff, never stored
+    'consent_cookie' => 'consent_marketing',  // cookie whose "1" grants the persistent id
+],
 ```
 
-For logic these settings cannot express, register closures on the `Analytics`
-manager from a service provider (they take precedence):
+For dynamic logic, register closures on the `Analytics` manager from a service
+provider (they take precedence):
 
 ```php
 use Falcon\Analytics\Facades\Analytics;
