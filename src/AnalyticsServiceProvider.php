@@ -38,6 +38,7 @@ final class AnalyticsServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'analytics');
         $this->loadRoutesFrom(__DIR__.'/../routes/analytics.php');
 
         Blade::directive('analyticsScripts', fn (): string => '<?php echo \Falcon\Analytics\View\Collector::render(); ?>');

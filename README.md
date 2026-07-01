@@ -77,12 +77,40 @@ Add the directive to the layouts you want to track:
 @analyticsScripts
 ```
 
-### 3. Dashboard access
+### 3. Dashboard
 
-The package exposes the named route `analytics.dashboard`. Add a link to it from
-your admin navigation with whatever your host uses (`route()` in Blade, a Vue
-router link, a plain anchor). Configure `analytics.dashboard.middleware` and
-`analytics.dashboard.layout` in the published config.
+The dashboard is a **separate**, admin-only area with its own shell, styled with
+the shared `falcon/ui-kit` design system. It mounts entirely from config, so it
+fits any host:
+
+```php
+'dashboard' => [
+    'route_prefix' => 'admin/analytics', // URL prefix (/admin/analytics)
+    'route_name'   => 'analytics',       // route('analytics.overview'), route('analytics.sessions')
+    'middleware'   => ['web', 'auth'],   // protect it; keep 'web' for the session stack
+    'layout'       => null,              // null = the package shell; or a host layout name
+],
+```
+
+Package routes are registered outside your route groups, so the middleware must
+include a session stack (`web`) alongside your auth guard, for example
+`['web', 'auth:admin']`. Pages: **Overview** (`.overview`) and **Sessions**
+(`.sessions`). Link to it from your own navigation:
+
+```blade
+<a href="{{ route('analytics.overview') }}">Analytics</a>
+```
+
+**Tailwind sources.** So the kit classes used by the dashboard are not purged,
+add the package views to your Tailwind sources, next to the ui-kit `@source`
+line in your kit CSS entrypoint:
+
+```css
+@source '../../vendor/falcon/analytics/resources/views/**/*.blade.php';
+```
+
+(During local development with a symlinked path repository, point `@source` at
+`../../packages/falcon/analytics/resources/views/**/*.blade.php` instead.)
 
 ### 4. Funnels
 
