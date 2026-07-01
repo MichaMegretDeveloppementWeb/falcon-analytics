@@ -39,7 +39,7 @@ and require it through a `vcs` repository entry (same model as `falcon/ui-kit`).
 ## Host integration
 
 The package never touches your application code. Installation is minimal: a few
-env values plus the `@analyticsScripts` directive.
+config values plus the `@analyticsScripts` directive.
 
 ### 1. Identity
 
@@ -64,6 +64,10 @@ Analytics::resolveSubjectUsing(fn () => ...); // ['type' => string, 'id' => int]
 Analytics::consentUsing(fn () => ...);        // bool
 Analytics::excludeUsing(fn () => ...);        // bool
 ```
+
+> **Host requirements.** The consent cookie must be excluded from encryption
+> (`bootstrap/app.php` → `encryptCookies(except: [...])`) so the server can read it;
+> behind a proxy, configure `TrustProxies` so the real client IP is used.
 
 ### 2. Collector script
 

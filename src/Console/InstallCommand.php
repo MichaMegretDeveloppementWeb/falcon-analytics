@@ -41,11 +41,10 @@ final class InstallCommand extends Command
         $this->newLine();
         $this->components->info('Next steps');
         $this->components->bulletList([
-            'Register the host callbacks (subject, consent, exclusion) in a service provider.',
+            'Set your guards and consent cookie in the identity block of config/analytics.php.',
+            'Exclude your consent cookie from encryption (bootstrap/app.php encryptCookies except) so it is readable.',
+            'If the app runs behind a proxy, configure TrustProxies so the real client IP is used.',
             'Add the @analyticsScripts directive to the layouts you want to track.',
-            'Declare your funnels in app/Analytics/funnels.php.',
-            "Add a navigation link to route('analytics.dashboard').",
-            'Schedule analytics:rollup and analytics:prune (an hourly cron is enough).',
         ]);
 
         return self::SUCCESS;
