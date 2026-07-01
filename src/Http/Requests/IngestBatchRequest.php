@@ -8,6 +8,7 @@ use Carbon\CarbonImmutable;
 use Falcon\Analytics\DTOs\IncomingBatch;
 use Falcon\Analytics\DTOs\IncomingEvent;
 use Falcon\Analytics\Enums\EventType;
+use Falcon\Analytics\Support\UrlRedactor;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -40,22 +41,25 @@ final class IngestBatchRequest extends FormRequest
             'events.*.selector' => ['nullable', 'string', 'max:255'],
             'events.*.text' => ['nullable', 'string', 'max:255'],
             'events.*.props' => ['nullable', 'array'],
-            'events.*.value' => ['nullable', 'numeric'],
+            // Bounded to the decimal(12,2) column so an overflow cannot fail the insert.
+            'events.*.value' => ['nullable', 'numeric', 'between:-9999999999.99,9999999999.99'],
         ];
     }
 
     /**
      * Map the validated payload into typed DTOs. Timestamps are reconstructed
      * from the client-relative deltas applied to the server time, so an offset
-     * client clock cannot skew the recorded times.
+     * client clock cannot skew the recorded times. Sensitive query parameters are
+     * redacted from every stored URL.
      */
     public function toBatch(): IncomingBatch
     {
         $now = CarbonImmutable::now();
         $sentAt = (int) $this->validated('sent_at');
+        $redactor = new UrlRedactor;
 
         $events = array_map(
-            function (array $raw) use ($now, $sentAt): IncomingEvent {
+            function (array $raw) use ($now, $sentAt, $redactor): IncomingEvent {
                 $deltaMs = max(0, min($sentAt - (int) $raw['ts'], self::MAX_EVENT_AGE_MS));
 
                 return new IncomingEvent(
@@ -63,7 +67,7 @@ final class IngestBatchRequest extends FormRequest
                     occurredAt: $now->subMilliseconds($deltaMs),
                     name: $raw['name'] ?? null,
                     route: $raw['route'] ?? null,
-                    url: $raw['url'] ?? null,
+                    url: $redactor->redact($raw['url'] ?? null),
                     targetSelector: $raw['selector'] ?? null,
                     targetText: $raw['text'] ?? null,
                     props: $raw['props'] ?? null,
@@ -75,7 +79,7 @@ final class IngestBatchRequest extends FormRequest
 
         return new IncomingBatch(
             events: array_values($events),
-            referrer: $this->validated('referrer'),
+            referrer: $redactor->redact($this->validated('referrer')),
         );
     }
 }

@@ -4,39 +4,38 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Services;
 
-use Falcon\Analytics\Analytics;
 use Falcon\Analytics\DTOs\IncomingBatch;
 use Falcon\Analytics\DTOs\IngestionContext;
+use Falcon\Analytics\DTOs\RequestSnapshot;
 use Falcon\Analytics\Support\GeoResolver;
 use Falcon\Analytics\Support\UserAgentParser;
-use Illuminate\Http\Request;
 
-final readonly class IngestionContextResolver
+final readonly class SessionContextEnricher
 {
     public function __construct(
-        private Analytics $analytics,
-        private VisitorIdentityResolver $identity,
         private UserAgentParser $userAgent,
         private GeoResolver $geo,
         private SourceResolver $source,
     ) {}
 
-    public function resolve(Request $request, IncomingBatch $batch): IngestionContext
+    /**
+     * Resolve the geo/device/acquisition context for a NEW session. This is the
+     * heavy work (device-detector parsing, GeoIP lookup), so callers run it only
+     * when a session is actually started, never on every in-session beacon.
+     *
+     * @param  array{type: string, id: int}|null  $subject
+     */
+    public function enrich(RequestSnapshot $snapshot, IncomingBatch $batch, ?array $subject): IngestionContext
     {
-        $uuid = $this->identity->resolve($request, $this->analytics->consentGranted());
-        $subject = $this->analytics->subject();
-
-        $ip = $request->ip();
-        $geo = $this->geo->locate($ip);
-        $device = $this->userAgent->parse($request->userAgent());
+        $geo = $this->geo->locate($snapshot->ip);
+        $device = $this->userAgent->parse($snapshot->userAgent);
 
         $landing = $batch->events[0] ?? null;
-        $acquisition = $this->source->resolve($landing?->url, $batch->referrer, $request->getHost());
+        $acquisition = $this->source->resolve($landing?->url, $batch->referrer, $snapshot->host);
 
         return new IngestionContext(
-            visitorUuid: $uuid,
             isBot: $device->isBot,
-            ip: $this->storableIp($ip),
+            ip: $this->storableIp($snapshot->ip),
             country: $geo->country,
             region: $geo->region,
             city: $geo->city,

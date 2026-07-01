@@ -7,7 +7,7 @@ namespace Falcon\Analytics\Actions;
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\DTOs\IncomingBatch;
 use Falcon\Analytics\DTOs\IncomingEvent;
-use Falcon\Analytics\DTOs\IngestionContext;
+use Falcon\Analytics\DTOs\RequestSnapshot;
 use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
@@ -15,6 +15,7 @@ use Falcon\Analytics\Repositories\EventWriteRepository;
 use Falcon\Analytics\Repositories\SessionReadRepository;
 use Falcon\Analytics\Repositories\SessionWriteRepository;
 use Falcon\Analytics\Repositories\VisitorWriteRepository;
+use Falcon\Analytics\Services\SessionContextEnricher;
 use Illuminate\Support\Facades\DB;
 
 final readonly class IngestEventsAction
@@ -26,17 +27,21 @@ final readonly class IngestEventsAction
         private SessionReadRepository $sessionReads,
         private SessionWriteRepository $sessions,
         private EventWriteRepository $events,
+        private SessionContextEnricher $enricher,
     ) {}
 
-    public function execute(IngestionContext $context, IncomingBatch $batch): void
+    /**
+     * @param  array{type: string, id: int}|null  $subject
+     */
+    public function execute(string $visitorUuid, ?array $subject, RequestSnapshot $snapshot, IncomingBatch $batch): void
     {
         $now = CarbonImmutable::now();
 
         // Resolved outside the transaction: firstOrCreate is race-safe, and a
         // conflicting insert must not poison the transaction below.
-        $visitor = $this->visitors->resolve($context->visitorUuid, $now, $this->subject($context));
+        $visitor = $this->visitors->resolve($visitorUuid, $now, $subject);
 
-        DB::transaction(function () use ($context, $batch, $visitor, $now): void {
+        DB::transaction(function () use ($subject, $snapshot, $batch, $visitor, $now): void {
             // Serialize concurrent beacons for this visitor so two tabs cannot each
             // start a session (which would duplicate sessions and inflate counts).
             $locked = $visitor->newQuery()->whereKey($visitor->getKey())->lockForUpdate()->firstOrFail();
@@ -45,6 +50,8 @@ final readonly class IngestEventsAction
             $session = $this->sessionReads->findOpenForVisitor($locked->id, $now->subMinutes($timeout));
 
             if ($session === null) {
+                // Heavy UA/geo/source enrichment runs only when a session starts.
+                $context = $this->enricher->enrich($snapshot, $batch, $subject);
                 $session = $this->sessions->start($locked, $context, $now);
                 $this->visitors->incrementSessionCount($locked);
             }
@@ -55,7 +62,7 @@ final readonly class IngestEventsAction
                 fn (IncomingEvent $event): bool => $event->type !== EventType::Heartbeat,
             ));
 
-            $this->events->insertBatch($this->rows($session, $locked, $context, $storable));
+            $this->events->insertBatch($this->rows($session, $locked, $subject, $storable));
 
             $pageviews = count(array_filter(
                 $storable,
@@ -72,20 +79,11 @@ final readonly class IngestEventsAction
     }
 
     /**
-     * @return array{type: string, id: int}|null
-     */
-    private function subject(IngestionContext $context): ?array
-    {
-        return $context->subjectType !== null && $context->subjectId !== null
-            ? ['type' => $context->subjectType, 'id' => $context->subjectId]
-            : null;
-    }
-
-    /**
+     * @param  array{type: string, id: int}|null  $subject
      * @param  list<IncomingEvent>  $events
      * @return list<array<string, mixed>>
      */
-    private function rows(Session $session, Visitor $visitor, IngestionContext $context, array $events): array
+    private function rows(Session $session, Visitor $visitor, ?array $subject, array $events): array
     {
         return array_map(fn (IncomingEvent $event): array => [
             'session_id' => $session->id,
@@ -99,8 +97,8 @@ final readonly class IngestEventsAction
             'target_text' => $event->targetText,
             'props' => $this->encodeProps($event->props),
             'value' => $event->value,
-            'subject_type' => $context->subjectType,
-            'subject_id' => $context->subjectId,
+            'subject_type' => $subject['type'] ?? null,
+            'subject_id' => $subject['id'] ?? null,
         ], $events);
     }
 

@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Falcon\Analytics\DTOs;
 
 /**
- * Per-request context resolved server-side and ready to be persisted onto a
- * session. Built by the context resolver, consumed by the write repositories.
+ * Session-level context resolved server-side and ready to be persisted onto a
+ * new session. Built lazily by the session context enricher, consumed by the
+ * session write repository.
  */
 final readonly class IngestionContext
 {
     public function __construct(
-        public string $visitorUuid,
         public bool $isBot = false,
         public ?string $ip = null,
         public ?string $country = null,

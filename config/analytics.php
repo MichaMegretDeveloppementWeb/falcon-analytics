@@ -111,6 +111,11 @@ return [
         // Raw IP is stored by default (locality + connection history). Set true
         // to store a truncated/anonymised IP instead.
         'anonymize_ip' => false,
+
+        // Query parameters (case-insensitive) redacted from stored URLs. Tracking
+        // params (utm_*, gclid, fbclid, custom ad params) are kept; only likely
+        // PII is removed. Set to [] to store URLs verbatim.
+        'redact_query_params' => ['token', 'access_token', 'auth', 'password', 'secret', 'apikey', 'api_key', 'otp', 'signature', 'email'],
     ],
 
     /*
