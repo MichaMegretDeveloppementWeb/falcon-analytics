@@ -86,17 +86,34 @@ router link, a plain anchor). Configure `analytics.dashboard.middleware` and
 
 ### 4. Funnels
 
-Declare funnels in code (published `app/Analytics/funnels.php`). An element carries
-a stable event name; the funnel carries the value per step.
+Declare funnels in code (in `app/Analytics/funnels.php`, path configurable via
+`analytics.funnels_path`). Each step matches a named event XOR a pageview route,
+and carries its own weight; the same event may belong to several funnels with a
+different value in each.
 
 ```php
 use Falcon\Analytics\Funnels\Funnel;
 
-Funnel::define('contact', channel: 'Demande')
-    ->step('listing.view',          value: 1)
-    ->step('listing.contact_click', value: 3)
-    ->step('listing.contact_sent',  value: 10);
+Funnel::define('acquisition_client', 'Acquisition client')
+    ->step('Page inscription', value: 1, route: 'client.register')
+    ->step('Soumission',       value: 5, event: 'auth.client.register.submit');
 ```
+
+### 5. Server-sent events
+
+Beyond what the collector captures in the browser, application code can emit
+events directly — same visitor/session, same storage, same funnels. Useful for
+true conversions a click can't confirm (a registration was validated, a payment
+succeeded). The event joins a funnel by its name, like any other.
+
+```php
+use Falcon\Analytics\Facades\Analytics;
+
+Analytics::record('CompleteRegistration', value: 5.0, props: ['plan' => 'pro']);
+```
+
+The call is deferred (never blocks the response), a no-op when tracking is off or
+the context is excluded (e.g. an admin), and never throws to the caller.
 
 ## Instrumentation (`data-track-*`)
 
