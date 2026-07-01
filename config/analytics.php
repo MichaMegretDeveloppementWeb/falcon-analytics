@@ -45,18 +45,28 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Host integration callbacks
+    | Host identity (zero-code integration)
     |--------------------------------------------------------------------------
     |
-    | The subject resolver, consent check and exclusion rule are closures and
-    | therefore CANNOT live in this file (config:cache forbids closures). They
-    | are registered on the Analytics manager from a service provider:
+    | The package resolves the subject, exclusions and consent from these
+    | declarative values, so a host only needs @analyticsScripts and these
+    | settings. For advanced logic, register closures on the Analytics manager
+    | from a service provider (they take precedence):
     |
-    |   Analytics::resolveSubjectUsing(fn () => ...);   // ?array{type,id}
-    |   Analytics::consentUsing(fn () => ...);          // bool, persistent id
-    |   Analytics::excludeUsing(fn () => ...);          // bool, drop the request
+    |   Analytics::resolveSubjectUsing(...); consentUsing(...); excludeUsing(...);
     |
     */
+
+    'identity' => [
+        // Guards whose authenticated user is the tracked subject (type = guard name).
+        'subject_guards' => array_values(array_filter(array_map('trim', explode(',', (string) env('ANALYTICS_SUBJECT_GUARDS', ''))))),
+
+        // Guards whose authenticated user is excluded entirely (internal staff).
+        'exclude_guards' => array_values(array_filter(array_map('trim', explode(',', (string) env('ANALYTICS_EXCLUDE_GUARDS', ''))))),
+
+        // Cookie whose value "1" means consent for the persistent visitor id.
+        'consent_cookie' => env('ANALYTICS_CONSENT_COOKIE'),
+    ],
 
     /*
     |--------------------------------------------------------------------------

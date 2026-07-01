@@ -9,9 +9,10 @@ use Closure;
 /**
  * Integration surface between the host application and the package.
  *
- * The host registers three closures (subject, consent, exclusion) from a service
- * provider; the package resolves them per request. Registered as a container
- * singleton so the closures survive across the request lifecycle.
+ * By default the subject, exclusions and consent are resolved from the
+ * declarative `analytics.identity` config (guards and cookie name), so a host
+ * needs no glue code. A host may instead register closures for advanced logic;
+ * a registered closure always takes precedence over the config.
  */
 final class Analytics
 {
@@ -25,10 +26,7 @@ final class Analytics
     private ?Closure $exclusionResolver = null;
 
     /**
-     * Register how to resolve the currently identified subject.
-     * The closure must return ['type' => string, 'id' => int] or null.
-     *
-     * @param  Closure(): mixed  $resolver
+     * @param  Closure(): mixed  $resolver  must return ['type' => string, 'id' => int] or null
      */
     public function resolveSubjectUsing(Closure $resolver): void
     {
@@ -36,8 +34,6 @@ final class Analytics
     }
 
     /**
-     * Register how to tell whether the visitor consented to a persistent identifier.
-     *
      * @param  Closure(): bool  $resolver
      */
     public function consentUsing(Closure $resolver): void
@@ -46,9 +42,6 @@ final class Analytics
     }
 
     /**
-     * Register how to tell whether the current request must be excluded entirely
-     * (internal staff, etc.).
-     *
      * @param  Closure(): bool  $resolver
      */
     public function excludeUsing(Closure $resolver): void
@@ -57,35 +50,89 @@ final class Analytics
     }
 
     /**
-     * The current identified subject, or null when anonymous. Malformed resolver
-     * output is normalised to null so a host mistake never corrupts the data.
+     * The current identified subject, or null when anonymous.
      *
      * @return array{type: string, id: int}|null
      */
     public function subject(): ?array
     {
-        if ($this->subjectResolver === null) {
-            return null;
-        }
+        $subject = $this->subjectResolver !== null
+            ? ($this->subjectResolver)()
+            : $this->subjectFromGuards();
 
-        $subject = ($this->subjectResolver)();
-
-        if (! is_array($subject) || ! isset($subject['type'], $subject['id'])) {
-            return null;
-        }
-
-        return ['type' => (string) $subject['type'], 'id' => (int) $subject['id']];
+        return $this->normaliseSubject($subject);
     }
 
-    /** Whether the visitor granted consent for a persistent identifier (default: false). */
+    /** Whether the visitor consented to a persistent identifier (default: false). */
     public function consentGranted(): bool
     {
-        return $this->consentResolver !== null && (bool) ($this->consentResolver)();
+        if ($this->consentResolver !== null) {
+            return (bool) ($this->consentResolver)();
+        }
+
+        $cookie = config('analytics.identity.consent_cookie');
+
+        return is_string($cookie) && request()->cookie($cookie) === '1';
     }
 
     /** Whether the current request must be excluded from tracking (default: false). */
     public function excluded(): bool
     {
-        return $this->exclusionResolver !== null && (bool) ($this->exclusionResolver)();
+        if ($this->exclusionResolver !== null) {
+            return (bool) ($this->exclusionResolver)();
+        }
+
+        foreach ($this->guards('exclude_guards') as $guard) {
+            if (auth()->guard($guard)->check()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @return array{type: string, id: int}|null
+     */
+    private function subjectFromGuards(): ?array
+    {
+        foreach ($this->guards('subject_guards') as $guard) {
+            if (auth()->guard($guard)->check()) {
+                return ['type' => $guard, 'id' => auth()->guard($guard)->id()];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Configured guard names for a key, keeping only guards that actually exist
+     * so a stray name never triggers a runtime error during ingestion.
+     *
+     * @return list<string>
+     */
+    private function guards(string $key): array
+    {
+        $defined = config('auth.guards', []);
+
+        return array_values(array_filter(
+            (array) config("analytics.identity.{$key}", []),
+            fn ($guard): bool => is_string($guard) && array_key_exists($guard, $defined),
+        ));
+    }
+
+    /**
+     * Malformed resolver output is normalised to null so a host mistake never
+     * corrupts the data.
+     *
+     * @return array{type: string, id: int}|null
+     */
+    private function normaliseSubject(mixed $subject): ?array
+    {
+        if (! is_array($subject) || ! isset($subject['type'], $subject['id'])) {
+            return null;
+        }
+
+        return ['type' => (string) $subject['type'], 'id' => (int) $subject['id']];
     }
 }

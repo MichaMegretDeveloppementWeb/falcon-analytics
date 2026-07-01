@@ -21,6 +21,9 @@ final class InstallCommand extends Command
     private const ENV_DEFAULTS = [
         'ANALYTICS_ENABLED' => 'true',
         'ANALYTICS_ROUTE_PREFIX' => 'admin/analytics',
+        'ANALYTICS_SUBJECT_GUARDS' => '',
+        'ANALYTICS_EXCLUDE_GUARDS' => '',
+        'ANALYTICS_CONSENT_COOKIE' => '',
         'ANALYTICS_GEOIP_DATABASE' => '',
     ];
 
