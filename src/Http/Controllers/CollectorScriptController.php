@@ -22,7 +22,7 @@ final class CollectorScriptController
 
         $headers = [
             'Content-Type' => 'application/javascript; charset=utf-8',
-            'Cache-Control' => 'public, max-age=86400',
+            'Cache-Control' => 'public, max-age=31536000, immutable',
             'ETag' => $etag,
         ];
 
