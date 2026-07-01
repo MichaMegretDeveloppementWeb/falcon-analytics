@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Falcon\Analytics;
 
 use Closure;
+use Falcon\Analytics\Services\ServerEventRecorder;
 
 /**
  * Integration surface between the host application and the package.
@@ -47,6 +48,18 @@ final class Analytics
     public function excludeUsing(Closure $resolver): void
     {
         $this->exclusionResolver = $resolver;
+    }
+
+    /**
+     * Record a server-emitted event for the current visitor (thin delegate to
+     * ServerEventRecorder). Like any event, it belongs to a funnel by its name.
+     * A no-op when tracking is off or the context is excluded.
+     *
+     * @param  array<string, scalar|null>  $props
+     */
+    public function record(string $name, ?float $value = null, array $props = []): void
+    {
+        app(ServerEventRecorder::class)->record($name, $value, $props);
     }
 
     /**
