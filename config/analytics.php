@@ -29,6 +29,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Ingestion endpoint
+    |--------------------------------------------------------------------------
+    |
+    | Path the collector posts batches to, its rate limit (requests,minutes),
+    | and IPs/CIDRs excluded entirely from tracking (internal staff, monitors).
+    |
+    */
+
+    'endpoint' => env('ANALYTICS_ENDPOINT', '__analytics'),
+
+    'throttle' => env('ANALYTICS_THROTTLE', '120,1'),
+
+    'exclude_ips' => [],
+
+    /*
+    |--------------------------------------------------------------------------
     | Host integration callbacks
     |--------------------------------------------------------------------------
     |

@@ -9,4 +9,5 @@ enum EventType: string
     case Pageview = 'pageview';
     case Click = 'click';
     case Custom = 'custom';
+    case Heartbeat = 'heartbeat';
 }
