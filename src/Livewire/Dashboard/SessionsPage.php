@@ -40,7 +40,7 @@ final class SessionsPage extends DashboardComponent
         $period = $this->currentPeriod();
 
         return view('analytics::livewire.dashboard.sessions', [
-            'sessions' => $repository->paginateSessions($period, $this->subjectType(), $this->search),
+            'sessions' => $repository->paginateSessions($period, $this->subjectType(), $this->search, null, null),
             ...$this->filterData(),
         ])->layout($this->layoutName(), ['title' => __('Sessions').' · '.__('Analytics')]);
     }

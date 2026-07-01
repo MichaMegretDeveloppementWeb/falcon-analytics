@@ -8,8 +8,9 @@ use Falcon\Analytics\Repositories\DashboardReadRepository;
 use Illuminate\Contracts\View\View;
 
 /**
- * Dashboard landing page: headline counters, a daily traffic trend, and the top
- * entry pages and acquisition sources over the selected period.
+ * Dashboard digest: headline counters with period-over-period deltas, a traffic
+ * trend, and the visitor and engagement widgets (sources, countries, top pages,
+ * top clicks) over the selected period.
  */
 final class OverviewPage extends DashboardComponent
 {
@@ -20,10 +21,12 @@ final class OverviewPage extends DashboardComponent
 
         return view('analytics::livewire.dashboard.overview', [
             'range' => $period,
-            'metrics' => $repository->metrics($period, $subjectType),
+            'headline' => $repository->headline($period, $subjectType),
             'trend' => $repository->dailyTrend($period, $subjectType),
-            'topPages' => $repository->topLandingPages($period, $subjectType),
             'topSources' => $repository->topSources($period, $subjectType),
+            'topCountries' => $repository->sessionsByCountry($period, $subjectType),
+            'topPages' => $repository->topPages($period, $subjectType),
+            'topClicks' => $repository->topClicks($period, $subjectType),
             ...$this->filterData(),
         ])->layout($this->layoutName(), ['title' => __('Vue d\'ensemble').' · '.__('Analytics')]);
     }

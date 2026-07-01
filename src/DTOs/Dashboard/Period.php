@@ -36,4 +36,17 @@ final readonly class Period
 
         return new self($from, $to, $days);
     }
+
+    /**
+     * The window of identical length immediately preceding this one, used for
+     * period-over-period comparisons.
+     */
+    public function previous(): self
+    {
+        return new self(
+            $this->from->subDays($this->days),
+            $this->to->subDays($this->days),
+            $this->days,
+        );
+    }
 }
