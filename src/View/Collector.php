@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\View;
 
+use Falcon\Analytics\Facades\Analytics;
 use Illuminate\Support\Facades\Route;
 
 final class Collector
@@ -14,7 +15,9 @@ final class Collector
      */
     public static function render(): string
     {
-        if (! config('analytics.enabled')) {
+        // Suppressed when tracking is off or the current context is excluded
+        // (e.g. an authenticated admin), so no collector loads on those pages.
+        if (! config('analytics.enabled') || Analytics::excluded()) {
             return '';
         }
 

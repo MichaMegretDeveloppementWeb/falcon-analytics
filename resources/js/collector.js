@@ -100,6 +100,21 @@
     return Object.prototype.hasOwnProperty.call(object, key);
   }
 
+  function readProps(data, props) {
+    for (var key in data) {
+      // data-track-prop-<name> -> dataset key trackProp<Name>; require the camel
+      // boundary so data-track-property etc. don't over-match.
+      if (key.indexOf('trackProp') === 0 && key.length > 9 && key.charAt(9) >= 'A' && key.charAt(9) <= 'Z') {
+        var prop = toSnake(key.charAt(9).toLowerCase() + key.slice(10));
+        props = props || {};
+        if (!has(props, prop)) {
+          props[prop] = data[key];
+        }
+      }
+    }
+    return props;
+  }
+
   function isActionable(el) {
     return (
       el.tagName === 'A' ||
@@ -131,7 +146,8 @@
       }
 
       var data = el.dataset || {};
-      if (name === null && data.trackEvent) {
+      // data-track-event on a <form> is captured on submit, not on click.
+      if (name === null && data.trackEvent && el.tagName !== 'FORM') {
         name = cap(data.trackEvent, MAX_NAME);
       }
       if (value === null && data.trackValue != null && data.trackValue !== '') {
@@ -143,17 +159,7 @@
       if (section === null && data.trackSection) {
         section = data.trackSection;
       }
-      for (var key in data) {
-        // data-track-prop-<name> -> dataset key trackProp<Name>; require the
-        // camel boundary so data-track-property etc. don't over-match.
-        if (key.indexOf('trackProp') === 0 && key.length > 9 && key.charAt(9) >= 'A' && key.charAt(9) <= 'Z') {
-          var prop = toSnake(key.charAt(9).toLowerCase() + key.slice(10));
-          props = props || {};
-          if (!has(props, prop)) {
-            props[prop] = data[key];
-          }
-        }
-      }
+      props = readProps(data, props);
 
       el = el.parentElement;
     }
@@ -214,6 +220,32 @@
     queue(event);
   }
 
+  function onSubmit(e) {
+    var form = e.target;
+    if (!form || form.nodeType !== 1 || !form.dataset || !form.dataset.trackEvent) {
+      return;
+    }
+
+    var data = form.dataset;
+    var event = baseEvent('click');
+    event.name = cap(data.trackEvent, MAX_NAME);
+
+    if (data.trackValue != null && data.trackValue !== '') {
+      var parsed = Number(data.trackValue);
+      if (Number.isFinite(parsed)) {
+        event.value = parsed;
+      }
+    }
+
+    var props = readProps(data, null);
+    if (props) {
+      event.props = props;
+    }
+
+    event.selector = selectorFor(form);
+    queue(event);
+  }
+
   function onHidden() {
     if (document.visibilityState === 'hidden') {
       flush();
@@ -226,6 +258,9 @@
   // Delegated click capture. Capture phase so app handlers calling
   // stopPropagation can't swallow it; not passive (passive is a no-op for click).
   document.addEventListener('click', onClick, true);
+
+  // Delegated form submit (capture) so Enter-key submissions are tracked too.
+  document.addEventListener('submit', onSubmit, true);
 
   // Visibility-gated heartbeat keeps last_activity_at accurate for passive reading.
   setInterval(function () {
