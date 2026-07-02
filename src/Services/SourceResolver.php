@@ -14,12 +14,25 @@ final readonly class SourceResolver
     /** @var list<string> */
     private const SOCIAL_NETWORKS = ['facebook', 'instagram', 'twitter', 'x.com', 'linkedin', 'tiktok', 'youtube', 'pinterest', 'reddit'];
 
+    /**
+     * Ad-platform click identifiers that unambiguously mark paid traffic even
+     * without UTM tags (auto-tagging). fbclid is deliberately excluded: Facebook
+     * appends it to every outbound click, organic ones included.
+     *
+     * @var list<string>
+     */
+    private const PAID_CLICK_IDS = ['gclid', 'gbraid', 'wbraid', 'dclid', 'msclkid', 'ttclid'];
+
+    /** @var list<string> */
+    private const PAID_MEDIUMS = ['cpc', 'ppc', 'paid', 'paidsearch', 'paid-search', 'paid_social', 'paidsocial', 'social-paid', 'display', 'banner', 'cpm', 'cpv', 'retargeting'];
+
     public function resolve(?string $landingUrl, ?string $referrer, ?string $appHost): Acquisition
     {
-        $utm = $this->parseUtm($landingUrl);
+        $params = $this->queryParams($landingUrl);
+        $utm = $this->extractUtm($params);
 
         return new Acquisition(
-            source: $this->classify($utm['medium'], $referrer, $appHost),
+            source: $this->classify($params, $utm['medium'], $referrer, $appHost),
             utmSource: $utm['source'],
             utmMedium: $utm['medium'],
             utmCampaign: $utm['campaign'],
@@ -29,13 +42,22 @@ final readonly class SourceResolver
     }
 
     /**
-     * @return array{source: ?string, medium: ?string, campaign: ?string, content: ?string, term: ?string}
+     * @return array<string, mixed>
      */
-    private function parseUtm(?string $url): array
+    private function queryParams(?string $url): array
     {
         $query = $url !== null ? (parse_url($url, PHP_URL_QUERY) ?: '') : '';
         parse_str($query, $params);
 
+        return $params;
+    }
+
+    /**
+     * @param  array<string, mixed>  $params
+     * @return array{source: ?string, medium: ?string, campaign: ?string, content: ?string, term: ?string}
+     */
+    private function extractUtm(array $params): array
+    {
         return [
             'source' => $this->clean($params['utm_source'] ?? null),
             'medium' => $this->clean($params['utm_medium'] ?? null),
@@ -45,11 +67,24 @@ final readonly class SourceResolver
         ];
     }
 
-    private function classify(?string $utmMedium, ?string $referrer, ?string $appHost): string
+    /**
+     * @param  array<string, mixed>  $params
+     */
+    private function classify(array $params, ?string $utmMedium, ?string $referrer, ?string $appHost): string
     {
+        // Ad click IDs (Google/Bing/TikTok auto-tagging) are the strongest paid signal.
+        if ($this->hasPaidClickId($params)) {
+            return 'paid';
+        }
+
         if ($utmMedium !== null) {
-            return match (strtolower($utmMedium)) {
-                'cpc', 'ppc', 'paid', 'paidsearch', 'display', 'banner' => 'paid',
+            $medium = strtolower($utmMedium);
+
+            if (in_array($medium, self::PAID_MEDIUMS, true)) {
+                return 'paid';
+            }
+
+            return match ($medium) {
                 'organic' => 'organic',
                 'social', 'social-media' => 'social',
                 'email', 'newsletter' => 'email',
@@ -83,6 +118,20 @@ final readonly class SourceResolver
         }
 
         return 'referral';
+    }
+
+    /**
+     * @param  array<string, mixed>  $params
+     */
+    private function hasPaidClickId(array $params): bool
+    {
+        foreach (self::PAID_CLICK_IDS as $key) {
+            if ($this->clean($params[$key] ?? null) !== null) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function sameHost(string $a, string $b): bool
