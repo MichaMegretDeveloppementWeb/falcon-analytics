@@ -8,12 +8,24 @@
             "name": "Micha Megret"
         }
     ],
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/MichaMegretDeveloppementWeb/falcon-ui-kit.git"
+        }
+    ],
     "require": {
         "php": "^8.4",
         "falcon/ui-kit": "^2.1",
         "geoip2/geoip2": "^3.0",
         "laravel/framework": "^13.0",
+        "livewire/livewire": "^4.2",
         "matomo/device-detector": "^6.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^11.0",
+        "pestphp/pest": "^4.4",
+        "pestphp/pest-plugin-laravel": "^4.1"
     },
     "autoload": {
         "psr-4": {
@@ -32,8 +44,15 @@
             ]
         }
     },
+    "scripts": {
+        "test": "@php vendor/bin/pest"
+    },
     "config": {
-        "sort-packages": true
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "php-http/discovery": true
+        }
     },
     "minimum-stability": "dev",
     "prefer-stable": true
