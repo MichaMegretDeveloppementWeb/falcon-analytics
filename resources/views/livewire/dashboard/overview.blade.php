@@ -57,16 +57,32 @@
     <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <x-ui.stat-card :label="__('Visiteurs')" :value="$count($headline['visitors']->current)" icon="users"
             :trend="$deltaLabel($headline['visitors'])" :trendUp="$headline['visitors']->increased()"
-            :description="$spotlightLine('visitors', $count)" />
+            :description="$spotlightLine('visitors', $count)">
+            <div wire:key="spark-visitors-{{ $period }}-{{ $subject }}" class="mt-3">
+                <x-analytics::sparkline :values="$sparklines['visitors']" />
+            </div>
+        </x-ui.stat-card>
         <x-ui.stat-card :label="__('Sessions')" :value="$count($headline['sessions']->current)" icon="cursor-arrow-rays"
             :trend="$deltaLabel($headline['sessions'])" :trendUp="$headline['sessions']->increased()"
-            :description="$spotlightLine('sessions', $count)" />
+            :description="$spotlightLine('sessions', $count)">
+            <div wire:key="spark-sessions-{{ $period }}-{{ $subject }}" class="mt-3">
+                <x-analytics::sparkline :values="$sparklines['sessions']" />
+            </div>
+        </x-ui.stat-card>
         <x-ui.stat-card :label="__('Durée moy. session')" :value="$formatSeconds($headline['avgSeconds']->current)" icon="clock"
             :trend="$deltaLabel($headline['avgSeconds'])" :trendUp="$headline['avgSeconds']->increased()"
-            :description="$spotlightLine('avgSeconds', $formatSeconds)" />
+            :description="$spotlightLine('avgSeconds', $formatSeconds)">
+            <div wire:key="spark-duration-{{ $period }}-{{ $subject }}" class="mt-3">
+                <x-analytics::sparkline :values="$sparklines['avgSeconds']" />
+            </div>
+        </x-ui.stat-card>
         <x-ui.stat-card :label="__('Taux de rebond')" :value="$percent($headline['bounceRate']->current)" icon="arrow-uturn-left"
             :trend="$deltaLabel($headline['bounceRate'])" :trendUp="! $headline['bounceRate']->increased()"
-            :description="$spotlightLine('bounceRate', $percent)" />
+            :description="$spotlightLine('bounceRate', $percent)">
+            <div wire:key="spark-bounce-{{ $period }}-{{ $subject }}" class="mt-3">
+                <x-analytics::sparkline :values="$sparklines['bounceRate']" />
+            </div>
+        </x-ui.stat-card>
     </div>
 
     {{-- Traffic trend (deferred, with skeleton) --}}

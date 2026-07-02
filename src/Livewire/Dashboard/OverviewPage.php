@@ -22,6 +22,7 @@ final class OverviewPage extends DashboardComponent
         return view('analytics::livewire.dashboard.overview', [
             'range' => $period,
             'headline' => $repository->headline($period, $subjectType),
+            'sparklines' => $repository->headlineSparklines($period, $subjectType),
             'spotlight' => $repository->spotlight($subjectType),
             'newVisitorRate' => $repository->newVisitorRate($period, $subjectType),
             'newVsReturning' => $repository->newVsReturning($period, $subjectType),

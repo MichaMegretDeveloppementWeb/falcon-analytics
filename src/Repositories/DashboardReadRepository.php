@@ -156,6 +156,39 @@ final readonly class DashboardReadRepository
     }
 
     /**
+     * Daily zero-filled series for each headline metric, so the KPI tiles can
+     * draw a mini trend (sparkline).
+     *
+     * @return array{visitors: list<float>, sessions: list<float>, avgSeconds: list<float>, bounceRate: list<float>}
+     */
+    public function headlineSparklines(Period $period, ?string $subjectType): array
+    {
+        $day = $this->dayExpression('started_at');
+        $duration = $this->durationSecondsExpression('started_at', 'last_activity_at');
+
+        $rows = $this->sessionScope($period, $subjectType)
+            ->toBase()
+            ->selectRaw("{$day} as day, COUNT(*) as sessions, COUNT(DISTINCT visitor_id) as visitors, COALESCE(AVG({$duration}), 0) as avg_seconds, SUM(CASE WHEN pageview_count <= 1 THEN 1 ELSE 0 END) as bounces")
+            ->groupBy(DB::raw($day))
+            ->get()
+            ->keyBy('day');
+
+        $series = ['visitors' => [], 'sessions' => [], 'avgSeconds' => [], 'bounceRate' => []];
+
+        for ($cursor = $period->from->startOfDay(); $cursor->lessThanOrEqualTo($period->to); $cursor = $cursor->addDay()) {
+            $row = $rows->get($cursor->format('Y-m-d'));
+            $sessions = (int) ($row->sessions ?? 0);
+
+            $series['visitors'][] = (float) ($row->visitors ?? 0);
+            $series['sessions'][] = (float) $sessions;
+            $series['avgSeconds'][] = (float) ($row->avg_seconds ?? 0);
+            $series['bounceRate'][] = $sessions > 0 ? (float) $row->bounces / $sessions * 100 : 0.0;
+        }
+
+        return $series;
+    }
+
+    /**
      * Top acquisition sources with their previous-period counts.
      *
      * @return list<array{label: string, total: int, previous: int}>
