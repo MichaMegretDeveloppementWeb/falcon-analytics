@@ -42,6 +42,16 @@
     $deviceTotal = array_sum($devices);
     $deviceLabels = ['desktop' => __('Ordinateur'), 'mobile' => __('Mobile'), 'tablet' => __('Tablette')];
     $devicePalette = ['#1684ea', '#7cb8f2', '#bcdcfa', '#d1d5db'];
+
+    $sourceIcon = fn (string $category): string => [
+        'direct' => 'cursor-arrow-rays',
+        'organic' => 'magnifying-glass',
+        'social' => 'user-group',
+        'paid' => 'megaphone',
+        'referral' => 'arrow-top-right-on-square',
+        'email' => 'envelope',
+        'campaign' => 'flag',
+    ][strtolower($category)] ?? 'globe-alt';
 @endphp
 
 <div class="space-y-8">
@@ -154,11 +164,14 @@
         <div class="grid gap-6 lg:grid-cols-2">
 
             <x-ui.card>
-                <x-ui.section-header :title="__('Sources')" class="mb-4" />
+                <x-ui.section-header :title="__('Sources')" :description="__('Par canal d\'acquisition')" class="mb-4" />
                 @forelse ($topSources as $item)
                     @php $pct = $maxSources > 0 ? round($item['total'] / $maxSources * 100) : 0; @endphp
                     <div class="flex items-center gap-3 py-1.5">
-                        <span class="w-36 shrink-0 truncate text-[13px] text-primary"><x-analytics::source :value="$item['label']" /></span>
+                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-elevated">
+                            <x-ui.icon :name="$sourceIcon($item['label'])" class="h-3.5 w-3.5 text-secondary" />
+                        </span>
+                        <span class="w-28 shrink-0 truncate text-[13px] text-primary"><x-analytics::source :value="$item['label']" /></span>
                         <div class="relative h-1.5 flex-1 overflow-hidden rounded-full bg-elevated">
                             <div class="absolute inset-y-0 left-0 rounded-full bg-[#1684ea]/70" style="width: {{ $pct }}%"></div>
                         </div>
@@ -171,11 +184,14 @@
             </x-ui.card>
 
             <x-ui.card>
-                <x-ui.section-header :title="__('Localités')" class="mb-4" />
+                <x-ui.section-header :title="__('Localités')" :description="__('Pays et ville')" class="mb-4" />
                 @forelse ($topLocalities as $item)
                     @php $pct = $maxLocalities > 0 ? round($item['total'] / $maxLocalities * 100) : 0; @endphp
                     <div class="flex items-center gap-3 py-1.5">
-                        <span class="w-44 shrink-0 truncate text-[13px] text-primary">
+                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-elevated">
+                            <x-ui.icon name="map-pin" class="h-3.5 w-3.5 text-secondary" />
+                        </span>
+                        <span class="w-40 shrink-0 truncate text-[13px] text-primary">
                             <x-analytics::country :code="$item['country']" :city="$item['city']" />
                         </span>
                         <div class="relative h-1.5 flex-1 overflow-hidden rounded-full bg-elevated">
@@ -197,24 +213,33 @@
         <div class="grid gap-6 lg:grid-cols-3">
 
             <x-ui.card>
-                <x-ui.section-header :title="__('Statistiques')" class="mb-4" />
-                <div class="space-y-3.5">
-                    <div class="flex items-center justify-between gap-2">
-                        <span class="text-[13px] text-secondary">{{ __('Pages vues') }}</span>
+                <x-ui.section-header :title="__('Statistiques')" :description="__('Sur la période')" class="mb-4" />
+                <div class="space-y-2">
+                    <div class="flex items-center gap-3 py-1">
+                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-elevated">
+                            <x-ui.icon name="document-text" class="h-3.5 w-3.5 text-secondary" />
+                        </span>
+                        <span class="flex-1 text-[13px] text-secondary">{{ __('Pages vues') }}</span>
                         <span class="flex items-center gap-2">
                             <span class="text-[13px] font-semibold text-primary">{{ number_format($headline['pageviews']->current, 0, ',', ' ') }}</span>
                             @include('analytics::livewire.dashboard.partials.delta', ['current' => $headline['pageviews']->current, 'previous' => $headline['pageviews']->previous])
                         </span>
                     </div>
-                    <div class="flex items-center justify-between gap-2">
-                        <span class="text-[13px] text-secondary">{{ __('Pages par session') }}</span>
+                    <div class="flex items-center gap-3 py-1">
+                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-elevated">
+                            <x-ui.icon name="document-duplicate" class="h-3.5 w-3.5 text-secondary" />
+                        </span>
+                        <span class="flex-1 text-[13px] text-secondary">{{ __('Pages par session') }}</span>
                         <span class="flex items-center gap-2">
                             <span class="text-[13px] font-semibold text-primary">{{ number_format($headline['pagesPerSession']->current, 1, ',', ' ') }}</span>
                             @include('analytics::livewire.dashboard.partials.delta', ['current' => $headline['pagesPerSession']->current, 'previous' => $headline['pagesPerSession']->previous])
                         </span>
                     </div>
-                    <div class="flex items-center justify-between gap-2">
-                        <span class="text-[13px] text-secondary">{{ __('Nouveaux visiteurs') }}</span>
+                    <div class="flex items-center gap-3 py-1">
+                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-elevated">
+                            <x-ui.icon name="user-plus" class="h-3.5 w-3.5 text-secondary" />
+                        </span>
+                        <span class="flex-1 text-[13px] text-secondary">{{ __('Nouveaux visiteurs') }}</span>
                         <span class="flex items-center gap-2">
                             <span class="text-[13px] font-semibold text-primary">{{ number_format($newVisitorRate->current, 1, ',', ' ') }} %</span>
                             @include('analytics::livewire.dashboard.partials.delta', ['current' => $newVisitorRate->current, 'previous' => $newVisitorRate->previous])
@@ -224,11 +249,14 @@
             </x-ui.card>
 
             <x-ui.card>
-                <x-ui.section-header :title="__('Pages les plus vues')" class="mb-4" />
+                <x-ui.section-header :title="__('Pages les plus vues')" :description="__('Les plus consultées')" class="mb-4" />
                 @forelse ($topPages as $item)
                     @php $pct = $maxPages > 0 ? round($item['total'] / $maxPages * 100) : 0; @endphp
                     <div class="flex items-center gap-3 py-1.5">
-                        <span class="w-32 shrink-0 truncate text-[13px] text-primary"><x-analytics::page-url :route="$item['label']" /></span>
+                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-elevated">
+                            <x-ui.icon name="document-text" class="h-3.5 w-3.5 text-secondary" />
+                        </span>
+                        <span class="w-24 shrink-0 truncate text-[13px] text-primary"><x-analytics::page-url :route="$item['label']" /></span>
                         <div class="relative h-1.5 flex-1 overflow-hidden rounded-full bg-elevated">
                             <div class="absolute inset-y-0 left-0 rounded-full bg-[#1684ea]/70" style="width: {{ $pct }}%"></div>
                         </div>
@@ -241,10 +269,13 @@
             </x-ui.card>
 
             <x-ui.card>
-                <x-ui.section-header :title="__('Clics principaux')" class="mb-4" />
+                <x-ui.section-header :title="__('Clics principaux')" :description="__('Boutons et liens cliqués')" class="mb-4" />
                 @forelse ($topClicks as $click)
-                    <div class="flex items-center justify-between gap-3 py-1.5">
-                        <div class="min-w-0">
+                    <div class="flex items-center gap-3 py-1.5">
+                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-elevated">
+                            <x-ui.icon name="cursor-arrow-rays" class="h-3.5 w-3.5 text-secondary" />
+                        </span>
+                        <div class="min-w-0 flex-1">
                             <p class="truncate text-[13px] text-primary">{{ $click['label'] }}</p>
                             @if ($click['route'])
                                 <p class="truncate text-[11px] text-muted"><x-analytics::page-url :route="$click['route']" /></p>
