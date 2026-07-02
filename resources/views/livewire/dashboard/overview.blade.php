@@ -35,6 +35,13 @@
     $maxSources = max(array_column($topSources, 'total') ?: [0]);
     $maxLocalities = max(array_column($topLocalities, 'total') ?: [0]);
     $maxPages = max(array_column($topPages, 'total') ?: [0]);
+
+    $newTotal = $newVsReturning['new'] + $newVsReturning['returning'];
+    $newPct = $newTotal > 0 ? (int) round($newVsReturning['new'] / $newTotal * 100) : 0;
+
+    $deviceTotal = array_sum($devices);
+    $deviceLabels = ['desktop' => __('Ordinateur'), 'mobile' => __('Mobile'), 'tablet' => __('Tablette')];
+    $devicePalette = ['#1684ea', '#7cb8f2', '#bcdcfa', '#d1d5db'];
 @endphp
 
 <div class="space-y-8">
@@ -68,6 +75,66 @@
     {{-- Section: visitors --}}
     <div>
         <x-ui.section-header :title="__('Vos visiteurs')" :description="__('D\'où viennent les sessions')" class="mb-4" />
+
+        {{-- Audience composition donuts --}}
+        <div class="mb-6 grid gap-6 lg:grid-cols-2">
+
+            <x-ui.card>
+                <x-ui.section-header :title="__('Nouveaux vs récurrents')" class="mb-4" />
+                @if ($newTotal > 0)
+                    <div class="flex items-center gap-5">
+                        <div wire:key="donut-audience-{{ $period }}-{{ $subject }}">
+                            <x-analytics::donut
+                                :labels="[__('Nouveaux'), __('Récurrents')]"
+                                :values="[$newVsReturning['new'], $newVsReturning['returning']]"
+                                :colors="['#1684ea', '#bcdcfa']"
+                                :total="number_format($newTotal, 0, ',', ' ')"
+                                :caption="__('visiteurs')" />
+                        </div>
+                        <div class="flex-1 space-y-2.5">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="flex items-center gap-2 text-[13px] text-secondary"><span class="h-2 w-2 rounded-full" style="background:#1684ea"></span>{{ __('Nouveaux') }}</span>
+                                <span class="text-[13px]"><span class="font-semibold text-primary">{{ $newPct }} %</span> <span class="text-muted">{{ number_format($newVsReturning['new'], 0, ',', ' ') }}</span></span>
+                            </div>
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="flex items-center gap-2 text-[13px] text-secondary"><span class="h-2 w-2 rounded-full" style="background:#bcdcfa"></span>{{ __('Récurrents') }}</span>
+                                <span class="text-[13px]"><span class="font-semibold text-primary">{{ 100 - $newPct }} %</span> <span class="text-muted">{{ number_format($newVsReturning['returning'], 0, ',', ' ') }}</span></span>
+                            </div>
+                        </div>
+                    </div>
+                @else
+                    <x-ui.empty-state icon="users" :title="__('Aucun visiteur')" :description="__('Aucune session sur la période.')" />
+                @endif
+            </x-ui.card>
+
+            <x-ui.card>
+                <x-ui.section-header :title="__('Appareils')" class="mb-4" />
+                @if ($deviceTotal > 0)
+                    <div class="flex items-center gap-5">
+                        <div wire:key="donut-devices-{{ $period }}-{{ $subject }}">
+                            <x-analytics::donut
+                                :labels="collect($devices)->keys()->map(fn ($d) => $deviceLabels[$d] ?? Str::title($d))->all()"
+                                :values="array_values($devices)"
+                                :colors="array_slice($devicePalette, 0, count($devices))"
+                                :total="number_format($deviceTotal, 0, ',', ' ')"
+                                :caption="__('sessions')" />
+                        </div>
+                        <div class="flex-1 space-y-2.5">
+                            @foreach ($devices as $device => $count)
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="flex items-center gap-2 text-[13px] text-secondary"><span class="h-2 w-2 rounded-full" style="background:{{ $devicePalette[$loop->index] ?? '#d1d5db' }}"></span>{{ $deviceLabels[$device] ?? Str::title($device) }}</span>
+                                    <span class="text-[13px]"><span class="font-semibold text-primary">{{ (int) round($count / $deviceTotal * 100) }} %</span> <span class="text-muted">{{ number_format($count, 0, ',', ' ') }}</span></span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @else
+                    <x-ui.empty-state icon="device-phone-mobile" :title="__('Aucun appareil')" :description="__('Aucune session sur la période.')" />
+                @endif
+            </x-ui.card>
+
+        </div>
+
         <div class="grid gap-6 lg:grid-cols-2">
 
             <x-ui.card>
@@ -117,10 +184,10 @@
                 <x-ui.section-header :title="__('Statistiques')" class="mb-4" />
                 <div class="space-y-3.5">
                     <div class="flex items-center justify-between gap-2">
-                        <span class="text-[13px] text-secondary">{{ __('Durée moy. session') }}</span>
+                        <span class="text-[13px] text-secondary">{{ __('Pages vues') }}</span>
                         <span class="flex items-center gap-2">
-                            <span class="text-[13px] font-semibold text-primary">{{ $formatSeconds($headline['avgSeconds']->current) }}</span>
-                            @include('analytics::livewire.dashboard.partials.delta', ['current' => $headline['avgSeconds']->current, 'previous' => $headline['avgSeconds']->previous])
+                            <span class="text-[13px] font-semibold text-primary">{{ number_format($headline['pageviews']->current, 0, ',', ' ') }}</span>
+                            @include('analytics::livewire.dashboard.partials.delta', ['current' => $headline['pageviews']->current, 'previous' => $headline['pageviews']->previous])
                         </span>
                     </div>
                     <div class="flex items-center justify-between gap-2">
@@ -131,10 +198,10 @@
                         </span>
                     </div>
                     <div class="flex items-center justify-between gap-2">
-                        <span class="text-[13px] text-secondary">{{ __('Taux de rebond') }}</span>
+                        <span class="text-[13px] text-secondary">{{ __('Nouveaux visiteurs') }}</span>
                         <span class="flex items-center gap-2">
-                            <span class="text-[13px] font-semibold text-primary">{{ number_format($headline['bounceRate']->current, 1, ',', ' ') }} %</span>
-                            @include('analytics::livewire.dashboard.partials.delta', ['current' => $headline['bounceRate']->current, 'previous' => $headline['bounceRate']->previous, 'inverse' => true])
+                            <span class="text-[13px] font-semibold text-primary">{{ number_format($newVisitorRate->current, 1, ',', ' ') }} %</span>
+                            @include('analytics::livewire.dashboard.partials.delta', ['current' => $newVisitorRate->current, 'previous' => $newVisitorRate->previous])
                         </span>
                     </div>
                 </div>
@@ -145,7 +212,7 @@
                 @forelse ($topPages as $item)
                     @php $pct = $maxPages > 0 ? round($item['total'] / $maxPages * 100) : 0; @endphp
                     <div class="flex items-center gap-3 py-1.5">
-                        <span class="w-32 shrink-0 truncate text-[13px] text-primary" title="{{ $item['label'] }}">{{ $item['label'] }}</span>
+                        <span class="w-32 shrink-0 truncate text-[13px] text-primary"><x-analytics::page-url :route="$item['label']" /></span>
                         <div class="relative h-1.5 flex-1 overflow-hidden rounded-full bg-elevated">
                             <div class="absolute inset-y-0 left-0 rounded-full bg-[#1684ea]/70" style="width: {{ $pct }}%"></div>
                         </div>
@@ -164,7 +231,7 @@
                         <div class="min-w-0">
                             <p class="truncate text-[13px] text-primary">{{ $click['label'] }}</p>
                             @if ($click['route'])
-                                <p class="truncate text-[11px] text-muted">{{ $click['route'] }}</p>
+                                <p class="truncate text-[11px] text-muted"><x-analytics::page-url :route="$click['route']" /></p>
                             @endif
                         </div>
                         <span class="shrink-0 text-[12px] font-medium text-secondary">{{ number_format($click['total'], 0, ',', ' ') }}</span>

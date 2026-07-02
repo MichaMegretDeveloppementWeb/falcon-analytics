@@ -73,6 +73,57 @@ final readonly class DashboardReadRepository
     }
 
     /**
+     * New (first ever seen within the period) vs returning visitor counts.
+     *
+     * @return array{new: int, returning: int}
+     */
+    public function newVsReturning(Period $period, ?string $subjectType): array
+    {
+        $total = $this->sessionScope($period, $subjectType)->distinct()->count('visitor_id');
+
+        $new = $this->sessionScope($period, $subjectType)
+            ->whereHas('visitor', fn (Builder $visitor): Builder => $visitor->whereBetween('first_seen_at', [$period->from, $period->to]))
+            ->distinct()
+            ->count('visitor_id');
+
+        return ['new' => $new, 'returning' => max($total - $new, 0)];
+    }
+
+    /**
+     * Session counts per device type (desktop / mobile / tablet).
+     *
+     * @return array<string, int>
+     */
+    public function sessionsByDevice(Period $period, ?string $subjectType): array
+    {
+        return $this->sessionScope($period, $subjectType)
+            ->toBase()
+            ->whereNotNull('device_type')
+            ->selectRaw('device_type, COUNT(*) as total')
+            ->groupBy('device_type')
+            ->orderByDesc('total')
+            ->pluck('total', 'device_type')
+            ->map(fn ($total): int => (int) $total)
+            ->all();
+    }
+
+    /**
+     * Share of new visitors among the period's visitors, with its
+     * previous-period value.
+     */
+    public function newVisitorRate(Period $period, ?string $subjectType): MetricDelta
+    {
+        $rate = function (Period $window) use ($subjectType): float {
+            $counts = $this->newVsReturning($window, $subjectType);
+            $total = $counts['new'] + $counts['returning'];
+
+            return $total > 0 ? $counts['new'] / $total * 100 : 0.0;
+        };
+
+        return new MetricDelta($rate($period), $rate($period->previous()));
+    }
+
+    /**
      * Daily sessions and page views across the period, with missing days filled
      * so the chart draws a continuous line.
      *
@@ -166,7 +217,8 @@ final readonly class DashboardReadRepository
      */
     public function topClicks(Period $period, ?string $subjectType, int $limit = 6): array
     {
-        $label = "COALESCE(NULLIF(name, ''), NULLIF(target_text, ''))";
+        // Prefer the visible button text (human-readable) over the technical event name.
+        $label = "COALESCE(NULLIF(target_text, ''), NULLIF(name, ''))";
 
         return $this->eventScope(EventType::Click, $period, $subjectType)
             ->whereRaw("{$label} IS NOT NULL")
