@@ -94,31 +94,26 @@
     </div>
 
     {{-- Header --}}
-    <div class="flex items-center gap-4">
-        <span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-elevated">
-            <x-ui.icon :name="$session->subject_type ? 'user' : 'user-circle'" class="h-7 w-7 text-secondary" />
-        </span>
-        <div class="min-w-0">
-            <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-                <h1 class="text-2xl font-semibold tracking-tight text-primary">
-                    {{ $session->subject_type ? $subjectResolver->display($session->subject_type, (int) $session->subject_id) : __('Visiteur anonyme') }}
-                </h1>
-                <x-ui.badge :color="$session->subject_type ? 'blue' : 'gray'">
-                    {{ $session->subject_type ? $subjectResolver->label($session->subject_type) : __('Anonyme') }}
-                </x-ui.badge>
-                @if ($isReturning)
-                    <x-ui.badge color="blue">{{ __('Récurrent') }}</x-ui.badge>
-                @endif
-            </div>
-            <div class="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm text-secondary">
-                <span class="flex items-center gap-1.5">
-                    <x-ui.icon name="clock" class="h-4 w-4 text-muted" />
-                    {{ $session->started_at->translatedFormat('d F Y à H:i') }}
-                </span>
-                @if ($session->visitor?->uuid)
-                    <span class="font-mono text-[12px] text-muted">{{ Str::limit($session->visitor->uuid, 14, '') }}</span>
-                @endif
-            </div>
+    <div class="min-w-0">
+        <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+            <h1 class="text-2xl font-semibold tracking-tight text-primary">
+                {{ $session->subject_type ? $subjectResolver->display($session->subject_type, (int) $session->subject_id) : __('Visiteur anonyme') }}
+            </h1>
+            <x-ui.badge :color="$session->subject_type ? 'blue' : 'gray'">
+                {{ $session->subject_type ? $subjectResolver->label($session->subject_type) : __('Anonyme') }}
+            </x-ui.badge>
+            @if ($isReturning)
+                <x-ui.badge color="blue">{{ __('Récurrent') }}</x-ui.badge>
+            @endif
+        </div>
+        <div class="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-0.5 text-sm text-secondary">
+            <span class="flex items-center gap-1.5">
+                <x-ui.icon name="clock" class="h-4 w-4 text-muted" />
+                {{ $session->started_at->translatedFormat('d F Y à H:i') }}
+            </span>
+            @if ($session->visitor?->uuid)
+                <span>{{ __('ID') }}{{ "\u{00A0}" }}: <span class="font-mono text-primary">{{ Str::limit($session->visitor->uuid, 24, '…') }}</span></span>
+            @endif
         </div>
     </div>
 
