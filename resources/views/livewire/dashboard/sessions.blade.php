@@ -75,7 +75,7 @@
     {{-- Toolbar --}}
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div class="w-full sm:max-w-xs">
-            <x-ui.search-input wire:model.live.debounce.300ms="search" :placeholder="__('Rechercher une IP ou une ville')" class="w-full" />
+            <x-ui.search-input wire:model.live.debounce.300ms="search" :placeholder="__('Rechercher un nom, une ville, un pays, un ID…')" class="w-full" />
         </div>
         <div class="flex items-center gap-2">
             @if (count($deviceOptions) > 1)
@@ -96,13 +96,13 @@
         <x-ui.table>
             <x-ui.table.head>
                 <x-ui.table.header-cell :first="true">{{ __('Visiteur') }}</x-ui.table.header-cell>
-                <x-ui.table.header-cell>{{ __('Début') }}</x-ui.table.header-cell>
-                <x-ui.table.header-cell>{{ __('Durée') }}</x-ui.table.header-cell>
-                <x-ui.table.header-cell align="right">{{ __('Pages') }}</x-ui.table.header-cell>
-                <x-ui.table.header-cell>{{ __('Source') }}</x-ui.table.header-cell>
-                <x-ui.table.header-cell>{{ __('Page d\'entrée') }}</x-ui.table.header-cell>
-                <x-ui.table.header-cell>{{ __('Appareil') }}</x-ui.table.header-cell>
-                <x-ui.table.header-cell :last="true">{{ __('Localité') }}</x-ui.table.header-cell>
+                <x-ui.table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'started_at', 'label' => __('Début')])</x-ui.table.header-cell>
+                <x-ui.table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'duration', 'label' => __('Durée')])</x-ui.table.header-cell>
+                <x-ui.table.header-cell align="right">@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'pageview_count', 'label' => __('Pages'), 'align' => 'right'])</x-ui.table.header-cell>
+                <x-ui.table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'source', 'label' => __('Source')])</x-ui.table.header-cell>
+                <x-ui.table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'landing_route', 'label' => __('Page d\'entrée')])</x-ui.table.header-cell>
+                <x-ui.table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'device_type', 'label' => __('Appareil')])</x-ui.table.header-cell>
+                <x-ui.table.header-cell :last="true">@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'country', 'label' => __('Localité')])</x-ui.table.header-cell>
             </x-ui.table.head>
             <x-ui.table.body>
                 @foreach ($sessions as $session)

@@ -7,6 +7,8 @@ use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Repositories\DashboardReadRepository;
+use Falcon\Analytics\Services\SubjectResolver;
+use Falcon\Analytics\Tests\Fixtures\Models\TestClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 
@@ -224,13 +226,40 @@ it('paginates sessions newest first, excluding bots, with filters', function () 
     makeDashboardSession(['city' => 'Geneva', 'device_type' => 'mobile']);
     makeDashboardSession(['city' => 'Paris', 'is_bot' => true]);
 
-    $all = $this->repository->paginateSessions($this->period, null, null, null, null, 20);
-    $byCity = $this->repository->paginateSessions($this->period, null, 'Geneva', null, null, 20);
-    $byDevice = $this->repository->paginateSessions($this->period, null, null, 'mobile', null, 20);
+    $subjects = new SubjectResolver;
+    $all = $this->repository->paginateSessions($this->period, null, null, null, null, $subjects);
+    $byCity = $this->repository->paginateSessions($this->period, null, 'Geneva', null, null, $subjects);
+    $byDevice = $this->repository->paginateSessions($this->period, null, null, 'mobile', null, $subjects);
 
     expect($all->total())->toBe(23)
         ->and($all->count())->toBe(20)
         ->and($byCity->total())->toBe(1)
         ->and($byDevice->total())->toBe(1)
         ->and($byDevice->first()->city)->toBe('Geneva');
+});
+
+it('sorts sessions by a whitelisted column and direction', function () {
+    makeDashboardSession(['pageview_count' => 3]);
+    makeDashboardSession(['pageview_count' => 9]);
+    makeDashboardSession(['pageview_count' => 1]);
+
+    $subjects = new SubjectResolver;
+    $asc = $this->repository->paginateSessions($this->period, null, null, null, null, $subjects, 'pageview_count', 'asc');
+    $desc = $this->repository->paginateSessions($this->period, null, null, null, null, $subjects, 'pageview_count', 'desc');
+
+    expect($asc->first()->pageview_count)->toBe(1)
+        ->and($desc->first()->pageview_count)->toBe(9);
+});
+
+it('searches sessions by visitor name resolved from the guard model', function () {
+    config()->set('analytics.identity.subjects.client', ['label' => 'Client', 'name' => ['first_name', 'last_name']]);
+
+    $marie = TestClient::create(['first_name' => 'Marie', 'last_name' => 'Dupont']);
+    makeDashboardSession(['subject_type' => 'client', 'subject_id' => $marie->id]);
+    makeDashboardSession(['subject_type' => 'client', 'subject_id' => 999]);
+
+    $found = $this->repository->paginateSessions($this->period, null, 'Marie', null, null, new SubjectResolver);
+
+    expect($found->total())->toBe(1)
+        ->and($found->first()->subject_id)->toBe($marie->id);
 });

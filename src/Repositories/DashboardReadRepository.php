@@ -11,6 +11,7 @@ use Falcon\Analytics\DTOs\Dashboard\TrendPoint;
 use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
+use Falcon\Analytics\Services\SubjectResolver;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -281,23 +282,45 @@ final readonly class DashboardReadRepository
         ?string $search,
         ?string $device,
         ?string $source,
+        SubjectResolver $subjects,
+        string $sort = 'started_at',
+        string $direction = 'desc',
         int $perPage = 20,
     ): LengthAwarePaginator {
-        return $this->sessionScope($period, $subjectType)
+        $direction = $direction === 'asc' ? 'asc' : 'desc';
+
+        $query = $this->sessionScope($period, $subjectType)
             ->with('visitor:id,uuid,subject_type,subject_id')
             ->when($device !== null && $device !== '', fn (Builder $q): Builder => $q->where('device_type', $device))
             ->when($source !== null && $source !== '', fn (Builder $q): Builder => $q->where('source', $source))
-            ->when($search !== null && $search !== '', function (Builder $query) use ($search): void {
+            ->when($search !== null && $search !== '', function (Builder $query) use ($search, $subjects): void {
                 $term = '%'.$search.'%';
 
-                $query->where(function (Builder $inner) use ($term): void {
-                    $inner->where('ip', 'like', $term)
-                        ->orWhere('city', 'like', $term)
-                        ->orWhere('country', 'like', $term);
+                $query->where(function (Builder $inner) use ($term, $search, $subjects): void {
+                    $inner->where('city', 'like', $term)->orWhere('country', 'like', $term);
+
+                    if (ctype_digit($search)) {
+                        $inner->orWhere('subject_id', (int) $search);
+                    }
+
+                    foreach ($subjects->guards() as $guard) {
+                        $ids = $subjects->matchIds($guard, $search);
+
+                        if ($ids !== []) {
+                            $inner->orWhere(fn (Builder $q): Builder => $q->where('subject_type', $guard)->whereIn('subject_id', $ids));
+                        }
+                    }
                 });
-            })
-            ->latest('started_at')
-            ->paginate($perPage);
+            });
+
+        if ($sort === 'duration') {
+            $query->orderByRaw($this->durationSecondsExpression('started_at', 'last_activity_at').' '.$direction);
+        } else {
+            $sortable = ['started_at', 'pageview_count', 'source', 'country', 'device_type', 'landing_route'];
+            $query->orderBy(in_array($sort, $sortable, true) ? $sort : 'started_at', $direction);
+        }
+
+        return $query->paginate($perPage);
     }
 
     /**

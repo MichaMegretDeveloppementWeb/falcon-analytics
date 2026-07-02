@@ -28,6 +28,58 @@ final class SubjectResolver
     }
 
     /**
+     * The subject guards declared in config.
+     *
+     * @return list<string>
+     */
+    public function guards(): array
+    {
+        $subjects = config('analytics.identity.subjects', []);
+
+        return is_array($subjects) ? array_map('strval', array_keys($subjects)) : [];
+    }
+
+    /**
+     * Ids of a guard whose name (or fallback) columns match the term, so the
+     * session list can be searched by visitor name.
+     *
+     * @return list<int>
+     */
+    public function matchIds(string $guard, string $term): array
+    {
+        $config = config("analytics.identity.subjects.{$guard}");
+        $config = is_array($config) ? $config : [];
+
+        $columns = array_values(array_unique([
+            ...$this->columns($config['name'] ?? []),
+            ...$this->columns($config['fallback'] ?? []),
+        ]));
+
+        $source = $columns === [] ? null : $this->source($guard, $config);
+
+        if ($source === null) {
+            return [];
+        }
+
+        [$table, $key] = $source;
+
+        try {
+            return DB::table($table)
+                ->where(function ($query) use ($columns, $term): void {
+                    foreach ($columns as $column) {
+                        $query->orWhere($column, 'like', '%'.$term.'%');
+                    }
+                })
+                ->limit(200)
+                ->pluck($key)
+                ->map(fn ($value): int => (int) $value)
+                ->all();
+        } catch (Throwable) {
+            return [];
+        }
+    }
+
+    /**
      * Batch-resolve display names for several ids of one guard in a single query.
      *
      * @param  list<int>  $ids
