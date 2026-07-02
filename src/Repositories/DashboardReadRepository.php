@@ -295,9 +295,16 @@ final readonly class DashboardReadRepository
             ->when($source !== null && $source !== '', fn (Builder $q): Builder => $q->where('source', $source))
             ->when($search !== null && $search !== '', function (Builder $query) use ($search, $subjects): void {
                 $term = '%'.$search.'%';
+                $countryCodes = $this->matchingCountryCodes($search);
 
-                $query->where(function (Builder $inner) use ($term, $search, $subjects): void {
-                    $inner->where('city', 'like', $term)->orWhere('country', 'like', $term);
+                $query->where(function (Builder $inner) use ($term, $search, $subjects, $countryCodes): void {
+                    $inner->where('city', 'like', $term)
+                        ->orWhere('country', 'like', $term)
+                        ->orWhereHas('visitor', fn (Builder $visitor): Builder => $visitor->where('uuid', 'like', $term));
+
+                    if ($countryCodes !== []) {
+                        $inner->orWhereIn('country', $countryCodes);
+                    }
 
                     if (ctype_digit($search)) {
                         $inner->orWhere('subject_id', (int) $search);
@@ -321,6 +328,39 @@ final readonly class DashboardReadRepository
         }
 
         return $query->paginate($perPage);
+    }
+
+    /**
+     * ISO country codes stored in sessions whose localised name (or the code
+     * itself) matches the term, so the list can be searched by country name.
+     *
+     * @return list<string>
+     */
+    private function matchingCountryCodes(string $search): array
+    {
+        if (! class_exists(\Locale::class)) {
+            return [];
+        }
+
+        try {
+            $codes = Session::query()->whereNotNull('country')->distinct()->pluck('country');
+        } catch (\Throwable) {
+            return [];
+        }
+
+        $locale = app()->getLocale();
+        $matches = [];
+
+        foreach ($codes as $code) {
+            $code = (string) $code;
+            $name = \Locale::getDisplayRegion('-'.$code, $locale);
+
+            if (is_string($name) && $name !== '' && mb_stripos($name, $search) !== false) {
+                $matches[] = $code;
+            }
+        }
+
+        return $matches;
     }
 
     /**

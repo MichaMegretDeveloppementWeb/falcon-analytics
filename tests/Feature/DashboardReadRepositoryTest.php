@@ -263,3 +263,24 @@ it('searches sessions by visitor name resolved from the guard model', function (
     expect($found->total())->toBe(1)
         ->and($found->first()->subject_id)->toBe($marie->id);
 });
+
+it('searches sessions by the visitor uuid shown as the ID', function () {
+    $visitor = Visitor::create(['uuid' => 'vd-known-42', 'first_seen_at' => now(), 'last_seen_at' => now()]);
+    makeDashboardSession([], $visitor);
+    makeDashboardSession();
+
+    $found = $this->repository->paginateSessions($this->period, null, 'vd-known', null, null, new SubjectResolver);
+
+    expect($found->total())->toBe(1)
+        ->and($found->first()->visitor_id)->toBe($visitor->id);
+});
+
+it('searches sessions by country name, resolving the stored ISO code', function () {
+    makeDashboardSession(['country' => 'FR']);
+    makeDashboardSession(['country' => 'CH']);
+
+    $found = $this->repository->paginateSessions($this->period, null, 'France', null, null, new SubjectResolver);
+
+    expect($found->total())->toBe(1)
+        ->and($found->first()->country)->toBe('FR');
+});
