@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Repositories;
 
+use Carbon\CarbonImmutable;
 use Falcon\Analytics\DTOs\Dashboard\MetricDelta;
 use Falcon\Analytics\DTOs\Dashboard\Period;
 use Falcon\Analytics\DTOs\Dashboard\TrendPoint;
@@ -45,6 +46,29 @@ final readonly class DashboardReadRepository
             'avgSeconds' => new MetricDelta((float) $current->avg_seconds, (float) $previous->avg_seconds),
             'pagesPerSession' => new MetricDelta($pagesPerSession($current), $pagesPerSession($previous)),
             'bounceRate' => new MetricDelta($bounceRate($current), $bounceRate($previous)),
+        ];
+    }
+
+    /**
+     * Today and yesterday values for the headline metrics, feeding the
+     * "X today, Y yesterday" mini-line. Duration uses last_activity (never now),
+     * so open sessions can't inflate it.
+     *
+     * @return array<string, array{today: float, yesterday: float}>
+     */
+    public function spotlight(?string $subjectType): array
+    {
+        $now = CarbonImmutable::now();
+        $today = $this->aggregates(new Period($now->startOfDay(), $now, 1), $subjectType);
+        $yesterday = $this->aggregates(new Period($now->subDay()->startOfDay(), $now->subDay()->endOfDay(), 1), $subjectType);
+
+        $bounce = fn (object $row): float => $row->sessions > 0 ? (float) $row->bounces / $row->sessions * 100 : 0.0;
+
+        return [
+            'visitors' => ['today' => (float) $today->visitors, 'yesterday' => (float) $yesterday->visitors],
+            'sessions' => ['today' => (float) $today->sessions, 'yesterday' => (float) $yesterday->sessions],
+            'avgSeconds' => ['today' => (float) $today->avg_seconds, 'yesterday' => (float) $yesterday->avg_seconds],
+            'bounceRate' => ['today' => $bounce($today), 'yesterday' => $bounce($yesterday)],
         ];
     }
 

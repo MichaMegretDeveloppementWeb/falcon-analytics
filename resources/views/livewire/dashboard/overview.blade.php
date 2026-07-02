@@ -18,6 +18,14 @@
         return ($metric->changePercent() > 0 ? '+' : '').number_format($metric->changePercent(), 0, ',', ' ').' %';
     };
 
+    $count = fn ($value): string => number_format((float) $value, 0, ',', ' ');
+    $percent = fn ($value): string => number_format((float) $value, 1, ',', ' ').' %';
+
+    $spotlightLine = fn (string $key, callable $format): string => __(':today aujourd\'hui · :yesterday hier', [
+        'today' => $format($spotlight[$key]['today']),
+        'yesterday' => $format($spotlight[$key]['yesterday']),
+    ]);
+
     $previous = $range->previous();
 
     $maxSources = max(array_column($topSources, 'total') ?: [0]);
@@ -34,16 +42,20 @@
         @include('analytics::livewire.dashboard.partials.filters')
     </x-ui.page-header>
 
-    {{-- Headline KPIs with period-over-period deltas --}}
+    {{-- Headline KPIs: reach, volume and two engagement-quality signals --}}
     <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <x-ui.stat-card :label="__('Visiteurs')" :value="number_format($headline['visitors']->current, 0, ',', ' ')" icon="users"
-            :trend="$deltaLabel($headline['visitors'])" :trendUp="$headline['visitors']->increased()" />
-        <x-ui.stat-card :label="__('Sessions')" :value="number_format($headline['sessions']->current, 0, ',', ' ')" icon="cursor-arrow-rays"
-            :trend="$deltaLabel($headline['sessions'])" :trendUp="$headline['sessions']->increased()" />
-        <x-ui.stat-card :label="__('Pages vues')" :value="number_format($headline['pageviews']->current, 0, ',', ' ')" icon="eye"
-            :trend="$deltaLabel($headline['pageviews'])" :trendUp="$headline['pageviews']->increased()" />
+        <x-ui.stat-card :label="__('Visiteurs')" :value="$count($headline['visitors']->current)" icon="users"
+            :trend="$deltaLabel($headline['visitors'])" :trendUp="$headline['visitors']->increased()"
+            :description="$spotlightLine('visitors', $count)" />
+        <x-ui.stat-card :label="__('Sessions')" :value="$count($headline['sessions']->current)" icon="cursor-arrow-rays"
+            :trend="$deltaLabel($headline['sessions'])" :trendUp="$headline['sessions']->increased()"
+            :description="$spotlightLine('sessions', $count)" />
         <x-ui.stat-card :label="__('Durée moy. session')" :value="$formatSeconds($headline['avgSeconds']->current)" icon="clock"
-            :trend="$deltaLabel($headline['avgSeconds'])" :trendUp="$headline['avgSeconds']->increased()" />
+            :trend="$deltaLabel($headline['avgSeconds'])" :trendUp="$headline['avgSeconds']->increased()"
+            :description="$spotlightLine('avgSeconds', $formatSeconds)" />
+        <x-ui.stat-card :label="__('Taux de rebond')" :value="$percent($headline['bounceRate']->current)" icon="arrow-uturn-left"
+            :trend="$deltaLabel($headline['bounceRate'])" :trendUp="! $headline['bounceRate']->increased()"
+            :description="$spotlightLine('bounceRate', $percent)" />
     </div>
 
     {{-- Traffic trend (deferred, with skeleton) --}}
