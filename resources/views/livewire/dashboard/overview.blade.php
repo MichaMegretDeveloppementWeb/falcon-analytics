@@ -11,7 +11,11 @@
     };
 
     $deltaLabel = function ($metric): ?string {
-        if (! $metric->hasBaseline() || $metric->changePercent() == 0.0) {
+        if (! $metric->hasBaseline()) {
+            return $metric->current > 0 ? '+∞ %' : null;
+        }
+
+        if ($metric->changePercent() == 0.0) {
             return null;
         }
 
