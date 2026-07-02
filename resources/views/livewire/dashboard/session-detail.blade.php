@@ -93,7 +93,7 @@
             </div>
         </div>
 
-        <div class="flex items-center gap-6 sm:gap-8">
+        <div class="flex flex-wrap items-center gap-x-6 gap-y-2 sm:gap-x-8">
             <div>
                 <p class="text-[11px] text-muted">{{ __('Durée') }}</p>
                 <p class="text-lg font-semibold tracking-tight text-primary">{{ $duration }}</p>
@@ -141,7 +141,7 @@
                                 <div class="min-w-0 flex-1 pt-1">
                                     <div class="flex items-baseline justify-between gap-2">
                                         <p @class(['flex min-w-0 items-center gap-2 text-[13px] font-medium', 'text-emerald-600 dark:text-emerald-400' => $isConversionStep, 'text-primary' => ! $isConversionStep])>
-                                            <span class="truncate">@if ($isPageview)<x-analytics::page-url :route="$event->route" />@else{{ $eventLabel($event) }}@endif</span>
+                                            <span class="min-w-0 truncate">@if ($isPageview)<x-analytics::page-url :route="$event->route" />@else{{ $eventLabel($event) }}@endif</span>
                                             @if ($isPageview && $loop->first)
                                                 <x-ui.badge color="gray">{{ __('Entrée') }}</x-ui.badge>
                                             @elseif ($isPageview && $loop->last)
@@ -197,11 +197,9 @@
                         </div>
                         <div class="min-w-0 flex-1 space-y-2">
                             @foreach ($segments as $pageLabel => $pageSeconds)
-                                <div class="flex items-center justify-between gap-2">
-                                    <span class="flex min-w-0 items-center gap-2 text-[12px] text-secondary">
-                                        <span class="h-2 w-2 shrink-0 rounded-full" style="background: {{ $palette[$loop->index] ?? '#d1d5db' }}"></span>
-                                        <span class="truncate">{{ $pageLabel }}</span>
-                                    </span>
+                                <div class="flex items-center gap-2">
+                                    <span class="h-2 w-2 shrink-0 rounded-full" style="background: {{ $palette[$loop->index] ?? '#d1d5db' }}"></span>
+                                    <span class="min-w-0 flex-1 truncate text-[12px] text-secondary">{{ $pageLabel }}</span>
                                     <span class="shrink-0 text-[12px] font-medium text-primary">{{ $formatSeconds($pageSeconds) }}</span>
                                 </div>
                             @endforeach
