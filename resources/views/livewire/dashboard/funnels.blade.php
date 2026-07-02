@@ -55,7 +55,7 @@
                                 </div>
                             </div>
                             <div class="mt-2 flex justify-center">
-                                <div class="h-2.5 rounded-md bg-indigo-500/80" style="width: {{ max($pct, 2) }}%"></div>
+                                <div class="h-2.5 rounded-md bg-[#1684ea]/80" style="width: {{ max($pct, 2) }}%"></div>
                             </div>
                             <p class="mt-1 text-center text-[11px] text-muted">{{ __('Valeur :v · score :s', [
                                 'v' => number_format($step->value, 0, ',', ' '),

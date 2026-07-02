@@ -115,13 +115,33 @@ final readonly class DashboardReadRepository
     }
 
     /**
-     * Top countries by sessions.
+     * Top localities (country + city) by sessions, with previous-period counts.
      *
-     * @return list<array{label: string, total: int, previous: int}>
+     * @return list<array{country: string, city: string|null, total: int, previous: int}>
      */
-    public function sessionsByCountry(Period $period, ?string $subjectType, int $limit = 6): array
+    public function topLocalities(Period $period, ?string $subjectType, int $limit = 6): array
     {
-        return $this->rankedSessionColumn('country', $period, $subjectType, $limit);
+        $counts = fn (Period $window): Collection => $this->sessionScope($window, $subjectType)
+            ->toBase()
+            ->whereNotNull('country')
+            ->selectRaw('country, city, COUNT(*) as total')
+            ->groupBy('country', 'city')
+            ->get()
+            ->keyBy(fn (object $row): string => $row->country.'|'.($row->city ?? ''));
+
+        $previous = $counts($period->previous());
+
+        return $counts($period)
+            ->sortByDesc(fn (object $row): int => (int) $row->total)
+            ->take($limit)
+            ->map(fn (object $row): array => [
+                'country' => (string) $row->country,
+                'city' => ($row->city !== null && $row->city !== '') ? (string) $row->city : null,
+                'total' => (int) $row->total,
+                'previous' => (int) ($previous[$row->country.'|'.($row->city ?? '')]->total ?? 0),
+            ])
+            ->values()
+            ->all();
     }
 
     /**

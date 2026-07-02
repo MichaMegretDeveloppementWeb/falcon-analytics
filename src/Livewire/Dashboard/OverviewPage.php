@@ -24,7 +24,7 @@ final class OverviewPage extends DashboardComponent
             'headline' => $repository->headline($period, $subjectType),
             'spotlight' => $repository->spotlight($subjectType),
             'topSources' => $repository->topSources($period, $subjectType),
-            'topCountries' => $repository->sessionsByCountry($period, $subjectType),
+            'topLocalities' => $repository->topLocalities($period, $subjectType),
             'topPages' => $repository->topPages($period, $subjectType),
             'topClicks' => $repository->topClicks($period, $subjectType),
             ...$this->filterData(),

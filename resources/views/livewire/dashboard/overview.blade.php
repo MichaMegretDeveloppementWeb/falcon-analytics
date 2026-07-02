@@ -33,7 +33,7 @@
     $previous = $range->previous();
 
     $maxSources = max(array_column($topSources, 'total') ?: [0]);
-    $maxCountries = max(array_column($topCountries, 'total') ?: [0]);
+    $maxLocalities = max(array_column($topLocalities, 'total') ?: [0]);
     $maxPages = max(array_column($topPages, 'total') ?: [0]);
 @endphp
 
@@ -75,9 +75,9 @@
                 @forelse ($topSources as $item)
                     @php $pct = $maxSources > 0 ? round($item['total'] / $maxSources * 100) : 0; @endphp
                     <div class="flex items-center gap-3 py-1.5">
-                        <span class="w-36 shrink-0 truncate text-[13px] text-primary">{{ Str::headline($item['label']) }}</span>
+                        <span class="w-36 shrink-0 truncate text-[13px] text-primary"><x-analytics::source :value="$item['label']" /></span>
                         <div class="relative h-1.5 flex-1 overflow-hidden rounded-full bg-elevated">
-                            <div class="absolute inset-y-0 left-0 rounded-full bg-emerald-500/70" style="width: {{ $pct }}%"></div>
+                            <div class="absolute inset-y-0 left-0 rounded-full bg-[#1684ea]/70" style="width: {{ $pct }}%"></div>
                         </div>
                         @include('analytics::livewire.dashboard.partials.delta', ['current' => $item['total'], 'previous' => $item['previous']])
                         <span class="w-10 shrink-0 text-right text-[12px] font-medium text-secondary">{{ number_format($item['total'], 0, ',', ' ') }}</span>
@@ -88,13 +88,15 @@
             </x-ui.card>
 
             <x-ui.card>
-                <x-ui.section-header :title="__('Pays')" class="mb-4" />
-                @forelse ($topCountries as $item)
-                    @php $pct = $maxCountries > 0 ? round($item['total'] / $maxCountries * 100) : 0; @endphp
+                <x-ui.section-header :title="__('Localités')" class="mb-4" />
+                @forelse ($topLocalities as $item)
+                    @php $pct = $maxLocalities > 0 ? round($item['total'] / $maxLocalities * 100) : 0; @endphp
                     <div class="flex items-center gap-3 py-1.5">
-                        <span class="w-36 shrink-0 truncate text-[13px] font-medium uppercase text-primary">{{ $item['label'] }}</span>
+                        <span class="w-44 shrink-0 truncate text-[13px] text-primary">
+                            <x-analytics::country :code="$item['country']" :city="$item['city']" />
+                        </span>
                         <div class="relative h-1.5 flex-1 overflow-hidden rounded-full bg-elevated">
-                            <div class="absolute inset-y-0 left-0 rounded-full bg-indigo-500/70" style="width: {{ $pct }}%"></div>
+                            <div class="absolute inset-y-0 left-0 rounded-full bg-[#1684ea]/70" style="width: {{ $pct }}%"></div>
                         </div>
                         <span class="w-10 shrink-0 text-right text-[12px] font-medium text-secondary">{{ number_format($item['total'], 0, ',', ' ') }}</span>
                     </div>
@@ -145,7 +147,7 @@
                     <div class="flex items-center gap-3 py-1.5">
                         <span class="w-32 shrink-0 truncate text-[13px] text-primary" title="{{ $item['label'] }}">{{ $item['label'] }}</span>
                         <div class="relative h-1.5 flex-1 overflow-hidden rounded-full bg-elevated">
-                            <div class="absolute inset-y-0 left-0 rounded-full bg-indigo-500/70" style="width: {{ $pct }}%"></div>
+                            <div class="absolute inset-y-0 left-0 rounded-full bg-[#1684ea]/70" style="width: {{ $pct }}%"></div>
                         </div>
                         @include('analytics::livewire.dashboard.partials.delta', ['current' => $item['total'], 'previous' => $item['previous']])
                         <span class="w-10 shrink-0 text-right text-[12px] font-medium text-secondary">{{ number_format($item['total'], 0, ',', ' ') }}</span>
