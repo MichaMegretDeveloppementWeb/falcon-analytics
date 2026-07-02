@@ -4,10 +4,13 @@
     $formatSeconds = function (float $seconds): string {
         $total = (int) round($seconds);
         $minutes = intdiv($total, 60);
+        $rest = $total % 60;
 
-        return $minutes > 0
-            ? trim($minutes.' min '.($total % 60 > 0 ? ($total % 60).' s' : ''))
-            : $total.' s';
+        if ($minutes > 0) {
+            return $rest > 0 ? "{$minutes}\u{00A0}min\u{00A0}{$rest}\u{00A0}s" : "{$minutes}\u{00A0}min";
+        }
+
+        return "{$total}\u{00A0}s";
     };
 
     $deltaLabel = function ($metric): ?string {
@@ -23,7 +26,7 @@
     };
 
     $count = fn ($value): string => number_format((float) $value, 0, ',', ' ');
-    $percent = fn ($value): string => number_format((float) $value, 1, ',', ' ').' %';
+    $percent = fn ($value): string => number_format((float) $value, 1, ',', ' ')."\u{00A0}%";
 
     $spotlightLine = fn (string $key, callable $format): string => __(':today aujourd\'hui · :yesterday hier', [
         'today' => $format($spotlight[$key]['today']),

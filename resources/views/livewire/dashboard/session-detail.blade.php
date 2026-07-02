@@ -8,10 +8,13 @@
 
     $formatSeconds = function (int $seconds): string {
         $minutes = intdiv($seconds, 60);
+        $rest = $seconds % 60;
 
-        return $minutes > 0
-            ? trim($minutes.' min '.($seconds % 60 > 0 ? ($seconds % 60).' s' : ''))
-            : $seconds.' s';
+        if ($minutes > 0) {
+            return $rest > 0 ? "{$minutes}\u{00A0}min\u{00A0}{$rest}\u{00A0}s" : "{$minutes}\u{00A0}min";
+        }
+
+        return "{$seconds}\u{00A0}s";
     };
 
     $eventLabel = fn ($event) => $value($event->target_text) ?? $value($event->name) ?? __('Évènement');
@@ -90,61 +93,48 @@
         </a>
     </div>
 
-    {{-- Header: identity + key figures --}}
-    <div class="flex flex-wrap items-start justify-between gap-4">
-        <div class="flex items-center gap-3">
-            <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-elevated">
-                <x-ui.icon :name="$session->subject_type ? 'user' : 'user-circle'" class="h-6 w-6 text-secondary" />
-            </span>
-            <div class="min-w-0">
-                <div class="flex flex-wrap items-center gap-2">
-                    <h1 class="text-lg font-semibold text-primary">
-                        {{ $session->subject_type ? $subjectResolver->display($session->subject_type, (int) $session->subject_id) : __('Visiteur anonyme') }}
-                    </h1>
-                    <x-ui.badge :color="$session->subject_type ? 'blue' : 'gray'">
-                        {{ $session->subject_type ? $subjectResolver->label($session->subject_type) : __('Anonyme') }}
-                    </x-ui.badge>
-                    @if ($isReturning)
-                        <x-ui.badge color="blue">{{ __('Récurrent') }}</x-ui.badge>
-                    @endif
-                </div>
-                <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[13px] text-secondary">
-                    <span class="flex items-center gap-1.5">
-                        <x-ui.icon name="clock" class="h-3.5 w-3.5 text-muted" />
-                        {{ $session->started_at->translatedFormat('d F Y à H:i') }}
-                    </span>
-                    @if ($session->visitor?->uuid)
-                        <span class="font-mono text-[12px] text-muted">{{ Str::limit($session->visitor->uuid, 14, '') }}</span>
-                    @endif
-                </div>
+    {{-- Header --}}
+    <div class="flex items-center gap-3">
+        <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-elevated">
+            <x-ui.icon :name="$session->subject_type ? 'user' : 'user-circle'" class="h-6 w-6 text-secondary" />
+        </span>
+        <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-2">
+                <h1 class="text-lg font-semibold text-primary">
+                    {{ $session->subject_type ? $subjectResolver->display($session->subject_type, (int) $session->subject_id) : __('Visiteur anonyme') }}
+                </h1>
+                <x-ui.badge :color="$session->subject_type ? 'blue' : 'gray'">
+                    {{ $session->subject_type ? $subjectResolver->label($session->subject_type) : __('Anonyme') }}
+                </x-ui.badge>
+                @if ($isReturning)
+                    <x-ui.badge color="blue">{{ __('Récurrent') }}</x-ui.badge>
+                @endif
+            </div>
+            <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[13px] text-secondary">
+                <span class="flex items-center gap-1.5">
+                    <x-ui.icon name="clock" class="h-3.5 w-3.5 text-muted" />
+                    {{ $session->started_at->translatedFormat('d F Y à H:i') }}
+                </span>
+                @if ($session->visitor?->uuid)
+                    <span class="font-mono text-[12px] text-muted">{{ Str::limit($session->visitor->uuid, 14, '') }}</span>
+                @endif
             </div>
         </div>
+    </div>
 
-        <div class="flex flex-wrap items-center gap-x-6 gap-y-2 sm:gap-x-8">
-            <div>
-                <p class="text-[11px] text-muted">{{ __('Durée') }}</p>
-                <p class="text-lg font-semibold tracking-tight text-primary">{{ $duration }}</p>
-            </div>
-            <div>
-                <p class="text-[11px] text-muted">{{ __('Pages vues') }}</p>
-                <p class="text-lg font-semibold tracking-tight text-primary">{{ $session->pageview_count }}</p>
-            </div>
-            <div>
-                <p class="text-[11px] text-muted">{{ __('Clics') }}</p>
-                <p class="text-lg font-semibold tracking-tight text-primary">{{ $clicksCount }}</p>
-            </div>
-            <div>
-                <p class="text-[11px] text-muted">{{ __('Temps moy./page') }}</p>
-                <p class="text-lg font-semibold tracking-tight text-primary">{{ $formatSeconds($avgPageSeconds) }}</p>
-            </div>
-        </div>
+    {{-- Key figures --}}
+    <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+        <x-ui.stat-card :label="__('Durée')" :value="$duration" icon="clock" />
+        <x-ui.stat-card :label="__('Pages vues')" :value="(string) $session->pageview_count" icon="document-text" />
+        <x-ui.stat-card :label="__('Clics')" :value="(string) $clicksCount" icon="cursor-arrow-rays" />
+        <x-ui.stat-card :label="__('Temps moy./page')" :value="$formatSeconds($avgPageSeconds)" icon="clock" />
     </div>
 
     {{-- Body: journey + details. Below lg the aside stacks, so we switch to tabs. --}}
     <div
         class="grid grid-cols-1 gap-6 lg:grid-cols-3"
         x-data="{
-            tab: 'parcours',
+            tab: 'infos',
             desktop: window.matchMedia('(min-width: 1024px)').matches,
             init() {
                 window.matchMedia('(min-width: 1024px)').addEventListener('change', (e) => { this.desktop = e.matches; });
@@ -154,8 +144,8 @@
         {{-- Mobile-only tabs --}}
         <div class="lg:hidden">
             <div class="flex gap-1 rounded-lg bg-elevated p-1">
-                <button type="button" @click="tab = 'parcours'" :class="tab === 'parcours' ? 'bg-surface text-primary' : 'text-secondary hover:text-primary'" class="flex-1 cursor-pointer rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors">{{ __('Parcours') }}</button>
                 <button type="button" @click="tab = 'infos'" :class="tab === 'infos' ? 'bg-surface text-primary' : 'text-secondary hover:text-primary'" class="flex-1 cursor-pointer rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors">{{ __('Infos') }}</button>
+                <button type="button" @click="tab = 'parcours'" :class="tab === 'parcours' ? 'bg-surface text-primary' : 'text-secondary hover:text-primary'" class="flex-1 cursor-pointer rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors">{{ __('Parcours') }}</button>
             </div>
         </div>
 

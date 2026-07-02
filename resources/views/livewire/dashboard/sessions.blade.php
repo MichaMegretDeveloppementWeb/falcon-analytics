@@ -6,11 +6,16 @@
     $formatSeconds = function (float $seconds): string {
         $total = (int) round($seconds);
         $minutes = intdiv($total, 60);
+        $rest = $total % 60;
 
-        return $minutes > 0
-            ? trim($minutes.' min '.($total % 60 > 0 ? ($total % 60).' s' : ''))
-            : $total.' s';
+        if ($minutes > 0) {
+            return $rest > 0 ? "{$minutes}\u{00A0}min\u{00A0}{$rest}\u{00A0}s" : "{$minutes}\u{00A0}min";
+        }
+
+        return "{$total}\u{00A0}s";
     };
+
+    $percent = fn ($v): string => number_format((float) $v, 1, ',', ' ')."\u{00A0}%";
 
     $deltaLabel = function ($metric): ?string {
         if (! $metric->hasBaseline()) {
@@ -61,7 +66,7 @@
             :trend="$deltaLabel($headline['pagesPerSession'])" :trendUp="$headline['pagesPerSession']->increased()">
             <div wire:key="spark-s-pps-{{ $period }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$sparklines['pagesPerSession']" /></div>
         </x-ui.stat-card>
-        <x-ui.stat-card :label="__('Taux de rebond')" :value="number_format($headline['bounceRate']->current, 1, ',', ' ').' %'" icon="arrow-uturn-left"
+        <x-ui.stat-card :label="__('Taux de rebond')" :value="$percent($headline['bounceRate']->current)" icon="arrow-uturn-left"
             :trend="$deltaLabel($headline['bounceRate'])" :trendUp="! $headline['bounceRate']->increased()">
             <div wire:key="spark-s-bounce-{{ $period }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$sparklines['bounceRate']" /></div>
         </x-ui.stat-card>
@@ -93,19 +98,16 @@
                 <x-ui.table.header-cell :first="true">{{ __('Visiteur') }}</x-ui.table.header-cell>
                 <x-ui.table.header-cell>{{ __('Début') }}</x-ui.table.header-cell>
                 <x-ui.table.header-cell>{{ __('Durée') }}</x-ui.table.header-cell>
-                <x-ui.table.header-cell hidden="sm" align="right">{{ __('Pages') }}</x-ui.table.header-cell>
-                <x-ui.table.header-cell hidden="md">{{ __('Appareil') }}</x-ui.table.header-cell>
-                <x-ui.table.header-cell hidden="lg">{{ __('Localité') }}</x-ui.table.header-cell>
-                <x-ui.table.header-cell hidden="lg" :last="true">{{ __('Source') }}</x-ui.table.header-cell>
+                <x-ui.table.header-cell align="right">{{ __('Pages') }}</x-ui.table.header-cell>
+                <x-ui.table.header-cell>{{ __('Source') }}</x-ui.table.header-cell>
+                <x-ui.table.header-cell>{{ __('Page d\'entrée') }}</x-ui.table.header-cell>
+                <x-ui.table.header-cell>{{ __('Appareil') }}</x-ui.table.header-cell>
+                <x-ui.table.header-cell :last="true">{{ __('Localité') }}</x-ui.table.header-cell>
             </x-ui.table.head>
             <x-ui.table.body>
                 @foreach ($sessions as $session)
                     @php
-                        $seconds = (int) $session->started_at->diffInSeconds($session->last_activity_at);
-                        $minutes = intdiv($seconds, 60);
-                        $duration = $minutes > 0
-                            ? trim($minutes.' min '.($seconds % 60 > 0 ? ($seconds % 60).' s' : ''))
-                            : $seconds.' s';
+                        $duration = $formatSeconds((int) $session->started_at->diffInSeconds($session->last_activity_at));
                     @endphp
                     <x-ui.table.row
                         wire:key="session-{{ $session->id }}"
@@ -126,28 +128,35 @@
                                 @endif
                             </div>
                         </x-ui.table.cell>
-                        <x-ui.table.cell>{{ $session->started_at->translatedFormat('d M, H:i') }}</x-ui.table.cell>
-                        <x-ui.table.cell>{{ $duration }}</x-ui.table.cell>
-                        <x-ui.table.cell hidden="sm" align="right">{{ $session->pageview_count }}</x-ui.table.cell>
-                        <x-ui.table.cell hidden="md">
+                        <x-ui.table.cell class="whitespace-nowrap">{{ $session->started_at->translatedFormat('d M, H:i') }}</x-ui.table.cell>
+                        <x-ui.table.cell class="whitespace-nowrap">{{ $duration }}</x-ui.table.cell>
+                        <x-ui.table.cell align="right">{{ $session->pageview_count }}</x-ui.table.cell>
+                        <x-ui.table.cell>
+                            @if ($session->source)
+                                <x-ui.badge color="gray"><x-analytics::source :value="$session->source" /></x-ui.badge>
+                            @else
+                                <span class="text-muted">{{ __('Directe') }}</span>
+                            @endif
+                        </x-ui.table.cell>
+                        <x-ui.table.cell class="whitespace-nowrap">
+                            @if ($session->landing_route)
+                                <x-analytics::page-url :route="$session->landing_route" />
+                            @else
+                                <span class="text-muted">·</span>
+                            @endif
+                        </x-ui.table.cell>
+                        <x-ui.table.cell class="whitespace-nowrap">
                             @if ($session->device_type || $session->browser)
                                 {{ Str::title($session->device_type ?: __('Inconnu')) }}@if ($session->browser) · {{ $session->browser }}@endif
                             @else
                                 <span class="text-muted">{{ __('Inconnu') }}</span>
                             @endif
                         </x-ui.table.cell>
-                        <x-ui.table.cell hidden="lg">
+                        <x-ui.table.cell :last="true" class="whitespace-nowrap">
                             @if ($session->country || $session->city)
                                 <x-analytics::country :code="$session->country" :city="$session->city" />
                             @else
                                 <span class="text-muted">{{ __('Inconnu') }}</span>
-                            @endif
-                        </x-ui.table.cell>
-                        <x-ui.table.cell hidden="lg" :last="true">
-                            @if ($session->source)
-                                <x-ui.badge color="gray"><x-analytics::source :value="$session->source" /></x-ui.badge>
-                            @else
-                                <span class="text-muted">{{ __('Directe') }}</span>
                             @endif
                         </x-ui.table.cell>
                     </x-ui.table.row>
