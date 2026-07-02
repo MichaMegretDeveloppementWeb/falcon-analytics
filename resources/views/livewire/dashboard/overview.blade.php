@@ -20,10 +20,6 @@
 
     $previous = $range->previous();
 
-    $labels = array_map(fn ($point) => $point->date->isoFormat('D MMM'), $trend);
-    $sessionsData = array_map(fn ($point) => $point->sessions, $trend);
-    $pageviewsData = array_map(fn ($point) => $point->pageviews, $trend);
-
     $maxSources = max(array_column($topSources, 'total') ?: [0]);
     $maxCountries = max(array_column($topCountries, 'total') ?: [0]);
     $maxPages = max(array_column($topPages, 'total') ?: [0]);
@@ -50,18 +46,8 @@
             :trend="$deltaLabel($headline['avgSeconds'])" :trendUp="$headline['avgSeconds']->increased()" />
     </div>
 
-    {{-- Traffic trend --}}
-    <x-ui.card>
-        <x-ui.section-header :title="__('Trafic')" :description="__('Sessions et pages vues par jour')" class="mb-4" />
-        <x-ui.chart
-            type="line"
-            wire:key="trend-{{ $period }}-{{ $subject }}"
-            :labels="$labels"
-            :datasets="[
-                ['label' => __('Sessions'), 'data' => $sessionsData, 'borderColor' => '#6366f1', 'backgroundColor' => 'rgba(99, 102, 241, 0.08)', 'fill' => true, 'tension' => 0.35, 'borderWidth' => 2, 'pointRadius' => 0],
-                ['label' => __('Pages vues'), 'data' => $pageviewsData, 'borderColor' => '#9ca3af', 'backgroundColor' => 'transparent', 'fill' => false, 'tension' => 0.35, 'borderWidth' => 2, 'pointRadius' => 0, 'borderDash' => [4, 4]],
-            ]" />
-    </x-ui.card>
+    {{-- Traffic trend (deferred, with skeleton) --}}
+    <livewire:analytics-trend-chart :period="$period" :subject="$subject" />
 
     {{-- Section: visitors --}}
     <div>

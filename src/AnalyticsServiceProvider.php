@@ -7,9 +7,11 @@ namespace Falcon\Analytics;
 use Falcon\Analytics\Console\GeoipDownloadCommand;
 use Falcon\Analytics\Console\InstallCommand;
 use Falcon\Analytics\Funnels\FunnelRegistry;
+use Falcon\Analytics\Livewire\Dashboard\Widgets\TrendChart;
 use Falcon\Analytics\Support\GeoResolver;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
+use Livewire\Livewire;
 
 final class AnalyticsServiceProvider extends ServiceProvider
 {
@@ -43,6 +45,8 @@ final class AnalyticsServiceProvider extends ServiceProvider
 
         Blade::anonymousComponentNamespace('analytics::components', 'analytics');
         Blade::directive('analyticsScripts', fn (): string => '<?php echo \Falcon\Analytics\View\Collector::render(); ?>');
+
+        Livewire::component('analytics-trend-chart', TrendChart::class);
 
         if ($this->app->runningInConsole()) {
             $this->publishes([
