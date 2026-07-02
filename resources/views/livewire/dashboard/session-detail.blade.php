@@ -5,6 +5,9 @@
     $routeName = config('analytics.dashboard.route_name', 'analytics');
     $value = fn ($raw) => filled($raw) ? $raw : null;
     $subjectResolver = app(\Falcon\Analytics\Services\SubjectResolver::class);
+    $visitorLabel = $session->subject_type ? $subjectResolver->label($session->subject_type) : null;
+    $visitorName = $session->subject_type ? $subjectResolver->name($session->subject_type, (int) $session->subject_id) : null;
+    $visitorPrimary = $visitorName ?? ($session->subject_type ? $visitorLabel.' #'.$session->subject_id : __('Visiteur anonyme'));
 
     $formatSeconds = function (int $seconds): string {
         $minutes = intdiv($seconds, 60);
@@ -95,24 +98,21 @@
 
     {{-- Header --}}
     <div class="min-w-0">
-        <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-            <h1 class="text-2xl font-semibold tracking-tight text-primary">
-                {{ $session->subject_type ? $subjectResolver->display($session->subject_type, (int) $session->subject_id) : __('Visiteur anonyme') }}
-            </h1>
-            <x-ui.badge :color="$session->subject_type ? 'blue' : 'gray'">
-                {{ $session->subject_type ? $subjectResolver->label($session->subject_type) : __('Anonyme') }}
-            </x-ui.badge>
+        <h1 class="text-2xl font-semibold tracking-tight text-primary">
+            {{ __('Session') }} #{{ $session->id }} <span class="text-muted">·</span> {{ $session->started_at->translatedFormat('d F Y à H:i') }}
+        </h1>
+        <div class="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-sm text-secondary">
+            <span class="font-medium text-primary">{{ $visitorPrimary }}</span>
+            @if ($visitorName && $visitorLabel)
+                <span class="text-muted">·</span>
+                <span>{{ $visitorLabel }}</span>
+            @endif
             @if ($isReturning)
                 <x-ui.badge color="blue">{{ __('Récurrent') }}</x-ui.badge>
             @endif
-        </div>
-        <div class="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-0.5 text-sm text-secondary">
-            <span class="flex items-center gap-1.5">
-                <x-ui.icon name="clock" class="h-4 w-4 text-muted" />
-                {{ $session->started_at->translatedFormat('d F Y à H:i') }}
-            </span>
             @if ($session->visitor?->uuid)
-                <span>{{ __('ID') }}{{ "\u{00A0}" }}: <span class="font-mono text-primary">{{ Str::limit($session->visitor->uuid, 24, '…') }}</span></span>
+                <span class="text-muted">·</span>
+                <span>{{ __('ID') }}{{ "\u{00A0}" }}: <span class="font-mono">{{ Str::limit($session->visitor->uuid, 24, '…') }}</span></span>
             @endif
         </div>
     </div>
