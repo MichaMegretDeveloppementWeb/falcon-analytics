@@ -255,10 +255,17 @@ final readonly class DashboardReadRepository
         // Prefer the visible button text (human-readable) over the technical event name.
         $label = "COALESCE(NULLIF(target_text, ''), NULLIF(name, ''))";
 
-        return $this->eventScope(EventType::Click, $period, $subjectType)
-            ->whereRaw("{$label} IS NOT NULL")
-            ->selectRaw("{$label} as label, route, COUNT(*) as total")
-            ->groupBy(DB::raw($label), 'route')
+        // Resolve the label in a subquery so the aggregate groups by a plain
+        // column: MySQL/MariaDB in ONLY_FULL_GROUP_BY reject grouping by this
+        // COALESCE expression directly (1055 "target_text isn't in GROUP BY").
+        $clicks = $this->eventScope(EventType::Click, $period, $subjectType)
+            ->selectRaw("{$label} as label, route");
+
+        return DB::query()
+            ->fromSub($clicks, 'clicks')
+            ->whereNotNull('label')
+            ->selectRaw('label, route, COUNT(*) as total')
+            ->groupBy('label', 'route')
             ->orderByDesc('total')
             ->limit($limit)
             ->get()
