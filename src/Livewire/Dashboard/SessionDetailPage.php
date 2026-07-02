@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Livewire\Dashboard;
 
+use Falcon\Analytics\Enums\EventType;
+use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Collection;
 use Livewire\Component;
 
 /**
- * A single session in detail: its main information and the chronological
- * timeline of its events. Read-only; the tabs are handled client-side.
+ * A single session in detail: its main information and the chronological journey
+ * (pages visited, clicks nested under their page, time spent). Read-only.
  */
 final class SessionDetailPage extends Component
 {
@@ -30,8 +33,39 @@ final class SessionDetailPage extends Component
 
         return view('analytics::livewire.dashboard.session-detail', [
             'session' => $this->session,
-            'events' => $events,
+            'journey' => $this->buildJourney($events),
+            'clicksCount' => $events->where('type', EventType::Click)->count(),
         ])->layout($this->layoutName(), ['title' => __('Session').' · '.__('Analytics')]);
+    }
+
+    /**
+     * Group events into a journey: each pageview is a step, other events nest
+     * under the page they happened on, and each step carries the seconds spent
+     * before the next step (or the end of the session).
+     *
+     * @param  Collection<int, Event>  $events
+     * @return list<array{event: Event, children: list<Event>, seconds: int}>
+     */
+    private function buildJourney(Collection $events): array
+    {
+        $journey = [];
+
+        foreach ($events as $event) {
+            if ($event->type === EventType::Pageview || $journey === []) {
+                $journey[] = ['event' => $event, 'children' => [], 'seconds' => 0];
+
+                continue;
+            }
+
+            $journey[array_key_last($journey)]['children'][] = $event;
+        }
+
+        foreach ($journey as $index => $step) {
+            $end = $journey[$index + 1]['event']->occurred_at ?? $this->session->last_activity_at;
+            $journey[$index]['seconds'] = max(0, (int) $step['event']->occurred_at->diffInSeconds($end));
+        }
+
+        return $journey;
     }
 
     private function layoutName(): string
