@@ -92,9 +92,19 @@ final class SessionDetailPage extends Component
             $journey[array_key_last($journey)]['children'][] = $event;
         }
 
+        // Partition the whole session window across the steps so the per-page
+        // times always sum to the session duration: the first step starts at the
+        // session start, every boundary is clamped inside [started, last_activity].
+        $windowStart = $this->session->started_at;
+        $windowEnd = $this->session->last_activity_at;
+        $clamp = fn ($moment) => $moment->lessThan($windowStart)
+            ? $windowStart
+            : ($moment->greaterThan($windowEnd) ? $windowEnd : $moment);
+
         foreach ($journey as $index => $step) {
-            $end = $journey[$index + 1]['event']->occurred_at ?? $this->session->last_activity_at;
-            $journey[$index]['seconds'] = max(0, (int) $step['event']->occurred_at->diffInSeconds($end));
+            $from = $index === 0 ? $windowStart : $clamp($step['event']->occurred_at);
+            $to = isset($journey[$index + 1]) ? $clamp($journey[$index + 1]['event']->occurred_at) : $windowEnd;
+            $journey[$index]['seconds'] = max(0, (int) $from->diffInSeconds($to));
         }
 
         return $journey;

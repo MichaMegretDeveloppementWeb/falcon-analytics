@@ -7,6 +7,11 @@
     'size' => 'h-28 w-28',
 ])
 
+@php
+    $totalLength = mb_strlen((string) $total);
+    $centerSize = $totalLength >= 8 ? 'text-[11px]' : ($totalLength >= 6 ? 'text-[13px]' : 'text-base');
+@endphp
+
 <div
     class="relative shrink-0 {{ $size }}"
     x-data="{
@@ -61,8 +66,8 @@
     }"
 >
     <canvas x-ref="canvas"></canvas>
-    <div class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-        <span class="text-base font-semibold tracking-tight text-primary">{{ $total }}</span>
+    <div class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-2 text-center leading-tight">
+        <span class="{{ $centerSize }} font-semibold tracking-tight text-primary">{{ $total }}</span>
         @if ($caption)
             <span class="text-[10px] uppercase tracking-wide text-muted">{{ $caption }}</span>
         @endif
