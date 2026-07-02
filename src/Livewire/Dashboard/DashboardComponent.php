@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Livewire\Dashboard;
 
 use Falcon\Analytics\DTOs\Dashboard\Period;
-use Illuminate\Support\Str;
+use Falcon\Analytics\Services\SubjectResolver;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 
@@ -73,9 +73,10 @@ abstract class DashboardComponent extends Component
 
         /** @var list<string> $guards */
         $guards = config('analytics.identity.subject_guards', []);
+        $subjects = app(SubjectResolver::class);
 
         foreach ($guards as $guard) {
-            $options[$guard] = Str::headline($guard);
+            $options[$guard] = $subjects->label($guard);
         }
 
         return $options;

@@ -78,6 +78,15 @@ return [
 
         // Cookie whose value "1" grants the persistent visitor id (null = always session-scoped).
         'consent_cookie' => null,
+
+        // Display metadata per subject guard, resolved at render time only (never
+        // stored). For each guard: an optional 'label' shown instead of the guard
+        // name, and a 'name' list of columns concatenated into a display name,
+        // read from the guard's own model (derived from the auth config, or an
+        // explicit 'model'/'table'/'key'). An optional 'fallback' list of columns
+        // is used when the name columns are all empty.
+        //   'client' => ['label' => 'Client', 'name' => ['first_name', 'last_name']],
+        'subjects' => [],
     ],
 
     /*

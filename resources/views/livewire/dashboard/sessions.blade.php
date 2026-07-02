@@ -1,6 +1,8 @@
 @php
     use Illuminate\Support\Str;
 
+    $subjectResolver = app(\Falcon\Analytics\Services\SubjectResolver::class);
+
     $formatSeconds = function (float $seconds): string {
         $total = (int) round($seconds);
         $minutes = intdiv($total, 60);
@@ -112,11 +114,16 @@
                         <x-ui.table.cell :first="true" variant="primary">
                             <div class="flex flex-col">
                                 @if ($session->subject_type)
-                                    <span class="text-[13px] font-medium text-primary">{{ Str::headline($session->subject_type) }} #{{ $session->subject_id }}</span>
+                                    @php
+                                        $subjectName = $subjectNames[$session->subject_type.':'.$session->subject_id] ?? null;
+                                        $subjectLabel = $subjectResolver->label($session->subject_type);
+                                    @endphp
+                                    <span class="text-[13px] font-medium text-primary">{{ $subjectName ?? $subjectLabel.' #'.$session->subject_id }}</span>
+                                    <span class="font-mono text-[11px] text-muted">@if ($subjectName){{ $subjectLabel }} · @endif{{ substr($session->visitor?->uuid ?? '', 0, 8) }}</span>
                                 @else
                                     <span class="text-[13px] text-secondary">{{ __('Anonyme') }}</span>
+                                    <span class="font-mono text-[11px] text-muted">{{ substr($session->visitor?->uuid ?? '', 0, 8) }}</span>
                                 @endif
-                                <span class="font-mono text-[11px] text-muted">{{ substr($session->visitor?->uuid ?? '', 0, 8) }}</span>
                             </div>
                         </x-ui.table.cell>
                         <x-ui.table.cell>{{ $session->started_at->translatedFormat('d M, H:i') }}</x-ui.table.cell>

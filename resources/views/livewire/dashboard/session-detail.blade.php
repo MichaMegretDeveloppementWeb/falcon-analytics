@@ -4,6 +4,7 @@
 
     $routeName = config('analytics.dashboard.route_name', 'analytics');
     $value = fn ($raw) => filled($raw) ? $raw : null;
+    $subjectResolver = app(\Falcon\Analytics\Services\SubjectResolver::class);
 
     $seconds = (int) $session->started_at->diffInSeconds($session->last_activity_at);
     $minutes = intdiv($seconds, 60);
@@ -45,7 +46,7 @@
                 </span>
                 <div class="min-w-0">
                     <p class="text-[15px] font-semibold text-primary">
-                        {{ $session->subject_type ? Str::headline($session->subject_type).' #'.$session->subject_id : __('Visiteur anonyme') }}
+                        {{ $session->subject_type ? $subjectResolver->display($session->subject_type, (int) $session->subject_id) : __('Visiteur anonyme') }}
                     </p>
                     <p class="text-[12px] text-muted">
                         {{ __('Session du :date', ['date' => $session->started_at->translatedFormat('d F Y à H:i')]) }}
@@ -56,7 +57,7 @@
                 </div>
             </div>
             <x-ui.badge :color="$session->subject_type ? 'blue' : 'gray'">
-                {{ $session->subject_type ? __('Identifié') : __('Anonyme') }}
+                {{ $session->subject_type ? $subjectResolver->label($session->subject_type) : __('Anonyme') }}
             </x-ui.badge>
         </div>
 
@@ -98,7 +99,7 @@
                     <x-ui.section-header :title="__('Visiteur')" class="mb-3" />
                     <dl class="space-y-2.5">
                         <x-analytics::detail-row :label="__('Identifiant')" :value="$session->visitor?->uuid" mono />
-                        <x-analytics::detail-row :label="__('Sujet')" :value="$session->subject_type ? Str::headline($session->subject_type).' #'.$session->subject_id : null" />
+                        <x-analytics::detail-row :label="__('Sujet')" :value="$session->subject_type ? $subjectResolver->label($session->subject_type).' #'.$session->subject_id : null" />
                         <x-analytics::detail-row :label="__('Sessions totales')" :value="(string) ($session->visitor?->session_count ?? 1)" />
                         <x-analytics::detail-row :label="__('Première visite')" :value="$session->visitor?->first_seen_at?->translatedFormat('d M Y, H:i')" />
                     </dl>
