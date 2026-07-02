@@ -16,7 +16,9 @@
 
     $eventLabel = fn ($event) => $value($event->target_text) ?? $value($event->name) ?? __('Évènement');
 
-    $duration = $formatSeconds((int) $session->started_at->diffInSeconds($session->last_activity_at));
+    $seconds = (int) $session->started_at->diffInSeconds($session->last_activity_at);
+    $duration = $formatSeconds($seconds);
+    $avgPageSeconds = $session->pageview_count > 0 ? (int) round($seconds / $session->pageview_count) : 0;
 
     $deviceIcon = match (strtolower((string) $session->device_type)) {
         'mobile' => 'device-phone-mobile',
@@ -25,8 +27,7 @@
         default => 'question-mark-circle',
     };
 
-    $sessionCount = (int) ($session->visitor?->session_count ?? 1);
-    $isReturning = $sessionCount > 1;
+    $isReturning = ((int) ($session->visitor?->session_count ?? 1)) > 1;
 
     $utm = collect([
         __('Campagne') => $session->utm_campaign,
@@ -35,6 +36,22 @@
         __('Contenu') => $session->utm_content,
         __('Terme') => $session->utm_term,
     ])->filter(fn ($v) => filled($v));
+
+    // Time distribution donut (top pages + others).
+    $palette = ['#1684ea', '#4b9bf0', '#7cb8f2', '#a5cdf7', '#bcdcfa', '#d1d5db'];
+    $totalPageSeconds = array_sum($timePerPage);
+    $segments = array_slice($timePerPage, 0, 5, true);
+    $othersSeconds = array_sum(array_slice($timePerPage, 5, null, true));
+    if ($othersSeconds > 0) {
+        $segments[__('Autres')] = $othersSeconds;
+    }
+
+    $maxStepSeconds = 1;
+    foreach ($journey as $s) {
+        if ($s['event']->type === EventType::Pageview) {
+            $maxStepSeconds = max($maxStepSeconds, $s['seconds']);
+        }
+    }
 @endphp
 
 <div class="space-y-6">
@@ -81,6 +98,10 @@
                 <p class="text-[11px] text-muted">{{ __('Clics') }}</p>
                 <p class="text-lg font-semibold tracking-tight text-primary">{{ $clicksCount }}</p>
             </div>
+            <div>
+                <p class="text-[11px] text-muted">{{ __('Temps moy./page') }}</p>
+                <p class="text-lg font-semibold tracking-tight text-primary">{{ $formatSeconds($avgPageSeconds) }}</p>
+            </div>
         </div>
     </div>
 
@@ -99,30 +120,45 @@
                             @php
                                 $event = $step['event'];
                                 $isPageview = $event->type === EventType::Pageview;
+                                $isConversionStep = $event->type === EventType::Custom;
+                                $barPct = $isPageview ? max(3, (int) round($step['seconds'] / $maxStepSeconds * 100)) : 0;
                             @endphp
                             <li class="relative flex gap-4 pb-6 last:pb-0">
                                 @unless ($loop->last)
                                     <span class="absolute bottom-0 left-4 top-8 w-px bg-base"></span>
                                 @endunless
                                 <span class="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-elevated ring-4 ring-surface">
-                                    <x-ui.icon :name="$isPageview ? 'document-text' : 'bolt'" class="h-4 w-4 text-secondary" />
+                                    <x-ui.icon :name="$isPageview ? 'document-text' : ($isConversionStep ? 'bolt' : 'cursor-arrow-rays')" @class(['h-4 w-4', 'text-emerald-500' => $isConversionStep, 'text-secondary' => ! $isConversionStep]) />
                                 </span>
                                 <div class="min-w-0 flex-1 pt-1">
                                     <div class="flex items-baseline justify-between gap-2">
-                                        <p class="min-w-0 truncate text-[13px] font-medium text-primary">
-                                            @if ($isPageview)<x-analytics::page-url :route="$event->route" />@else{{ $eventLabel($event) }}@endif
+                                        <p @class(['flex min-w-0 items-center gap-2 text-[13px] font-medium', 'text-emerald-600 dark:text-emerald-400' => $isConversionStep, 'text-primary' => ! $isConversionStep])>
+                                            <span class="truncate">@if ($isPageview)<x-analytics::page-url :route="$event->route" />@else{{ $eventLabel($event) }}@endif</span>
+                                            @if ($isPageview && $loop->first)
+                                                <x-ui.badge color="gray">{{ __('Entrée') }}</x-ui.badge>
+                                            @elseif ($isPageview && $loop->last)
+                                                <x-ui.badge color="gray">{{ __('Sortie') }}</x-ui.badge>
+                                            @endif
                                         </p>
                                         <span class="shrink-0 text-[11px] tabular-nums text-muted">{{ $event->occurred_at->translatedFormat('H:i:s') }}</span>
                                     </div>
-                                    @if ($isPageview && $step['seconds'] > 0)
-                                        <p class="mt-0.5 text-[11px] text-muted">{{ $formatSeconds($step['seconds']) }} {{ __('sur la page') }}</p>
+
+                                    @if ($isPageview)
+                                        <div class="mt-1.5 flex items-center gap-2">
+                                            <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-elevated">
+                                                <div class="h-full rounded-full bg-[#1684ea]/70" style="width: {{ $barPct }}%"></div>
+                                            </div>
+                                            <span class="w-14 shrink-0 text-right text-[11px] tabular-nums text-muted">{{ $formatSeconds($step['seconds']) }}</span>
+                                        </div>
                                     @endif
+
                                     @if (! empty($step['children']))
                                         <div class="mt-2.5 space-y-1.5">
                                             @foreach ($step['children'] as $child)
+                                                @php $isConversion = $child->type === EventType::Custom; @endphp
                                                 <div class="flex items-center gap-2">
-                                                    <x-ui.icon name="cursor-arrow-rays" class="h-3.5 w-3.5 shrink-0 text-muted" />
-                                                    <span class="min-w-0 truncate text-[12px] text-secondary">{{ $eventLabel($child) }}</span>
+                                                    <x-ui.icon :name="$isConversion ? 'bolt' : 'cursor-arrow-rays'" @class(['h-3.5 w-3.5 shrink-0', 'text-emerald-500' => $isConversion, 'text-[#1684ea]' => ! $isConversion]) />
+                                                    <span @class(['min-w-0 truncate text-[12px]', 'font-medium text-emerald-600 dark:text-emerald-400' => $isConversion, 'text-secondary' => ! $isConversion])>{{ $eventLabel($child) }}</span>
                                                     <span class="ml-auto shrink-0 text-[11px] tabular-nums text-muted">{{ $child->occurred_at->translatedFormat('H:i:s') }}</span>
                                                 </div>
                                             @endforeach
@@ -139,13 +175,33 @@
         <div class="space-y-5">
 
             <x-ui.card>
-                <x-ui.section-header :title="__('Visiteur')" class="mb-3" />
-                <dl class="space-y-2.5">
-                    <x-analytics::detail-row :label="__('Identifiant')" :value="$session->visitor?->uuid" mono />
-                    <x-analytics::detail-row :label="__('Sessions totales')" :value="(string) $sessionCount" />
-                    <x-analytics::detail-row :label="__('Première visite')" :value="$session->visitor?->first_seen_at?->translatedFormat('d M Y, H:i')" />
-                    <x-analytics::detail-row :label="__('Dernière visite')" :value="$session->visitor?->last_seen_at?->translatedFormat('d M Y, H:i')" />
-                </dl>
+                <x-ui.section-header :title="__('Répartition du temps')" :description="__('Par page')" class="mb-4" />
+                @if ($totalPageSeconds > 0)
+                    <div class="flex items-center gap-5">
+                        <div wire:key="donut-time-{{ $session->id }}">
+                            <x-analytics::donut
+                                :labels="array_keys($segments)"
+                                :values="array_values($segments)"
+                                :colors="array_slice($palette, 0, count($segments))"
+                                :total="$formatSeconds($totalPageSeconds)"
+                                :caption="__('total')"
+                                size="h-24 w-24" />
+                        </div>
+                        <div class="min-w-0 flex-1 space-y-2">
+                            @foreach ($segments as $pageLabel => $pageSeconds)
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="flex min-w-0 items-center gap-2 text-[12px] text-secondary">
+                                        <span class="h-2 w-2 shrink-0 rounded-full" style="background: {{ $palette[$loop->index] ?? '#d1d5db' }}"></span>
+                                        <span class="truncate">{{ $pageLabel }}</span>
+                                    </span>
+                                    <span class="shrink-0 text-[12px] font-medium text-primary">{{ $formatSeconds($pageSeconds) }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @else
+                    <p class="text-[12px] text-muted">{{ __('Temps par page indisponible.') }}</p>
+                @endif
             </x-ui.card>
 
             <x-ui.card>

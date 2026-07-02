@@ -9,6 +9,7 @@ use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Route;
 use Livewire\Component;
 
 /**
@@ -31,11 +32,42 @@ final class SessionDetailPage extends Component
             ->orderBy('id')
             ->get();
 
+        $journey = $this->buildJourney($events);
+
         return view('analytics::livewire.dashboard.session-detail', [
             'session' => $this->session,
-            'journey' => $this->buildJourney($events),
+            'journey' => $journey,
             'clicksCount' => $events->where('type', EventType::Click)->count(),
+            'timePerPage' => $this->timePerPage($journey),
         ])->layout($this->layoutName(), ['title' => __('Session').' · '.__('Analytics')]);
+    }
+
+    /**
+     * Seconds spent per page (route resolved to a clean URL), aggregated across
+     * repeat visits and sorted from most to least time.
+     *
+     * @param  list<array{event: Event, children: list<Event>, seconds: int}>  $journey
+     * @return array<string, int>
+     */
+    private function timePerPage(array $journey): array
+    {
+        $byPage = [];
+
+        foreach ($journey as $step) {
+            if ($step['event']->type !== EventType::Pageview) {
+                continue;
+            }
+
+            $route = $step['event']->route;
+            $uri = $route !== null ? Route::getRoutes()->getByName($route)?->uri() : null;
+            $label = $uri !== null ? '/'.ltrim($uri, '/') : ($route ?? $step['event']->url ?? '—');
+
+            $byPage[$label] = ($byPage[$label] ?? 0) + $step['seconds'];
+        }
+
+        arsort($byPage);
+
+        return $byPage;
     }
 
     /**
