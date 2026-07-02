@@ -1,16 +1,12 @@
 @props([
     'route' => null,
+    'url' => null,
 ])
 
 @php
-    // The clean URL for a route name (its URI pattern, no query params). Falls
-    // back to the raw route name when the route no longer exists in the host.
-    $uri = null;
-    if ($route) {
-        $uri = \Illuminate\Support\Facades\Route::getRoutes()->getByName($route)?->uri();
-    }
-
-    $display = $uri !== null ? '/'.ltrim($uri, '/') : ($route ?? __('Inconnu'));
+    // The real page path (dynamic value, no domain or query) when the stored URL
+    // is available, else the route's URI pattern, else the raw route name.
+    $display = \Falcon\Analytics\Support\PageUrl::resolve($route, $url);
 @endphp
 
-{{ $display }}
+{{ $display !== '' ? $display : __('Inconnu') }}

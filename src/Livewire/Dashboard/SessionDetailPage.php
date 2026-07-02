@@ -7,9 +7,9 @@ namespace Falcon\Analytics\Livewire\Dashboard;
 use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
+use Falcon\Analytics\Support\PageUrl;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Route;
 use Livewire\Component;
 
 /**
@@ -58,9 +58,7 @@ final class SessionDetailPage extends Component
                 continue;
             }
 
-            $route = $step['event']->route;
-            $uri = $route !== null ? Route::getRoutes()->getByName($route)?->uri() : null;
-            $label = $uri !== null ? '/'.ltrim($uri, '/') : ($route ?? $step['event']->url ?? '—');
+            $label = PageUrl::resolve($step['event']->route, $step['event']->url) ?: '—';
 
             $byPage[$label] = ($byPage[$label] ?? 0) + $step['seconds'];
         }

@@ -170,7 +170,7 @@
                                 <div class="min-w-0 flex-1 pt-1">
                                     <div class="flex items-baseline justify-between gap-2">
                                         <p @class(['flex min-w-0 items-center gap-2 text-[13px] font-medium', 'text-emerald-600 dark:text-emerald-400' => $isConversionStep, 'text-primary' => ! $isConversionStep])>
-                                            <span class="min-w-0 truncate">@if ($isPageview)<x-analytics::page-url :route="$event->route" />@else{{ $eventLabel($event) }}@endif</span>
+                                            <span class="min-w-0 truncate">@if ($isPageview)<x-analytics::page-url :route="$event->route" :url="$event->url" />@else{{ $eventLabel($event) }}@endif</span>
                                             @if ($isPageview && $loop->first)
                                                 <x-ui.badge color="gray">{{ __('Entrée') }}</x-ui.badge>
                                             @elseif ($isPageview && $loop->last)
@@ -229,7 +229,7 @@
                     @if ($searchKeyword)
                         <x-analytics::detail-row :label="__('Mot-clé')" :value="$searchKeyword" icon="magnifying-glass" />
                     @endif
-                    <x-analytics::detail-row :label="__('Page d\'entrée')" icon="document-text">@if ($session->landing_route)<x-analytics::page-url :route="$session->landing_route" />@endif</x-analytics::detail-row>
+                    <x-analytics::detail-row :label="__('Page d\'entrée')" icon="document-text">@if ($session->landing_route || $session->landing_url)<x-analytics::page-url :route="$session->landing_route" :url="$session->landing_url" />@endif</x-analytics::detail-row>
                     <x-analytics::detail-row :label="__('Référent')" :value="$value($session->referrer)" icon="arrow-top-right-on-square" />
                     @foreach ($utm as $utmLabel => $utmValue)
                         <x-analytics::detail-row :label="$utmLabel" :value="$utmValue" icon="tag" />

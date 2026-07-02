@@ -139,8 +139,8 @@
                             @endif
                         </x-ui.table.cell>
                         <x-ui.table.cell class="whitespace-nowrap">
-                            @if ($session->landing_route)
-                                <x-analytics::page-url :route="$session->landing_route" />
+                            @if ($session->landing_route || $session->landing_url)
+                                <x-analytics::page-url :route="$session->landing_route" :url="$session->landing_url" />
                             @else
                                 <span class="text-muted">·</span>
                             @endif
