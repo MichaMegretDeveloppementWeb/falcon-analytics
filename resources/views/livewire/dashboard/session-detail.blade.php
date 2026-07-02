@@ -3,7 +3,6 @@
     use Illuminate\Support\Str;
 
     $routeName = config('analytics.dashboard.route_name', 'analytics');
-
     $value = fn ($raw) => filled($raw) ? $raw : null;
 
     $seconds = (int) $session->started_at->diffInSeconds($session->last_activity_at);
@@ -11,6 +10,14 @@
     $duration = $minutes > 0
         ? trim($minutes.' min '.($seconds % 60 > 0 ? ($seconds % 60).' s' : ''))
         : $seconds.' s';
+
+    $deviceLabel = $value($session->device_type) ? Str::title($session->device_type) : __('Inconnu');
+    $deviceIcon = match (strtolower((string) $session->device_type)) {
+        'mobile' => 'device-phone-mobile',
+        'tablet' => 'device-tablet',
+        'desktop' => 'computer-desktop',
+        default => 'question-mark-circle',
+    };
 
     $eventMeta = fn (EventType $type): array => match ($type) {
         EventType::Pageview => ['icon' => 'document-text', 'color' => 'gray', 'label' => __('Page vue')],
@@ -29,102 +36,144 @@
         </a>
     </div>
 
-    <x-ui.page-header
-        :title="$session->subject_type ? Str::headline($session->subject_type).' #'.$session->subject_id : __('Visiteur anonyme')"
-        :description="__('Session du :date', ['date' => $session->started_at->translatedFormat('d F Y à H:i')])">
-        <x-ui.badge :color="$session->subject_type ? 'indigo' : 'gray'">
-            {{ $session->subject_type ? __('Identifié') : __('Anonyme') }}
-        </x-ui.badge>
-    </x-ui.page-header>
+    {{-- Summary --}}
+    <x-ui.card>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-elevated">
+                    <x-ui.icon :name="$session->subject_type ? 'user' : 'user-circle'" class="h-5 w-5 text-secondary" />
+                </span>
+                <div class="min-w-0">
+                    <p class="text-[15px] font-semibold text-primary">
+                        {{ $session->subject_type ? Str::headline($session->subject_type).' #'.$session->subject_id : __('Visiteur anonyme') }}
+                    </p>
+                    <p class="text-[12px] text-muted">
+                        {{ __('Session du :date', ['date' => $session->started_at->translatedFormat('d F Y à H:i')]) }}
+                        @if ($session->visitor?->uuid)
+                            · <span class="font-mono">{{ Str::limit($session->visitor->uuid, 12, '') }}</span>
+                        @endif
+                    </p>
+                </div>
+            </div>
+            <x-ui.badge :color="$session->subject_type ? 'blue' : 'gray'">
+                {{ $session->subject_type ? __('Identifié') : __('Anonyme') }}
+            </x-ui.badge>
+        </div>
+
+        <div class="mt-5 grid grid-cols-2 gap-4 border-t border-subtle pt-5 sm:grid-cols-3 lg:grid-cols-5">
+            <div class="flex items-center gap-2.5">
+                <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-elevated"><x-ui.icon name="clock" class="h-4 w-4 text-secondary" /></span>
+                <div class="min-w-0"><p class="text-[11px] text-muted">{{ __('Durée') }}</p><p class="truncate text-[13px] font-medium text-primary">{{ $duration }}</p></div>
+            </div>
+            <div class="flex items-center gap-2.5">
+                <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-elevated"><x-ui.icon name="document-text" class="h-4 w-4 text-secondary" /></span>
+                <div class="min-w-0"><p class="text-[11px] text-muted">{{ __('Pages vues') }}</p><p class="truncate text-[13px] font-medium text-primary">{{ $session->pageview_count }}</p></div>
+            </div>
+            <div class="flex items-center gap-2.5">
+                <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-elevated"><x-ui.icon :name="$deviceIcon" class="h-4 w-4 text-secondary" /></span>
+                <div class="min-w-0"><p class="text-[11px] text-muted">{{ __('Appareil') }}</p><p class="truncate text-[13px] font-medium text-primary">{{ $deviceLabel }}@if ($session->browser) · {{ $session->browser }}@endif</p></div>
+            </div>
+            <div class="flex items-center gap-2.5">
+                <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-elevated"><x-ui.icon name="map-pin" class="h-4 w-4 text-secondary" /></span>
+                <div class="min-w-0"><p class="text-[11px] text-muted">{{ __('Localité') }}</p><p class="truncate text-[13px] font-medium text-primary">@if ($session->country)<x-analytics::country :code="$session->country" :city="$session->city" />@else{{ __('Inconnu') }}@endif</p></div>
+            </div>
+            <div class="flex items-center gap-2.5">
+                <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-elevated"><x-ui.icon name="signal" class="h-4 w-4 text-secondary" /></span>
+                <div class="min-w-0"><p class="text-[11px] text-muted">{{ __('Source') }}</p><p class="truncate text-[13px] font-medium text-primary">@if ($session->source)<x-analytics::source :value="$session->source" />@else{{ __('Directe') }}@endif</p></div>
+            </div>
+        </div>
+    </x-ui.card>
 
     <x-ui.tab-group default="infos">
         <x-slot:tabs>
             <x-ui.tab name="infos" :label="__('Informations')" />
-            <x-ui.tab name="events" :label="__('Évènements').' ('.$events->count().')'" />
+            <x-ui.tab name="events" :label="__('Parcours').' ('.$events->count().')'" />
         </x-slot:tabs>
 
         {{-- Informations --}}
         <x-ui.tab name="infos">
-            <div class="grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
 
-                <div class="space-y-3">
-                    <p class="text-[11px] font-semibold uppercase tracking-wider text-muted">{{ __('Session') }}</p>
-                    <x-analytics::detail-row :label="__('Début')" :value="$session->started_at->translatedFormat('d M Y, H:i:s')" />
-                    <x-analytics::detail-row :label="__('Dernière activité')" :value="$session->last_activity_at->translatedFormat('d M Y, H:i:s')" />
-                    <x-analytics::detail-row :label="__('Durée')" :value="$duration" />
-                    <x-analytics::detail-row :label="__('Pages vues')" :value="(string) $session->pageview_count" />
-                    <x-analytics::detail-row :label="__('Évènements')" :value="(string) $session->event_count" />
-                </div>
+                <x-ui.card class="border border-base">
+                    <x-ui.section-header :title="__('Visiteur')" class="mb-3" />
+                    <dl class="space-y-2.5">
+                        <x-analytics::detail-row :label="__('Identifiant')" :value="$session->visitor?->uuid" mono />
+                        <x-analytics::detail-row :label="__('Sujet')" :value="$session->subject_type ? Str::headline($session->subject_type).' #'.$session->subject_id : null" />
+                        <x-analytics::detail-row :label="__('Sessions totales')" :value="(string) ($session->visitor?->session_count ?? 1)" />
+                        <x-analytics::detail-row :label="__('Première visite')" :value="$session->visitor?->first_seen_at?->translatedFormat('d M Y, H:i')" />
+                    </dl>
+                </x-ui.card>
 
-                <div class="space-y-3">
-                    <p class="text-[11px] font-semibold uppercase tracking-wider text-muted">{{ __('Visiteur') }}</p>
-                    <x-analytics::detail-row :label="__('Identifiant')" :value="$session->visitor?->uuid" mono />
-                    <x-analytics::detail-row :label="__('Sujet')" :value="$session->subject_type ? Str::headline($session->subject_type).' #'.$session->subject_id : null" />
-                    <x-analytics::detail-row :label="__('Sessions totales')" :value="(string) ($session->visitor?->session_count ?? 1)" />
-                    <x-analytics::detail-row :label="__('Vu pour la première fois')" :value="$session->visitor?->first_seen_at?->translatedFormat('d M Y, H:i')" />
-                </div>
+                <x-ui.card class="border border-base">
+                    <x-ui.section-header :title="__('Appareil')" class="mb-3" />
+                    <dl class="space-y-2.5">
+                        <x-analytics::detail-row :label="__('Type')" :value="$value($session->device_type) ? Str::title($session->device_type) : null" />
+                        <x-analytics::detail-row :label="__('Navigateur')" :value="trim(($session->browser ?? '').' '.($session->browser_version ?? '')) ?: null" />
+                        <x-analytics::detail-row :label="__('Système')" :value="trim(($session->os ?? '').' '.($session->os_version ?? '')) ?: null" />
+                        <x-analytics::detail-row :label="__('Robot')" :value="$session->is_bot ? __('Oui') : __('Non')" />
+                    </dl>
+                </x-ui.card>
 
-                <div class="space-y-3">
-                    <p class="text-[11px] font-semibold uppercase tracking-wider text-muted">{{ __('Appareil') }}</p>
-                    <x-analytics::detail-row :label="__('Type')" :value="$value($session->device_type) ? Str::title($session->device_type) : null" />
-                    <x-analytics::detail-row :label="__('Navigateur')" :value="trim(($session->browser ?? '').' '.($session->browser_version ?? '')) ?: null" />
-                    <x-analytics::detail-row :label="__('Système')" :value="trim(($session->os ?? '').' '.($session->os_version ?? '')) ?: null" />
-                    <x-analytics::detail-row :label="__('Robot')" :value="$session->is_bot ? __('Oui') : __('Non')" />
-                </div>
+                <x-ui.card class="border border-base">
+                    <x-ui.section-header :title="__('Localité')" class="mb-3" />
+                    <dl class="space-y-2.5">
+                        <x-analytics::detail-row :label="__('Pays')">@if ($session->country)<x-analytics::country :code="$session->country" />@endif</x-analytics::detail-row>
+                        <x-analytics::detail-row :label="__('Région')" :value="$value($session->region)" />
+                        <x-analytics::detail-row :label="__('Ville')" :value="$value($session->city)" />
+                        <x-analytics::detail-row :label="__('IP')" :value="$value($session->ip)" mono />
+                    </dl>
+                </x-ui.card>
 
-                <div class="space-y-3">
-                    <p class="text-[11px] font-semibold uppercase tracking-wider text-muted">{{ __('Localité') }}</p>
-                    <x-analytics::detail-row :label="__('Pays')" :value="$value($session->country)" />
-                    <x-analytics::detail-row :label="__('Région')" :value="$value($session->region)" />
-                    <x-analytics::detail-row :label="__('Ville')" :value="$value($session->city)" />
-                    <x-analytics::detail-row :label="__('IP')" :value="$value($session->ip)" mono />
-                </div>
+                <x-ui.card class="border border-base">
+                    <x-ui.section-header :title="__('Acquisition')" class="mb-3" />
+                    <dl class="space-y-2.5">
+                        <x-analytics::detail-row :label="__('Source')">@if ($session->source)<x-analytics::source :value="$session->source" />@endif</x-analytics::detail-row>
+                        <x-analytics::detail-row :label="__('Référent')" :value="$value($session->referrer)" />
+                        <x-analytics::detail-row :label="__('Campagne UTM')" :value="$value($session->utm_campaign)" />
+                        <x-analytics::detail-row :label="__('Source UTM')" :value="$value($session->utm_source)" />
+                    </dl>
+                </x-ui.card>
 
-                <div class="space-y-3">
-                    <p class="text-[11px] font-semibold uppercase tracking-wider text-muted">{{ __('Acquisition') }}</p>
-                    <x-analytics::detail-row :label="__('Source')" :value="$value($session->source) ? Str::headline($session->source) : null" />
-                    <x-analytics::detail-row :label="__('Référent')" :value="$value($session->referrer)" />
-                    <x-analytics::detail-row :label="__('Campagne UTM')" :value="$value($session->utm_campaign)" />
-                    <x-analytics::detail-row :label="__('Source UTM')" :value="$value($session->utm_source)" />
-                </div>
-
-                <div class="space-y-3">
-                    <p class="text-[11px] font-semibold uppercase tracking-wider text-muted">{{ __('Entrée') }}</p>
-                    <x-analytics::detail-row :label="__('Route d\'entrée')" :value="$value($session->landing_route)" />
-                    <x-analytics::detail-row :label="__('URL d\'entrée')" :value="$value($session->landing_url)" />
-                </div>
+                <x-ui.card class="border border-base">
+                    <x-ui.section-header :title="__('Page d\'entrée')" class="mb-3" />
+                    <dl class="space-y-2.5">
+                        <x-analytics::detail-row :label="__('Page')">@if ($session->landing_route)<x-analytics::page-url :route="$session->landing_route" />@endif</x-analytics::detail-row>
+                        <x-analytics::detail-row :label="__('URL complète')" :value="$value($session->landing_url)" mono />
+                    </dl>
+                </x-ui.card>
 
             </div>
         </x-ui.tab>
 
-        {{-- Évènements --}}
+        {{-- Parcours --}}
         <x-ui.tab name="events">
             @if ($events->isEmpty())
                 <x-ui.empty-state icon="signal" :title="__('Aucun évènement')" :description="__('Cette session n\'a enregistré aucun évènement.')" />
             @else
-                <x-ui.timeline>
-                    @foreach ($events as $event)
-                        @php
-                            $meta = $eventMeta($event->type);
-                            $title = match ($event->type) {
-                                EventType::Pageview => $event->route ?? $event->url ?? __('Page vue'),
-                                EventType::Click => $event->name ?? $event->target_text ?? __('Clic'),
-                                default => $event->name ?? $meta['label'],
-                            };
-                        @endphp
-                        <x-ui.timeline.item
-                            :icon="$meta['icon']"
-                            :color="$meta['color']"
-                            :title="$meta['label'].' · '.e($title)"
-                            :date="$event->occurred_at->translatedFormat('d M, H:i:s')">
-                            @if ($event->type === EventType::Click && $event->route)
-                                {{ __('sur :route', ['route' => $event->route]) }}
-                            @elseif ($event->type === EventType::Pageview && $event->url)
-                                {{ $event->url }}
-                            @endif
-                        </x-ui.timeline.item>
-                    @endforeach
-                </x-ui.timeline>
+                <div class="pt-1">
+                    <x-ui.timeline>
+                        @foreach ($events as $event)
+                            @php
+                                $meta = $eventMeta($event->type);
+                                $human = $value($event->target_text) ?? $value($event->name);
+                                $itemTitle = match ($event->type) {
+                                    EventType::Pageview => $meta['label'],
+                                    EventType::Click => $meta['label'].($human ? ' · '.$human : ''),
+                                    default => $human ?? $meta['label'],
+                                };
+                            @endphp
+                            <x-ui.timeline.item
+                                :icon="$meta['icon']"
+                                :color="$meta['color']"
+                                :title="$itemTitle"
+                                :date="$event->occurred_at->translatedFormat('d M, H:i:s')">
+                                @if ($event->route)
+                                    @if ($event->type === EventType::Click)<span class="text-muted">{{ __('sur') }}</span> @endif<x-analytics::page-url :route="$event->route" />
+                                @endif
+                            </x-ui.timeline.item>
+                        @endforeach
+                    </x-ui.timeline>
+                </div>
             @endif
         </x-ui.tab>
     </x-ui.tab-group>

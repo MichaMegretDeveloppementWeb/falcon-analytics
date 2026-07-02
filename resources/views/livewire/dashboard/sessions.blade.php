@@ -32,9 +32,10 @@
         $deviceOptions[$deviceType] = Str::title($deviceType);
     }
 
+    $sourceLabels = ['direct' => 'Direct', 'organic' => 'Naturel', 'social' => 'Réseaux sociaux', 'paid' => 'Payant', 'referral' => 'Référent', 'email' => 'E-mail', 'campaign' => 'Campagne'];
     $sourceOptions = ['' => __('Toutes les sources')];
     foreach ($filterOptions['sources'] as $sourceName) {
-        $sourceOptions[$sourceName] = Str::headline($sourceName);
+        $sourceOptions[$sourceName] = __($sourceLabels[strtolower($sourceName)] ?? Str::headline($sourceName));
     }
 @endphp
 
@@ -47,13 +48,21 @@
     {{-- Engagement stats --}}
     <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <x-ui.stat-card :label="__('Sessions')" :value="number_format($headline['sessions']->current, 0, ',', ' ')" icon="cursor-arrow-rays"
-            :trend="$deltaLabel($headline['sessions'])" :trendUp="$headline['sessions']->increased()" />
+            :trend="$deltaLabel($headline['sessions'])" :trendUp="$headline['sessions']->increased()">
+            <div wire:key="spark-s-sessions-{{ $period }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$sparklines['sessions']" /></div>
+        </x-ui.stat-card>
         <x-ui.stat-card :label="__('Durée moy. session')" :value="$formatSeconds($headline['avgSeconds']->current)" icon="clock"
-            :trend="$deltaLabel($headline['avgSeconds'])" :trendUp="$headline['avgSeconds']->increased()" />
+            :trend="$deltaLabel($headline['avgSeconds'])" :trendUp="$headline['avgSeconds']->increased()">
+            <div wire:key="spark-s-duration-{{ $period }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$sparklines['avgSeconds']" /></div>
+        </x-ui.stat-card>
         <x-ui.stat-card :label="__('Pages par session')" :value="number_format($headline['pagesPerSession']->current, 1, ',', ' ')" icon="rectangle-stack"
-            :trend="$deltaLabel($headline['pagesPerSession'])" :trendUp="$headline['pagesPerSession']->increased()" />
+            :trend="$deltaLabel($headline['pagesPerSession'])" :trendUp="$headline['pagesPerSession']->increased()">
+            <div wire:key="spark-s-pps-{{ $period }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$sparklines['pagesPerSession']" /></div>
+        </x-ui.stat-card>
         <x-ui.stat-card :label="__('Taux de rebond')" :value="number_format($headline['bounceRate']->current, 1, ',', ' ').' %'" icon="arrow-uturn-left"
-            :trend="$deltaLabel($headline['bounceRate'])" :trendUp="! $headline['bounceRate']->increased()" />
+            :trend="$deltaLabel($headline['bounceRate'])" :trendUp="! $headline['bounceRate']->increased()">
+            <div wire:key="spark-s-bounce-{{ $period }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$sparklines['bounceRate']" /></div>
+        </x-ui.stat-card>
     </div>
 
     {{-- Toolbar --}}
@@ -121,15 +130,15 @@
                             @endif
                         </x-ui.table.cell>
                         <x-ui.table.cell hidden="lg">
-                            @if ($session->city || $session->country)
-                                {{ collect([$session->city, $session->country])->filter()->join(', ') }}
+                            @if ($session->country || $session->city)
+                                <x-analytics::country :code="$session->country" :city="$session->city" />
                             @else
                                 <span class="text-muted">{{ __('Inconnu') }}</span>
                             @endif
                         </x-ui.table.cell>
                         <x-ui.table.cell hidden="lg" :last="true">
                             @if ($session->source)
-                                <x-ui.badge color="gray">{{ Str::headline($session->source) }}</x-ui.badge>
+                                <x-ui.badge color="gray"><x-analytics::source :value="$session->source" /></x-ui.badge>
                             @else
                                 <span class="text-muted">{{ __('Directe') }}</span>
                             @endif

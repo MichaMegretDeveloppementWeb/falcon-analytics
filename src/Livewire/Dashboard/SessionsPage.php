@@ -59,6 +59,7 @@ final class SessionsPage extends DashboardComponent
         return view('analytics::livewire.dashboard.sessions', [
             'range' => $period,
             'headline' => $repository->headline($period, $subjectType),
+            'sparklines' => $repository->headlineSparklines($period, $subjectType),
             'sessions' => $repository->paginateSessions($period, $subjectType, $this->search, $this->device ?: null, $this->source ?: null),
             'filterOptions' => $repository->sessionFilterOptions($period, $subjectType),
             ...$this->filterData(),

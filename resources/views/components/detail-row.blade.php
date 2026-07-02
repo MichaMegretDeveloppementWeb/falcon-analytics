@@ -10,7 +10,7 @@
         'min-w-0 truncate text-right',
         'font-mono text-[12px]' => $mono,
         'text-[13px]' => ! $mono,
-        'text-primary' => filled($value),
-        'text-muted' => ! filled($value),
-    ])>{{ filled($value) ? $value : '·' }}</dd>
+        'text-primary' => $slot->isNotEmpty() || filled($value),
+        'text-muted' => $slot->isEmpty() && ! filled($value),
+    ])>{{ $slot->isNotEmpty() ? $slot : (filled($value) ? $value : '·') }}</dd>
 </div>
