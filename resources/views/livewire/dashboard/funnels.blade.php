@@ -9,7 +9,7 @@
         @include('analytics::livewire.dashboard.partials.filters')
     </x-ui.page-header>
 
-    <div class="grid gap-6 lg:grid-cols-2">
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
         @forelse ($reports as $report)
             @php
                 $entrants = number_format($report->entrants, 0, ',', ' ');

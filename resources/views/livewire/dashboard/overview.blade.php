@@ -103,7 +103,7 @@
         <x-ui.section-header :title="__('Vos visiteurs')" :description="__('D\'où viennent les sessions')" class="mb-4" />
 
         {{-- Audience composition donuts --}}
-        <div class="mb-6 grid gap-6 lg:grid-cols-2">
+        <div class="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
 
             <x-ui.card>
                 <x-ui.section-header :title="__('Nouveaux vs récurrents')" class="mb-4" />
@@ -161,7 +161,7 @@
 
         </div>
 
-        <div class="grid gap-6 lg:grid-cols-2">
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
 
             <x-ui.card>
                 <x-ui.section-header :title="__('Sources')" :description="__('Par canal d\'acquisition')" class="mb-4" />
@@ -210,7 +210,7 @@
     {{-- Section: engagement --}}
     <div>
         <x-ui.section-header :title="__('Engagement')" :description="__('Comment les visiteurs interagissent')" class="mb-4" />
-        <div class="grid gap-6 lg:grid-cols-3">
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
             <x-ui.card>
                 <x-ui.section-header :title="__('Statistiques')" :description="__('Sur la période')" class="mb-4" />

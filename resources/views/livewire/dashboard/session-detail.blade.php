@@ -31,7 +31,6 @@
 
     // Acquisition: a prominent, self-explanatory channel with its icon.
     $sourceKey = strtolower((string) $session->source);
-    $isPaid = $sourceKey === 'paid';
     $sourceIcon = [
         'direct' => 'cursor-arrow-rays',
         'organic' => 'magnifying-glass',
@@ -143,7 +142,7 @@
 
     {{-- Body: journey + details. Below lg the aside stacks, so we switch to tabs. --}}
     <div
-        class="grid gap-6 lg:grid-cols-3"
+        class="grid grid-cols-1 gap-6 lg:grid-cols-3"
         x-data="{
             tab: 'parcours',
             desktop: window.matchMedia('(min-width: 1024px)').matches,
@@ -161,7 +160,7 @@
         </div>
 
         {{-- Journey --}}
-        <div class="lg:col-span-2" x-show="desktop || tab === 'parcours'">
+        <div class="min-w-0 lg:col-span-2" x-show="desktop || tab === 'parcours'">
             <x-ui.card>
                 <x-ui.section-header :title="__('Parcours')" :description="__('Ce que le visiteur a fait, dans l\'ordre')" class="mb-5" />
 
@@ -226,12 +225,12 @@
         </div>
 
         {{-- Details --}}
-        <div class="space-y-5" x-show="desktop || tab === 'infos'">
+        <div class="min-w-0 space-y-5" x-show="desktop || tab === 'infos'">
 
             <x-ui.card>
                 <x-ui.section-header :title="__('Acquisition')" class="mb-3" />
-                <div @class(['mb-3 flex items-center gap-3 rounded-lg px-3 py-2.5', 'bg-amber-50 dark:bg-amber-500/10' => $isPaid, 'bg-elevated' => ! $isPaid])>
-                    <span @class(['flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400' => $isPaid, 'bg-surface text-secondary' => ! $isPaid])>
+                <div class="flex items-center gap-3 border-b border-subtle pb-3">
+                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-elevated text-secondary">
                         <x-ui.icon :name="$sourceIcon" class="h-4 w-4" />
                     </span>
                     <div class="min-w-0 flex-1">
@@ -240,11 +239,8 @@
                         </p>
                         <p class="truncate text-[11px] text-muted">{{ __($sourceDescription) }}</p>
                     </div>
-                    @if ($isPaid)
-                        <x-ui.badge color="amber">{{ __('Pub') }}</x-ui.badge>
-                    @endif
                 </div>
-                <dl class="space-y-2.5">
+                <dl class="mt-3 space-y-2.5">
                     @if ($searchKeyword)
                         <x-analytics::detail-row :label="__('Mot-clé')" :value="$searchKeyword" icon="magnifying-glass" />
                     @endif
