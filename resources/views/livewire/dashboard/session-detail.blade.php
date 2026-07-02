@@ -29,12 +29,40 @@
 
     $isReturning = ((int) ($session->visitor?->session_count ?? 1)) > 1;
 
+    // Acquisition: a prominent, self-explanatory channel with its icon.
+    $sourceKey = strtolower((string) $session->source);
+    $isPaid = $sourceKey === 'paid';
+    $sourceIcon = [
+        'direct' => 'cursor-arrow-rays',
+        'organic' => 'magnifying-glass',
+        'social' => 'user-group',
+        'paid' => 'megaphone',
+        'referral' => 'arrow-top-right-on-square',
+        'email' => 'envelope',
+        'campaign' => 'flag',
+    ][$sourceKey] ?? 'globe-alt';
+    $sourceDescription = [
+        'direct' => 'Accès direct',
+        'organic' => 'Recherche naturelle',
+        'social' => 'Réseaux sociaux',
+        'paid' => 'Trafic publicitaire',
+        'referral' => 'Site référent',
+        'email' => 'Campagne e-mail',
+        'campaign' => 'Campagne balisée',
+    ][$sourceKey] ?? 'Provenance inconnue';
+
+    // Search keyword: UTM term, or the query of a search-engine referrer.
+    $searchKeyword = $value($session->utm_term);
+    if ($searchKeyword === null && filled($session->referrer)) {
+        parse_str((string) (parse_url($session->referrer, PHP_URL_QUERY) ?: ''), $refParams);
+        $searchKeyword = $value($refParams['q'] ?? ($refParams['query'] ?? null));
+    }
+
     $utm = collect([
         __('Campagne') => $session->utm_campaign,
         __('Source UTM') => $session->utm_source,
         __('Support') => $session->utm_medium,
         __('Contenu') => $session->utm_content,
-        __('Terme') => $session->utm_term,
     ])->filter(fn ($v) => filled($v));
 
     // Time distribution donut (top pages + others).
@@ -113,10 +141,27 @@
         </div>
     </div>
 
-    {{-- Body: journey (main) + details (sidebar) --}}
-    <div class="grid gap-6 lg:grid-cols-3">
+    {{-- Body: journey + details. Below lg the aside stacks, so we switch to tabs. --}}
+    <div
+        class="grid gap-6 lg:grid-cols-3"
+        x-data="{
+            tab: 'parcours',
+            desktop: window.matchMedia('(min-width: 1024px)').matches,
+            init() {
+                window.matchMedia('(min-width: 1024px)').addEventListener('change', (e) => { this.desktop = e.matches; });
+            },
+        }"
+    >
+        {{-- Mobile-only tabs --}}
+        <div class="lg:hidden">
+            <div class="flex gap-1 rounded-lg bg-elevated p-1">
+                <button type="button" @click="tab = 'parcours'" :class="tab === 'parcours' ? 'bg-surface text-primary' : 'text-secondary hover:text-primary'" class="flex-1 cursor-pointer rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors">{{ __('Parcours') }}</button>
+                <button type="button" @click="tab = 'infos'" :class="tab === 'infos' ? 'bg-surface text-primary' : 'text-secondary hover:text-primary'" class="flex-1 cursor-pointer rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors">{{ __('Infos') }}</button>
+            </div>
+        </div>
 
-        <div class="lg:col-span-2">
+        {{-- Journey --}}
+        <div class="lg:col-span-2" x-show="desktop || tab === 'parcours'">
             <x-ui.card>
                 <x-ui.section-header :title="__('Parcours')" :description="__('Ce que le visiteur a fait, dans l\'ordre')" class="mb-5" />
 
@@ -153,8 +198,8 @@
 
                                     @if ($isPageview)
                                         <div class="mt-1.5 flex items-center gap-2">
-                                            <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-elevated">
-                                                <div class="h-full rounded-full bg-[#1684ea]/70" style="width: {{ $barPct }}%"></div>
+                                            <div class="h-1 flex-1 overflow-hidden rounded-full bg-elevated">
+                                                <div class="h-full rounded-full bg-[#1684ea]" style="width: {{ $barPct }}%"></div>
                                             </div>
                                             <span class="w-14 shrink-0 text-right text-[11px] tabular-nums text-muted">{{ $formatSeconds($step['seconds']) }}</span>
                                         </div>
@@ -180,7 +225,36 @@
             </x-ui.card>
         </div>
 
-        <div class="space-y-5">
+        {{-- Details --}}
+        <div class="space-y-5" x-show="desktop || tab === 'infos'">
+
+            <x-ui.card>
+                <x-ui.section-header :title="__('Acquisition')" class="mb-3" />
+                <div @class(['mb-3 flex items-center gap-3 rounded-lg px-3 py-2.5', 'bg-amber-50 dark:bg-amber-500/10' => $isPaid, 'bg-elevated' => ! $isPaid])>
+                    <span @class(['flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400' => $isPaid, 'bg-surface text-secondary' => ! $isPaid])>
+                        <x-ui.icon :name="$sourceIcon" class="h-4 w-4" />
+                    </span>
+                    <div class="min-w-0 flex-1">
+                        <p class="truncate text-[13px] font-semibold text-primary">
+                            @if ($session->source)<x-analytics::source :value="$session->source" />@else{{ __('Direct') }}@endif
+                        </p>
+                        <p class="truncate text-[11px] text-muted">{{ __($sourceDescription) }}</p>
+                    </div>
+                    @if ($isPaid)
+                        <x-ui.badge color="amber">{{ __('Pub') }}</x-ui.badge>
+                    @endif
+                </div>
+                <dl class="space-y-2.5">
+                    @if ($searchKeyword)
+                        <x-analytics::detail-row :label="__('Mot-clé')" :value="$searchKeyword" icon="magnifying-glass" />
+                    @endif
+                    <x-analytics::detail-row :label="__('Page d\'entrée')" icon="document-text">@if ($session->landing_route)<x-analytics::page-url :route="$session->landing_route" />@endif</x-analytics::detail-row>
+                    <x-analytics::detail-row :label="__('Référent')" :value="$value($session->referrer)" icon="arrow-top-right-on-square" />
+                    @foreach ($utm as $utmLabel => $utmValue)
+                        <x-analytics::detail-row :label="$utmLabel" :value="$utmValue" icon="tag" />
+                    @endforeach
+                </dl>
+            </x-ui.card>
 
             <x-ui.card>
                 <x-ui.section-header :title="__('Répartition du temps')" :description="__('Par page')" class="mb-4" />
@@ -211,34 +285,22 @@
             </x-ui.card>
 
             <x-ui.card>
+                <x-ui.section-header :title="__('Localité')" class="mb-3" />
+                <dl class="space-y-2.5">
+                    <x-analytics::detail-row :label="__('Pays')" icon="flag">@if ($session->country)<x-analytics::country :code="$session->country" />@endif</x-analytics::detail-row>
+                    <x-analytics::detail-row :label="__('Ville')" :value="$value($session->city)" icon="map-pin" />
+                    <x-analytics::detail-row :label="__('IP')" :value="$value($session->ip)" icon="hashtag" mono />
+                </dl>
+            </x-ui.card>
+
+            <x-ui.card>
                 <x-ui.section-header :title="__('Appareil')" class="mb-3">
                     <x-ui.icon :name="$deviceIcon" class="h-4 w-4 text-muted" />
                 </x-ui.section-header>
                 <dl class="space-y-2.5">
-                    <x-analytics::detail-row :label="__('Type')" :value="$value($session->device_type) ? Str::title($session->device_type) : null" />
-                    <x-analytics::detail-row :label="__('Navigateur')" :value="trim(($session->browser ?? '').' '.($session->browser_version ?? '')) ?: null" />
-                    <x-analytics::detail-row :label="__('Système')" :value="trim(($session->os ?? '').' '.($session->os_version ?? '')) ?: null" />
-                </dl>
-            </x-ui.card>
-
-            <x-ui.card>
-                <x-ui.section-header :title="__('Localité')" class="mb-3" />
-                <dl class="space-y-2.5">
-                    <x-analytics::detail-row :label="__('Pays')">@if ($session->country)<x-analytics::country :code="$session->country" />@endif</x-analytics::detail-row>
-                    <x-analytics::detail-row :label="__('Ville')" :value="$value($session->city)" />
-                    <x-analytics::detail-row :label="__('IP')" :value="$value($session->ip)" mono />
-                </dl>
-            </x-ui.card>
-
-            <x-ui.card>
-                <x-ui.section-header :title="__('Acquisition')" class="mb-3" />
-                <dl class="space-y-2.5">
-                    <x-analytics::detail-row :label="__('Source')">@if ($session->source)<x-analytics::source :value="$session->source" />@endif</x-analytics::detail-row>
-                    <x-analytics::detail-row :label="__('Page d\'entrée')">@if ($session->landing_route)<x-analytics::page-url :route="$session->landing_route" />@endif</x-analytics::detail-row>
-                    <x-analytics::detail-row :label="__('Référent')" :value="$value($session->referrer)" />
-                    @foreach ($utm as $utmLabel => $utmValue)
-                        <x-analytics::detail-row :label="$utmLabel" :value="$utmValue" />
-                    @endforeach
+                    <x-analytics::detail-row :label="__('Type')" :value="$value($session->device_type) ? Str::title($session->device_type) : null" :icon="$deviceIcon" />
+                    <x-analytics::detail-row :label="__('Navigateur')" :value="trim(($session->browser ?? '').' '.($session->browser_version ?? '')) ?: null" icon="globe-alt" />
+                    <x-analytics::detail-row :label="__('Système')" :value="trim(($session->os ?? '').' '.($session->os_version ?? '')) ?: null" icon="cpu-chip" />
                 </dl>
             </x-ui.card>
 
