@@ -166,14 +166,11 @@ it('renders the declared funnels for an authenticated admin', function () {
         ->assertSeeText('Sample funnel');
 });
 
-it('renders the trend chart inline with its series (no deferred placeholder)', function () {
-    seedSession();
+it('defers the trend chart behind a skeleton placeholder', function () {
     $this->actingAs($this->admin, 'admin');
 
     Livewire::test(TrendChart::class, ['period' => 30])
-        ->assertViewHas('points')
-        ->assertViewHas('labels')
-        ->assertDontSee('animate-pulse');
+        ->assertSee('animate-pulse', escape: false);
 });
 
 it('renders the overview within its query budget with no duplicate query', function () {
