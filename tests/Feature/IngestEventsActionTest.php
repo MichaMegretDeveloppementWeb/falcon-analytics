@@ -26,9 +26,9 @@ function actionSnapshot(): RequestSnapshot
     );
 }
 
-function incomingEvent(EventType $type, CarbonImmutable $at, ?string $name = null): IncomingEvent
+function incomingEvent(EventType $type, CarbonImmutable $at, ?string $name = null, string $url = 'https://vantadrive.ch/'): IncomingEvent
 {
-    return new IncomingEvent(type: $type, occurredAt: $at, name: $name, url: 'https://vantadrive.ch/');
+    return new IncomingEvent(type: $type, occurredAt: $at, name: $name, url: $url);
 }
 
 it('persists a visitor, session and events from a batch', function () {
@@ -89,6 +89,36 @@ it('starts a new session after the timeout', function () {
 
     expect(Session::count())->toBe(2)
         ->and(Visitor::firstOrFail()->session_count)->toBe(2);
+});
+
+it('collapses a reload of the same page within a session', function () {
+    $now = CarbonImmutable::parse('2026-07-01 10:00:00');
+    CarbonImmutable::setTestNow($now);
+    $action = app(IngestEventsAction::class);
+
+    $action->execute('u-1', null, actionSnapshot(), new IncomingBatch(events: [incomingEvent(EventType::Pageview, $now, url: 'https://vantadrive.ch/a')]));
+
+    CarbonImmutable::setTestNow($now->addMinute());
+    $action->execute('u-1', null, actionSnapshot(), new IncomingBatch(events: [incomingEvent(EventType::Pageview, CarbonImmutable::now(), url: 'https://vantadrive.ch/a')]));
+
+    $session = Session::firstOrFail();
+    expect(Session::count())->toBe(1)
+        ->and($session->pageview_count)->toBe(1) // the reload is not a new view
+        ->and($session->last_pageview_url)->toBe('https://vantadrive.ch/a');
+});
+
+it('counts real navigations including returning to a page (A to B back to A is 3)', function () {
+    $now = CarbonImmutable::parse('2026-07-01 10:00:00');
+    CarbonImmutable::setTestNow($now);
+
+    app(IngestEventsAction::class)->execute('u-1', null, actionSnapshot(), new IncomingBatch(events: [
+        incomingEvent(EventType::Pageview, $now->subSeconds(3), url: 'https://vantadrive.ch/a'),
+        incomingEvent(EventType::Pageview, $now->subSeconds(2), url: 'https://vantadrive.ch/b'),
+        incomingEvent(EventType::Pageview, $now->subSecond(), url: 'https://vantadrive.ch/a'),
+    ]));
+
+    expect(Session::firstOrFail()->pageview_count)->toBe(3)
+        ->and(Event::count())->toBe(3);
 });
 
 it('bumps activity for a heartbeat without storing or counting it', function () {

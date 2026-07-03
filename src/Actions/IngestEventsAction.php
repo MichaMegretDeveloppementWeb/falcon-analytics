@@ -62,18 +62,33 @@ final readonly class IngestEventsAction
                 fn (IncomingEvent $event): bool => $event->type !== EventType::Heartbeat,
             ));
 
-            $this->events->insertBatch($this->rows($session, $locked, $subject, $storable));
+            // Collapse consecutive duplicate page views: reloading the same URL is
+            // not a new view. A fresh session starts from a null last URL, so the
+            // first view after a timeout always counts even if the URL is unchanged.
+            $lastPageviewUrl = $session->last_pageview_url;
+            $kept = [];
+            $pageviews = 0;
 
-            $pageviews = count(array_filter(
-                $storable,
-                fn (IncomingEvent $event): bool => $event->type === EventType::Pageview,
-            ));
+            foreach ($storable as $event) {
+                if ($event->type === EventType::Pageview) {
+                    if ($event->url !== null && $event->url === $lastPageviewUrl) {
+                        continue;
+                    }
+                    $lastPageviewUrl = $event->url;
+                    $pageviews++;
+                }
+
+                $kept[] = $event;
+            }
+
+            $this->events->insertBatch($this->rows($session, $locked, $subject, $kept));
 
             $this->sessions->recordActivity(
                 $session,
                 $this->lastActivity($batch->events),
                 $pageviews,
-                count($storable),
+                count($kept),
+                $lastPageviewUrl,
             );
         });
     }

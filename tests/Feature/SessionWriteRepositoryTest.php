@@ -66,13 +66,14 @@ it('records activity atomically with counters', function () {
     $visitor = visitorRow();
     $session = $repo->start($visitor, new IngestionContext, CarbonImmutable::parse('2026-06-30 09:00:00'));
 
-    $repo->recordActivity($session, CarbonImmutable::parse('2026-06-30 09:05:00'), pageviewDelta: 2, eventDelta: 5);
-    $repo->recordActivity($session, CarbonImmutable::parse('2026-06-30 09:08:00'), pageviewDelta: 1, eventDelta: 3);
+    $repo->recordActivity($session, CarbonImmutable::parse('2026-06-30 09:05:00'), pageviewDelta: 2, eventDelta: 5, lastPageviewUrl: 'https://x.test/a');
+    $repo->recordActivity($session, CarbonImmutable::parse('2026-06-30 09:08:00'), pageviewDelta: 1, eventDelta: 3, lastPageviewUrl: 'https://x.test/b');
     // An out-of-order older batch must not regress the timestamp, but still counts.
-    $repo->recordActivity($session, CarbonImmutable::parse('2026-06-30 09:02:00'), pageviewDelta: 1, eventDelta: 1);
+    $repo->recordActivity($session, CarbonImmutable::parse('2026-06-30 09:02:00'), pageviewDelta: 1, eventDelta: 1, lastPageviewUrl: 'https://x.test/b');
 
     $fresh = $session->fresh();
     expect($fresh->pageview_count)->toBe(4)
         ->and($fresh->event_count)->toBe(9)
+        ->and($fresh->last_pageview_url)->toBe('https://x.test/b')
         ->and($fresh->last_activity_at->toDateTimeString())->toBe('2026-06-30 09:08:00');
 });
