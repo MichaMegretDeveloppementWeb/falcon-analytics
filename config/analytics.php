@@ -151,15 +151,22 @@ return [
     |--------------------------------------------------------------------------
     | Geolocation (local database, no third-party call)
     |--------------------------------------------------------------------------
+    |
+    | MaxMind GeoLite2 City: free, accurate and fully local, so a visitor's IP
+    | never leaves the server. Get a free licence key at
+    | https://www.maxmind.com/en/geolite2/signup, then run analytics:geoip:download.
+    |
     */
 
     'geoip' => [
-        // Local City database used to resolve localities. An empty env value
-        // falls back to the storage path where analytics:geoip:download writes.
-        'database_path' => env('ANALYTICS_GEOIP_DATABASE') ?: storage_path('app/analytics/dbip-city.mmdb'),
+        'license_key' => env('ANALYTICS_GEOIP_LICENSE_KEY', ''),
+        'edition' => env('ANALYTICS_GEOIP_EDITION', 'GeoLite2-City'),
 
-        // Free DB-IP City Lite source ({month} is replaced with YYYY-MM).
-        'download_url' => 'https://download.db-ip.com/free/dbip-city-lite-{month}.mmdb.gz',
+        // Where analytics:geoip:download writes the extracted .mmdb.
+        'database_path' => env('ANALYTICS_GEOIP_DATABASE') ?: storage_path('app/analytics/GeoLite2-City.mmdb'),
+
+        // MaxMind permalink ({edition} and {license_key} are substituted).
+        'download_url' => 'https://download.maxmind.com/app/geoip_download?edition_id={edition}&license_key={license_key}&suffix=tar.gz',
     ],
 
 ];

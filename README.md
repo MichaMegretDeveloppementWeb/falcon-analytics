@@ -203,6 +203,21 @@ Further publish groups (views, funnels, assets) are documented as they ship.
 | `analytics:events` | list observed event names and where they fire |
 | `analytics:funnels` | validate funnel definitions against observed events |
 | `analytics:forget` | erase a visitor's or subject's data |
+| `analytics:geoip:download` | download/refresh the local GeoLite2 City database |
+
+## Geolocation
+
+Localities are resolved from the visitor IP against **MaxMind GeoLite2 City** — free,
+accurate and **fully local**, so an IP never leaves the server (no third-party call).
+
+1. Create a free account and licence key: <https://www.maxmind.com/en/geolite2/signup>
+2. Add the key to `.env`: `ANALYTICS_GEOIP_LICENSE_KEY=xxxxxxxx`
+3. Download the database: `php artisan analytics:geoip:download`
+
+The `.mmdb` lands at `storage/app/analytics/GeoLite2-City.mmdb` (override with
+`ANALYTICS_GEOIP_DATABASE`). Re-run the command monthly (cron) to refresh it; geolocation
+degrades silently to "unknown" when the database is missing. IP geolocation is inherently
+city/region level — it will not pinpoint an exact street.
 
 ## License
 
