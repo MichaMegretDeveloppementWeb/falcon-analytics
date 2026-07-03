@@ -8,6 +8,7 @@ use Carbon\CarbonImmutable;
 use Falcon\Analytics\DTOs\IngestionContext;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 final readonly class SessionWriteRepository
@@ -68,5 +69,31 @@ final readonly class SessionWriteRepository
             ->whereKey($session->getKey())
             ->where('last_activity_at', '<', $lastActivityAt)
             ->update(['last_activity_at' => $lastActivityAt]);
+    }
+
+    /**
+     * Close sessions idle past the timeout by stamping ended_at deterministically
+     * at last_activity_at + timeout (never the sweep time), in bounded batches.
+     * Returns the number of sessions closed.
+     */
+    public function closeIdleSessions(CarbonImmutable $idleBefore, int $timeoutMinutes): int
+    {
+        $closed = 0;
+
+        Session::query()
+            ->whereNull('ended_at')
+            ->where('last_activity_at', '<', $idleBefore)
+            ->select(['id', 'last_activity_at'])
+            ->chunkById(500, function (Collection $sessions) use ($timeoutMinutes, &$closed): void {
+                foreach ($sessions as $session) {
+                    Session::query()
+                        ->whereKey($session->id)
+                        ->update(['ended_at' => $session->last_activity_at->addMinutes($timeoutMinutes)]);
+
+                    $closed++;
+                }
+            });
+
+        return $closed;
     }
 }

@@ -6,6 +6,8 @@ namespace Falcon\Analytics;
 
 use Falcon\Analytics\Console\GeoipDownloadCommand;
 use Falcon\Analytics\Console\InstallCommand;
+use Falcon\Analytics\Console\PruneCommand;
+use Falcon\Analytics\Console\SweepCommand;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\TrendChart;
 use Falcon\Analytics\Support\GeoResolver;
@@ -57,14 +59,21 @@ final class AnalyticsServiceProvider extends ServiceProvider
             $this->commands([
                 InstallCommand::class,
                 GeoipDownloadCommand::class,
+                PruneCommand::class,
+                SweepCommand::class,
             ]);
 
-            // Self-refresh the GeoLite2 database monthly so the host never wires a
-            // dedicated cron; only the standard schedule:run is needed. The runtime
-            // guard keeps it silent when no licence key is configured.
+            // Self-schedule maintenance so a host only needs the standard
+            // schedule:run cron, never a dedicated analytics cron.
             $this->app->booted(function (): void {
-                $this->app->make(Schedule::class)
-                    ->command('analytics:geoip:download')
+                $schedule = $this->app->make(Schedule::class);
+
+                // Close idle sessions and prune expired raw events on a fixed cadence.
+                $schedule->command('analytics:sweep')->everyFiveMinutes()->withoutOverlapping();
+                $schedule->command('analytics:prune')->dailyAt('03:30')->withoutOverlapping();
+
+                // Refresh the GeoLite2 database monthly; inert until a licence key is set.
+                $schedule->command('analytics:geoip:download')
                     ->monthlyOn(1, '04:00')
                     ->withoutOverlapping()
                     ->when(fn (): bool => (string) config('analytics.geoip.license_key') !== '');
