@@ -259,7 +259,7 @@
                         <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-elevated">
                             <x-ui.icon name="document-text" class="h-3.5 w-3.5 text-secondary" />
                         </span>
-                        <span class="w-24 shrink-0 truncate text-[13px] text-primary"><x-analytics::page-url :route="$item['label']" /></span>
+                        <span class="w-24 shrink-0 truncate text-[13px] text-primary"><x-analytics::page-url :url="$item['label']" /></span>
                         <div class="relative h-1.5 flex-1 overflow-hidden rounded-full bg-elevated">
                             <div class="absolute inset-y-0 left-0 rounded-full bg-[#1684ea]/70" style="width: {{ $pct }}%"></div>
                         </div>

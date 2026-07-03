@@ -146,18 +146,18 @@ it('ranks the top localities (country + city)', function () {
         ->and($localities[0])->toBe(['country' => 'FR', 'city' => 'Paris', 'total' => 2, 'previous' => 0]);
 });
 
-it('ranks the most viewed pages from pageview events, excluding bot sessions', function () {
+it('ranks the most viewed pages by their real URL, excluding bot sessions', function () {
     $session = makeDashboardSession();
-    makeDashboardEvent($session, EventType::Pageview, ['route' => 'home']);
-    makeDashboardEvent($session, EventType::Pageview, ['route' => 'home']);
-    makeDashboardEvent($session, EventType::Pageview, ['route' => 'catalog']);
+    makeDashboardEvent($session, EventType::Pageview, ['route' => 'listing.detail', 'url' => 'https://x.test/listings/25']);
+    makeDashboardEvent($session, EventType::Pageview, ['route' => 'listing.detail', 'url' => 'https://x.test/listings/25']);
+    makeDashboardEvent($session, EventType::Pageview, ['route' => 'catalog', 'url' => 'https://x.test/catalog']);
 
     $bot = makeDashboardSession(['is_bot' => true]);
-    makeDashboardEvent($bot, EventType::Pageview, ['route' => 'home']);
+    makeDashboardEvent($bot, EventType::Pageview, ['route' => 'home', 'url' => 'https://x.test/']);
 
     expect($this->overview->topPages($this->period, null))->toBe([
-        ['label' => 'home', 'total' => 2, 'previous' => 0],
-        ['label' => 'catalog', 'total' => 1, 'previous' => 0],
+        ['label' => 'https://x.test/listings/25', 'total' => 2, 'previous' => 0], // same URL aggregates
+        ['label' => 'https://x.test/catalog', 'total' => 1, 'previous' => 0],
     ]);
 });
 

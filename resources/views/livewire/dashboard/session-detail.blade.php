@@ -19,7 +19,8 @@
         return "{$seconds}\u{00A0}s";
     };
 
-    $eventLabel = fn ($event) => $value($event->target_text) ?? $value($event->name) ?? __('Évènement');
+    $eventLabel = fn ($event) => $value($event->target_text) ?? $value($event->name)
+        ?? ($event->type === EventType::Click ? __('Clic') : __('Évènement'));
 
     $seconds = (int) $session->started_at->diffInSeconds($session->last_activity_at);
     $duration = $formatSeconds($seconds);

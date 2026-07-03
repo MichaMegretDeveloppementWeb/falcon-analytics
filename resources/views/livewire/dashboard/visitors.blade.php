@@ -58,7 +58,7 @@
             <x-ui.table.head>
                 <x-ui.table.header-cell :first="true">{{ __('Visiteur') }}</x-ui.table.header-cell>
                 <x-ui.table.header-cell>{{ __('Type') }}</x-ui.table.header-cell>
-                <x-ui.table.header-cell align="right">@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'period_sessions', 'label' => __('Sessions'), 'align' => 'right'])</x-ui.table.header-cell>
+                <x-ui.table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'period_sessions', 'label' => __('Sessions')])</x-ui.table.header-cell>
                 <x-ui.table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'first_seen_at', 'label' => __('Première visite')])</x-ui.table.header-cell>
                 <x-ui.table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'last_seen_at', 'label' => __('Dernière visite')])</x-ui.table.header-cell>
                 <x-ui.table.header-cell>{{ __('Localité') }}</x-ui.table.header-cell>
@@ -90,7 +90,7 @@
                                 <x-ui.badge color="gray">{{ __('Anonyme') }}</x-ui.badge>
                             @endif
                         </x-ui.table.cell>
-                        <x-ui.table.cell align="right" class="tabular-nums">{{ number_format((int) $visitor->period_sessions, 0, ',', ' ') }}</x-ui.table.cell>
+                        <x-ui.table.cell class="tabular-nums">{{ number_format((int) $visitor->period_sessions, 0, ',', ' ') }}</x-ui.table.cell>
                         <x-ui.table.cell class="whitespace-nowrap">{{ $visitor->first_seen_at->translatedFormat('d M Y') }}</x-ui.table.cell>
                         <x-ui.table.cell class="whitespace-nowrap text-secondary">{{ $visitor->last_seen_at->diffForHumans() }}</x-ui.table.cell>
                         <x-ui.table.cell class="whitespace-nowrap">

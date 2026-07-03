@@ -71,8 +71,10 @@
         },
     }"
 >
-    <canvas x-ref="canvas"></canvas>
-    <div class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-2 text-center leading-tight">
+    {{-- Center content sits behind the canvas and shows through the doughnut hole,
+         so tooltips (drawn on the canvas) render above it instead of being hidden. --}}
+    <canvas x-ref="canvas" class="relative z-10"></canvas>
+    <div class="pointer-events-none absolute inset-0 z-0 flex flex-col items-center justify-center px-2 text-center leading-tight">
         <span class="{{ $centerSize }} font-semibold tracking-tight text-primary">{{ $total }}</span>
         @if ($caption)
             <span class="text-[10px] uppercase tracking-wide text-muted">{{ $caption }}</span>

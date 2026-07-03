@@ -119,15 +119,15 @@ final readonly class OverviewReadRepository
     }
 
     /**
-     * Most viewed pages (pageview events grouped by route), with the
-     * previous-period count for each.
+     * Most viewed pages (pageview events grouped by their real URL, so dynamic
+     * pages show their concrete path), with the previous-period count for each.
      *
      * @return list<array{label: string, total: int, previous: int}>
      */
     public function topPages(Period $period, ?string $subjectType, int $limit = 6): array
     {
-        $current = $this->rankedEventCounts(EventType::Pageview, 'route', $period, $subjectType);
-        $previous = $this->rankedEventCounts(EventType::Pageview, 'route', $period->previous(), $subjectType);
+        $current = $this->rankedEventCounts(EventType::Pageview, 'url', $period, $subjectType);
+        $previous = $this->rankedEventCounts(EventType::Pageview, 'url', $period->previous(), $subjectType);
 
         return $this->mergeRanked($current, $previous, $limit);
     }

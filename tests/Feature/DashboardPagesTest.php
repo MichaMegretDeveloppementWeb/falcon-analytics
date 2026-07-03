@@ -74,7 +74,7 @@ it('protects the dashboard from guests', function () {
 
 it('renders the overview digest for an authenticated admin', function () {
     $session = seedSession(['source' => 'google']);
-    Event::create(['session_id' => $session->id, 'visitor_id' => $session->visitor_id, 'occurred_at' => now()->subMinute(), 'type' => EventType::Pageview, 'route' => 'accueil']);
+    Event::create(['session_id' => $session->id, 'visitor_id' => $session->visitor_id, 'occurred_at' => now()->subMinute(), 'type' => EventType::Pageview, 'route' => 'accueil', 'url' => 'https://vantadrive.test/accueil']);
 
     $this->actingAs($this->admin, 'admin')
         ->get(route('analytics.overview'))
@@ -84,7 +84,7 @@ it('renders the overview digest for an authenticated admin', function () {
         ->assertSeeText(__('Durée moy. session'))
         ->assertSeeText(__('Taux de rebond'))
         ->assertSeeText('Google')
-        ->assertSeeText('accueil');
+        ->assertSeeText('/accueil');
 });
 
 it('renders the sessions list for an authenticated admin', function () {

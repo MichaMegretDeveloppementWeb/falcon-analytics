@@ -26,7 +26,14 @@ final class PageUrl
         if ($route !== null && $route !== '') {
             $uri = Route::getRoutes()->getByName($route)?->uri();
 
-            return $uri !== null ? '/'.ltrim($uri, '/') : $route;
+            if ($uri === null) {
+                return $route;
+            }
+
+            // No concrete URL to show (e.g. an aggregated route): render the
+            // pattern cleanly, replacing {param} placeholders with an ellipsis
+            // rather than exposing the raw template.
+            return '/'.ltrim(preg_replace('/\{[^}]+\}/', '…', $uri) ?? $uri, '/');
         }
 
         return '';
