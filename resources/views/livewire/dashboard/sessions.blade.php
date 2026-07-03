@@ -121,10 +121,10 @@
                                         $subjectLabel = $subjectResolver->label($session->subject_type);
                                     @endphp
                                     <span class="text-[13px] font-medium text-primary">{{ $subjectName ?? $subjectLabel.' #'.$session->subject_id }}</span>
-                                    <span class="font-mono text-[11px] text-muted">@if ($subjectName){{ $subjectLabel }} · @endif{{ substr($session->visitor?->uuid ?? '', 0, 8) }}</span>
+                                    <span class="text-[11px] text-muted">@if ($subjectName){{ $subjectLabel }} · @endif{{ substr($session->visitor?->uuid ?? '', 0, 8) }}</span>
                                 @else
                                     <span class="text-[13px] text-secondary">{{ __('Anonyme') }}</span>
-                                    <span class="font-mono text-[11px] text-muted">{{ substr($session->visitor?->uuid ?? '', 0, 8) }}</span>
+                                    <span class="text-[11px] text-muted">{{ substr($session->visitor?->uuid ?? '', 0, 8) }}</span>
                                 @endif
                             </div>
                         </x-ui.table.cell>

@@ -10,6 +10,7 @@ use Falcon\Analytics\Repositories\DashboardReadRepository;
 use Falcon\Analytics\Services\SubjectResolver;
 use Falcon\Analytics\Tests\Fixtures\Models\TestClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
@@ -283,4 +284,90 @@ it('searches sessions by country name, resolving the stored ISO code', function 
 
     expect($found->total())->toBe(1)
         ->and($found->first()->country)->toBe('FR');
+});
+
+it('paginates visitors active in the period with their derived columns', function () {
+    $visitor = makeDashboardVisitor();
+    makeDashboardSession(['source' => 'organic', 'started_at' => now()->subDays(60)], $visitor); // first-ever = acquisition
+    makeDashboardSession(['city' => 'Lyon', 'source' => 'referral', 'started_at' => now()->subDays(3)], $visitor);
+    makeDashboardSession(['city' => 'Paris', 'source' => 'paid', 'started_at' => now()->subDay()], $visitor); // latest = locality
+
+    makeDashboardSession(['is_bot' => true], makeDashboardVisitor()); // bot-only visitor: excluded
+
+    $result = $this->repository->paginateVisitors($this->period, null, null, new SubjectResolver);
+
+    expect($result->total())->toBe(1);
+
+    $row = $result->first();
+    expect((int) $row->id)->toBe($visitor->id)
+        ->and((int) $row->period_sessions)->toBe(2)       // only the two in-period sessions
+        ->and($row->last_city)->toBe('Paris')             // latest session
+        ->and($row->acquisition_source)->toBe('organic'); // first-ever session
+});
+
+it('sorts visitors by their period session count', function () {
+    $busy = makeDashboardVisitor();
+    makeDashboardSession([], $busy);
+    makeDashboardSession([], $busy);
+    makeDashboardSession([], makeDashboardVisitor());
+
+    $desc = $this->repository->paginateVisitors($this->period, null, null, new SubjectResolver, 'period_sessions', 'desc');
+
+    expect((int) $desc->first()->period_sessions)->toBe(2)
+        ->and((int) $desc->first()->id)->toBe($busy->id);
+});
+
+it('counts period visitors, new visitors and sessions, excluding bots', function () {
+    $returning = makeDashboardVisitor();
+    $returning->update(['first_seen_at' => now()->subDays(60)]); // seen before the period
+    makeDashboardSession([], $returning);
+    makeDashboardSession([], $returning);
+
+    $new = makeDashboardVisitor();
+    $new->update(['first_seen_at' => now()->subDay()]); // first seen within the period
+    makeDashboardSession([], $new);
+
+    makeDashboardSession(['is_bot' => true], makeDashboardVisitor()); // bot: excluded
+
+    $counts = $this->repository->visitorCounts($this->period, null);
+
+    expect($counts['visitors'])->toBe(2)
+        ->and($counts['new'])->toBe(1)
+        ->and($counts['sessions'])->toBe(3);
+});
+
+it('returns raw daily rows keyed by day with new visitors bot-excluded', function () {
+    $visitor = makeDashboardVisitor();
+    $visitor->update(['first_seen_at' => CarbonImmutable::parse('2026-06-10 09:00')]);
+    makeDashboardSession(['started_at' => CarbonImmutable::parse('2026-06-10 09:00')], $visitor);
+
+    $botVisitor = makeDashboardVisitor();
+    $botVisitor->update(['first_seen_at' => CarbonImmutable::parse('2026-06-10 10:00')]);
+    makeDashboardSession(['is_bot' => true, 'started_at' => CarbonImmutable::parse('2026-06-10 10:00')], $botVisitor);
+
+    $rows = $this->repository->visitorDailyRows($this->period, null);
+
+    expect($rows['active']['2026-06-10'])->toBe(['sessions' => 1, 'visitors' => 1])
+        ->and($rows['new']['2026-06-10'])->toBe(1); // bot-only visitor excluded from new
+});
+
+it('fetches the visitors screen data within its query budget', function () {
+    foreach (range(1, 5) as $i) {
+        makeDashboardSession(['city' => 'Paris']);
+    }
+
+    DB::enableQueryLog();
+    DB::flushQueryLog();
+
+    $this->repository->paginateVisitors($this->period, null, null, new SubjectResolver);
+    $this->repository->visitorCounts($this->period, null);
+    $this->repository->visitorCounts($this->period->previous(), null);
+    $this->repository->visitorDailyRows($this->period, null);
+
+    $queries = DB::getQueryLog();
+    $signatures = array_map(fn (array $q): string => $q['query'].'|'.json_encode($q['bindings']), $queries);
+
+    // Frozen plan: paginate (count + select) + counts x2 (totals + new) + daily (active + new) = 8.
+    expect($queries)->toHaveCount(8)
+        ->and($signatures)->toBe(array_values(array_unique($signatures))); // nothing fetched twice
 });

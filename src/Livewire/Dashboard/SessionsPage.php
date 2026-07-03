@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Livewire\Dashboard;
 
-use Falcon\Analytics\Models\Session;
+use Falcon\Analytics\Livewire\Dashboard\Concerns\ResolvesSubjectNames;
+use Falcon\Analytics\Livewire\Dashboard\Concerns\SortsAndSearchesList;
 use Falcon\Analytics\Repositories\DashboardReadRepository;
 use Falcon\Analytics\Services\SubjectResolver;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Url;
 use Livewire\WithPagination;
@@ -18,6 +18,8 @@ use Livewire\WithPagination;
  */
 final class SessionsPage extends DashboardComponent
 {
+    use ResolvesSubjectNames;
+    use SortsAndSearchesList;
     use WithPagination;
 
     #[Url]
@@ -34,33 +36,6 @@ final class SessionsPage extends DashboardComponent
 
     #[Url]
     public string $direction = 'desc';
-
-    public function sortBy(string $column): void
-    {
-        if ($this->sort === $column) {
-            $this->direction = $this->direction === 'asc' ? 'desc' : 'asc';
-        } else {
-            $this->sort = $column;
-            $this->direction = 'desc';
-        }
-
-        $this->resetPage();
-    }
-
-    public function updatedPeriod(): void
-    {
-        $this->resetPage();
-    }
-
-    public function updatedSubject(): void
-    {
-        $this->resetPage();
-    }
-
-    public function updatedSearch(): void
-    {
-        $this->resetPage();
-    }
 
     public function updatedDevice(): void
     {
@@ -89,31 +64,5 @@ final class SessionsPage extends DashboardComponent
             'filterOptions' => $repository->sessionFilterOptions($period, $subjectType),
             ...$this->filterData(),
         ])->layout($this->layoutName(), ['title' => __('Sessions').' · '.__('Analytics')]);
-    }
-
-    /**
-     * Batch-resolve a "guard:id" => name map for the current page, one query per
-     * guard, so the list never triggers per-row lookups.
-     *
-     * @param  LengthAwarePaginator<int, Session>  $sessions
-     * @return array<string, string>
-     */
-    private function resolveSubjectNames(LengthAwarePaginator $sessions, SubjectResolver $subjects): array
-    {
-        $byGuard = [];
-        foreach ($sessions as $session) {
-            if ($session->subject_type !== null && $session->subject_id !== null) {
-                $byGuard[$session->subject_type][] = (int) $session->subject_id;
-            }
-        }
-
-        $names = [];
-        foreach ($byGuard as $guard => $ids) {
-            foreach ($subjects->names($guard, $ids) as $id => $name) {
-                $names[$guard.':'.$id] = $name;
-            }
-        }
-
-        return $names;
     }
 }

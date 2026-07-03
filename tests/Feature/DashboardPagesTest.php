@@ -39,6 +39,7 @@ beforeEach(function () {
 
 it('mounts the dashboard at the configured prefix and route names', function () {
     expect(route('analytics.overview', absolute: false))->toBe('/admin/analytics')
+        ->and(route('analytics.visitors', absolute: false))->toBe('/admin/analytics/visitors')
         ->and(route('analytics.funnels', absolute: false))->toBe('/admin/analytics/funnels')
         ->and(route('analytics.sessions', absolute: false))->toBe('/admin/analytics/sessions')
         ->and(route('analytics.sessions.show', ['session' => 1], absolute: false))->toBe('/admin/analytics/sessions/1');
@@ -48,6 +49,7 @@ it('protects the dashboard from guests', function () {
     $session = seedSession();
 
     $this->get(route('analytics.overview'))->assertRedirect(route('login'));
+    $this->get(route('analytics.visitors'))->assertRedirect(route('login'));
     $this->get(route('analytics.funnels'))->assertRedirect(route('login'));
     $this->get(route('analytics.sessions'))->assertRedirect(route('login'));
     $this->get(route('analytics.sessions.show', $session))->assertRedirect(route('login'));
@@ -77,6 +79,35 @@ it('renders the sessions list for an authenticated admin', function () {
         ->assertSeeText(__('Sessions'))
         ->assertSeeText('Genève')
         ->assertSeeText('Client #1');
+});
+
+it('renders the visitors list for an authenticated admin', function () {
+    $visitor = Visitor::create([
+        'uuid' => (string) Str::uuid(),
+        'first_seen_at' => now(),
+        'last_seen_at' => now(),
+        'subject_type' => 'client',
+        'subject_id' => 1,
+    ]);
+    Session::create([
+        'visitor_id' => $visitor->id,
+        'started_at' => now(),
+        'last_activity_at' => now(),
+        'is_bot' => false,
+        'pageview_count' => 1,
+        'city' => 'Genève',
+        'country' => 'CH',
+        'source' => 'google',
+    ]);
+
+    $this->actingAs($this->admin, 'admin')
+        ->get(route('analytics.visitors'))
+        ->assertSuccessful()
+        ->assertSeeText(__('Visiteurs'))
+        ->assertSeeText(__('Nouveaux'))
+        ->assertSeeText(__('Sessions / visiteur'))
+        ->assertSeeText('Client #1')
+        ->assertSeeText('Genève');
 });
 
 it('renders a session detail with its information and event timeline', function () {

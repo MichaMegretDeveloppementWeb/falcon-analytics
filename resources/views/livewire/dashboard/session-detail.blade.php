@@ -112,7 +112,7 @@
             @endif
             @if ($session->visitor?->uuid)
                 <span class="text-muted">·</span>
-                <span>{{ __('ID') }}{{ "\u{00A0}" }}: <span class="font-mono">{{ Str::limit($session->visitor->uuid, 24, '…') }}</span></span>
+                <span>{{ __('ID') }}{{ "\u{00A0}" }}: {{ Str::limit($session->visitor->uuid, 24, '…') }}</span>
             @endif
         </div>
     </div>

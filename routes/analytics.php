@@ -9,6 +9,7 @@ use Falcon\Analytics\Livewire\Dashboard\FunnelsPage;
 use Falcon\Analytics\Livewire\Dashboard\OverviewPage;
 use Falcon\Analytics\Livewire\Dashboard\SessionDetailPage;
 use Falcon\Analytics\Livewire\Dashboard\SessionsPage;
+use Falcon\Analytics\Livewire\Dashboard\VisitorsPage;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Session\Middleware\StartSession;
@@ -42,6 +43,7 @@ Route::prefix((string) ($dashboard['route_prefix'] ?? 'admin/analytics'))
     ->name(($dashboard['route_name'] ?? 'analytics').'.')
     ->group(function (): void {
         Route::livewire('/', OverviewPage::class)->name('overview');
+        Route::livewire('/visitors', VisitorsPage::class)->name('visitors');
         Route::livewire('/funnels', FunnelsPage::class)->name('funnels');
         Route::livewire('/sessions', SessionsPage::class)->name('sessions');
         Route::livewire('/sessions/{session}', SessionDetailPage::class)->name('sessions.show');

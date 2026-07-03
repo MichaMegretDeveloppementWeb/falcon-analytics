@@ -94,11 +94,26 @@ fits any host:
 
 Package routes are registered outside your route groups, so the middleware must
 include a session stack (`web`) alongside your auth guard, for example
-`['web', 'auth:admin']`. Pages: **Overview** (`.overview`) and **Sessions**
-(`.sessions`). Link to it from your own navigation:
+`['web', 'auth:admin']`.
+
+**Dashboard pages.** Four full-page Livewire routes are registered under the
+prefix. The package does not touch your navigation — add the links yourself:
+
+| Route name | Page |
+|------------|------|
+| `{name}.overview`  | Digest: KPIs, trend, sources, localities, engagement |
+| `{name}.visitors`  | Visitor list (sessions, first/last seen, locality, acquisition) |
+| `{name}.sessions`  | Session list + `{name}.sessions.show` detail (journey) |
+| `{name}.funnels`   | Funnels declared in `app/Analytics/funnels.php` |
+
+`{name}` is `dashboard.route_name` (default `analytics`). Link to them from your
+own navigation, e.g.:
 
 ```blade
-<a href="{{ route('analytics.overview') }}">Analytics</a>
+<a href="{{ route('analytics.overview') }}">Vue d'ensemble</a>
+<a href="{{ route('analytics.visitors') }}">Visiteurs</a>
+<a href="{{ route('analytics.sessions') }}">Sessions</a>
+<a href="{{ route('analytics.funnels') }}">Entonnoirs</a>
 ```
 
 **Tailwind sources.** So the kit classes used by the dashboard are not purged,
