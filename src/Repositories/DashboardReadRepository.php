@@ -194,7 +194,7 @@ final readonly class DashboardReadRepository
     /**
      * Raw visitor counts for the period (bots excluded): distinct active
      * visitors, distinct new visitors (first seen within the period) and total
-     * sessions. No derivation — the calculator turns these into metrics.
+     * sessions. No derivation; the calculator turns these into metrics.
      *
      * @return array{visitors: int, new: int, sessions: int}
      */
@@ -221,7 +221,7 @@ final readonly class DashboardReadRepository
      * Raw per-day rows for the period (bots excluded), keyed by 'Y-m-d': active
      * visitors and sessions per day, and new visitors bucketed by their first
      * seen day (only visitors with a real, non-bot session). No zero-fill or
-     * ratio — that is the calculator's job.
+     * ratio; that is the calculator's job.
      *
      * @return array{active: array<string, array{sessions: int, visitors: int}>, new: array<string, int>}
      */
@@ -361,6 +361,7 @@ final readonly class DashboardReadRepository
         $direction = $direction === 'asc' ? 'asc' : 'desc';
 
         $query = $this->sessionScope($period, $subjectType)
+            ->select(['id', 'visitor_id', 'subject_type', 'subject_id', 'started_at', 'last_activity_at', 'pageview_count', 'source', 'landing_route', 'landing_url', 'device_type', 'browser', 'country', 'city'])
             ->with('visitor:id,uuid,subject_type,subject_id')
             ->when($device !== null && $device !== '', fn (Builder $q): Builder => $q->where('device_type', $device))
             ->when($source !== null && $source !== '', fn (Builder $q): Builder => $q->where('source', $source))

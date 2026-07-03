@@ -7,6 +7,7 @@ namespace Falcon\Analytics\Livewire\Dashboard;
 use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
+use Falcon\Analytics\Services\SubjectResolver;
 use Falcon\Analytics\Support\PageUrl;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
@@ -25,7 +26,7 @@ final class SessionDetailPage extends Component
         $this->session = $session->load('visitor:id,uuid,subject_type,subject_id,session_count,first_seen_at,last_seen_at');
     }
 
-    public function render(): View
+    public function render(SubjectResolver $subjects): View
     {
         $events = $this->session->events()
             ->orderBy('occurred_at')
@@ -33,12 +34,15 @@ final class SessionDetailPage extends Component
             ->get();
 
         $journey = $this->buildJourney($events);
+        $subjectType = $this->session->subject_type;
 
         return view('analytics::livewire.dashboard.session-detail', [
             'session' => $this->session,
             'journey' => $journey,
             'clicksCount' => $events->where('type', EventType::Click)->count(),
             'timePerPage' => $this->timePerPage($journey),
+            'subjectLabel' => $subjectType !== null ? $subjects->label($subjectType) : null,
+            'subjectName' => $subjectType !== null ? $subjects->name($subjectType, (int) $this->session->subject_id) : null,
         ])->layout($this->layoutName(), ['title' => __('Session').' · '.__('Analytics')]);
     }
 
@@ -58,7 +62,7 @@ final class SessionDetailPage extends Component
                 continue;
             }
 
-            $label = PageUrl::resolve($step['event']->route, $step['event']->url) ?: '—';
+            $label = PageUrl::resolve($step['event']->route, $step['event']->url) ?: '·';
 
             $byPage[$label] = ($byPage[$label] ?? 0) + $step['seconds'];
         }

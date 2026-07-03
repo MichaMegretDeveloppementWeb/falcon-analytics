@@ -16,18 +16,18 @@ use Falcon\Analytics\Repositories\SessionReadRepository;
 use Falcon\Analytics\Repositories\SessionWriteRepository;
 use Falcon\Analytics\Repositories\VisitorWriteRepository;
 use Falcon\Analytics\Services\SessionContextEnricher;
+use Falcon\Analytics\Support\PropsEncoder;
 use Illuminate\Support\Facades\DB;
 
 final readonly class IngestEventsAction
 {
-    private const MAX_PROPS = 30;
-
     public function __construct(
         private VisitorWriteRepository $visitors,
         private SessionReadRepository $sessionReads,
         private SessionWriteRepository $sessions,
         private EventWriteRepository $events,
         private SessionContextEnricher $enricher,
+        private PropsEncoder $propsEncoder,
     ) {}
 
     /**
@@ -95,37 +95,11 @@ final readonly class IngestEventsAction
             'url' => $event->url,
             'target_selector' => $event->targetSelector,
             'target_text' => $event->targetText,
-            'props' => $this->encodeProps($event->props),
+            'props' => $this->propsEncoder->encode($event->props),
             'value' => $event->value,
             'subject_type' => $subject['type'] ?? null,
             'subject_id' => $subject['id'] ?? null,
         ], $events);
-    }
-
-    /**
-     * Keep only scalar values and cap the key count so a hostile client cannot
-     * amplify storage; JSON_INVALID_UTF8_SUBSTITUTE keeps bad bytes from failing
-     * the encode (which would otherwise write a literal false into the column).
-     *
-     * @param  array<string, mixed>|null  $props
-     */
-    private function encodeProps(?array $props): ?string
-    {
-        if ($props === null) {
-            return null;
-        }
-
-        $clean = [];
-        foreach ($props as $key => $value) {
-            if (count($clean) >= self::MAX_PROPS) {
-                break;
-            }
-            if ($value === null || is_scalar($value)) {
-                $clean[(string) $key] = $value;
-            }
-        }
-
-        return $clean === [] ? null : json_encode($clean, JSON_INVALID_UTF8_SUBSTITUTE);
     }
 
     /**

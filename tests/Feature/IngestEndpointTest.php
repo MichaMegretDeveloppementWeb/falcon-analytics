@@ -74,6 +74,14 @@ it('drops a request with a present but unparseable origin', function () {
     expect(Event::count())->toBe(0);
 });
 
+it('accepts a request with neither Origin nor Referer as same-origin', function () {
+    $this->withoutDefer()
+        ->postJson('/__analytics', analyticsPayload())
+        ->assertNoContent();
+
+    expect(Event::count())->toBe(1);
+});
+
 it('drops a request from an excluded ip', function () {
     config(['analytics.exclude_ips' => ['127.0.0.1']]);
 

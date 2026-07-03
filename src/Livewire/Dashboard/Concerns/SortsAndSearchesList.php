@@ -7,7 +7,7 @@ namespace Falcon\Analytics\Livewire\Dashboard\Concerns;
 /**
  * Sorting and pagination-reset behaviour shared by the paginated dashboard lists
  * (sessions, visitors). The consuming component declares its own $search, $sort
- * and $direction properties — their defaults differ per screen — and uses
+ * and $direction properties (their defaults differ per screen) and uses
  * Livewire\WithPagination for resetPage().
  *
  * @property string $search

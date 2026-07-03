@@ -97,7 +97,7 @@ include a session stack (`web`) alongside your auth guard, for example
 `['web', 'auth:admin']`.
 
 **Dashboard pages.** Four full-page Livewire routes are registered under the
-prefix. The package does not touch your navigation — add the links yourself:
+prefix. The package does not touch your navigation; add the links yourself:
 
 | Route name | Page |
 |------------|------|
@@ -145,7 +145,7 @@ Funnel::define('acquisition_client', 'Acquisition client')
 ### 5. Server-sent events
 
 Beyond what the collector captures in the browser, application code can emit
-events directly — same visitor/session, same storage, same funnels. Useful for
+events directly: same visitor/session, same storage, same funnels. Useful for
 true conversions a click can't confirm (a registration was validated, a payment
 succeeded). The event joins a funnel by its name, like any other.
 

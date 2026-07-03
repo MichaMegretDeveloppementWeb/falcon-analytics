@@ -42,6 +42,9 @@
                 },
             });
         },
+        destroy() {
+            this.chart?.destroy();
+        },
     }"
 >
     <canvas x-ref="canvas"></canvas>

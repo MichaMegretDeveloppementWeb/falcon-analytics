@@ -4,9 +4,8 @@
 
     $routeName = config('analytics.dashboard.route_name', 'analytics');
     $value = fn ($raw) => filled($raw) ? $raw : null;
-    $subjectResolver = app(\Falcon\Analytics\Services\SubjectResolver::class);
-    $visitorLabel = $session->subject_type ? $subjectResolver->label($session->subject_type) : null;
-    $visitorName = $session->subject_type ? $subjectResolver->name($session->subject_type, (int) $session->subject_id) : null;
+    $visitorLabel = $subjectLabel;
+    $visitorName = $subjectName;
     $visitorPrimary = $visitorName ?? ($session->subject_type ? $visitorLabel.' #'.$session->subject_id : __('Visiteur anonyme'));
 
     $formatSeconds = function (int $seconds): string {

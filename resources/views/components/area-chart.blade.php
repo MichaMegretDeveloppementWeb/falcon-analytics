@@ -14,6 +14,7 @@
 <div
     x-data="{
         chart: null,
+        observer: null,
         isDark: document.documentElement.classList.contains('dark'),
         muted() { return this.isDark ? '#6b7280' : '#9ca3af'; },
         grid() { return this.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(17,24,39,0.06)'; },
@@ -81,7 +82,7 @@
                 },
             });
 
-            new MutationObserver(() => {
+            this.observer = new MutationObserver(() => {
                 const dark = document.documentElement.classList.contains('dark');
                 if (dark === this.isDark || !this.chart) return;
                 this.isDark = dark;
@@ -94,7 +95,12 @@
                 o.plugins.tooltip.bodyColor = dark ? '#d1d5db' : '#374151';
                 o.plugins.tooltip.borderColor = dark ? '#374151' : '#e5e7eb';
                 this.chart.update('none');
-            }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+            });
+            this.observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+        },
+        destroy() {
+            this.observer?.disconnect();
+            this.chart?.destroy();
         },
     }"
     {{ $attributes->merge(['class' => 'relative '.$height]) }}
