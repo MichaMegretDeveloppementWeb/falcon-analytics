@@ -10,21 +10,6 @@ use Falcon\Analytics\Models\Visitor;
 final readonly class VisitorWriteRepository
 {
     /**
-     * @param  array{type: string, id: int}|null  $subject
-     */
-    public function create(string $uuid, CarbonImmutable $seenAt, ?array $subject): Visitor
-    {
-        return Visitor::create([
-            'uuid' => $uuid,
-            'first_seen_at' => $seenAt,
-            'last_seen_at' => $seenAt,
-            'session_count' => 0,
-            'subject_type' => $subject['type'] ?? null,
-            'subject_id' => $subject['id'] ?? null,
-        ]);
-    }
-
-    /**
      * Refresh the last-seen timestamp and stitch the subject the first time the
      * visitor becomes identified (never overwrites an already-stitched subject).
      *

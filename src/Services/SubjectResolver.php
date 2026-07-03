@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Services;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -15,6 +16,12 @@ use Throwable;
  */
 final class SubjectResolver
 {
+    /**
+     * Upper bound on ids returned by a subject search, so a broad term can never
+     * pull an unbounded set into the WHERE IN of the caller.
+     */
+    private const MATCH_LIMIT = 200;
+
     public function label(string $guard): string
     {
         $label = config("analytics.identity.subjects.{$guard}.label");
@@ -70,11 +77,13 @@ final class SubjectResolver
                         $query->orWhere($column, 'like', '%'.$term.'%');
                     }
                 })
-                ->limit(200)
+                ->limit(self::MATCH_LIMIT)
                 ->pluck($key)
                 ->map(fn ($value): int => (int) $value)
                 ->all();
-        } catch (Throwable) {
+        } catch (Throwable $e) {
+            Log::channel(config('analytics.log_channel'))->warning('Analytics subject id search failed.', ['exception' => $e]);
+
             return [];
         }
     }
@@ -115,7 +124,9 @@ final class SubjectResolver
             $rows = DB::table($table)
                 ->whereIn($key, $ids)
                 ->get(array_values(array_unique([$key, ...$columns, ...$fallback])));
-        } catch (Throwable) {
+        } catch (Throwable $e) {
+            Log::channel(config('analytics.log_channel'))->warning('Analytics subject name lookup failed.', ['exception' => $e]);
+
             return [];
         }
 
@@ -173,7 +184,9 @@ final class SubjectResolver
             $instance = new $model;
 
             return [$instance->getTable(), $instance->getKeyName()];
-        } catch (Throwable) {
+        } catch (Throwable $e) {
+            Log::channel(config('analytics.log_channel'))->warning('Analytics subject source resolution failed.', ['exception' => $e]);
+
             return null;
         }
     }

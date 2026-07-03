@@ -10,12 +10,13 @@ use Falcon\Analytics\Repositories\Concerns\ScopesSessionQueries;
 use Falcon\Analytics\Services\SubjectResolver;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Read model for the sessions screen: the paginated, searchable and sortable
  * session list plus the distinct device/source filter options. Bots excluded.
  */
-final readonly class SessionsReadRepository
+final readonly class SessionListReadRepository
 {
     use ScopesSessionQueries;
 
@@ -115,7 +116,9 @@ final readonly class SessionsReadRepository
 
         try {
             $codes = Session::query()->whereNotNull('country')->distinct()->pluck('country');
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            Log::channel(config('analytics.log_channel'))->warning('Analytics country-code lookup failed.', ['exception' => $e]);
+
             return [];
         }
 

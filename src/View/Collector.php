@@ -29,7 +29,7 @@ final class Collector
             'endpoint' => $endpoint,
             'route' => Route::currentRouteName(),
             'heartbeat' => (int) config('analytics.session.heartbeat_seconds') * 1000,
-            'flush' => 5000,
+            'flush' => (int) config('analytics.session.flush_seconds') * 1000,
         ], JSON_THROW_ON_ERROR | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 
         $script = e($endpoint.'.js?v='.self::version());

@@ -8,8 +8,8 @@ use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Repositories\EngagementReadRepository;
 use Falcon\Analytics\Repositories\OverviewReadRepository;
-use Falcon\Analytics\Repositories\SessionsReadRepository;
-use Falcon\Analytics\Repositories\VisitorsReadRepository;
+use Falcon\Analytics\Repositories\SessionListReadRepository;
+use Falcon\Analytics\Repositories\VisitorListReadRepository;
 use Falcon\Analytics\Services\SubjectResolver;
 use Falcon\Analytics\Tests\Fixtures\Models\TestClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -54,8 +54,8 @@ beforeEach(function () {
     $this->travelTo(CarbonImmutable::parse('2026-06-15 12:00:00'));
     $this->engagement = new EngagementReadRepository;
     $this->overview = new OverviewReadRepository;
-    $this->sessions = new SessionsReadRepository;
-    $this->visitors = new VisitorsReadRepository;
+    $this->sessions = new SessionListReadRepository;
+    $this->visitors = new VisitorListReadRepository;
     $this->period = Period::ofDays(30);
 });
 

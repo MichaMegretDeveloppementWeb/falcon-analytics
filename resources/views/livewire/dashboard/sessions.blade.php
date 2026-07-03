@@ -112,10 +112,10 @@
                                         $subjectName = $subjectNames[$session->subject_type.':'.$session->subject_id] ?? null;
                                         $subjectLabel = $subjectResolver->label($session->subject_type);
                                     @endphp
-                                    <a href="{{ $sessionUrl }}" class="text-[13px] font-medium text-primary hover:underline">{{ $subjectName ?? $subjectLabel.' #'.$session->subject_id }}</a>
+                                    <a href="{{ $sessionUrl }}" class="cursor-pointer text-[13px] font-medium text-primary hover:underline">{{ $subjectName ?? $subjectLabel.' #'.$session->subject_id }}</a>
                                     <span class="text-[11px] text-muted">@if ($subjectName){{ $subjectLabel }} · @endif{{ substr($session->visitor?->uuid ?? '', 0, 8) }}</span>
                                 @else
-                                    <a href="{{ $sessionUrl }}" class="text-[13px] font-medium text-primary hover:underline">{{ __('Visiteur #:id', ['id' => $session->visitor_id]) }}</a>
+                                    <a href="{{ $sessionUrl }}" class="cursor-pointer text-[13px] font-medium text-primary hover:underline">{{ __('Visiteur #:id', ['id' => $session->visitor_id]) }}</a>
                                     <span class="text-[11px] text-muted">{{ substr($session->visitor?->uuid ?? '', 0, 8) }}</span>
                                 @endif
                             </div>

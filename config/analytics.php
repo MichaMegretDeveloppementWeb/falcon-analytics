@@ -128,6 +128,8 @@ return [
         'timeout_minutes' => 5,
         // Visibility-gated heartbeat interval that keeps last_activity_at fresh.
         'heartbeat_seconds' => 20,
+        // How often the collector flushes its buffered event batch to the server.
+        'flush_seconds' => 5,
     ],
 
     /*

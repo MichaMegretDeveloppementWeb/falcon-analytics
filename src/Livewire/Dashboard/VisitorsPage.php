@@ -6,7 +6,7 @@ namespace Falcon\Analytics\Livewire\Dashboard;
 
 use Falcon\Analytics\Livewire\Dashboard\Concerns\ResolvesSubjectNames;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\SortsAndSearchesList;
-use Falcon\Analytics\Repositories\VisitorsReadRepository;
+use Falcon\Analytics\Repositories\VisitorListReadRepository;
 use Falcon\Analytics\Services\Dashboard\VisitorMetricsCalculator;
 use Falcon\Analytics\Services\SubjectResolver;
 use Illuminate\Contracts\View\View;
@@ -33,7 +33,7 @@ final class VisitorsPage extends DashboardComponent
     #[Url]
     public string $direction = 'desc';
 
-    public function render(VisitorsReadRepository $repository, SubjectResolver $subjects, VisitorMetricsCalculator $metrics): View
+    public function render(VisitorListReadRepository $repository, SubjectResolver $subjects, VisitorMetricsCalculator $metrics): View
     {
         return $this->guardedRender(
             function () use ($repository, $subjects, $metrics): array {

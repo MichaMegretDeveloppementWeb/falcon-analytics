@@ -142,8 +142,8 @@
         {{-- Mobile-only tabs --}}
         <div class="lg:hidden">
             <div class="flex gap-1 rounded-lg bg-elevated p-1">
-                <button type="button" @click="tab = 'infos'" :class="tab === 'infos' ? 'bg-surface text-primary' : 'text-secondary hover:text-primary'" class="flex-1 cursor-pointer rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors">{{ __('Infos') }}</button>
-                <button type="button" @click="tab = 'parcours'" :class="tab === 'parcours' ? 'bg-surface text-primary' : 'text-secondary hover:text-primary'" class="flex-1 cursor-pointer rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors">{{ __('Parcours') }}</button>
+                <button type="button" @click="tab = 'infos'" :class="tab === 'infos' ? 'bg-surface text-primary' : 'text-secondary hover:text-primary'" class="flex-1 cursor-pointer rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors">{{ __('Infos') }}</button>
+                <button type="button" @click="tab = 'parcours'" :class="tab === 'parcours' ? 'bg-surface text-primary' : 'text-secondary hover:text-primary'" class="flex-1 cursor-pointer rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors">{{ __('Parcours') }}</button>
             </div>
         </div>
 
