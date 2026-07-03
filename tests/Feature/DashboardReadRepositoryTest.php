@@ -53,91 +53,67 @@ beforeEach(function () {
     $this->period = Period::ofDays(30);
 });
 
-it('computes headline metrics with period-over-period deltas, excluding bots', function () {
+it('fetches raw headline counts for the period, excluding bots', function () {
     makeDashboardSession(['pageview_count' => 2]);
     makeDashboardSession(['pageview_count' => 2]);
     makeDashboardSession(['pageview_count' => 2]);
-    makeDashboardSession(['pageview_count' => 1, 'started_at' => now()->subDays(40), 'last_activity_at' => now()->subDays(40)]);
-    makeDashboardSession(['pageview_count' => 1, 'started_at' => now()->subDays(40), 'last_activity_at' => now()->subDays(40)]);
+    makeDashboardSession(['pageview_count' => 1, 'started_at' => now()->subMinutes(5), 'last_activity_at' => now()->subMinutes(4)]);
     makeDashboardSession(['pageview_count' => 9, 'is_bot' => true]);
 
-    $headline = $this->repository->headline($this->period, null);
+    $counts = $this->repository->headlineCounts($this->period, null);
 
-    expect($headline['sessions']->current)->toBe(3.0)
-        ->and($headline['sessions']->previous)->toBe(2.0)
-        ->and($headline['sessions']->changePercent())->toBe(50.0)
-        ->and($headline['visitors']->current)->toBe(3.0)
-        ->and($headline['pageviews']->current)->toBe(6.0)
-        ->and($headline['pageviews']->previous)->toBe(2.0);
+    expect($counts['sessions'])->toBe(4)
+        ->and($counts['visitors'])->toBe(4)
+        ->and($counts['pageviews'])->toBe(7)
+        ->and($counts['bounces'])->toBe(1)
+        ->and((int) round($counts['avgSeconds']))->toBe(15); // (0 + 0 + 0 + 60) / 4
 });
 
-it('computes engagement metrics: average duration, pages per session and bounce rate', function () {
-    makeDashboardSession(['pageview_count' => 2, 'started_at' => now()->subMinutes(5), 'last_activity_at' => now()->subMinutes(4)]);
-    makeDashboardSession(['pageview_count' => 2, 'started_at' => now()->subMinutes(5), 'last_activity_at' => now()->subMinutes(4)]);
-    makeDashboardSession(['pageview_count' => 1, 'started_at' => now()->subMinutes(3), 'last_activity_at' => now()->subMinutes(3)]);
-
-    $headline = $this->repository->headline($this->period, null);
-
-    expect((int) round($headline['avgSeconds']->current))->toBe(40)
-        ->and(round($headline['pagesPerSession']->current, 2))->toBe(1.67)
-        ->and(round($headline['bounceRate']->current, 1))->toBe(33.3);
-});
-
-it('narrows the metrics to a subject type', function () {
+it('narrows the raw headline counts to a subject type', function () {
     $client = makeDashboardVisitor();
     makeDashboardSession(['subject_type' => 'client', 'subject_id' => 1], $client);
     makeDashboardSession(['subject_type' => 'client', 'subject_id' => 1], $client);
     makeDashboardSession(['subject_type' => 'lessor', 'subject_id' => 7]);
 
-    $headline = $this->repository->headline($this->period, 'client');
+    $counts = $this->repository->headlineCounts($this->period, 'client');
 
-    expect($headline['sessions']->current)->toBe(2.0)
-        ->and($headline['visitors']->current)->toBe(1.0);
+    expect($counts['sessions'])->toBe(2)
+        ->and($counts['visitors'])->toBe(1);
 });
 
-it('reports today and yesterday values for the headline metrics', function () {
-    makeDashboardSession(['pageview_count' => 2]);
-    makeDashboardSession(['pageview_count' => 2]);
-    makeDashboardSession(['pageview_count' => 1, 'started_at' => now()->subDay(), 'last_activity_at' => now()->subDay()]);
+it('fetches raw today and yesterday counts for the spotlight', function () {
+    makeDashboardSession();
+    makeDashboardSession();
+    makeDashboardSession(['started_at' => now()->subDay(), 'last_activity_at' => now()->subDay()]);
 
-    $spotlight = $this->repository->spotlight(null);
+    $spotlight = $this->repository->spotlightCounts(null);
 
-    expect($spotlight['sessions']['today'])->toBe(2.0)
-        ->and($spotlight['visitors']['today'])->toBe(2.0)
-        ->and($spotlight['sessions']['yesterday'])->toBe(1.0);
+    expect($spotlight['today']['sessions'])->toBe(2)
+        ->and($spotlight['today']['visitors'])->toBe(2)
+        ->and($spotlight['yesterday']['sessions'])->toBe(1);
 });
 
-it('builds a continuous daily trend with zero-filled days', function () {
-    $period = Period::ofDays(7);
-
+it('fetches raw daily trend rows keyed by day, without zero-fill', function () {
     makeDashboardSession(['pageview_count' => 1]);
     makeDashboardSession(['pageview_count' => 1]);
     makeDashboardSession(['pageview_count' => 4, 'started_at' => now()->subDays(2)]);
 
-    $trend = $this->repository->dailyTrend($period, null);
+    $rows = $this->repository->trendRows(Period::ofDays(7), null);
 
-    expect($trend)->toHaveCount(7);
-
-    $byDate = collect($trend)->keyBy(fn ($point) => $point->date->format('Y-m-d'));
-
-    expect($byDate[now()->format('Y-m-d')]->sessions)->toBe(2)
-        ->and($byDate[now()->subDays(2)->format('Y-m-d')]->pageviews)->toBe(4)
-        ->and($byDate[now()->subDays(1)->format('Y-m-d')]->sessions)->toBe(0);
+    expect($rows[now()->format('Y-m-d')])->toBe(['sessions' => 2, 'pageviews' => 2])
+        ->and($rows[now()->subDays(2)->format('Y-m-d')]['pageviews'])->toBe(4)
+        ->and($rows)->not->toHaveKey(now()->subDay()->format('Y-m-d'));
 });
 
-it('builds zero-filled daily sparkline series for the headline metrics', function () {
-    $period = Period::ofDays(7);
-
+it('fetches raw daily sparkline rows keyed by day', function () {
     makeDashboardSession(['pageview_count' => 2]);
     makeDashboardSession(['pageview_count' => 2]);
     makeDashboardSession(['pageview_count' => 1, 'started_at' => now()->subDays(2), 'last_activity_at' => now()->subDays(2)]);
 
-    $spark = $this->repository->headlineSparklines($period, null);
+    $rows = $this->repository->sparklineRows(Period::ofDays(7), null);
 
-    expect($spark)->toHaveKeys(['visitors', 'sessions', 'avgSeconds', 'bounceRate'])
-        ->and($spark['sessions'])->toHaveCount(7)
-        ->and(end($spark['sessions']))->toBe(2.0)
-        ->and(end($spark['visitors']))->toBe(2.0);
+    expect($rows[now()->format('Y-m-d')])->toMatchArray(['sessions' => 2, 'visitors' => 2, 'pageviews' => 4, 'bounces' => 0])
+        ->and($rows)->toHaveKey(now()->subDays(2)->format('Y-m-d'));
 });
 
 it('ranks the top sources with previous-period counts', function () {
@@ -189,16 +165,6 @@ it('ranks the top clicks, preferring the visible text over the technical name', 
         ['label' => 'Nous contacter', 'route' => 'home', 'total' => 2],
         ['label' => 'auth.login', 'route' => 'client.login', 'total' => 1],
     ]);
-});
-
-it('computes the share of new visitors in the period', function () {
-    makeDashboardSession(['pageview_count' => 1]);
-
-    $returning = makeDashboardVisitor();
-    $returning->update(['first_seen_at' => now()->subMonths(3)]);
-    makeDashboardSession([], $returning);
-
-    expect($this->repository->newVisitorRate($this->period, null)->current)->toBe(50.0);
 });
 
 it('splits new and returning visitor counts', function () {

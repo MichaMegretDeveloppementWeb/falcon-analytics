@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Repositories;
 
 use Carbon\CarbonImmutable;
-use Falcon\Analytics\DTOs\Dashboard\MetricDelta;
 use Falcon\Analytics\DTOs\Dashboard\Period;
-use Falcon\Analytics\DTOs\Dashboard\TrendPoint;
 use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
@@ -26,51 +24,39 @@ use Illuminate\Support\Facades\DB;
 final readonly class DashboardReadRepository
 {
     /**
-     * Headline and engagement metrics, each with its previous-period value.
+     * Raw engagement counts for a period in a single query: distinct visitors,
+     * sessions, page views, average duration and bounces. No derivation; the
+     * EngagementMetricsCalculator turns these into deltas and ratios.
      *
-     * @return array{
-     *     visitors: MetricDelta, sessions: MetricDelta, pageviews: MetricDelta,
-     *     avgSeconds: MetricDelta, pagesPerSession: MetricDelta, bounceRate: MetricDelta
-     * }
+     * @return array{visitors: int, sessions: int, pageviews: int, avgSeconds: float, bounces: int}
      */
-    public function headline(Period $period, ?string $subjectType): array
+    public function headlineCounts(Period $period, ?string $subjectType): array
     {
-        $current = $this->aggregates($period, $subjectType);
-        $previous = $this->aggregates($period->previous(), $subjectType);
-
-        $pagesPerSession = fn (object $a): float => $a->sessions > 0 ? (float) $a->pageviews / $a->sessions : 0.0;
-        $bounceRate = fn (object $a): float => $a->sessions > 0 ? (float) $a->bounces / $a->sessions * 100 : 0.0;
+        $row = $this->aggregates($period, $subjectType);
 
         return [
-            'visitors' => new MetricDelta((float) $current->visitors, (float) $previous->visitors),
-            'sessions' => new MetricDelta((float) $current->sessions, (float) $previous->sessions),
-            'pageviews' => new MetricDelta((float) $current->pageviews, (float) $previous->pageviews),
-            'avgSeconds' => new MetricDelta((float) $current->avg_seconds, (float) $previous->avg_seconds),
-            'pagesPerSession' => new MetricDelta($pagesPerSession($current), $pagesPerSession($previous)),
-            'bounceRate' => new MetricDelta($bounceRate($current), $bounceRate($previous)),
+            'visitors' => (int) $row->visitors,
+            'sessions' => (int) $row->sessions,
+            'pageviews' => (int) $row->pageviews,
+            'avgSeconds' => (float) $row->avg_seconds,
+            'bounces' => (int) $row->bounces,
         ];
     }
 
     /**
-     * Today and yesterday values for the headline metrics, feeding the
-     * "X today, Y yesterday" mini-line. Duration uses last_activity (never now),
-     * so open sessions can't inflate it.
+     * Raw engagement counts for today and yesterday, feeding the "X today,
+     * Y yesterday" mini-line. Duration uses last_activity (never now), so open
+     * sessions cannot inflate it.
      *
-     * @return array<string, array{today: float, yesterday: float}>
+     * @return array{today: array{visitors: int, sessions: int, pageviews: int, avgSeconds: float, bounces: int}, yesterday: array{visitors: int, sessions: int, pageviews: int, avgSeconds: float, bounces: int}}
      */
-    public function spotlight(?string $subjectType): array
+    public function spotlightCounts(?string $subjectType): array
     {
         $now = CarbonImmutable::now();
-        $today = $this->aggregates(new Period($now->startOfDay(), $now, 1), $subjectType);
-        $yesterday = $this->aggregates(new Period($now->subDay()->startOfDay(), $now->subDay()->endOfDay(), 1), $subjectType);
-
-        $bounce = fn (object $row): float => $row->sessions > 0 ? (float) $row->bounces / $row->sessions * 100 : 0.0;
 
         return [
-            'visitors' => ['today' => (float) $today->visitors, 'yesterday' => (float) $yesterday->visitors],
-            'sessions' => ['today' => (float) $today->sessions, 'yesterday' => (float) $yesterday->sessions],
-            'avgSeconds' => ['today' => (float) $today->avg_seconds, 'yesterday' => (float) $yesterday->avg_seconds],
-            'bounceRate' => ['today' => $bounce($today), 'yesterday' => $bounce($yesterday)],
+            'today' => $this->headlineCounts(new Period($now->startOfDay(), $now, 1), $subjectType),
+            'yesterday' => $this->headlineCounts(new Period($now->subDay()->startOfDay(), $now->subDay()->endOfDay(), 1), $subjectType),
         ];
     }
 
@@ -110,85 +96,51 @@ final readonly class DashboardReadRepository
     }
 
     /**
-     * Share of new visitors among the period's visitors, with its
-     * previous-period value.
-     */
-    public function newVisitorRate(Period $period, ?string $subjectType): MetricDelta
-    {
-        $rate = function (Period $window) use ($subjectType): float {
-            $counts = $this->newVsReturning($window, $subjectType);
-            $total = $counts['new'] + $counts['returning'];
-
-            return $total > 0 ? $counts['new'] / $total * 100 : 0.0;
-        };
-
-        return new MetricDelta($rate($period), $rate($period->previous()));
-    }
-
-    /**
-     * Daily sessions and page views across the period, with missing days filled
-     * so the chart draws a continuous line.
+     * Raw daily session and page-view counts across the period, keyed by
+     * 'Y-m-d'. No zero-fill; the TrendSeriesCalculator builds the point list.
      *
-     * @return list<TrendPoint>
+     * @return array<string, array{sessions: int, pageviews: int}>
      */
-    public function dailyTrend(Period $period, ?string $subjectType): array
+    public function trendRows(Period $period, ?string $subjectType): array
     {
         $day = $this->dayExpression('started_at');
 
-        $rows = $this->sessionScope($period, $subjectType)
+        return $this->sessionScope($period, $subjectType)
             ->toBase()
-            ->selectRaw("{$day} as day, COUNT(*) as session_total, COALESCE(SUM(pageview_count), 0) as pageview_total")
+            ->selectRaw("{$day} as day, COUNT(*) as sessions, COALESCE(SUM(pageview_count), 0) as pageviews")
             ->groupBy(DB::raw($day))
             ->get()
-            ->keyBy('day');
-
-        $points = [];
-
-        for ($cursor = $period->from->startOfDay(); $cursor->lessThanOrEqualTo($period->to); $cursor = $cursor->addDay()) {
-            $row = $rows->get($cursor->format('Y-m-d'));
-
-            $points[] = new TrendPoint(
-                date: $cursor,
-                sessions: (int) ($row->session_total ?? 0),
-                pageviews: (int) ($row->pageview_total ?? 0),
-            );
-        }
-
-        return $points;
+            ->mapWithKeys(fn (object $row): array => [(string) $row->day => [
+                'sessions' => (int) $row->sessions,
+                'pageviews' => (int) $row->pageviews,
+            ]])
+            ->all();
     }
 
     /**
-     * Daily zero-filled series for each headline metric, so the KPI tiles can
-     * draw a mini trend (sparkline).
+     * Raw per-day engagement rows for the period, keyed by 'Y-m-d'. No zero-fill
+     * or ratio; the EngagementMetricsCalculator builds the sparkline series.
      *
-     * @return array{visitors: list<float>, sessions: list<float>, avgSeconds: list<float>, bounceRate: list<float>, pagesPerSession: list<float>}
+     * @return array<string, array{sessions: int, visitors: int, pageviews: int, avgSeconds: float, bounces: int}>
      */
-    public function headlineSparklines(Period $period, ?string $subjectType): array
+    public function sparklineRows(Period $period, ?string $subjectType): array
     {
         $day = $this->dayExpression('started_at');
         $duration = $this->durationSecondsExpression('started_at', 'last_activity_at');
 
-        $rows = $this->sessionScope($period, $subjectType)
+        return $this->sessionScope($period, $subjectType)
             ->toBase()
             ->selectRaw("{$day} as day, COUNT(*) as sessions, COUNT(DISTINCT visitor_id) as visitors, COALESCE(SUM(pageview_count), 0) as pageviews, COALESCE(AVG({$duration}), 0) as avg_seconds, SUM(CASE WHEN pageview_count <= 1 THEN 1 ELSE 0 END) as bounces")
             ->groupBy(DB::raw($day))
             ->get()
-            ->keyBy('day');
-
-        $series = ['visitors' => [], 'sessions' => [], 'avgSeconds' => [], 'bounceRate' => [], 'pagesPerSession' => []];
-
-        for ($cursor = $period->from->startOfDay(); $cursor->lessThanOrEqualTo($period->to); $cursor = $cursor->addDay()) {
-            $row = $rows->get($cursor->format('Y-m-d'));
-            $sessions = (int) ($row->sessions ?? 0);
-
-            $series['visitors'][] = (float) ($row->visitors ?? 0);
-            $series['sessions'][] = (float) $sessions;
-            $series['avgSeconds'][] = (float) ($row->avg_seconds ?? 0);
-            $series['bounceRate'][] = $sessions > 0 ? (float) $row->bounces / $sessions * 100 : 0.0;
-            $series['pagesPerSession'][] = $sessions > 0 ? (int) ($row->pageviews ?? 0) / $sessions : 0.0;
-        }
-
-        return $series;
+            ->mapWithKeys(fn (object $row): array => [(string) $row->day => [
+                'sessions' => (int) $row->sessions,
+                'visitors' => (int) $row->visitors,
+                'pageviews' => (int) $row->pageviews,
+                'avgSeconds' => (float) $row->avg_seconds,
+                'bounces' => (int) $row->bounces,
+            ]])
+            ->all();
     }
 
     /**

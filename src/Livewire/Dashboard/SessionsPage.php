@@ -7,6 +7,7 @@ namespace Falcon\Analytics\Livewire\Dashboard;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\ResolvesSubjectNames;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\SortsAndSearchesList;
 use Falcon\Analytics\Repositories\DashboardReadRepository;
+use Falcon\Analytics\Services\Dashboard\EngagementMetricsCalculator;
 use Falcon\Analytics\Services\SubjectResolver;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Url;
@@ -47,7 +48,7 @@ final class SessionsPage extends DashboardComponent
         $this->resetPage();
     }
 
-    public function render(DashboardReadRepository $repository, SubjectResolver $subjects): View
+    public function render(DashboardReadRepository $repository, SubjectResolver $subjects, EngagementMetricsCalculator $engagement): View
     {
         $period = $this->currentPeriod();
         $subjectType = $this->subjectType();
@@ -55,8 +56,11 @@ final class SessionsPage extends DashboardComponent
 
         return view('analytics::livewire.dashboard.sessions', [
             'range' => $period,
-            'headline' => $repository->headline($period, $subjectType),
-            'sparklines' => $repository->headlineSparklines($period, $subjectType),
+            'headline' => $engagement->headline(
+                $repository->headlineCounts($period, $subjectType),
+                $repository->headlineCounts($period->previous(), $subjectType),
+            ),
+            'sparklines' => $engagement->sparklines($repository->sparklineRows($period, $subjectType), $period),
             'sessions' => $sessions,
             'subjectNames' => $this->resolveSubjectNames($sessions, $subjects),
             'sort' => $this->sort,
