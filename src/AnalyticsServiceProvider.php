@@ -9,6 +9,7 @@ use Falcon\Analytics\Console\InstallCommand;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\TrendChart;
 use Falcon\Analytics\Support\GeoResolver;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
@@ -57,6 +58,17 @@ final class AnalyticsServiceProvider extends ServiceProvider
                 InstallCommand::class,
                 GeoipDownloadCommand::class,
             ]);
+
+            // Self-refresh the GeoLite2 database monthly so the host never wires a
+            // dedicated cron; only the standard schedule:run is needed. The runtime
+            // guard keeps it silent when no licence key is configured.
+            $this->app->booted(function (): void {
+                $this->app->make(Schedule::class)
+                    ->command('analytics:geoip:download')
+                    ->monthlyOn(1, '04:00')
+                    ->withoutOverlapping()
+                    ->when(fn (): bool => (string) config('analytics.geoip.license_key') !== '');
+            });
         }
     }
 }

@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Http;
 
 beforeEach(function () {
@@ -60,4 +61,18 @@ it('fails cleanly and preserves an existing database when the source errors', fu
     $this->artisan('analytics:geoip:download')->assertFailed();
 
     expect(file_get_contents($this->target))->toBe('PREVIOUS-WORKING-DB');
+});
+
+it('schedules a monthly refresh that only runs when a licence key is set', function () {
+    $event = collect(app(Schedule::class)->events())
+        ->first(fn ($e) => str_contains($e->command ?? '', 'analytics:geoip:download'));
+
+    expect($event)->not->toBeNull()
+        ->and($event->expression)->toBe('0 4 1 * *');
+
+    config(['analytics.geoip.license_key' => 'a-key']);
+    expect($event->filtersPass(app()))->toBeTrue();
+
+    config(['analytics.geoip.license_key' => '']);
+    expect($event->filtersPass(app()))->toBeFalse();
 });
