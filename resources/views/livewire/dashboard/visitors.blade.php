@@ -2,21 +2,11 @@
     use Illuminate\Support\Str;
 
     $subjectResolver = app(\Falcon\Analytics\Services\SubjectResolver::class);
-
-    // Magnitude only: the stat-card arrow + colour convey the direction (see the
-    // overview note). Hidden without a baseline or when it rounds to 0 %.
-    $deltaLabel = function ($metric): ?string {
-        if (! $metric->hasBaseline()) {
-            return null;
-        }
-
-        $pct = (int) round($metric->changePercent());
-
-        return $pct === 0 ? null : number_format(abs($pct), 0, ',', ' ')."\u{00A0}%";
-    };
 @endphp
 
 <div class="space-y-6">
+
+    @include('analytics::livewire.dashboard.partials.tooltip-host')
 
     <x-ui.page-header
         :title="__('Visiteurs')"
@@ -28,22 +18,22 @@
     </x-ui.page-header>
 
     <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <x-ui.stat-card :label="__('Visiteurs')" :value="number_format($metrics->visitors->delta->current, 0, ',', ' ')" icon="users"
-            :trend="$deltaLabel($metrics->visitors->delta)" :trendUp="$metrics->visitors->delta->increased()">
+        <x-analytics::kpi-card :label="__('Visiteurs')" :value="number_format($metrics->visitors->delta->current, 0, ',', ' ')" icon="users"
+            :metric="$metrics->visitors->delta">
             <div wire:key="spark-v-visitors-{{ $period }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$metrics->visitors->sparkline" /></div>
-        </x-ui.stat-card>
-        <x-ui.stat-card :label="__('Nouveaux')" :value="number_format($metrics->newVisitors->delta->current, 0, ',', ' ')" icon="sparkles"
-            :trend="$deltaLabel($metrics->newVisitors->delta)" :trendUp="$metrics->newVisitors->delta->increased()">
+        </x-analytics::kpi-card>
+        <x-analytics::kpi-card :label="__('Nouveaux')" :value="number_format($metrics->newVisitors->delta->current, 0, ',', ' ')" icon="sparkles"
+            :metric="$metrics->newVisitors->delta">
             <div wire:key="spark-v-new-{{ $period }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$metrics->newVisitors->sparkline" /></div>
-        </x-ui.stat-card>
-        <x-ui.stat-card :label="__('Récurrents')" :value="number_format($metrics->returning->delta->current, 0, ',', ' ')" icon="arrow-path"
-            :trend="$deltaLabel($metrics->returning->delta)" :trendUp="$metrics->returning->delta->increased()">
+        </x-analytics::kpi-card>
+        <x-analytics::kpi-card :label="__('Récurrents')" :value="number_format($metrics->returning->delta->current, 0, ',', ' ')" icon="arrow-path"
+            :metric="$metrics->returning->delta">
             <div wire:key="spark-v-returning-{{ $period }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$metrics->returning->sparkline" /></div>
-        </x-ui.stat-card>
-        <x-ui.stat-card :label="__('Sessions / visiteur')" :value="number_format($metrics->sessionsPerVisitor->delta->current, 1, ',', ' ')" icon="cursor-arrow-rays"
-            :trend="$deltaLabel($metrics->sessionsPerVisitor->delta)" :trendUp="$metrics->sessionsPerVisitor->delta->increased()">
+        </x-analytics::kpi-card>
+        <x-analytics::kpi-card :label="__('Sessions / visiteur')" :value="number_format($metrics->sessionsPerVisitor->delta->current, 1, ',', ' ')" icon="cursor-arrow-rays"
+            :metric="$metrics->sessionsPerVisitor->delta">
             <div wire:key="spark-v-spv-{{ $period }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$metrics->sessionsPerVisitor->sparkline" /></div>
-        </x-ui.stat-card>
+        </x-analytics::kpi-card>
     </div>
 
     <x-ui.search-input wire:model.live.debounce.300ms="search" :placeholder="__('Rechercher un nom, un ID…')" class="w-full sm:max-w-xs" />

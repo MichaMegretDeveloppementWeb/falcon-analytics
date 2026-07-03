@@ -1,5 +1,7 @@
 <div class="space-y-8">
 
+    @include('analytics::livewire.dashboard.partials.tooltip-host')
+
     <x-ui.page-header
         :title="__('Entonnoirs')"
         :description="__('du :from au :to', [
@@ -62,7 +64,7 @@
                                 <div class="flex items-baseline justify-between gap-3">
                                     <div class="flex min-w-0 items-baseline gap-x-2">
                                         <span class="text-lg font-semibold tabular-nums tracking-tight text-primary">{{ number_format($step->visitors, 0, ',', ' ') }}</span>
-                                        <span class="truncate text-[13px] text-secondary">{{ $step->label }}</span>
+                                        <span class="truncate text-[13px] text-secondary" data-tooltip="{{ $step->label }}">{{ $step->label }}</span>
                                     </div>
                                     <div class="flex shrink-0 items-center gap-x-2">
                                         @if ($previousVisitors !== null && $previousVisitors > 0)

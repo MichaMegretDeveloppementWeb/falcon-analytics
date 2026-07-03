@@ -15,4 +15,4 @@
     $key = strtolower((string) $value);
     $sourceLabel = __($labels[$key] ?? \Illuminate\Support\Str::headline((string) $value));
 @endphp
-<span title="{{ $sourceLabel }}">{{ $sourceLabel }}</span>
+<span data-tooltip="{{ $sourceLabel }}">{{ $sourceLabel }}</span>

@@ -10,6 +10,5 @@
     $display = $display !== '' ? $display : __('Inconnu');
 @endphp
 
-{{-- title carries the full path so a truncated cell still reveals it on hover
-     (native tooltip: always on-screen, safe inside re-rendering Livewire). --}}
-<span title="{{ $display }}">{{ $display }}</span>
+{{-- data-tooltip reveals the full path on hover via the dashboard tooltip host. --}}
+<span data-tooltip="{{ $display }}">{{ $display }}</span>

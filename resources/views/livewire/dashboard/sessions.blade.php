@@ -18,18 +18,6 @@
 
     $percent = fn ($v): string => number_format((float) $v, 1, ',', ' ')."\u{00A0}%";
 
-    // Magnitude only: the stat-card arrow + colour convey the direction (see the
-    // overview note). Hidden without a baseline or when it rounds to 0 %.
-    $deltaLabel = function ($metric): ?string {
-        if (! $metric->hasBaseline()) {
-            return null;
-        }
-
-        $pct = (int) round($metric->changePercent());
-
-        return $pct === 0 ? null : number_format(abs($pct), 0, ',', ' ')."\u{00A0}%";
-    };
-
     $sessionsTotal = number_format($sessions->total(), 0, ',', ' ');
     $sessionsCount = $sessions->total() <= 1
         ? __(':count session', ['count' => $sessionsTotal])
@@ -49,28 +37,30 @@
 
 <div class="space-y-6">
 
+    @include('analytics::livewire.dashboard.partials.tooltip-host')
+
     <x-ui.page-header :title="__('Sessions')" :description="$sessionsCount">
         @include('analytics::livewire.dashboard.partials.filters')
     </x-ui.page-header>
 
     {{-- Engagement stats --}}
     <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <x-ui.stat-card :label="__('Sessions')" :value="number_format($headline['sessions']->current, 0, ',', ' ')" icon="cursor-arrow-rays"
-            :trend="$deltaLabel($headline['sessions'])" :trendUp="$headline['sessions']->increased()">
+        <x-analytics::kpi-card :label="__('Sessions')" :value="number_format($headline['sessions']->current, 0, ',', ' ')" icon="cursor-arrow-rays"
+            :metric="$headline['sessions']">
             <div wire:key="spark-s-sessions-{{ $period }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$sparklines['sessions']" /></div>
-        </x-ui.stat-card>
-        <x-ui.stat-card :label="__('Durée moy. session')" :value="$formatSeconds($headline['avgSeconds']->current)" icon="clock"
-            :trend="$deltaLabel($headline['avgSeconds'])" :trendUp="$headline['avgSeconds']->increased()">
+        </x-analytics::kpi-card>
+        <x-analytics::kpi-card :label="__('Durée moy. session')" :value="$formatSeconds($headline['avgSeconds']->current)" icon="clock"
+            :metric="$headline['avgSeconds']">
             <div wire:key="spark-s-duration-{{ $period }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$sparklines['avgSeconds']" /></div>
-        </x-ui.stat-card>
-        <x-ui.stat-card :label="__('Pages par session')" :value="number_format($headline['pagesPerSession']->current, 1, ',', ' ')" icon="rectangle-stack"
-            :trend="$deltaLabel($headline['pagesPerSession'])" :trendUp="$headline['pagesPerSession']->increased()">
+        </x-analytics::kpi-card>
+        <x-analytics::kpi-card :label="__('Pages par session')" :value="number_format($headline['pagesPerSession']->current, 1, ',', ' ')" icon="rectangle-stack"
+            :metric="$headline['pagesPerSession']">
             <div wire:key="spark-s-pps-{{ $period }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$sparklines['pagesPerSession']" /></div>
-        </x-ui.stat-card>
-        <x-ui.stat-card :label="__('Taux de rebond')" :value="$percent($headline['bounceRate']->current)" icon="arrow-uturn-left"
-            :trend="$deltaLabel($headline['bounceRate'])" :trendUp="! $headline['bounceRate']->increased()">
+        </x-analytics::kpi-card>
+        <x-analytics::kpi-card :label="__('Taux de rebond')" :value="$percent($headline['bounceRate']->current)" icon="arrow-uturn-left"
+            :metric="$headline['bounceRate']" :inverse="true">
             <div wire:key="spark-s-bounce-{{ $period }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$sparklines['bounceRate']" /></div>
-        </x-ui.stat-card>
+        </x-analytics::kpi-card>
     </div>
 
     {{-- Toolbar --}}

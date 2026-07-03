@@ -90,6 +90,8 @@
 
 <div class="space-y-6">
 
+    @include('analytics::livewire.dashboard.partials.tooltip-host')
+
     <div>
         <a href="{{ route($routeName.'.sessions') }}" class="inline-flex cursor-pointer items-center gap-x-1 text-[12px] font-medium text-secondary transition-colors hover:text-primary">
             <x-ui.icon name="arrow-left" class="h-3.5 w-3.5" />
@@ -196,7 +198,8 @@
                                                 @php $isConversion = $child->type === EventType::Custom; @endphp
                                                 <div class="flex items-center gap-2">
                                                     <x-ui.icon :name="$isConversion ? 'bolt' : 'cursor-arrow-rays'" @class(['h-3.5 w-3.5 shrink-0', 'text-emerald-500' => $isConversion, 'text-[#1684ea]' => ! $isConversion]) />
-                                                    <span @class(['min-w-0 truncate text-[12px]', 'font-medium text-emerald-600 dark:text-emerald-400' => $isConversion, 'text-secondary' => ! $isConversion])>{{ $eventLabel($child) }}</span>
+                                                    @php $childLabel = $eventLabel($child); @endphp
+                                                    <span @class(['min-w-0 truncate text-[12px]', 'font-medium text-emerald-600 dark:text-emerald-400' => $isConversion, 'text-secondary' => ! $isConversion]) data-tooltip="{{ $childLabel }}">{{ $childLabel }}</span>
                                                     <span class="ml-auto shrink-0 text-[11px] tabular-nums text-muted">{{ $child->occurred_at->translatedFormat('H:i:s') }}</span>
                                                 </div>
                                             @endforeach
