@@ -10,8 +10,25 @@ use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Tests\Fixtures\Models\TestAdmin;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
+
+/**
+ * @return array{count: int, duplicates: int}
+ */
+function analyticsQueryBudget(callable $render): array
+{
+    DB::enableQueryLog();
+    DB::flushQueryLog();
+    $render();
+
+    $signatures = collect(DB::getQueryLog())
+        ->filter(fn (array $q): bool => str_contains($q['query'], 'falcon_analytics_'))
+        ->map(fn (array $q): string => $q['query'].'|'.json_encode($q['bindings']));
+
+    return ['count' => $signatures->count(), 'duplicates' => $signatures->count() - $signatures->unique()->count()];
+}
 
 uses(RefreshDatabase::class);
 
@@ -154,6 +171,28 @@ it('defers the trend chart behind a skeleton placeholder', function () {
 
     Livewire::test(TrendChart::class, ['period' => 30])
         ->assertSee('animate-pulse', escape: false);
+});
+
+it('renders the overview within its query budget with no duplicate query', function () {
+    seedSession(['source' => 'google', 'country' => 'FR', 'city' => 'Paris']);
+
+    $this->actingAs($this->admin, 'admin');
+
+    $budget = analyticsQueryBudget(fn () => Livewire::test(OverviewPage::class));
+
+    expect($budget['count'])->toBeLessThanOrEqual(18)
+        ->and($budget['duplicates'])->toBe(0);
+});
+
+it('renders the sessions list within its query budget with no duplicate query', function () {
+    seedSession(['city' => 'Genève']);
+
+    $this->actingAs($this->admin, 'admin');
+
+    $budget = analyticsQueryBudget(fn () => Livewire::test(SessionsPage::class));
+
+    expect($budget['count'])->toBeLessThanOrEqual(12)
+        ->and($budget['duplicates'])->toBe(0);
 });
 
 it('recomputes the overview metrics when the period changes', function () {
