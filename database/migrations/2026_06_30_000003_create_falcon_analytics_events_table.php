@@ -35,8 +35,8 @@ return new class extends Migration
             $table->unsignedBigInteger('subject_id')->nullable();
 
             $table->index('occurred_at', 'fa_events_occurred_idx');
-            // Name/type indexes are added in the aggregation lot, justified by
-            // the rollup and funnel queries that consume them.
+            // (type, occurred_at) and (name, occurred_at) lookup indexes are added
+            // by a later migration, for the topPages/topClicks/funnel reads.
         });
     }
 

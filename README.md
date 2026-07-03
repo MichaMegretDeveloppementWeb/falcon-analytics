@@ -197,13 +197,13 @@ Further publish groups (views, funnels, assets) are documented as they ship.
 | Command | Role |
 |---|---|
 | `analytics:install` | publish config + run migrations |
-| `analytics:rollup` | build aggregates from raw events (hourly cron or lazy) |
-| `analytics:prune` | drop raw events past retention |
-| `analytics:sweep` | close stale sessions deterministically |
-| `analytics:events` | list observed event names and where they fire |
-| `analytics:funnels` | validate funnel definitions against observed events |
-| `analytics:forget` | erase a visitor's or subject's data |
 | `analytics:geoip:download` | download/refresh the local GeoLite2 City database |
+| `analytics:sweep` | stamp `ended_at` on sessions idle past the timeout |
+| `analytics:prune` | delete raw events older than `retention_days` |
+
+`sweep` (every 5 min), `prune` (daily) and the monthly GeoLite2 refresh are
+**self-scheduled** by the package, so the host only needs Laravel's standard
+`schedule:run` cron; no dedicated analytics cron is required.
 
 ## Geolocation
 

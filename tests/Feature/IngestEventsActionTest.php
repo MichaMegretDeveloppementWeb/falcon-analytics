@@ -88,7 +88,10 @@ it('starts a new session after the timeout', function () {
     $action->execute('u-1', null, actionSnapshot(), new IncomingBatch(events: [incomingEvent(EventType::Pageview, CarbonImmutable::now())]));
 
     expect(Session::count())->toBe(2)
-        ->and(Visitor::firstOrFail()->session_count)->toBe(2);
+        ->and(Visitor::firstOrFail()->session_count)->toBe(2)
+        // The identical URL still counts in the fresh session: the reload guard
+        // starts from a null last URL after a timeout.
+        ->and(Session::orderByDesc('id')->first()->pageview_count)->toBe(1);
 });
 
 it('collapses a reload of the same page within a session', function () {
