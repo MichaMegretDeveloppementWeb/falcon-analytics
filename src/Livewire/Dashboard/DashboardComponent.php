@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Livewire\Dashboard;
 
 use Falcon\Analytics\DTOs\Dashboard\Period;
+use Falcon\Analytics\Livewire\Dashboard\Concerns\ResolvesDashboardLayout;
 use Falcon\Analytics\Services\SubjectResolver;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -16,6 +17,8 @@ use Livewire\Component;
  */
 abstract class DashboardComponent extends Component
 {
+    use ResolvesDashboardLayout;
+
     #[Url]
     public int $period = Period::DEFAULT_DAYS;
 
@@ -80,12 +83,5 @@ abstract class DashboardComponent extends Component
         }
 
         return $options;
-    }
-
-    protected function layoutName(): string
-    {
-        $layout = config('analytics.dashboard.layout');
-
-        return is_string($layout) && $layout !== '' ? $layout : 'analytics::layouts.dashboard';
     }
 }
