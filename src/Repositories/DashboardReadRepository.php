@@ -12,6 +12,7 @@ use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Services\SubjectResolver;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -587,13 +588,24 @@ final readonly class DashboardReadRepository
     }
 
     /**
+     * The active database driver name (mysql / sqlite / pgsql / sqlsrv).
+     */
+    private function driver(): string
+    {
+        /** @var Connection $connection */
+        $connection = Session::query()->getConnection();
+
+        return $connection->getDriverName();
+    }
+
+    /**
      * Driver-aware SQL truncating a timestamp to a 'YYYY-MM-DD' string so daily
      * buckets group identically on every database. The column is a trusted
      * internal constant, never user input.
      */
     private function dayExpression(string $column): string
     {
-        return match (Session::query()->getConnection()->getDriverName()) {
+        return match ($this->driver()) {
             'pgsql' => "to_char({$column}, 'YYYY-MM-DD')",
             'sqlsrv' => "CONVERT(varchar(10), {$column}, 23)",
             default => "DATE({$column})",
@@ -606,7 +618,7 @@ final readonly class DashboardReadRepository
      */
     private function durationSecondsExpression(string $start, string $end): string
     {
-        return match (Session::query()->getConnection()->getDriverName()) {
+        return match ($this->driver()) {
             'sqlite' => "(strftime('%s', {$end}) - strftime('%s', {$start}))",
             'pgsql' => "EXTRACT(EPOCH FROM ({$end} - {$start}))",
             'sqlsrv' => "DATEDIFF(SECOND, {$start}, {$end})",

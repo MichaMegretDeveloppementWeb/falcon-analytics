@@ -16,15 +16,20 @@ use Illuminate\Database\Eloquent\Model;
 trait ResolvesSubjectNames
 {
     /**
-     * @param  LengthAwarePaginator<int, Model>  $records
+     * @template TModel of Model
+     *
+     * @param  LengthAwarePaginator<int, TModel>  $records
      * @return array<string, string>
      */
     protected function resolveSubjectNames(LengthAwarePaginator $records, SubjectResolver $subjects): array
     {
         $byGuard = [];
-        foreach ($records as $record) {
-            if ($record->subject_type !== null && $record->subject_id !== null) {
-                $byGuard[$record->subject_type][] = (int) $record->subject_id;
+        foreach ($records->items() as $record) {
+            $guard = $record->getAttribute('subject_type');
+            $id = $record->getAttribute('subject_id');
+
+            if ($guard !== null && $id !== null) {
+                $byGuard[(string) $guard][] = (int) $id;
             }
         }
 
