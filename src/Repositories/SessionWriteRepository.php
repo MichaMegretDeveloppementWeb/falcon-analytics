@@ -51,24 +51,24 @@ final readonly class SessionWriteRepository
 
     /**
      * Atomically increment the counters, remember the last page view URL (so a
-     * later reload can be collapsed), then advance the activity timestamp forward
-     * only: an out-of-order deferred batch (an older one committing last) must
-     * never regress last_activity_at, which the session closure relies on.
+     * later reload can be collapsed), and advance the activity timestamp forward
+     * only, in a single UPDATE: an out-of-order deferred batch (an older one
+     * committing last) must never regress last_activity_at, which the session
+     * closure relies on. The CASE keeps last_activity_at when the incoming stamp
+     * is older, so the whole write stays on the ingestion hot path as one query.
      */
     public function recordActivity(Session $session, CarbonImmutable $lastActivityAt, int $pageviewDelta, int $eventDelta, ?string $lastPageviewUrl): void
     {
+        $stamp = $lastActivityAt->toDateTimeString();
+
         $session->newQuery()
             ->whereKey($session->getKey())
             ->update([
                 'pageview_count' => DB::raw('pageview_count + '.$pageviewDelta),
                 'event_count' => DB::raw('event_count + '.$eventDelta),
                 'last_pageview_url' => $lastPageviewUrl,
+                'last_activity_at' => DB::raw("CASE WHEN last_activity_at < '{$stamp}' THEN '{$stamp}' ELSE last_activity_at END"),
             ]);
-
-        $session->newQuery()
-            ->whereKey($session->getKey())
-            ->where('last_activity_at', '<', $lastActivityAt)
-            ->update(['last_activity_at' => $lastActivityAt]);
     }
 
     /**
