@@ -6,7 +6,10 @@ use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
-use Falcon\Analytics\Repositories\DashboardReadRepository;
+use Falcon\Analytics\Repositories\EngagementReadRepository;
+use Falcon\Analytics\Repositories\OverviewReadRepository;
+use Falcon\Analytics\Repositories\SessionsReadRepository;
+use Falcon\Analytics\Repositories\VisitorsReadRepository;
 use Falcon\Analytics\Services\SubjectResolver;
 use Falcon\Analytics\Tests\Fixtures\Models\TestClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -49,7 +52,10 @@ function makeDashboardEvent(Session $session, EventType $type, array $attrs = []
 
 beforeEach(function () {
     $this->travelTo(CarbonImmutable::parse('2026-06-15 12:00:00'));
-    $this->repository = new DashboardReadRepository;
+    $this->engagement = new EngagementReadRepository;
+    $this->overview = new OverviewReadRepository;
+    $this->sessions = new SessionsReadRepository;
+    $this->visitors = new VisitorsReadRepository;
     $this->period = Period::ofDays(30);
 });
 
@@ -60,7 +66,7 @@ it('fetches raw headline counts for the period, excluding bots', function () {
     makeDashboardSession(['pageview_count' => 1, 'started_at' => now()->subMinutes(5), 'last_activity_at' => now()->subMinutes(4)]);
     makeDashboardSession(['pageview_count' => 9, 'is_bot' => true]);
 
-    $counts = $this->repository->headlineCounts($this->period, null);
+    $counts = $this->engagement->headlineCounts($this->period, null);
 
     expect($counts['sessions'])->toBe(4)
         ->and($counts['visitors'])->toBe(4)
@@ -75,7 +81,7 @@ it('narrows the raw headline counts to a subject type', function () {
     makeDashboardSession(['subject_type' => 'client', 'subject_id' => 1], $client);
     makeDashboardSession(['subject_type' => 'lessor', 'subject_id' => 7]);
 
-    $counts = $this->repository->headlineCounts($this->period, 'client');
+    $counts = $this->engagement->headlineCounts($this->period, 'client');
 
     expect($counts['sessions'])->toBe(2)
         ->and($counts['visitors'])->toBe(1);
@@ -86,7 +92,7 @@ it('fetches raw today and yesterday counts for the spotlight', function () {
     makeDashboardSession();
     makeDashboardSession(['started_at' => now()->subDay(), 'last_activity_at' => now()->subDay()]);
 
-    $spotlight = $this->repository->spotlightCounts(null);
+    $spotlight = $this->engagement->spotlightCounts(null);
 
     expect($spotlight['today']['sessions'])->toBe(2)
         ->and($spotlight['today']['visitors'])->toBe(2)
@@ -98,7 +104,7 @@ it('fetches raw daily trend rows keyed by day, without zero-fill', function () {
     makeDashboardSession(['pageview_count' => 1]);
     makeDashboardSession(['pageview_count' => 4, 'started_at' => now()->subDays(2)]);
 
-    $rows = $this->repository->trendRows(Period::ofDays(7), null);
+    $rows = $this->overview->trendRows(Period::ofDays(7), null);
 
     expect($rows[now()->format('Y-m-d')])->toBe(['sessions' => 2, 'pageviews' => 2])
         ->and($rows[now()->subDays(2)->format('Y-m-d')]['pageviews'])->toBe(4)
@@ -110,7 +116,7 @@ it('fetches raw daily sparkline rows keyed by day', function () {
     makeDashboardSession(['pageview_count' => 2]);
     makeDashboardSession(['pageview_count' => 1, 'started_at' => now()->subDays(2), 'last_activity_at' => now()->subDays(2)]);
 
-    $rows = $this->repository->sparklineRows(Period::ofDays(7), null);
+    $rows = $this->engagement->sparklineRows(Period::ofDays(7), null);
 
     expect($rows[now()->format('Y-m-d')])->toMatchArray(['sessions' => 2, 'visitors' => 2, 'pageviews' => 4, 'bounces' => 0])
         ->and($rows)->toHaveKey(now()->subDays(2)->format('Y-m-d'));
@@ -122,7 +128,7 @@ it('ranks the top sources with previous-period counts', function () {
     makeDashboardSession(['source' => 'facebook']);
     makeDashboardSession(['source' => 'google', 'started_at' => now()->subDays(40), 'last_activity_at' => now()->subDays(40)]);
 
-    expect($this->repository->topSources($this->period, null))->toBe([
+    expect($this->overview->topSources($this->period, null))->toBe([
         ['label' => 'google', 'total' => 2, 'previous' => 1],
         ['label' => 'facebook', 'total' => 1, 'previous' => 0],
     ]);
@@ -134,7 +140,7 @@ it('ranks the top localities (country + city)', function () {
     makeDashboardSession(['country' => 'FR', 'city' => 'Lyon']);
     makeDashboardSession(['country' => 'CH', 'city' => 'Genève']);
 
-    $localities = $this->repository->topLocalities($this->period, null);
+    $localities = $this->overview->topLocalities($this->period, null);
 
     expect($localities)->toHaveCount(3)
         ->and($localities[0])->toBe(['country' => 'FR', 'city' => 'Paris', 'total' => 2, 'previous' => 0]);
@@ -149,7 +155,7 @@ it('ranks the most viewed pages from pageview events, excluding bot sessions', f
     $bot = makeDashboardSession(['is_bot' => true]);
     makeDashboardEvent($bot, EventType::Pageview, ['route' => 'home']);
 
-    expect($this->repository->topPages($this->period, null))->toBe([
+    expect($this->overview->topPages($this->period, null))->toBe([
         ['label' => 'home', 'total' => 2, 'previous' => 0],
         ['label' => 'catalog', 'total' => 1, 'previous' => 0],
     ]);
@@ -161,7 +167,7 @@ it('ranks the top clicks, preferring the visible text over the technical name', 
     makeDashboardEvent($session, EventType::Click, ['name' => 'cta.contact', 'target_text' => 'Nous contacter', 'route' => 'home']);
     makeDashboardEvent($session, EventType::Click, ['name' => 'auth.login', 'route' => 'client.login']);
 
-    expect($this->repository->topClicks($this->period, null))->toBe([
+    expect($this->overview->topClicks($this->period, null))->toBe([
         ['label' => 'Nous contacter', 'route' => 'home', 'total' => 2],
         ['label' => 'auth.login', 'route' => 'client.login', 'total' => 1],
     ]);
@@ -174,7 +180,7 @@ it('splits new and returning visitor counts', function () {
     $returning->update(['first_seen_at' => now()->subMonths(3)]);
     makeDashboardSession([], $returning);
 
-    expect($this->repository->newVsReturning($this->period, null))->toBe(['new' => 1, 'returning' => 1]);
+    expect($this->overview->newVsReturning($this->period, null))->toBe(['new' => 1, 'returning' => 1]);
 });
 
 it('counts sessions by device type, busiest first', function () {
@@ -183,7 +189,7 @@ it('counts sessions by device type, busiest first', function () {
     makeDashboardSession(['device_type' => 'mobile']);
     makeDashboardSession(['device_type' => null]);
 
-    expect($this->repository->sessionsByDevice($this->period, null))->toBe(['desktop' => 2, 'mobile' => 1]);
+    expect($this->overview->sessionsByDevice($this->period, null))->toBe(['desktop' => 2, 'mobile' => 1]);
 });
 
 it('paginates sessions newest first, excluding bots, with filters', function () {
@@ -194,9 +200,9 @@ it('paginates sessions newest first, excluding bots, with filters', function () 
     makeDashboardSession(['city' => 'Paris', 'is_bot' => true]);
 
     $subjects = new SubjectResolver;
-    $all = $this->repository->paginateSessions($this->period, null, null, null, null, $subjects);
-    $byCity = $this->repository->paginateSessions($this->period, null, 'Geneva', null, null, $subjects);
-    $byDevice = $this->repository->paginateSessions($this->period, null, null, 'mobile', null, $subjects);
+    $all = $this->sessions->paginateSessions($this->period, null, null, null, null, $subjects);
+    $byCity = $this->sessions->paginateSessions($this->period, null, 'Geneva', null, null, $subjects);
+    $byDevice = $this->sessions->paginateSessions($this->period, null, null, 'mobile', null, $subjects);
 
     expect($all->total())->toBe(23)
         ->and($all->count())->toBe(20)
@@ -211,8 +217,8 @@ it('sorts sessions by a whitelisted column and direction', function () {
     makeDashboardSession(['pageview_count' => 1]);
 
     $subjects = new SubjectResolver;
-    $asc = $this->repository->paginateSessions($this->period, null, null, null, null, $subjects, 'pageview_count', 'asc');
-    $desc = $this->repository->paginateSessions($this->period, null, null, null, null, $subjects, 'pageview_count', 'desc');
+    $asc = $this->sessions->paginateSessions($this->period, null, null, null, null, $subjects, 'pageview_count', 'asc');
+    $desc = $this->sessions->paginateSessions($this->period, null, null, null, null, $subjects, 'pageview_count', 'desc');
 
     expect($asc->first()->pageview_count)->toBe(1)
         ->and($desc->first()->pageview_count)->toBe(9);
@@ -225,7 +231,7 @@ it('searches sessions by visitor name resolved from the guard model', function (
     makeDashboardSession(['subject_type' => 'client', 'subject_id' => $marie->id]);
     makeDashboardSession(['subject_type' => 'client', 'subject_id' => 999]);
 
-    $found = $this->repository->paginateSessions($this->period, null, 'Marie', null, null, new SubjectResolver);
+    $found = $this->sessions->paginateSessions($this->period, null, 'Marie', null, null, new SubjectResolver);
 
     expect($found->total())->toBe(1)
         ->and($found->first()->subject_id)->toBe($marie->id);
@@ -236,7 +242,7 @@ it('searches sessions by the visitor uuid shown as the ID', function () {
     makeDashboardSession([], $visitor);
     makeDashboardSession();
 
-    $found = $this->repository->paginateSessions($this->period, null, 'vd-known', null, null, new SubjectResolver);
+    $found = $this->sessions->paginateSessions($this->period, null, 'vd-known', null, null, new SubjectResolver);
 
     expect($found->total())->toBe(1)
         ->and($found->first()->visitor_id)->toBe($visitor->id);
@@ -246,7 +252,7 @@ it('searches sessions by country name, resolving the stored ISO code', function 
     makeDashboardSession(['country' => 'FR']);
     makeDashboardSession(['country' => 'CH']);
 
-    $found = $this->repository->paginateSessions($this->period, null, 'France', null, null, new SubjectResolver);
+    $found = $this->sessions->paginateSessions($this->period, null, 'France', null, null, new SubjectResolver);
 
     expect($found->total())->toBe(1)
         ->and($found->first()->country)->toBe('FR');
@@ -260,7 +266,7 @@ it('paginates visitors active in the period with their derived columns', functio
 
     makeDashboardSession(['is_bot' => true], makeDashboardVisitor()); // bot-only visitor: excluded
 
-    $result = $this->repository->paginateVisitors($this->period, null, null, new SubjectResolver);
+    $result = $this->visitors->paginateVisitors($this->period, null, null, new SubjectResolver);
 
     expect($result->total())->toBe(1);
 
@@ -277,7 +283,7 @@ it('sorts visitors by their period session count', function () {
     makeDashboardSession([], $busy);
     makeDashboardSession([], makeDashboardVisitor());
 
-    $desc = $this->repository->paginateVisitors($this->period, null, null, new SubjectResolver, 'period_sessions', 'desc');
+    $desc = $this->visitors->paginateVisitors($this->period, null, null, new SubjectResolver, 'period_sessions', 'desc');
 
     expect((int) $desc->first()->period_sessions)->toBe(2)
         ->and((int) $desc->first()->id)->toBe($busy->id);
@@ -295,7 +301,7 @@ it('counts period visitors, new visitors and sessions, excluding bots', function
 
     makeDashboardSession(['is_bot' => true], makeDashboardVisitor()); // bot: excluded
 
-    $counts = $this->repository->visitorCounts($this->period, null);
+    $counts = $this->visitors->visitorCounts($this->period, null);
 
     expect($counts['visitors'])->toBe(2)
         ->and($counts['new'])->toBe(1)
@@ -311,7 +317,7 @@ it('returns raw daily rows keyed by day with new visitors bot-excluded', functio
     $botVisitor->update(['first_seen_at' => CarbonImmutable::parse('2026-06-10 10:00')]);
     makeDashboardSession(['is_bot' => true, 'started_at' => CarbonImmutable::parse('2026-06-10 10:00')], $botVisitor);
 
-    $rows = $this->repository->visitorDailyRows($this->period, null);
+    $rows = $this->visitors->visitorDailyRows($this->period, null);
 
     expect($rows['active']['2026-06-10'])->toBe(['sessions' => 1, 'visitors' => 1])
         ->and($rows['new']['2026-06-10'])->toBe(1); // bot-only visitor excluded from new
@@ -325,10 +331,10 @@ it('fetches the visitors screen data within its query budget', function () {
     DB::enableQueryLog();
     DB::flushQueryLog();
 
-    $this->repository->paginateVisitors($this->period, null, null, new SubjectResolver);
-    $this->repository->visitorCounts($this->period, null);
-    $this->repository->visitorCounts($this->period->previous(), null);
-    $this->repository->visitorDailyRows($this->period, null);
+    $this->visitors->paginateVisitors($this->period, null, null, new SubjectResolver);
+    $this->visitors->visitorCounts($this->period, null);
+    $this->visitors->visitorCounts($this->period->previous(), null);
+    $this->visitors->visitorDailyRows($this->period, null);
 
     $queries = DB::getQueryLog();
     $signatures = array_map(fn (array $q): string => $q['query'].'|'.json_encode($q['bindings']), $queries);

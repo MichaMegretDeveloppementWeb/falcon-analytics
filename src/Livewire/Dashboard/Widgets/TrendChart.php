@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Livewire\Dashboard\Widgets;
 
 use Falcon\Analytics\DTOs\Dashboard\Period;
-use Falcon\Analytics\Repositories\DashboardReadRepository;
+use Falcon\Analytics\Repositories\OverviewReadRepository;
 use Falcon\Analytics\Services\Dashboard\TrendSeriesCalculator;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Lazy;
@@ -30,7 +30,7 @@ final class TrendChart extends Component
         return view('analytics::livewire.dashboard.widgets.trend-chart-placeholder');
     }
 
-    public function render(DashboardReadRepository $repository, TrendSeriesCalculator $trends): View
+    public function render(OverviewReadRepository $repository, TrendSeriesCalculator $trends): View
     {
         $range = Period::ofDays($this->period);
         $trend = $trends->points($repository->trendRows($range, $this->subject !== '' ? $this->subject : null), $range);

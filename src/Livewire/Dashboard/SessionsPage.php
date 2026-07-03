@@ -6,7 +6,8 @@ namespace Falcon\Analytics\Livewire\Dashboard;
 
 use Falcon\Analytics\Livewire\Dashboard\Concerns\ResolvesSubjectNames;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\SortsAndSearchesList;
-use Falcon\Analytics\Repositories\DashboardReadRepository;
+use Falcon\Analytics\Repositories\EngagementReadRepository;
+use Falcon\Analytics\Repositories\SessionsReadRepository;
 use Falcon\Analytics\Services\Dashboard\EngagementMetricsCalculator;
 use Falcon\Analytics\Services\SubjectResolver;
 use Illuminate\Contracts\View\View;
@@ -48,24 +49,28 @@ final class SessionsPage extends DashboardComponent
         $this->resetPage();
     }
 
-    public function render(DashboardReadRepository $repository, SubjectResolver $subjects, EngagementMetricsCalculator $engagement): View
-    {
+    public function render(
+        EngagementReadRepository $engagementRepository,
+        SessionsReadRepository $sessionsRepository,
+        SubjectResolver $subjects,
+        EngagementMetricsCalculator $engagement,
+    ): View {
         $period = $this->currentPeriod();
         $subjectType = $this->subjectType();
-        $sessions = $repository->paginateSessions($period, $subjectType, $this->search, $this->device ?: null, $this->source ?: null, $subjects, $this->sort, $this->direction);
+        $sessions = $sessionsRepository->paginateSessions($period, $subjectType, $this->search, $this->device ?: null, $this->source ?: null, $subjects, $this->sort, $this->direction);
 
         return view('analytics::livewire.dashboard.sessions', [
             'range' => $period,
             'headline' => $engagement->headline(
-                $repository->headlineCounts($period, $subjectType),
-                $repository->headlineCounts($period->previous(), $subjectType),
+                $engagementRepository->headlineCounts($period, $subjectType),
+                $engagementRepository->headlineCounts($period->previous(), $subjectType),
             ),
-            'sparklines' => $engagement->sparklines($repository->sparklineRows($period, $subjectType), $period),
+            'sparklines' => $engagement->sparklines($engagementRepository->sparklineRows($period, $subjectType), $period),
             'sessions' => $sessions,
             'subjectNames' => $this->resolveSubjectNames($sessions, $subjects),
             'sort' => $this->sort,
             'direction' => $this->direction,
-            'filterOptions' => $repository->sessionFilterOptions($period, $subjectType),
+            'filterOptions' => $sessionsRepository->sessionFilterOptions($period, $subjectType),
             ...$this->filterData(),
         ])->layout($this->layoutName(), ['title' => __('Sessions').' · '.__('Analytics')]);
     }
