@@ -51,7 +51,9 @@ final class EnsureAnalyticsAccepts
 
         $sourceHost = parse_url($source, PHP_URL_HOST);
 
-        if ($sourceHost === null) {
+        // parse_url returns false (not null) for a malformed URL such as
+        // "http://:80"; both mean "no usable host", so the request is dropped.
+        if (! is_string($sourceHost)) {
             return false;
         }
 

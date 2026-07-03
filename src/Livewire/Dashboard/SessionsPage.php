@@ -55,23 +55,29 @@ final class SessionsPage extends DashboardComponent
         SubjectResolver $subjects,
         EngagementMetricsCalculator $engagement,
     ): View {
-        $period = $this->currentPeriod();
-        $subjectType = $this->subjectType();
-        $sessions = $sessionsRepository->paginateSessions($period, $subjectType, $this->search, $this->device ?: null, $this->source ?: null, $subjects, $this->sort, $this->direction);
+        return $this->guardedRender(
+            function () use ($engagementRepository, $sessionsRepository, $subjects, $engagement): array {
+                $period = $this->currentPeriod();
+                $subjectType = $this->subjectType();
+                $sessions = $sessionsRepository->paginateSessions($period, $subjectType, $this->search, $this->device ?: null, $this->source ?: null, $subjects, $this->sort, $this->direction);
 
-        return view('analytics::livewire.dashboard.sessions', [
-            'range' => $period,
-            'headline' => $engagement->headline(
-                $engagementRepository->headlineCounts($period, $subjectType),
-                $engagementRepository->headlineCounts($period->previous(), $subjectType),
-            ),
-            'sparklines' => $engagement->sparklines($engagementRepository->sparklineRows($period, $subjectType), $period),
-            'sessions' => $sessions,
-            'subjectNames' => $this->resolveSubjectNames($sessions, $subjects),
-            'sort' => $this->sort,
-            'direction' => $this->direction,
-            'filterOptions' => $sessionsRepository->sessionFilterOptions($period, $subjectType),
-            ...$this->filterData(),
-        ])->layout($this->layoutName(), ['title' => __('Sessions').' · '.__('Analytics')]);
+                return [
+                    'range' => $period,
+                    'headline' => $engagement->headline(
+                        $engagementRepository->headlineCounts($period, $subjectType),
+                        $engagementRepository->headlineCounts($period->previous(), $subjectType),
+                    ),
+                    'sparklines' => $engagement->sparklines($engagementRepository->sparklineRows($period, $subjectType), $period),
+                    'sessions' => $sessions,
+                    'subjectNames' => $this->resolveSubjectNames($sessions, $subjects),
+                    'sort' => $this->sort,
+                    'direction' => $this->direction,
+                    'filterOptions' => $sessionsRepository->sessionFilterOptions($period, $subjectType),
+                    ...$this->filterData(),
+                ];
+            },
+            fn (array $data): View => view('analytics::livewire.dashboard.sessions', $data)
+                ->layout($this->layoutName(), ['title' => __('Sessions').' · '.__('Analytics')]),
+        );
     }
 }

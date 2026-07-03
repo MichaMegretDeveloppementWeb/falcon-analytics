@@ -11,6 +11,7 @@ use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Tests\Fixtures\Models\TestAdmin;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
 
@@ -85,6 +86,15 @@ it('renders the overview digest for an authenticated admin', function () {
         ->assertSeeText(__('Taux de rebond'))
         ->assertSeeText('Google')
         ->assertSeeText('/accueil');
+});
+
+it('renders a graceful error state instead of a 500 when a dashboard read fails', function () {
+    $this->actingAs($this->admin, 'admin');
+
+    // Force a real read failure: an aggregation query hits a missing table.
+    Schema::drop('falcon_analytics_events');
+
+    Livewire::test(OverviewPage::class)->assertSee(__('Données indisponibles'));
 });
 
 it('renders the sessions list for an authenticated admin', function () {

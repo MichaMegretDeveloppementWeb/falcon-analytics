@@ -23,29 +23,35 @@ final class OverviewPage extends DashboardComponent
         EngagementMetricsCalculator $engagement,
         OverviewMetricsCalculator $overview,
     ): View {
-        $period = $this->currentPeriod();
-        $subjectType = $this->subjectType();
+        return $this->guardedRender(
+            function () use ($engagementRepository, $overviewRepository, $engagement, $overview): array {
+                $period = $this->currentPeriod();
+                $subjectType = $this->subjectType();
 
-        $spotlight = $engagementRepository->spotlightCounts($subjectType);
-        $newVsReturning = $overviewRepository->newVsReturning($period, $subjectType);
-        $newVsReturningPrevious = $overviewRepository->newVsReturning($period->previous(), $subjectType);
+                $spotlight = $engagementRepository->spotlightCounts($subjectType);
+                $newVsReturning = $overviewRepository->newVsReturning($period, $subjectType);
+                $newVsReturningPrevious = $overviewRepository->newVsReturning($period->previous(), $subjectType);
 
-        return view('analytics::livewire.dashboard.overview', [
-            'range' => $period,
-            'headline' => $engagement->headline(
-                $engagementRepository->headlineCounts($period, $subjectType),
-                $engagementRepository->headlineCounts($period->previous(), $subjectType),
-            ),
-            'sparklines' => $engagement->sparklines($engagementRepository->sparklineRows($period, $subjectType), $period),
-            'spotlight' => $engagement->spotlight($spotlight['today'], $spotlight['yesterday']),
-            'newVisitorRate' => $overview->newVisitorRate($newVsReturning, $newVsReturningPrevious),
-            'newVsReturning' => $newVsReturning,
-            'devices' => $overviewRepository->sessionsByDevice($period, $subjectType),
-            'topSources' => $overviewRepository->topSources($period, $subjectType),
-            'topLocalities' => $overviewRepository->topLocalities($period, $subjectType),
-            'topPages' => $overviewRepository->topPages($period, $subjectType),
-            'topClicks' => $overviewRepository->topClicks($period, $subjectType),
-            ...$this->filterData(),
-        ])->layout($this->layoutName(), ['title' => __('Vue d\'ensemble').' · '.__('Analytics')]);
+                return [
+                    'range' => $period,
+                    'headline' => $engagement->headline(
+                        $engagementRepository->headlineCounts($period, $subjectType),
+                        $engagementRepository->headlineCounts($period->previous(), $subjectType),
+                    ),
+                    'sparklines' => $engagement->sparklines($engagementRepository->sparklineRows($period, $subjectType), $period),
+                    'spotlight' => $engagement->spotlight($spotlight['today'], $spotlight['yesterday']),
+                    'newVisitorRate' => $overview->newVisitorRate($newVsReturning, $newVsReturningPrevious),
+                    'newVsReturning' => $newVsReturning,
+                    'devices' => $overviewRepository->sessionsByDevice($period, $subjectType),
+                    'topSources' => $overviewRepository->topSources($period, $subjectType),
+                    'topLocalities' => $overviewRepository->topLocalities($period, $subjectType),
+                    'topPages' => $overviewRepository->topPages($period, $subjectType),
+                    'topClicks' => $overviewRepository->topClicks($period, $subjectType),
+                    ...$this->filterData(),
+                ];
+            },
+            fn (array $data): View => view('analytics::livewire.dashboard.overview', $data)
+                ->layout($this->layoutName(), ['title' => __('Vue d\'ensemble').' · '.__('Analytics')]),
+        );
     }
 }

@@ -17,7 +17,7 @@ uses(RefreshDatabase::class);
  * Create a visitor whose events happen in the given order. A string is a custom
  * event (matched by name); ['route' => x] is a pageview (matched by route).
  */
-function funnelJourney(array $events, ?string $subjectType = null): void
+function funnelJourney(array $events, ?string $subjectType = null, bool $isBot = false): void
 {
     $visitor = Visitor::create([
         'uuid' => (string) Str::uuid(),
@@ -31,6 +31,7 @@ function funnelJourney(array $events, ?string $subjectType = null): void
         'visitor_id' => $visitor->id,
         'started_at' => now(),
         'last_activity_at' => now(),
+        'is_bot' => $isBot,
     ]);
 
     foreach ($events as $order => $spec) {
@@ -108,6 +109,17 @@ it('matches pageview steps by route and event steps by name', function () {
     $report = $this->evaluator->evaluate($funnel, $this->period, null);
 
     expect($report->steps[0]->visitors)->toBe(2)
+        ->and($report->steps[1]->visitors)->toBe(1);
+});
+
+it('excludes bot sessions from funnel counts', function () {
+    funnelJourney(['ViewContent', 'Lead']);                  // human
+    funnelJourney(['ViewContent', 'Lead'], isBot: true);     // bot, must not count
+
+    $report = $this->evaluator->evaluate($this->funnel, $this->period, null);
+
+    expect($report->entrants)->toBe(1)
+        ->and($report->steps[0]->visitors)->toBe(1)
         ->and($report->steps[1]->visitors)->toBe(1);
 });
 

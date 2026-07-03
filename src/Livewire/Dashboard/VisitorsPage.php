@@ -35,24 +35,30 @@ final class VisitorsPage extends DashboardComponent
 
     public function render(VisitorsReadRepository $repository, SubjectResolver $subjects, VisitorMetricsCalculator $metrics): View
     {
-        $period = $this->currentPeriod();
-        $subjectType = $this->subjectType();
+        return $this->guardedRender(
+            function () use ($repository, $subjects, $metrics): array {
+                $period = $this->currentPeriod();
+                $subjectType = $this->subjectType();
 
-        $visitors = $repository->paginateVisitors($period, $subjectType, $this->search, $subjects, $this->sort, $this->direction);
+                $visitors = $repository->paginateVisitors($period, $subjectType, $this->search, $subjects, $this->sort, $this->direction);
 
-        return view('analytics::livewire.dashboard.visitors', [
-            'range' => $period,
-            'metrics' => $metrics->compute(
-                $repository->visitorCounts($period, $subjectType),
-                $repository->visitorCounts($period->previous(), $subjectType),
-                $repository->visitorDailyRows($period, $subjectType),
-                $period,
-            ),
-            'visitors' => $visitors,
-            'subjectNames' => $this->resolveSubjectNames($visitors, $subjects),
-            'sort' => $this->sort,
-            'direction' => $this->direction,
-            ...$this->filterData(),
-        ])->layout($this->layoutName(), ['title' => __('Visiteurs').' · '.__('Analytics')]);
+                return [
+                    'range' => $period,
+                    'metrics' => $metrics->compute(
+                        $repository->visitorCounts($period, $subjectType),
+                        $repository->visitorCounts($period->previous(), $subjectType),
+                        $repository->visitorDailyRows($period, $subjectType),
+                        $period,
+                    ),
+                    'visitors' => $visitors,
+                    'subjectNames' => $this->resolveSubjectNames($visitors, $subjects),
+                    'sort' => $this->sort,
+                    'direction' => $this->direction,
+                    ...$this->filterData(),
+                ];
+            },
+            fn (array $data): View => view('analytics::livewire.dashboard.visitors', $data)
+                ->layout($this->layoutName(), ['title' => __('Visiteurs').' · '.__('Analytics')]),
+        );
     }
 }

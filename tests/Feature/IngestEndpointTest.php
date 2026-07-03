@@ -74,6 +74,16 @@ it('drops a request with a present but unparseable origin', function () {
     expect(Event::count())->toBe(0);
 });
 
+it('drops a request with a malformed origin without erroring', function () {
+    // parse_url returns false (not null) here; it must be dropped, not 500.
+    $this->withoutDefer()
+        ->withHeader('Origin', 'http://:80')
+        ->postJson('/__analytics', analyticsPayload())
+        ->assertNoContent();
+
+    expect(Event::count())->toBe(0);
+});
+
 it('accepts a request with neither Origin nor Referer as same-origin', function () {
     $this->withoutDefer()
         ->postJson('/__analytics', analyticsPayload())

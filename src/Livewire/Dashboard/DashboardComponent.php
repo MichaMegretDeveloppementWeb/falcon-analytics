@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Livewire\Dashboard;
 
 use Falcon\Analytics\DTOs\Dashboard\Period;
+use Falcon\Analytics\Livewire\Dashboard\Concerns\RecoversFromReadFailure;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\ResolvesDashboardLayout;
 use Falcon\Analytics\Services\SubjectResolver;
 use Livewire\Attributes\Url;
@@ -17,6 +18,7 @@ use Livewire\Component;
  */
 abstract class DashboardComponent extends Component
 {
+    use RecoversFromReadFailure;
     use ResolvesDashboardLayout;
 
     #[Url]

@@ -108,6 +108,9 @@ final readonly class FunnelEvaluator
         $query = Event::query()
             ->select(['id', 'visitor_id', 'type', 'name', 'route', 'occurred_at'])
             ->whereBetween('occurred_at', [$period->from, $period->to])
+            // Exclude bot traffic, consistently with every other dashboard read,
+            // so funnel conversions are not inflated.
+            ->whereHas('session', fn (Builder $session): Builder => $session->where('is_bot', false))
             ->where(function (Builder $matcher) use ($names, $routes): void {
                 if ($names !== []) {
                     $matcher->whereIn('name', $names);

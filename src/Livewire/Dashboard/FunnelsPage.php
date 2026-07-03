@@ -17,14 +17,20 @@ final class FunnelsPage extends DashboardComponent
 {
     public function render(FunnelEvaluator $evaluator): View
     {
-        $period = $this->currentPeriod();
-        $subjectType = $this->subjectType();
+        return $this->guardedRender(
+            function () use ($evaluator): array {
+                $period = $this->currentPeriod();
+                $subjectType = $this->subjectType();
 
-        return view('analytics::livewire.dashboard.funnels', [
-            'range' => $period,
-            'reports' => $evaluator->evaluateAll($period, $subjectType),
-            'previousReports' => Collection::make($evaluator->evaluateAll($period->previous(), $subjectType))->keyBy('key'),
-            ...$this->filterData(),
-        ])->layout($this->layoutName(), ['title' => __('Entonnoirs').' · '.__('Analytics')]);
+                return [
+                    'range' => $period,
+                    'reports' => $evaluator->evaluateAll($period, $subjectType),
+                    'previousReports' => Collection::make($evaluator->evaluateAll($period->previous(), $subjectType))->keyBy('key'),
+                    ...$this->filterData(),
+                ];
+            },
+            fn (array $data): View => view('analytics::livewire.dashboard.funnels', $data)
+                ->layout($this->layoutName(), ['title' => __('Entonnoirs').' · '.__('Analytics')]),
+        );
     }
 }
