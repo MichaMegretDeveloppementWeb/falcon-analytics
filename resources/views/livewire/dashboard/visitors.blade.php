@@ -3,16 +3,16 @@
 
     $subjectResolver = app(\Falcon\Analytics\Services\SubjectResolver::class);
 
+    // Magnitude only: the stat-card arrow + colour convey the direction (see the
+    // overview note). Hidden without a baseline or when it rounds to 0 %.
     $deltaLabel = function ($metric): ?string {
         if (! $metric->hasBaseline()) {
-            return $metric->current > 0 ? '+∞ %' : null;
-        }
-
-        if ($metric->changePercent() == 0.0) {
             return null;
         }
 
-        return ($metric->changePercent() > 0 ? '+' : '').number_format($metric->changePercent(), 0, ',', ' ').' %';
+        $pct = (int) round($metric->changePercent());
+
+        return $pct === 0 ? null : number_format(abs($pct), 0, ',', ' ')."\u{00A0}%";
     };
 @endphp
 
@@ -40,7 +40,7 @@
             :trend="$deltaLabel($metrics->returning->delta)" :trendUp="$metrics->returning->delta->increased()">
             <div wire:key="spark-v-returning-{{ $period }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$metrics->returning->sparkline" /></div>
         </x-ui.stat-card>
-        <x-ui.stat-card :label="__('Sessions / visiteur')" :value="number_format($metrics->sessionsPerVisitor->delta->current, 1, ',', '')" icon="cursor-arrow-rays"
+        <x-ui.stat-card :label="__('Sessions / visiteur')" :value="number_format($metrics->sessionsPerVisitor->delta->current, 1, ',', ' ')" icon="cursor-arrow-rays"
             :trend="$deltaLabel($metrics->sessionsPerVisitor->delta)" :trendUp="$metrics->sessionsPerVisitor->delta->increased()">
             <div wire:key="spark-v-spv-{{ $period }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$metrics->sessionsPerVisitor->sparkline" /></div>
         </x-ui.stat-card>

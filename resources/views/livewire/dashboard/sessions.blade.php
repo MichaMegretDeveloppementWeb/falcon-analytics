@@ -1,4 +1,5 @@
 @php
+    use Falcon\Analytics\Support\DeviceLabel;
     use Illuminate\Support\Str;
 
     $subjectResolver = app(\Falcon\Analytics\Services\SubjectResolver::class);
@@ -17,16 +18,16 @@
 
     $percent = fn ($v): string => number_format((float) $v, 1, ',', ' ')."\u{00A0}%";
 
+    // Magnitude only: the stat-card arrow + colour convey the direction (see the
+    // overview note). Hidden without a baseline or when it rounds to 0 %.
     $deltaLabel = function ($metric): ?string {
         if (! $metric->hasBaseline()) {
-            return $metric->current > 0 ? '+∞ %' : null;
-        }
-
-        if ($metric->changePercent() == 0.0) {
             return null;
         }
 
-        return ($metric->changePercent() > 0 ? '+' : '').number_format($metric->changePercent(), 0, ',', ' ').' %';
+        $pct = (int) round($metric->changePercent());
+
+        return $pct === 0 ? null : number_format(abs($pct), 0, ',', ' ')."\u{00A0}%";
     };
 
     $sessionsTotal = number_format($sessions->total(), 0, ',', ' ');
@@ -36,7 +37,7 @@
 
     $deviceOptions = ['' => __('Tous les appareils')];
     foreach ($filterOptions['devices'] as $deviceType) {
-        $deviceOptions[$deviceType] = Str::title($deviceType);
+        $deviceOptions[$deviceType] = DeviceLabel::for($deviceType);
     }
 
     $sourceLabels = ['direct' => 'Direct', 'organic' => 'Naturel', 'social' => 'Réseaux sociaux', 'paid' => 'Payant', 'referral' => 'Référent', 'email' => 'E-mail', 'campaign' => 'Campagne'];
@@ -109,9 +110,10 @@
                     @php
                         $duration = $formatSeconds((int) $session->started_at->diffInSeconds($session->last_activity_at));
                     @endphp
+                    @php $sessionUrl = route('analytics.sessions.show', $session); @endphp
                     <x-ui.table.row
                         wire:key="session-{{ $session->id }}"
-                        onclick="window.location='{{ route('analytics.sessions.show', $session) }}'"
+                        onclick="if (!event.target.closest('a')) window.location='{{ $sessionUrl }}'"
                         class="cursor-pointer">
                         <x-ui.table.cell :first="true" variant="primary">
                             <div class="flex flex-col">
@@ -120,10 +122,10 @@
                                         $subjectName = $subjectNames[$session->subject_type.':'.$session->subject_id] ?? null;
                                         $subjectLabel = $subjectResolver->label($session->subject_type);
                                     @endphp
-                                    <span class="text-[13px] font-medium text-primary">{{ $subjectName ?? $subjectLabel.' #'.$session->subject_id }}</span>
+                                    <a href="{{ $sessionUrl }}" class="text-[13px] font-medium text-primary hover:underline">{{ $subjectName ?? $subjectLabel.' #'.$session->subject_id }}</a>
                                     <span class="text-[11px] text-muted">@if ($subjectName){{ $subjectLabel }} · @endif{{ substr($session->visitor?->uuid ?? '', 0, 8) }}</span>
                                 @else
-                                    <span class="text-[13px] text-secondary">{{ __('Anonyme') }}</span>
+                                    <a href="{{ $sessionUrl }}" class="text-[13px] text-secondary hover:underline">{{ __('Anonyme') }}</a>
                                     <span class="text-[11px] text-muted">{{ substr($session->visitor?->uuid ?? '', 0, 8) }}</span>
                                 @endif
                             </div>
@@ -147,7 +149,7 @@
                         </x-ui.table.cell>
                         <x-ui.table.cell class="whitespace-nowrap">
                             @if ($session->device_type || $session->browser)
-                                {{ Str::title($session->device_type ?: __('Inconnu')) }}@if ($session->browser) · {{ $session->browser }}@endif
+                                {{ $session->device_type ? DeviceLabel::for($session->device_type) : __('Inconnu') }}@if ($session->browser) · {{ $session->browser }}@endif
                             @else
                                 <span class="text-muted">{{ __('Inconnu') }}</span>
                             @endif

@@ -160,7 +160,20 @@ the context is excluded (e.g. an admin), and never throws to the caller.
 
 ## Instrumentation (`data-track-*`)
 
-All page views and clicks are captured automatically. Attributes enrich them:
+Page views are captured on every load. **Clicks are only captured on genuinely
+interactive elements** — a click on plain text or empty space carries no signal
+and is never recorded. An element counts as interactive when it is:
+
+- a native control: `<a>`, `<button>`, `<summary>`, or an actionable `<input>`
+  (`submit` / `button` / `reset` / `image` / `checkbox` / `radio`);
+- an ARIA widget: `role="button" | link | menuitem | tab | option | switch`;
+- made interactive by a handler: `wire:click`, `@click`, `x-on:click`, `onclick`.
+
+If an element is interactive only through custom code and carries none of the
+above in its markup, opt it in explicitly with `data-track-event`. On a
+`<form>`, `data-track-event` is captured on **submit**, not on click.
+
+Attributes enrich a captured click:
 
 | Attribute | Effect |
 |---|---|

@@ -1,4 +1,5 @@
 @php
+    use Falcon\Analytics\Support\DeviceLabel;
     use Illuminate\Support\Str;
 
     $formatSeconds = function (float $seconds): string {
@@ -13,16 +14,18 @@
         return "{$total}\u{00A0}s";
     };
 
+    // Magnitude only: the stat-card arrow + colour already convey the direction
+    // (and, for inverse metrics like bounce, whether it improved), so a signed
+    // number would fight the arrow. Hidden when there is no comparable baseline
+    // or the change rounds to 0 %.
     $deltaLabel = function ($metric): ?string {
         if (! $metric->hasBaseline()) {
-            return $metric->current > 0 ? '+∞ %' : null;
-        }
-
-        if ($metric->changePercent() == 0.0) {
             return null;
         }
 
-        return ($metric->changePercent() > 0 ? '+' : '').number_format($metric->changePercent(), 0, ',', ' ').' %';
+        $pct = (int) round($metric->changePercent());
+
+        return $pct === 0 ? null : number_format(abs($pct), 0, ',', ' ')."\u{00A0}%";
     };
 
     $count = fn ($value): string => number_format((float) $value, 0, ',', ' ');
@@ -43,7 +46,6 @@
     $newPct = $newTotal > 0 ? (int) round($newVsReturning['new'] / $newTotal * 100) : 0;
 
     $deviceTotal = array_sum($devices);
-    $deviceLabels = ['desktop' => __('Ordinateur'), 'mobile' => __('Mobile'), 'tablet' => __('Tablette')];
     $devicePalette = ['#1684ea', '#7cb8f2', '#bcdcfa', '#d1d5db'];
 
     $sourceIcon = fn (string $category): string => [
@@ -123,11 +125,11 @@
                         <div class="flex-1 space-y-2.5">
                             <div class="flex items-center justify-between gap-2">
                                 <span class="flex items-center gap-2 text-[13px] text-secondary"><span class="h-2 w-2 rounded-full" style="background:#1684ea"></span>{{ __('Nouveaux') }}</span>
-                                <span class="text-[13px]"><span class="font-semibold text-primary">{{ $newPct }} %</span> <span class="text-muted">{{ number_format($newVsReturning['new'], 0, ',', ' ') }}</span></span>
+                                <span class="text-[13px]"><span class="font-semibold text-primary">{{ $newPct."\u{00A0}%" }}</span> <span class="text-muted">{{ number_format($newVsReturning['new'], 0, ',', ' ') }}</span></span>
                             </div>
                             <div class="flex items-center justify-between gap-2">
                                 <span class="flex items-center gap-2 text-[13px] text-secondary"><span class="h-2 w-2 rounded-full" style="background:#bcdcfa"></span>{{ __('Récurrents') }}</span>
-                                <span class="text-[13px]"><span class="font-semibold text-primary">{{ 100 - $newPct }} %</span> <span class="text-muted">{{ number_format($newVsReturning['returning'], 0, ',', ' ') }}</span></span>
+                                <span class="text-[13px]"><span class="font-semibold text-primary">{{ (100 - $newPct)."\u{00A0}%" }}</span> <span class="text-muted">{{ number_format($newVsReturning['returning'], 0, ',', ' ') }}</span></span>
                             </div>
                         </div>
                     </div>
@@ -142,7 +144,7 @@
                     <div class="flex items-center gap-5">
                         <div wire:key="donut-devices-{{ $period }}-{{ $subject }}">
                             <x-analytics::donut
-                                :labels="collect($devices)->keys()->map(fn ($d) => $deviceLabels[$d] ?? Str::title($d))->all()"
+                                :labels="collect($devices)->keys()->map(fn ($d) => DeviceLabel::for($d))->all()"
                                 :values="array_values($devices)"
                                 :colors="array_slice($devicePalette, 0, count($devices))"
                                 :total="number_format($deviceTotal, 0, ',', ' ')"
@@ -151,8 +153,8 @@
                         <div class="flex-1 space-y-2.5">
                             @foreach ($devices as $device => $count)
                                 <div class="flex items-center justify-between gap-2">
-                                    <span class="flex items-center gap-2 text-[13px] text-secondary"><span class="h-2 w-2 rounded-full" style="background:{{ $devicePalette[$loop->index] ?? '#d1d5db' }}"></span>{{ $deviceLabels[$device] ?? Str::title($device) }}</span>
-                                    <span class="text-[13px]"><span class="font-semibold text-primary">{{ (int) round($count / $deviceTotal * 100) }} %</span> <span class="text-muted">{{ number_format($count, 0, ',', ' ') }}</span></span>
+                                    <span class="flex items-center gap-2 text-[13px] text-secondary"><span class="h-2 w-2 rounded-full" style="background:{{ $devicePalette[$loop->index] ?? '#d1d5db' }}"></span>{{ DeviceLabel::for($device) }}</span>
+                                    <span class="text-[13px]"><span class="font-semibold text-primary">{{ ((int) round($count / $deviceTotal * 100))."\u{00A0}%" }}</span> <span class="text-muted">{{ number_format($count, 0, ',', ' ') }}</span></span>
                                 </div>
                             @endforeach
                         </div>
@@ -174,7 +176,7 @@
                         <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-elevated">
                             <x-ui.icon :name="$sourceIcon($item['label'])" class="h-3.5 w-3.5 text-secondary" />
                         </span>
-                        <span class="w-28 shrink-0 truncate text-[13px] text-primary"><x-analytics::source :value="$item['label']" /></span>
+                        <span class="w-36 shrink-0 truncate text-[13px] text-primary"><x-analytics::source :value="$item['label']" /></span>
                         <div class="relative h-1.5 flex-1 overflow-hidden rounded-full bg-elevated">
                             <div class="absolute inset-y-0 left-0 rounded-full bg-[#1684ea]/70" style="width: {{ $pct }}%"></div>
                         </div>
@@ -194,12 +196,13 @@
                         <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-elevated">
                             <x-ui.icon name="map-pin" class="h-3.5 w-3.5 text-secondary" />
                         </span>
-                        <span class="w-40 shrink-0 truncate text-[13px] text-primary">
+                        <span class="w-36 shrink-0 truncate text-[13px] text-primary">
                             <x-analytics::country :code="$item['country']" :city="$item['city']" />
                         </span>
                         <div class="relative h-1.5 flex-1 overflow-hidden rounded-full bg-elevated">
                             <div class="absolute inset-y-0 left-0 rounded-full bg-[#1684ea]/70" style="width: {{ $pct }}%"></div>
                         </div>
+                        @include('analytics::livewire.dashboard.partials.delta', ['current' => $item['total'], 'previous' => $item['previous']])
                         <span class="w-10 shrink-0 text-right text-[12px] font-medium text-secondary">{{ number_format($item['total'], 0, ',', ' ') }}</span>
                     </div>
                 @empty
@@ -213,9 +216,9 @@
     {{-- Section: engagement --}}
     <div>
         <x-ui.section-header :title="__('Engagement')" :description="__('Comment les visiteurs interagissent')" class="mb-4" />
-        <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-12">
 
-            <x-ui.card>
+            <x-ui.card class="lg:col-span-4">
                 <x-ui.section-header :title="__('Statistiques')" :description="__('Sur la période')" class="mb-4" />
                 <div class="space-y-2">
                     <div class="flex items-center gap-3 py-1">
@@ -244,14 +247,14 @@
                         </span>
                         <span class="flex-1 text-[13px] text-secondary">{{ __('Nouveaux visiteurs') }}</span>
                         <span class="flex items-center gap-2">
-                            <span class="text-[13px] font-semibold text-primary">{{ number_format($newVisitorRate->current, 1, ',', ' ') }} %</span>
+                            <span class="text-[13px] font-semibold text-primary">{{ number_format($newVisitorRate->current, 1, ',', ' ')."\u{00A0}%" }}</span>
                             @include('analytics::livewire.dashboard.partials.delta', ['current' => $newVisitorRate->current, 'previous' => $newVisitorRate->previous])
                         </span>
                     </div>
                 </div>
             </x-ui.card>
 
-            <x-ui.card>
+            <x-ui.card class="lg:col-span-5">
                 <x-ui.section-header :title="__('Pages les plus vues')" :description="__('Les plus consultées')" class="mb-4" />
                 @forelse ($topPages as $item)
                     @php $pct = $maxPages > 0 ? round($item['total'] / $maxPages * 100) : 0; @endphp
@@ -259,7 +262,7 @@
                         <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-elevated">
                             <x-ui.icon name="document-text" class="h-3.5 w-3.5 text-secondary" />
                         </span>
-                        <span class="w-24 shrink-0 truncate text-[13px] text-primary"><x-analytics::page-url :url="$item['label']" /></span>
+                        <span class="w-40 shrink-0 truncate text-[13px] text-primary"><x-analytics::page-url :url="$item['label']" /></span>
                         <div class="relative h-1.5 flex-1 overflow-hidden rounded-full bg-elevated">
                             <div class="absolute inset-y-0 left-0 rounded-full bg-[#1684ea]/70" style="width: {{ $pct }}%"></div>
                         </div>
@@ -271,7 +274,7 @@
                 @endforelse
             </x-ui.card>
 
-            <x-ui.card>
+            <x-ui.card class="lg:col-span-3">
                 <x-ui.section-header :title="__('Clics principaux')" :description="__('Boutons et liens cliqués')" class="mb-4" />
                 @forelse ($topClicks as $click)
                     <div class="flex items-center gap-3 py-1.5">
@@ -279,7 +282,7 @@
                             <x-ui.icon name="cursor-arrow-rays" class="h-3.5 w-3.5 text-secondary" />
                         </span>
                         <div class="min-w-0 flex-1">
-                            <p class="truncate text-[13px] text-primary">{{ $click['label'] }}</p>
+                            <p class="truncate text-[13px] text-primary" title="{{ $click['label'] }}">{{ $click['label'] }}</p>
                             @if ($click['route'])
                                 <p class="truncate text-[11px] text-muted"><x-analytics::page-url :route="$click['route']" /></p>
                             @endif

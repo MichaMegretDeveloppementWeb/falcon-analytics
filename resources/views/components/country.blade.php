@@ -13,6 +13,8 @@
             $name = $resolved;
         }
     }
+    $name = $name ?? __('Inconnu');
+    $countryTitle = $name.($city ? ' ('.$city.')' : '');
 @endphp
 
-{{ $name ?? __('Inconnu') }}@if ($city) <span class="text-secondary">({{ $city }})</span>@endif
+<span title="{{ $countryTitle }}">{{ $name }}@if ($city) <span class="text-secondary">({{ $city }})</span>@endif</span>

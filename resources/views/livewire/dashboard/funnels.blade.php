@@ -25,7 +25,7 @@
                             {{ $report->entrants <= 1 ? __(':count entrant', ['count' => $entrants]) : __(':count entrants', ['count' => $entrants]) }}
                             @if ($report->entrants > 0 && $lastStep !== null)
                                 <span class="text-muted">·</span>
-                                {{ $overallPct }} % {{ __('de conversion') }}
+                                {{ $overallPct."\u{00A0}%" }} {{ __('de conversion') }}
                             @endif
                         </p>
                     </div>
@@ -51,7 +51,7 @@
                             @if ($previous !== null && $previous->visitors > 0 && $lost > 0)
                                 <div class="flex items-center gap-1.5 pl-0.5 text-[11px] text-muted">
                                     <x-ui.icon name="arrow-trending-down" class="h-3.5 w-3.5" />
-                                    <span>&minus;{{ $drop }} %</span>
+                                    <span>&minus;{{ $drop."\u{00A0}%" }}</span>
                                     <span class="text-muted/60">·</span>
                                     <span>{{ $lost <= 1 ? __(':count perdu', ['count' => $lost]) : __(':count perdus', ['count' => number_format($lost, 0, ',', ' ')]) }}</span>
                                 </div>
@@ -68,7 +68,7 @@
                                         @if ($previousVisitors !== null && $previousVisitors > 0)
                                             @include('analytics::livewire.dashboard.partials.delta', ['current' => $step->visitors, 'previous' => $previousVisitors])
                                         @endif
-                                        <span class="text-[13px] font-semibold tabular-nums text-primary">{{ $pct }} %</span>
+                                        <span class="text-[13px] font-semibold tabular-nums text-primary">{{ $pct."\u{00A0}%" }}</span>
                                     </div>
                                 </div>
                                 <div class="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-elevated">

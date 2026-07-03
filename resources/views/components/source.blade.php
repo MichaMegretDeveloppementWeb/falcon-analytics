@@ -13,5 +13,6 @@
         'campaign' => 'Campagne',
     ];
     $key = strtolower((string) $value);
+    $sourceLabel = __($labels[$key] ?? \Illuminate\Support\Str::headline((string) $value));
 @endphp
-{{ __($labels[$key] ?? \Illuminate\Support\Str::headline((string) $value)) }}
+<span title="{{ $sourceLabel }}">{{ $sourceLabel }}</span>

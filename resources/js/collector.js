@@ -115,12 +115,37 @@
     return props;
   }
 
+  var ACTIONABLE_ROLES = { button: 1, link: 1, menuitem: 1, menuitemcheckbox: 1, menuitemradio: 1, tab: 1, option: 1, switch: 1 };
+  var ACTIONABLE_INPUTS = { submit: 1, button: 1, reset: 1, image: 1, checkbox: 1, radio: 1 };
+
+  /**
+   * True only for elements a user meaningfully clicks to trigger something:
+   * native controls (links, buttons, actionable inputs, summary), ARIA widgets,
+   * elements made interactive by a framework (wire:click / @click / onclick),
+   * and explicit opt-ins via data-track-event. A plain click on text or empty
+   * space is never recorded. A <form>'s data-track-event is for submit, not click.
+   */
   function isActionable(el) {
+    var tag = el.tagName;
+
+    if (tag === 'A' || tag === 'BUTTON' || tag === 'SUMMARY') {
+      return true;
+    }
+    if (tag === 'INPUT') {
+      return has(ACTIONABLE_INPUTS, (el.getAttribute('type') || 'text').toLowerCase());
+    }
+    if (has(ACTIONABLE_ROLES, el.getAttribute('role') || '')) {
+      return true;
+    }
+    if (tag !== 'FORM' && el.hasAttribute('data-track-event')) {
+      return true;
+    }
+
     return (
-      el.tagName === 'A' ||
-      el.tagName === 'BUTTON' ||
-      el.getAttribute('role') === 'button' ||
-      el.hasAttribute('data-track-event')
+      el.hasAttribute('wire:click') ||
+      el.hasAttribute('@click') ||
+      el.hasAttribute('x-on:click') ||
+      el.hasAttribute('onclick')
     );
   }
 
@@ -131,6 +156,7 @@
    */
   function inspect(node) {
     var name = null;
+    var label = null;
     var value = null;
     var section = null;
     var props = null;
@@ -149,6 +175,9 @@
       // data-track-event on a <form> is captured on submit, not on click.
       if (name === null && data.trackEvent && el.tagName !== 'FORM') {
         name = cap(data.trackEvent, MAX_NAME);
+      }
+      if (label === null && data.trackLabel) {
+        label = cap(data.trackLabel, MAX_TEXT);
       }
       if (value === null && data.trackValue != null && data.trackValue !== '') {
         var parsed = Number(data.trackValue);
@@ -171,7 +200,7 @@
       }
     }
 
-    return { ignored: false, name: name, value: value, props: props, actionable: actionable };
+    return { ignored: false, name: name, label: label, value: value, props: props, actionable: actionable };
   }
 
   function selectorFor(el) {
@@ -195,7 +224,9 @@
     }
 
     var found = inspect(node);
-    if (found.ignored) {
+    if (found.ignored || !found.actionable) {
+      // Only record clicks that land on a genuinely interactive element; a click
+      // on plain text or empty space carries no analytics signal.
       return;
     }
 
@@ -212,8 +243,9 @@
 
     if (found.actionable) {
       event.selector = selectorFor(found.actionable);
-      // textContent (not innerText) avoids a synchronous layout reflow on click.
-      var text = (found.actionable.textContent || '').trim();
+      // An explicit data-track-label wins; otherwise the element's own text
+      // (textContent, not innerText, to avoid a synchronous layout reflow).
+      var text = found.label != null ? found.label : (found.actionable.textContent || '').trim();
       event.text = text ? text.slice(0, MAX_TEXT) : null;
     }
 

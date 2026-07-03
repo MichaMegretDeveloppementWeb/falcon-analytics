@@ -1,5 +1,6 @@
 @php
     use Falcon\Analytics\Enums\EventType;
+    use Falcon\Analytics\Support\DeviceLabel;
     use Illuminate\Support\Str;
 
     $routeName = config('analytics.dashboard.route_name', 'analytics');
@@ -279,7 +280,7 @@
                     <x-ui.icon :name="$deviceIcon" class="h-4 w-4 text-muted" />
                 </x-ui.section-header>
                 <dl class="space-y-2.5">
-                    <x-analytics::detail-row :label="__('Type')" :value="$value($session->device_type) ? Str::title($session->device_type) : null" :icon="$deviceIcon" />
+                    <x-analytics::detail-row :label="__('Type')" :value="$session->device_type ? DeviceLabel::for($session->device_type) : null" :icon="$deviceIcon" />
                     <x-analytics::detail-row :label="__('Navigateur')" :value="trim(($session->browser ?? '').' '.($session->browser_version ?? '')) ?: null" icon="globe-alt" />
                     <x-analytics::detail-row :label="__('Système')" :value="trim(($session->os ?? '').' '.($session->os_version ?? '')) ?: null" icon="cpu-chip" />
                 </dl>
