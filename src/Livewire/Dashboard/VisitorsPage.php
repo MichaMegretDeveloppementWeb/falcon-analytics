@@ -6,7 +6,7 @@ namespace Falcon\Analytics\Livewire\Dashboard;
 
 use Falcon\Analytics\Livewire\Dashboard\Concerns\ResolvesSubjectNames;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\SortsAndSearchesList;
-use Falcon\Analytics\Repositories\VisitorListReadRepository;
+use Falcon\Analytics\Repositories\Dashboard\VisitorListReadRepository;
 use Falcon\Analytics\Services\Dashboard\VisitorMetricsCalculator;
 use Falcon\Analytics\Services\SubjectResolver;
 use Illuminate\Contracts\View\View;

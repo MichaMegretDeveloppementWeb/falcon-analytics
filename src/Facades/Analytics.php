@@ -12,8 +12,8 @@ use Illuminate\Support\Facades\Facade;
  * @method static void consentUsing(Closure $resolver)
  * @method static void excludeUsing(Closure $resolver)
  * @method static array{type: string, id: int}|null subject()
- * @method static bool consentGranted()
- * @method static bool excluded()
+ * @method static bool hasConsent()
+ * @method static bool isExcluded()
  *
  * @see \Falcon\Analytics\Analytics
  */

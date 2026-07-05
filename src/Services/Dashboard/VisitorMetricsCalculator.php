@@ -59,7 +59,7 @@ final class VisitorMetricsCalculator
     {
         $series = ['visitors' => [], 'new' => [], 'returning' => [], 'sessionsPerVisitor' => []];
 
-        for ($cursor = $period->from->startOfDay(); $cursor->lessThanOrEqualTo($period->to); $cursor = $cursor->addDay()) {
+        foreach ($period->eachDay() as $cursor) {
             $key = $cursor->format('Y-m-d');
             $active = $daily['active'][$key] ?? ['sessions' => 0, 'visitors' => 0];
             $visitors = $active['visitors'];

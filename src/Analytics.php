@@ -77,7 +77,7 @@ final class Analytics
     }
 
     /** Whether the visitor consented to a persistent identifier (default: false). */
-    public function consentGranted(): bool
+    public function hasConsent(): bool
     {
         if ($this->consentResolver !== null) {
             return (bool) ($this->consentResolver)();
@@ -89,7 +89,7 @@ final class Analytics
     }
 
     /** Whether the current request must be excluded from tracking (default: false). */
-    public function excluded(): bool
+    public function isExcluded(): bool
     {
         if ($this->exclusionResolver !== null) {
             return (bool) ($this->exclusionResolver)();
@@ -110,8 +110,17 @@ final class Analytics
     private function subjectFromGuards(): ?array
     {
         foreach ($this->guards('subject_guards') as $guard) {
-            if (auth()->guard($guard)->check()) {
-                return ['type' => $guard, 'id' => (int) auth()->guard($guard)->id()];
+            if (! auth()->guard($guard)->check()) {
+                continue;
+            }
+
+            $id = auth()->guard($guard)->id();
+
+            // subject_id is an integer column: a non-numeric key (e.g. a UUID)
+            // cannot be stored, so the subject is left unstitched rather than
+            // silently collapsed to 0.
+            if (is_int($id) || (is_string($id) && ctype_digit($id))) {
+                return ['type' => $guard, 'id' => (int) $id];
             }
         }
 

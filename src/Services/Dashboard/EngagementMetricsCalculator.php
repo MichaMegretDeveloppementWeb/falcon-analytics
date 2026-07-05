@@ -63,7 +63,7 @@ final class EngagementMetricsCalculator
     {
         $series = ['visitors' => [], 'sessions' => [], 'avgSeconds' => [], 'bounceRate' => [], 'pagesPerSession' => []];
 
-        for ($cursor = $period->from->startOfDay(); $cursor->lessThanOrEqualTo($period->to); $cursor = $cursor->addDay()) {
+        foreach ($period->eachDay() as $cursor) {
             $row = $rows[$cursor->format('Y-m-d')] ?? ['sessions' => 0, 'visitors' => 0, 'pageviews' => 0, 'avgSeconds' => 0.0, 'bounces' => 0];
             $sessions = $row['sessions'];
 

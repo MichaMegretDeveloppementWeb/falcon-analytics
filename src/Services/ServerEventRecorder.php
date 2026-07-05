@@ -46,12 +46,12 @@ final readonly class ServerEventRecorder
         }
 
         try {
-            if ($this->analytics->excluded()) {
+            if ($this->analytics->isExcluded()) {
                 return;
             }
 
             $request = request();
-            $uuid = $this->identity->resolve($request, $this->analytics->consentGranted());
+            $uuid = $this->identity->resolve($request, $this->analytics->hasConsent());
             $subject = $this->analytics->subject();
             $snapshot = new RequestSnapshot(
                 ip: $request->ip(),

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Livewire\Dashboard\Widgets;
 
 use Falcon\Analytics\DTOs\Dashboard\Period;
-use Falcon\Analytics\Repositories\OverviewReadRepository;
+use Falcon\Analytics\Repositories\Dashboard\OverviewReadRepository;
 use Falcon\Analytics\Services\Dashboard\TrendSeriesCalculator;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Lazy;

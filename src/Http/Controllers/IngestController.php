@@ -30,7 +30,7 @@ final class IngestController
         IngestEventsAction $action,
     ): Response {
         $batch = $request->toBatch();
-        $visitorUuid = $identity->resolve($request, $analytics->consentGranted());
+        $visitorUuid = $identity->resolve($request, $analytics->hasConsent());
         $subject = $analytics->subject();
         $snapshot = new RequestSnapshot(
             ip: $request->ip(),

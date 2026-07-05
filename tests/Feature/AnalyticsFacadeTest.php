@@ -11,7 +11,7 @@ it('registers resolvers through the facade onto the container instance', functio
     AnalyticsFacade::consentUsing(fn () => true);
     AnalyticsFacade::resolveSubjectUsing(fn () => ['type' => 'client', 'id' => 5]);
 
-    expect(AnalyticsFacade::consentGranted())->toBeTrue()
-        ->and(app(Analytics::class)->consentGranted())->toBeTrue()
+    expect(AnalyticsFacade::hasConsent())->toBeTrue()
+        ->and(app(Analytics::class)->hasConsent())->toBeTrue()
         ->and(app(Analytics::class)->subject())->toBe(['type' => 'client', 'id' => 5]);
 });

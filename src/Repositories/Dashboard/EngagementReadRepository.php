@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Falcon\Analytics\Repositories;
+namespace Falcon\Analytics\Repositories\Dashboard;
 
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\DTOs\Dashboard\Period;

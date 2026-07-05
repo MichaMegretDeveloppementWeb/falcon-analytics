@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Falcon\Analytics\Repositories;
+namespace Falcon\Analytics\Repositories\Dashboard;
 
 use Falcon\Analytics\DTOs\Dashboard\Period;
 use Falcon\Analytics\Enums\EventType;

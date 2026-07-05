@@ -11,8 +11,8 @@ it('returns safe defaults with no resolver and empty identity config', function 
     $analytics = new Analytics;
 
     expect($analytics->subject())->toBeNull()
-        ->and($analytics->consentGranted())->toBeFalse()
-        ->and($analytics->excluded())->toBeFalse();
+        ->and($analytics->hasConsent())->toBeFalse()
+        ->and($analytics->isExcluded())->toBeFalse();
 });
 
 it('resolves and coerces the registered subject closure', function () {
@@ -48,14 +48,14 @@ it('excludes traffic from the configured guards', function () {
     $admin = TestAdmin::create([]);
     $this->actingAs($admin, 'admin');
 
-    expect((new Analytics)->excluded())->toBeTrue();
+    expect((new Analytics)->isExcluded())->toBeTrue();
 });
 
 it('reads consent from the configured cookie', function () {
     config(['analytics.identity.consent_cookie' => 'vd_consent_marketing']);
     request()->cookies->set('vd_consent_marketing', '1');
 
-    expect((new Analytics)->consentGranted())->toBeTrue();
+    expect((new Analytics)->hasConsent())->toBeTrue();
 });
 
 it('lets a consent closure take precedence over config', function () {
@@ -63,5 +63,5 @@ it('lets a consent closure take precedence over config', function () {
     $analytics = new Analytics;
     $analytics->consentUsing(fn () => true);
 
-    expect($analytics->consentGranted())->toBeTrue();
+    expect($analytics->hasConsent())->toBeTrue();
 });

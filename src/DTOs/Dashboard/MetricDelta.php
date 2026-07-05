@@ -30,7 +30,7 @@ final readonly class MetricDelta
         return round(($this->current - $this->previous) / $this->previous * 100, 1);
     }
 
-    public function increased(): bool
+    public function hasIncreased(): bool
     {
         return $this->current > $this->previous;
     }

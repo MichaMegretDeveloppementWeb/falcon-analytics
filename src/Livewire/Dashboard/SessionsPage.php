@@ -6,8 +6,8 @@ namespace Falcon\Analytics\Livewire\Dashboard;
 
 use Falcon\Analytics\Livewire\Dashboard\Concerns\ResolvesSubjectNames;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\SortsAndSearchesList;
-use Falcon\Analytics\Repositories\EngagementReadRepository;
-use Falcon\Analytics\Repositories\SessionListReadRepository;
+use Falcon\Analytics\Repositories\Dashboard\EngagementReadRepository;
+use Falcon\Analytics\Repositories\Dashboard\SessionListReadRepository;
 use Falcon\Analytics\Services\Dashboard\EngagementMetricsCalculator;
 use Falcon\Analytics\Services\SubjectResolver;
 use Illuminate\Contracts\View\View;

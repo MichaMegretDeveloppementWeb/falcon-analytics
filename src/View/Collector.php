@@ -19,7 +19,7 @@ final class Collector
     {
         // Suppressed when tracking is off or the current context is excluded
         // (e.g. an authenticated admin), so no collector loads on those pages.
-        if (! config('analytics.enabled') || Analytics::excluded()) {
+        if (! config('analytics.enabled') || Analytics::isExcluded()) {
             return '';
         }
 

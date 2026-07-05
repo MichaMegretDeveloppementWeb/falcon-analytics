@@ -30,7 +30,7 @@ final class EnsureAnalyticsAccepts
     {
         return ! config('analytics.enabled')
             || ! $this->isSameOrigin($request)
-            || Analytics::excluded()
+            || Analytics::isExcluded()
             || IpUtils::checkIp((string) $request->ip(), config('analytics.exclude_ips', []));
     }
 

@@ -18,7 +18,7 @@ it('returns a zero change when there is no baseline, never dividing by zero', fu
 });
 
 it('reports whether the metric increased', function () {
-    expect((new MetricDelta(10, 5))->increased())->toBeTrue()
-        ->and((new MetricDelta(5, 10))->increased())->toBeFalse()
-        ->and((new MetricDelta(5, 5))->increased())->toBeFalse();
+    expect((new MetricDelta(10, 5))->hasIncreased())->toBeTrue()
+        ->and((new MetricDelta(5, 10))->hasIncreased())->toBeFalse()
+        ->and((new MetricDelta(5, 5))->hasIncreased())->toBeFalse();
 });

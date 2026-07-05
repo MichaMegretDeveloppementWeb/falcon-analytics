@@ -21,7 +21,7 @@ final class TrendSeriesCalculator
     {
         $points = [];
 
-        for ($cursor = $period->from->startOfDay(); $cursor->lessThanOrEqualTo($period->to); $cursor = $cursor->addDay()) {
+        foreach ($period->eachDay() as $cursor) {
             $row = $rows[$cursor->format('Y-m-d')] ?? ['sessions' => 0, 'pageviews' => 0];
 
             $points[] = new TrendPoint(

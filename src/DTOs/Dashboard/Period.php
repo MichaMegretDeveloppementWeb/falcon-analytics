@@ -49,4 +49,21 @@ final readonly class Period
             $this->days,
         );
     }
+
+    /**
+     * Each day in the range as a start-of-day instant, for zero-filling a daily
+     * series so gaps in the data still render as points.
+     *
+     * @return list<CarbonImmutable>
+     */
+    public function eachDay(): array
+    {
+        $days = [];
+
+        for ($cursor = $this->from->startOfDay(); $cursor->lessThanOrEqualTo($this->to); $cursor = $cursor->addDay()) {
+            $days[] = $cursor;
+        }
+
+        return $days;
+    }
 }

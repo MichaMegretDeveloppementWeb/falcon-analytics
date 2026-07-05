@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Livewire\Dashboard;
 
-use Falcon\Analytics\Repositories\EngagementReadRepository;
-use Falcon\Analytics\Repositories\OverviewReadRepository;
+use Falcon\Analytics\Repositories\Dashboard\EngagementReadRepository;
+use Falcon\Analytics\Repositories\Dashboard\OverviewReadRepository;
 use Falcon\Analytics\Services\Dashboard\EngagementMetricsCalculator;
 use Falcon\Analytics\Services\Dashboard\OverviewMetricsCalculator;
 use Illuminate\Contracts\View\View;
