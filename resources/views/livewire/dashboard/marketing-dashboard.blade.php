@@ -35,7 +35,7 @@
     <x-ui.card>
         <x-ui.section-header :title="__('Sessions issues de pubs au fil du temps')" class="mb-4" />
         @if (array_sum($trendData) > 0)
-            <x-analytics::area-chart :labels="$trendLabels" :data="$trendData" :label="__('Sessions')" />
+            <x-analytics::area-chart wire:key="mkt-trend-{{ $range->days }}-{{ $subject }}" :labels="$trendLabels" :data="$trendData" :label="__('Sessions')" />
         @else
             <div class="flex h-48 items-center justify-center rounded-lg bg-elevated text-[12px] text-muted">{{ __('Aucune session issue de pubs sur la période.') }}</div>
         @endif

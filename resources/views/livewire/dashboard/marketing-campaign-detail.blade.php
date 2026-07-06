@@ -53,7 +53,7 @@
         <x-ui.card class="mt-6">
             <x-ui.section-header :title="__('Sessions au fil du temps')" class="mb-4" />
             @if (array_sum($trendData) > 0)
-                <x-analytics::area-chart :labels="$trendLabels" :data="$trendData" :label="__('Sessions')" height="h-56" />
+                <x-analytics::area-chart wire:key="mkt-ctrend-{{ $range->days }}-{{ $subject }}" :labels="$trendLabels" :data="$trendData" :label="__('Sessions')" height="h-56" />
             @else
                 <div class="flex h-56 items-center justify-center rounded-lg bg-elevated text-[12px] text-muted">{{ __('Aucune session sur la période.') }}</div>
             @endif
