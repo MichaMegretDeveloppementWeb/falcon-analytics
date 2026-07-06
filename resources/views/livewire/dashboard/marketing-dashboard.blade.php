@@ -27,8 +27,8 @@
                 <x-analytics::sparkline :values="$trendData" />
             </div>
         </x-analytics::kpi-card>
-        <x-analytics::kpi-card :label="__('Campagnes')" :value="number_format($campaignCount, 0, ',', ' ')" icon="megaphone" />
-        <x-analytics::kpi-card :label="__('Pubs')" :value="number_format($adCount, 0, ',', ' ')" icon="rectangle-stack" />
+        <x-analytics::kpi-card :label="__('Conversions')" :value="number_format($conversions, 0, ',', ' ')" icon="check-circle" :metric="$conversionsDelta" :description="__(':n campagnes · :m pubs', ['n' => number_format($campaignCount, 0, ',', ' '), 'm' => number_format($adCount, 0, ',', ' ')])" />
+        <x-analytics::kpi-card :label="__('Taux de conversion')" :value="$rateLabel" icon="arrow-trending-up" :metric="$rateDelta" :description="__('conversions / visiteurs issus de pubs')" />
     </div>
 
     {{-- Trend --}}
@@ -55,7 +55,9 @@
                     <x-ui.table.head>
                         <x-ui.table.header-cell :first="true">{{ __('Campagne') }}</x-ui.table.header-cell>
                         <x-ui.table.header-cell align="right">{{ __('Sessions') }}</x-ui.table.header-cell>
-                        <x-ui.table.header-cell :last="true" align="right">{{ __('Visiteurs') }}</x-ui.table.header-cell>
+                        <x-ui.table.header-cell align="right">{{ __('Visiteurs') }}</x-ui.table.header-cell>
+                        <x-ui.table.header-cell align="right">{{ __('Conv.') }}</x-ui.table.header-cell>
+                        <x-ui.table.header-cell :last="true" align="right">{{ __('Taux') }}</x-ui.table.header-cell>
                     </x-ui.table.head>
                     <x-ui.table.body>
                         @foreach ($campaignRows as $row)
@@ -65,7 +67,9 @@
                                     <a href="{{ $showUrl }}" class="cursor-pointer text-[13px] font-medium text-primary hover:underline">{{ $row['name'] }}</a>
                                 </x-ui.table.cell>
                                 <x-ui.table.cell align="right" class="tabular-nums">{{ number_format($row['sessions'], 0, ',', ' ') }}</x-ui.table.cell>
-                                <x-ui.table.cell :last="true" align="right" class="tabular-nums">{{ number_format($row['visitors'], 0, ',', ' ') }}</x-ui.table.cell>
+                                <x-ui.table.cell align="right" class="tabular-nums">{{ number_format($row['visitors'], 0, ',', ' ') }}</x-ui.table.cell>
+                                <x-ui.table.cell align="right" class="font-medium tabular-nums text-primary">{{ number_format($row['conversions'], 0, ',', ' ') }}</x-ui.table.cell>
+                                <x-ui.table.cell :last="true" align="right" class="tabular-nums text-secondary">{{ number_format($row['rate'], 1, ',', ' ')."\u{00A0}%" }}</x-ui.table.cell>
                             </x-ui.table.row>
                         @endforeach
                     </x-ui.table.body>
@@ -75,7 +79,7 @@
 
         <div class="lg:col-span-5">
             <div class="mb-4 flex items-center justify-between">
-                <x-ui.section-header :title="__('Top pubs')" />
+                <x-ui.section-header :title="__('Top pubs')" :description="__('conversions / sessions')" />
                 <a href="{{ route($routeName.'.ads') }}" class="inline-flex cursor-pointer items-center gap-x-1 text-[12px] font-medium text-secondary transition-colors hover:text-primary">{{ __('Toutes les pubs') }} <x-ui.icon name="arrow-right" class="h-3.5 w-3.5" /></a>
             </div>
             <x-ui.card>
@@ -88,7 +92,7 @@
                         <div class="relative h-1.5 flex-1 overflow-hidden rounded-full bg-elevated">
                             <div class="absolute inset-y-0 left-0 rounded-full bg-[#1684ea]/70" style="width: {{ max((int) round($row['sessions'] / $maxAd * 100), 3) }}%"></div>
                         </div>
-                        <span class="w-10 shrink-0 text-right text-[12px] font-medium text-secondary tabular-nums">{{ number_format($row['sessions'], 0, ',', ' ') }}</span>
+                        <span class="shrink-0 text-right text-[12px] tabular-nums"><span class="font-medium text-primary">{{ number_format($row['conversions'], 0, ',', ' ') }}</span><span class="text-muted"> / {{ number_format($row['sessions'], 0, ',', ' ') }}</span></span>
                     </a>
                 @empty
                     <div class="px-2 py-6 text-center text-[12px] text-muted">{{ __('Aucune pub avec du trafic sur la période.') }}</div>

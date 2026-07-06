@@ -40,6 +40,13 @@ final class AdDetailPage extends DashboardComponent
                     $trend[$day->toDateString()] = $report['daily'][$day->toDateString()] ?? 0;
                 }
 
+                $conversions = $marketing->conversions($period, $subjectType, $funnels);
+                $conversionsPrevious = $marketing->conversions($period->previous(), $subjectType, $funnels);
+                $adConversions = $conversions['ads'][$this->ad->id] ?? 0;
+                $adConversionsPrevious = $conversionsPrevious['ads'][$this->ad->id] ?? 0;
+                $rate = $report['visitors'] > 0 ? $adConversions / $report['visitors'] * 100 : 0.0;
+                $ratePrevious = $previous['visitors'] > 0 ? $adConversionsPrevious / $previous['visitors'] * 100 : 0.0;
+
                 $labels = [];
                 foreach ($funnels->all() as $funnel) {
                     $labels['funnel:'.$funnel->key] = $funnel->label;
@@ -54,6 +61,11 @@ final class AdDetailPage extends DashboardComponent
                     'visitors' => $report['visitors'],
                     'sessionsDelta' => new MetricDelta((float) $report['sessions'], (float) $previous['sessions']),
                     'visitorsDelta' => new MetricDelta((float) $report['visitors'], (float) $previous['visitors']),
+                    'conversions' => $adConversions,
+                    'conversionsDelta' => new MetricDelta((float) $adConversions, (float) $adConversionsPrevious),
+                    'rateLabel' => number_format($rate, 1, ',', ' ')."\u{00A0}%",
+                    'rateDelta' => new MetricDelta($rate, $ratePrevious),
+                    'objectiveConversions' => $conversions['objectives'][$this->ad->id] ?? [],
                     'trendLabels' => array_map(fn (string $d): string => Carbon::parse($d)->isoFormat('D MMM'), array_keys($trend)),
                     'trendData' => array_values($trend),
                     'objectiveLabels' => $labels,

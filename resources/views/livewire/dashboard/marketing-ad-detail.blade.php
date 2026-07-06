@@ -31,24 +31,24 @@
             <x-ui.section-header :title="__('Performance')" :description="__('du :from au :to', ['from' => $range->from->isoFormat('D MMM'), 'to' => $range->to->isoFormat('D MMM YYYY')])" />
             @include('analytics::livewire.dashboard.partials.filters')
         </div>
-        <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            <div class="grid grid-cols-2 gap-4 lg:grid-cols-1">
-                <x-analytics::kpi-card :label="__('Sessions')" :value="number_format($sessions, 0, ',', ' ')" icon="cursor-arrow-rays" :metric="$sessionsDelta">
-                    <div wire:key="a-spark-s-{{ $range->days }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$trendData" /></div>
-                </x-analytics::kpi-card>
-                <x-analytics::kpi-card :label="__('Visiteurs')" :value="number_format($visitors, 0, ',', ' ')" icon="users" :metric="$visitorsDelta">
-                    <div wire:key="a-spark-v-{{ $range->days }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$trendData" /></div>
-                </x-analytics::kpi-card>
-            </div>
-            <x-ui.card class="lg:col-span-2">
-                <x-ui.section-header :title="__('Sessions au fil du temps')" class="mb-4" />
-                @if (array_sum($trendData) > 0)
-                    <x-analytics::area-chart :labels="$trendLabels" :data="$trendData" :label="__('Sessions')" height="h-56" />
-                @else
-                    <div class="flex h-56 items-center justify-center rounded-lg bg-elevated text-[12px] text-muted">{{ __('Aucune session sur la période.') }}</div>
-                @endif
-            </x-ui.card>
+        <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <x-analytics::kpi-card :label="__('Sessions')" :value="number_format($sessions, 0, ',', ' ')" icon="cursor-arrow-rays" :metric="$sessionsDelta">
+                <div wire:key="a-spark-s-{{ $range->days }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$trendData" /></div>
+            </x-analytics::kpi-card>
+            <x-analytics::kpi-card :label="__('Visiteurs')" :value="number_format($visitors, 0, ',', ' ')" icon="users" :metric="$visitorsDelta">
+                <div wire:key="a-spark-v-{{ $range->days }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$trendData" /></div>
+            </x-analytics::kpi-card>
+            <x-analytics::kpi-card :label="__('Conversions')" :value="number_format($conversions, 0, ',', ' ')" icon="check-circle" :metric="$conversionsDelta" />
+            <x-analytics::kpi-card :label="__('Taux de conversion')" :value="$rateLabel" icon="arrow-trending-up" :metric="$rateDelta" />
         </div>
+        <x-ui.card class="mt-6">
+            <x-ui.section-header :title="__('Sessions au fil du temps')" class="mb-4" />
+            @if (array_sum($trendData) > 0)
+                <x-analytics::area-chart :labels="$trendLabels" :data="$trendData" :label="__('Sessions')" height="h-56" />
+            @else
+                <div class="flex h-56 items-center justify-center rounded-lg bg-elevated text-[12px] text-muted">{{ __('Aucune session sur la période.') }}</div>
+            @endif
+        </x-ui.card>
     </div>
 
     {{-- Objectives + conditions --}}
@@ -61,6 +61,7 @@
                         <x-ui.icon :name="$objective->type->value === 'funnel' ? 'funnel' : 'bolt'" class="h-3.5 w-3.5 text-secondary" />
                     </span>
                     <span class="min-w-0 flex-1 truncate text-[13px] text-primary">{{ $objectiveLabels[$objective->type->value.':'.$objective->reference] ?? $objective->reference }}</span>
+                    <span class="shrink-0 text-[12px] tabular-nums"><span class="font-semibold text-primary">{{ number_format($objectiveConversions[$objective->reference] ?? 0, 0, ',', ' ') }}</span> <span class="text-muted">{{ __('conv.') }}</span></span>
                     <x-ui.badge :color="$objective->type->value === 'funnel' ? 'blue' : 'emerald'">{{ $objective->type->value === 'funnel' ? __('Tunnel') : __('Événement') }}</x-ui.badge>
                     @if ($objective->type->value === 'event')
                         <span class="text-[11px] text-muted tabular-nums">{{ rtrim(rtrim(number_format((float) $objective->value, 2, ',', ' '), '0'), ',') }} {{ __('pts') }}</span>
