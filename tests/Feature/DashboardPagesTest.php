@@ -60,7 +60,8 @@ it('mounts the dashboard at the configured prefix and route names', function () 
         ->and(route('analytics.visitors', absolute: false))->toBe('/admin/analytics/visitors')
         ->and(route('analytics.funnels', absolute: false))->toBe('/admin/analytics/funnels')
         ->and(route('analytics.sessions', absolute: false))->toBe('/admin/analytics/sessions')
-        ->and(route('analytics.sessions.show', ['session' => 1], absolute: false))->toBe('/admin/analytics/sessions/1');
+        ->and(route('analytics.sessions.show', ['session' => 1], absolute: false))->toBe('/admin/analytics/sessions/1')
+        ->and(route('analytics.visitors.show', ['visitor' => 1], absolute: false))->toBe('/admin/analytics/visitors/1');
 });
 
 it('protects the dashboard from guests', function () {
@@ -71,6 +72,7 @@ it('protects the dashboard from guests', function () {
     $this->get(route('analytics.funnels'))->assertRedirect(route('login'));
     $this->get(route('analytics.sessions'))->assertRedirect(route('login'));
     $this->get(route('analytics.sessions.show', $session))->assertRedirect(route('login'));
+    $this->get(route('analytics.visitors.show', $session->visitor_id))->assertRedirect(route('login'));
 });
 
 it('renders the overview digest for an authenticated admin', function () {
@@ -151,6 +153,31 @@ it('renders a session detail with its information and event timeline', function 
         ->assertSeeText('Chrome')
         ->assertSeeText('Nous contacter')
         ->assertSeeText('/catalog');
+});
+
+it('renders a visitor detail with its sessions', function () {
+    $visitor = Visitor::create([
+        'uuid' => (string) Str::uuid(),
+        'first_seen_at' => now(),
+        'last_seen_at' => now(),
+        'session_count' => 2,
+    ]);
+    Session::create([
+        'visitor_id' => $visitor->id,
+        'started_at' => now(),
+        'last_activity_at' => now()->addMinute(),
+        'is_bot' => false,
+        'pageview_count' => 3,
+        'city' => 'Genève',
+        'source' => 'google',
+    ]);
+
+    $this->actingAs($this->admin, 'admin')
+        ->get(route('analytics.visitors.show', $visitor))
+        ->assertSuccessful()
+        ->assertSeeText(__('Visiteur #:id', ['id' => $visitor->id]))
+        ->assertSeeText(__('Sessions'))
+        ->assertSeeText('Genève');
 });
 
 it('renders the declared funnels for an authenticated admin', function () {

@@ -59,17 +59,18 @@
                     @php
                         $subjectName = $visitor->subject_type ? ($subjectNames[$visitor->subject_type.':'.$visitor->subject_id] ?? null) : null;
                         $subjectLabel = $visitor->subject_type ? $subjectResolver->label($visitor->subject_type) : null;
+                        $visitorUrl = route(config('analytics.dashboard.route_name', 'analytics').'.visitors.show', $visitor);
                     @endphp
-                    <x-ui.table.row wire:key="visitor-{{ $visitor->id }}">
+                    <x-ui.table.row wire:key="visitor-{{ $visitor->id }}" onclick="if (!event.target.closest('a')) window.location='{{ $visitorUrl }}'" class="cursor-pointer">
                         <x-ui.table.cell :first="true">
                             <div class="flex flex-col gap-0.5">
-                                <span class="text-[13px] font-medium text-primary">
+                                <a href="{{ $visitorUrl }}" class="cursor-pointer text-[13px] font-medium text-primary hover:underline">
                                     @if ($visitor->subject_type)
                                         {{ $subjectName ?? $subjectLabel.' #'.$visitor->subject_id }}
                                     @else
                                         {{ __('Visiteur #:id', ['id' => $visitor->id]) }}
                                     @endif
-                                </span>
+                                </a>
                                 <span class="text-[11px] text-muted">{{ Str::limit($visitor->uuid, 16, '') }}</span>
                             </div>
                         </x-ui.table.cell>
