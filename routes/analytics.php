@@ -6,6 +6,7 @@ use Falcon\Analytics\Http\Controllers\CollectorScriptController;
 use Falcon\Analytics\Http\Controllers\IngestController;
 use Falcon\Analytics\Http\Middleware\EnsureAnalyticsAccepts;
 use Falcon\Analytics\Livewire\Dashboard\FunnelsPage;
+use Falcon\Analytics\Livewire\Dashboard\MarketingSettingsPage;
 use Falcon\Analytics\Livewire\Dashboard\OverviewPage;
 use Falcon\Analytics\Livewire\Dashboard\SessionDetailPage;
 use Falcon\Analytics\Livewire\Dashboard\SessionsPage;
@@ -49,4 +50,5 @@ Route::prefix((string) ($dashboard['route_prefix'] ?? 'admin/analytics'))
         Route::livewire('/funnels', FunnelsPage::class)->name('funnels');
         Route::livewire('/sessions', SessionsPage::class)->name('sessions');
         Route::livewire('/sessions/{session}', SessionDetailPage::class)->name('sessions.show');
+        Route::livewire('/marketing/settings', MarketingSettingsPage::class)->name('marketing.settings');
     });

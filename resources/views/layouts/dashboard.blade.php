@@ -39,6 +39,13 @@
             </x-ui.sidebar.link>
 
             <x-ui.sidebar.link
+                :href="route($routeName.'.marketing.settings')"
+                icon="megaphone"
+                :active="request()->routeIs($routeName.'.marketing*')">
+                {{ __('Publicités') }}
+            </x-ui.sidebar.link>
+
+            <x-ui.sidebar.link
                 :href="route($routeName.'.sessions')"
                 icon="users"
                 :active="request()->routeIs($routeName.'.sessions')">
