@@ -5,30 +5,84 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Repositories\Dashboard;
 
 use Falcon\Analytics\Models\Ad;
-use Illuminate\Database\Eloquent\Builder;
+use Falcon\Analytics\Models\Campaign;
 
 /**
- * Read model for the marketing screens. For now it resolves a session's raw
- * (campaign, ad) values to a defined ad; the per-ad performance report is built
- * on top of this in a later step.
+ * Read model for the marketing screens. Resolves a session's captured landing
+ * parameters to a defined ad or campaign by matching their conditions (all must
+ * hold, AND); on overlap the most specific rule (most conditions) wins, so a
+ * broad campaign rule never steals a session from a precise ad rule.
  */
 final class MarketingReadRepository
 {
     /**
-     * The ad a session's raw campaign/ad values map to, or null when the pair is
-     * not defined. The (campaign key, ad key) pair is unique, so an ad key reused
-     * across campaigns never collides — the campaign disambiguates it.
+     * @param  array<string, string>|null  $params
      */
-    public function resolveAd(?string $campaignKey, ?string $adKey): ?Ad
+    public function resolveAd(?array $params): ?Ad
     {
-        if ($campaignKey === null || $adKey === null) {
+        if ($params === null || $params === []) {
             return null;
         }
 
-        return Ad::query()
-            ->where('key', $adKey)
-            ->whereHas('campaign', fn (Builder $query): Builder => $query->where('key', $campaignKey))
-            ->with('campaign')
-            ->first();
+        $best = null;
+        $bestSpecificity = 0;
+
+        foreach (Ad::query()->where('is_active', true)->with('campaign')->get() as $ad) {
+            $conditions = $ad->match_conditions ?? [];
+
+            if ($conditions === [] || ! $this->matches($conditions, $params)) {
+                continue;
+            }
+
+            if (count($conditions) > $bestSpecificity) {
+                $best = $ad;
+                $bestSpecificity = count($conditions);
+            }
+        }
+
+        return $best;
+    }
+
+    /**
+     * @param  array<string, string>|null  $params
+     */
+    public function resolveCampaign(?array $params): ?Campaign
+    {
+        if ($params === null || $params === []) {
+            return null;
+        }
+
+        $best = null;
+        $bestSpecificity = 0;
+
+        foreach (Campaign::query()->where('is_active', true)->get() as $campaign) {
+            $conditions = $campaign->match_conditions ?? [];
+
+            if ($conditions === [] || ! $this->matches($conditions, $params)) {
+                continue;
+            }
+
+            if (count($conditions) > $bestSpecificity) {
+                $best = $campaign;
+                $bestSpecificity = count($conditions);
+            }
+        }
+
+        return $best;
+    }
+
+    /**
+     * @param  array<int, array{param: string, value: string}>  $conditions
+     * @param  array<string, string>  $params
+     */
+    private function matches(array $conditions, array $params): bool
+    {
+        foreach ($conditions as $condition) {
+            if (($params[$condition['param']] ?? null) !== $condition['value']) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

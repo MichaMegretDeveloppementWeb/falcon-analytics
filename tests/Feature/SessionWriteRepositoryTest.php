@@ -37,8 +37,7 @@ it('starts a session mapping the resolved context', function () {
         utmCampaign: 'spring',
         landingRoute: 'home',
         landingUrl: 'https://vantadrive.ch/',
-        mktCampaign: 'ete',
-        mktAd: 'cabrio',
+        mktParams: ['src' => 'meta_ete', 'creative' => 'cabrio'],
         subjectType: 'client',
         subjectId: 7,
     );
@@ -57,8 +56,7 @@ it('starts a session mapping the resolved context', function () {
         ->and($session->source)->toBe('google')
         ->and($session->utm_campaign)->toBe('spring')
         ->and($session->landing_route)->toBe('home')
-        ->and($session->mkt_campaign)->toBe('ete')
-        ->and($session->mkt_ad)->toBe('cabrio')
+        ->and($session->mkt_params)->toBe(['src' => 'meta_ete', 'creative' => 'cabrio'])
         ->and($session->subject_type)->toBe('client')
         ->and($session->subject_id)->toBe(7)
         ->and($session->is_bot)->toBeFalse()

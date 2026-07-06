@@ -40,8 +40,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $landing_route
  * @property string|null $landing_url
  * @property string|null $last_pageview_url
- * @property string|null $mkt_campaign
- * @property string|null $mkt_ad
+ * @property array<string, string>|null $mkt_params
  * @property string|null $subject_type
  * @property int|null $subject_id
  * @property int $pageview_count
@@ -86,6 +85,7 @@ final class Session extends Model
             'latitude' => 'float',
             'longitude' => 'float',
             'is_bot' => 'boolean',
+            'mkt_params' => 'array',
             'visitor_id' => 'integer',
             'subject_id' => 'integer',
             'pageview_count' => 'integer',

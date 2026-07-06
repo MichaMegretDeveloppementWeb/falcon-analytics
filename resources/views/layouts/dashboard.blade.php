@@ -42,7 +42,7 @@
                 :href="route($routeName.'.marketing.settings')"
                 icon="megaphone"
                 :active="request()->routeIs($routeName.'.marketing*')">
-                {{ __('Publicités') }}
+                {{ __('Marketing') }}
             </x-ui.sidebar.link>
 
             <x-ui.sidebar.link

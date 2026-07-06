@@ -4,24 +4,23 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Livewire\Dashboard;
 
+use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\RecoversFromReadFailure;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\ResolvesDashboardLayout;
 use Falcon\Analytics\Models\Ad;
 use Falcon\Analytics\Models\AdObjective;
 use Falcon\Analytics\Models\Campaign;
-use Falcon\Analytics\Models\Event;
-use Falcon\Analytics\Models\Session;
 use Illuminate\Contracts\View\View;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 
 /**
  * Manages the marketing definitions: campaigns, their ads, and each ad's
- * conversion objectives (a funnel, or named events with a value). The raw
- * campaign/ad values captured on sessions are matched to these at report time.
+ * conversion objectives. A campaign or ad is identified by free URL-parameter
+ * conditions (all must hold, AND); objectives come from the declared funnels and
+ * tracked events.
  */
 final class MarketingSettingsPage extends Component
 {
@@ -35,19 +34,21 @@ final class MarketingSettingsPage extends Component
 
     public string $campaignName = '';
 
-    public string $campaignKey = '';
-
     public string $campaignPlatform = '';
 
-    public ?int $adCampaignId = null;
+    /** @var list<array{param: string, value: string}> */
+    public array $campaignConditions = [];
 
     public ?int $adId = null;
 
+    public ?int $adCampaignId = null;
+
     public string $adName = '';
 
-    public string $adKey = '';
+    /** @var list<array{param: string, value: string}> */
+    public array $adConditions = [];
 
-    public string $objType = 'funnel';
+    public string $objType = '';
 
     public string $objReference = '';
 
@@ -62,6 +63,7 @@ final class MarketingSettingsPage extends Component
     public function newCampaign(): void
     {
         $this->resetCampaignForm();
+        $this->campaignConditions = [['param' => '', 'value' => '']];
         $this->modal = 'campaign';
     }
 
@@ -71,28 +73,34 @@ final class MarketingSettingsPage extends Component
 
         $this->campaignId = $campaign->id;
         $this->campaignName = $campaign->name;
-        $this->campaignKey = $campaign->key;
         $this->campaignPlatform = (string) $campaign->platform;
+        $this->campaignConditions = $campaign->match_conditions ?: [['param' => '', 'value' => '']];
         $this->modal = 'campaign';
+    }
+
+    public function addCampaignCondition(): void
+    {
+        $this->campaignConditions[] = ['param' => '', 'value' => ''];
+    }
+
+    public function removeCampaignCondition(int $index): void
+    {
+        unset($this->campaignConditions[$index]);
+        $this->campaignConditions = array_values($this->campaignConditions);
     }
 
     public function saveCampaign(): void
     {
-        $this->validate([
+        $this->validate($this->conditionRules('campaignConditions') + [
             'campaignName' => ['required', 'string', 'max:150'],
-            'campaignKey' => ['required', 'string', 'max:150', Rule::unique('falcon_analytics_campaigns', 'key')->ignore($this->campaignId)],
             'campaignPlatform' => ['nullable', 'string', 'max:60'],
-        ], attributes: [
-            'campaignName' => __('nom'),
-            'campaignKey' => __('identifiant'),
-            'campaignPlatform' => __('plateforme'),
-        ]);
+        ], attributes: $this->conditionAttributes('campaignConditions') + ['campaignName' => __('nom')]);
 
         $campaign = $this->campaignId !== null ? Campaign::findOrFail($this->campaignId) : new Campaign;
         $campaign->fill([
             'name' => $this->campaignName,
-            'key' => $this->campaignKey,
             'platform' => $this->campaignPlatform !== '' ? $this->campaignPlatform : null,
+            'match_conditions' => $this->cleanConditions($this->campaignConditions),
         ])->save();
 
         $this->modal = '';
@@ -103,6 +111,7 @@ final class MarketingSettingsPage extends Component
     {
         $this->resetAdForm();
         $this->adCampaignId = $campaignId;
+        $this->adConditions = [['param' => '', 'value' => '']];
         $this->modal = 'ad';
     }
 
@@ -113,29 +122,44 @@ final class MarketingSettingsPage extends Component
         $this->adId = $ad->id;
         $this->adCampaignId = $ad->campaign_id;
         $this->adName = $ad->name;
-        $this->adKey = $ad->key;
+        $this->adConditions = $ad->match_conditions ?: [['param' => '', 'value' => '']];
         $this->modal = 'ad';
+    }
+
+    public function addAdCondition(): void
+    {
+        $this->adConditions[] = ['param' => '', 'value' => ''];
+    }
+
+    public function removeAdCondition(int $index): void
+    {
+        unset($this->adConditions[$index]);
+        $this->adConditions = array_values($this->adConditions);
     }
 
     public function saveAd(): void
     {
-        $this->validate([
+        $this->validate($this->conditionRules('adConditions') + [
             'adName' => ['required', 'string', 'max:150'],
-            'adKey' => ['required', 'string', 'max:150', Rule::unique('falcon_analytics_ads', 'key')->where('campaign_id', $this->adCampaignId)->ignore($this->adId)],
-        ], attributes: [
-            'adName' => __('nom'),
-            'adKey' => __('identifiant'),
-        ]);
+        ], attributes: $this->conditionAttributes('adConditions') + ['adName' => __('nom')]);
 
         $ad = $this->adId !== null ? Ad::findOrFail($this->adId) : new Ad;
         $ad->fill([
             'campaign_id' => $this->adCampaignId,
             'name' => $this->adName,
-            'key' => $this->adKey,
+            'match_conditions' => $this->cleanConditions($this->adConditions),
         ])->save();
 
         // Stay in edit mode so objectives can be added straight away.
         $this->adId = $ad->id;
+    }
+
+    public function selectObjective(string $type, string $reference, ?float $value = null): void
+    {
+        $this->objType = $type;
+        $this->objReference = $reference;
+        $this->objValue = $type === 'event' && $value !== null ? (string) $value : '';
+        $this->resetErrorBag(['objReference', 'objValue']);
     }
 
     public function addObjective(): void
@@ -148,26 +172,21 @@ final class MarketingSettingsPage extends Component
             'objType' => ['required', Rule::in(['funnel', 'event'])],
             'objReference' => ['required', 'string', 'max:191'],
             'objValue' => [Rule::requiredIf($this->objType === 'event'), 'nullable', 'numeric', 'min:0'],
-        ], attributes: [
-            'objReference' => __('objectif'),
-            'objValue' => __('valeur'),
-        ]);
+        ], attributes: ['objReference' => __('objectif'), 'objValue' => __('valeur')]);
 
         AdObjective::updateOrCreate(
             ['ad_id' => $this->adId, 'type' => $this->objType, 'reference' => $this->objReference],
             ['value' => $this->objType === 'event' ? $this->objValue : null],
         );
 
-        $this->reset('objReference', 'objValue');
-        $this->objType = 'funnel';
+        $this->objType = '';
+        $this->objReference = '';
+        $this->objValue = '';
     }
 
     public function removeObjective(int $id): void
     {
-        AdObjective::query()
-            ->whereKey($id)
-            ->where('ad_id', $this->adId)
-            ->delete();
+        AdObjective::query()->whereKey($id)->where('ad_id', $this->adId)->delete();
     }
 
     public function confirmDelete(string $type, int $id): void
@@ -210,64 +229,75 @@ final class MarketingSettingsPage extends Component
         $this->modal = '';
         $this->resetCampaignForm();
         $this->resetAdForm();
-        $this->deleteType = '';
-        $this->deleteId = null;
-        $this->deleteLabel = '';
+        $this->reset('deleteType', 'deleteId', 'deleteLabel');
     }
 
     private function resetCampaignForm(): void
     {
-        $this->reset('campaignId', 'campaignName', 'campaignKey', 'campaignPlatform');
+        $this->reset('campaignId', 'campaignName', 'campaignPlatform', 'campaignConditions');
     }
 
     private function resetAdForm(): void
     {
-        $this->reset('adCampaignId', 'adId', 'adName', 'adKey', 'objType', 'objReference', 'objValue');
-    }
-
-    public function render(FunnelRegistry $funnels): View
-    {
-        return $this->guardedRender(
-            function () use ($funnels): array {
-                $campaigns = Campaign::query()->with(['ads.objectives'])->orderBy('name')->get();
-
-                return [
-                    'campaigns' => $campaigns,
-                    'editingAd' => $this->adId !== null ? Ad::query()->with('objectives')->find($this->adId) : null,
-                    'funnels' => $funnels->all(),
-                    'observedEvents' => Event::query()
-                        ->whereNotNull('name')
-                        ->distinct()
-                        ->orderBy('name')
-                        ->limit(200)
-                        ->pluck('name')
-                        ->all(),
-                    'undefinedCampaigns' => $this->undefinedCampaignValues($campaigns),
-                ];
-            },
-            fn (array $data): View => view('analytics::livewire.dashboard.marketing-settings', $data)
-                ->layout($this->layoutName(), ['title' => __('Publicités').' · '.__('Analytics')]),
-        );
+        $this->reset('adId', 'adCampaignId', 'adName', 'adConditions', 'objType', 'objReference', 'objValue');
     }
 
     /**
-     * Campaign values seen in real traffic that aren't defined yet, to nudge the
-     * user into naming them.
-     *
-     * @param  Collection<int, Campaign>  $campaigns
-     * @return list<string>
+     * @return array<string, list<string>>
      */
-    private function undefinedCampaignValues($campaigns): array
+    private function conditionRules(string $property): array
     {
-        $defined = $campaigns->pluck('key')->all();
+        return [
+            $property => ['required', 'array', 'min:1'],
+            $property.'.*.param' => ['required', 'string', 'max:100'],
+            $property.'.*.value' => ['required', 'string', 'max:150'],
+        ];
+    }
 
-        return Session::query()
-            ->whereNotNull('mkt_campaign')
-            ->when($defined !== [], fn ($query) => $query->whereNotIn('mkt_campaign', $defined))
-            ->distinct()
-            ->orderBy('mkt_campaign')
-            ->limit(50)
-            ->pluck('mkt_campaign')
-            ->all();
+    /**
+     * @return array<string, string>
+     */
+    private function conditionAttributes(string $property): array
+    {
+        return [
+            $property.'.*.param' => __('paramètre'),
+            $property.'.*.value' => __('valeur'),
+        ];
+    }
+
+    /**
+     * @param  list<array{param: string, value: string}>  $conditions
+     * @return list<array{param: string, value: string}>
+     */
+    private function cleanConditions(array $conditions): array
+    {
+        $cleaned = array_map(
+            fn (array $condition): array => ['param' => trim($condition['param']), 'value' => trim($condition['value'])],
+            $conditions,
+        );
+
+        return array_values(array_filter($cleaned, fn (array $c): bool => $c['param'] !== '' && $c['value'] !== ''));
+    }
+
+    public function render(FunnelRegistry $funnels, EventRegistry $events): View
+    {
+        return $this->guardedRender(
+            function () use ($funnels, $events): array {
+                return [
+                    'campaigns' => Campaign::query()->with(['ads.objectives'])->orderBy('name')->get(),
+                    'editingAd' => $this->adId !== null ? Ad::query()->with('objectives')->find($this->adId) : null,
+                    'funnelOptions' => array_map(
+                        fn ($funnel): array => ['type' => 'funnel', 'reference' => $funnel->key, 'label' => $funnel->label, 'value' => null],
+                        $funnels->all(),
+                    ),
+                    'eventOptions' => array_map(
+                        fn ($event): array => ['type' => 'event', 'reference' => $event->name, 'label' => $event->label, 'value' => $event->value],
+                        $events->all(),
+                    ),
+                ];
+            },
+            fn (array $data): View => view('analytics::livewire.dashboard.marketing-settings', $data)
+                ->layout($this->layoutName(), ['title' => __('Marketing').' · '.__('Analytics')]),
+        );
     }
 }

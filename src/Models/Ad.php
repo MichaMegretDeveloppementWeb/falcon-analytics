@@ -13,8 +13,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * @property int $id
  * @property int $campaign_id
- * @property string $key
  * @property string $name
+ * @property array<int, array{param: string, value: string}>|null $match_conditions
  * @property bool $is_active
  * @property CarbonImmutable $created_at
  * @property CarbonImmutable $updated_at
@@ -26,7 +26,7 @@ final class Ad extends Model
     protected $table = 'falcon_analytics_ads';
 
     /** @var list<string> */
-    protected $fillable = ['campaign_id', 'key', 'name', 'is_active'];
+    protected $fillable = ['campaign_id', 'name', 'match_conditions', 'is_active'];
 
     /** @return BelongsTo<Campaign, $this> */
     public function campaign(): BelongsTo
@@ -46,6 +46,7 @@ final class Ad extends Model
         return [
             'campaign_id' => 'integer',
             'is_active' => 'boolean',
+            'match_conditions' => 'array',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];

@@ -35,8 +35,8 @@ final readonly class IngestionContext
         public ?string $utmTerm = null,
         public ?string $landingRoute = null,
         public ?string $landingUrl = null,
-        public ?string $mktCampaign = null,
-        public ?string $mktAd = null,
+        /** @var array<string, string> */
+        public array $mktParams = [],
         public ?string $subjectType = null,
         public ?int $subjectId = null,
     ) {}

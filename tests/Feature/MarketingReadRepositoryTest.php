@@ -7,29 +7,35 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-it('resolves a session to the right ad, with no collision when an ad key is reused across campaigns', function () {
-    $ete = Campaign::create(['name' => 'Été', 'key' => 'ete']);
-    $hiver = Campaign::create(['name' => 'Hiver', 'key' => 'hiver']);
-    $eteCabrio = Ad::create(['campaign_id' => $ete->id, 'name' => 'Été · Cabriolet', 'key' => 'cabrio']);
-    $hiverCabrio = Ad::create(['campaign_id' => $hiver->id, 'name' => 'Hiver · Cabriolet', 'key' => 'cabrio']);
-    $eteSuv = Ad::create(['campaign_id' => $ete->id, 'name' => 'Été · SUV', 'key' => 'suv']);
+it('resolves the most specific ad whose conditions all match the session params', function () {
+    $ete = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
+    $generic = Ad::create(['campaign_id' => $ete->id, 'name' => 'Été générique', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
+    $cabrio = Ad::create(['campaign_id' => $ete->id, 'name' => 'Cabriolet', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete'], ['param' => 'creative', 'value' => 'cabrio']]]);
 
     $repo = new MarketingReadRepository;
 
-    expect($repo->resolveAd('ete', 'cabrio')->id)->toBe($eteCabrio->id)
-        ->and($repo->resolveAd('hiver', 'cabrio')->id)->toBe($hiverCabrio->id)
-        ->and($repo->resolveAd('ete', 'suv')->id)->toBe($eteSuv->id);
+    expect($repo->resolveAd(['src' => 'meta_ete', 'creative' => 'cabrio'])->id)->toBe($cabrio->id)  // 2 conditions win over 1
+        ->and($repo->resolveAd(['src' => 'meta_ete', 'creative' => 'other'])->id)->toBe($generic->id)
+        ->and($repo->resolveAd(['src' => 'meta_ete'])->id)->toBe($generic->id);
 });
 
-it('returns null for unknown, partial or empty ad tags', function () {
-    $ete = Campaign::create(['name' => 'Été', 'key' => 'ete']);
-    Ad::create(['campaign_id' => $ete->id, 'name' => 'Cabrio', 'key' => 'cabrio']);
+it('returns null when a condition is unmet, and resolves the campaign independently', function () {
+    $ete = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
+    Ad::create(['campaign_id' => $ete->id, 'name' => 'Cabrio', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete'], ['param' => 'creative', 'value' => 'cabrio']]]);
 
     $repo = new MarketingReadRepository;
 
-    expect($repo->resolveAd('ete', 'unknown'))->toBeNull()        // campaign defined, ad not
-        ->and($repo->resolveAd('unknown', 'cabrio'))->toBeNull()  // campaign not defined
-        ->and($repo->resolveAd('ete', null))->toBeNull()          // campaign-only traffic
-        ->and($repo->resolveAd(null, 'cabrio'))->toBeNull()       // no campaign value
-        ->and($repo->resolveAd(null, null))->toBeNull();
+    expect($repo->resolveAd(['src' => 'meta_hiver', 'creative' => 'cabrio']))->toBeNull() // src differs
+        ->and($repo->resolveAd(['src' => 'meta_ete']))->toBeNull()                        // creative missing
+        ->and($repo->resolveAd([]))->toBeNull()
+        ->and($repo->resolveCampaign(['src' => 'meta_ete'])->id)->toBe($ete->id)
+        ->and($repo->resolveCampaign(['src' => 'meta_hiver']))->toBeNull();
+});
+
+it('ignores inactive ads and conditionless definitions', function () {
+    $ete = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
+    Ad::create(['campaign_id' => $ete->id, 'name' => 'Off', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']], 'is_active' => false]);
+    Ad::create(['campaign_id' => $ete->id, 'name' => 'Empty', 'match_conditions' => []]);
+
+    expect((new MarketingReadRepository)->resolveAd(['src' => 'meta_ete']))->toBeNull();
 });

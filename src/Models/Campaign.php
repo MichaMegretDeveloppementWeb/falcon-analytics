@@ -11,9 +11,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property int $id
- * @property string $key
  * @property string $name
  * @property string|null $platform
+ * @property array<int, array{param: string, value: string}>|null $match_conditions
  * @property bool $is_active
  * @property CarbonImmutable $created_at
  * @property CarbonImmutable $updated_at
@@ -24,7 +24,7 @@ final class Campaign extends Model
     protected $table = 'falcon_analytics_campaigns';
 
     /** @var list<string> */
-    protected $fillable = ['key', 'name', 'platform', 'is_active'];
+    protected $fillable = ['name', 'platform', 'match_conditions', 'is_active'];
 
     /** @return HasMany<Ad, $this> */
     public function ads(): HasMany
@@ -37,6 +37,7 @@ final class Campaign extends Model
     {
         return [
             'is_active' => 'boolean',
+            'match_conditions' => 'array',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];
