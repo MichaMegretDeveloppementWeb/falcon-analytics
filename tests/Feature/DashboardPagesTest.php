@@ -153,22 +153,24 @@ it('renders a session detail with its information and event timeline', function 
         ->assertSeeText('Paris')
         ->assertSeeText('Chrome')
         ->assertSeeText('Nous contacter')
-        ->assertSeeText('/catalog');
+        ->assertSeeText('/catalog')
+        ->assertSee(route('analytics.visitors.show', $session->visitor_id, absolute: false));
 });
 
-it('renders a visitor detail with its sessions', function () {
+it('renders a visitor detail with its sessions, engagement and breakdowns', function () {
     $visitor = Visitor::create([
         'uuid' => (string) Str::uuid(),
         'first_seen_at' => now(),
         'last_seen_at' => now(),
         'session_count' => 2,
     ]);
-    Session::create([
+    $session = Session::create([
         'visitor_id' => $visitor->id,
         'started_at' => now(),
         'last_activity_at' => now()->addMinute(),
         'is_bot' => false,
         'pageview_count' => 3,
+        'device_type' => 'mobile',
         'city' => 'Genève',
         'source' => 'google',
     ]);
@@ -177,24 +179,52 @@ it('renders a visitor detail with its sessions', function () {
         ->get(route('analytics.visitors.show', $visitor))
         ->assertSuccessful()
         ->assertSeeText(__('Visiteur #:id', ['id' => $visitor->id]))
-        ->assertSeeText(__('Sessions'))
-        ->assertSeeText('Genève');
+        ->assertSeeText(__('Appareils'))
+        ->assertSeeText(__('Acquisition'))
+        ->assertSeeText('Genève')
+        ->assertSee(route('analytics.sessions.show', $session, absolute: false));
 });
 
-it('erases a visitor and all their data from the detail page', function () {
-    $visitor = Visitor::create(['uuid' => (string) Str::uuid(), 'first_seen_at' => now(), 'last_seen_at' => now(), 'session_count' => 1]);
-    $session = Session::create(['visitor_id' => $visitor->id, 'started_at' => now(), 'last_activity_at' => now(), 'is_bot' => false, 'pageview_count' => 1]);
-    Event::create(['session_id' => $session->id, 'visitor_id' => $visitor->id, 'occurred_at' => now(), 'type' => EventType::Pageview]);
+it('erases only the target visitor, leaving other visitors untouched', function () {
+    $make = function (): array {
+        $v = Visitor::create(['uuid' => (string) Str::uuid(), 'first_seen_at' => now(), 'last_seen_at' => now(), 'session_count' => 1]);
+        $s = Session::create(['visitor_id' => $v->id, 'started_at' => now(), 'last_activity_at' => now(), 'is_bot' => false, 'pageview_count' => 1]);
+        Event::create(['session_id' => $s->id, 'visitor_id' => $v->id, 'occurred_at' => now(), 'type' => EventType::Pageview]);
+
+        return [$v, $s];
+    };
+
+    [$target] = $make();
+    [$other] = $make();
+
+    $this->actingAs($this->admin, 'admin');
+
+    Livewire::test(VisitorDetailPage::class, ['visitor' => $target])
+        ->call('forget')
+        ->assertRedirect(route('analytics.visitors'));
+
+    // Target fully erased; the other visitor's data must survive (proves scoping).
+    expect(Visitor::whereKey($target->id)->exists())->toBeFalse()
+        ->and(Session::where('visitor_id', $target->id)->count())->toBe(0)
+        ->and(Event::where('visitor_id', $target->id)->count())->toBe(0)
+        ->and(Visitor::whereKey($other->id)->exists())->toBeTrue()
+        ->and(Session::where('visitor_id', $other->id)->count())->toBe(1)
+        ->and(Event::where('visitor_id', $other->id)->count())->toBe(1);
+});
+
+it('shows an inline error and keeps the visitor when the erasure fails', function () {
+    $visitor = Visitor::create(['uuid' => (string) Str::uuid(), 'first_seen_at' => now(), 'last_seen_at' => now(), 'session_count' => 0]);
+
+    Schema::drop('falcon_analytics_events'); // force the erasure query to fail
 
     $this->actingAs($this->admin, 'admin');
 
     Livewire::test(VisitorDetailPage::class, ['visitor' => $visitor])
         ->call('forget')
-        ->assertRedirect(route('analytics.visitors'));
+        ->assertHasErrors('visitor-erasure-failed')
+        ->assertNoRedirect();
 
-    expect(Visitor::count())->toBe(0)
-        ->and(Session::count())->toBe(0)
-        ->and(Event::count())->toBe(0);
+    expect(Visitor::whereKey($visitor->id)->exists())->toBeTrue();
 });
 
 it('renders the declared funnels for an authenticated admin', function () {

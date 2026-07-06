@@ -1,7 +1,6 @@
 @php
     use Falcon\Analytics\Enums\EventType;
     use Falcon\Analytics\Support\DeviceLabel;
-    use Illuminate\Support\Str;
 
     $routeName = config('analytics.dashboard.route_name', 'analytics');
     $value = fn ($raw) => filled($raw) ? $raw : null;
@@ -118,7 +117,7 @@
             @endif
             @if ($session->visitor?->uuid)
                 <span class="text-muted">·</span>
-                <span class="inline-flex items-center gap-1">{{ __('ID') }}{{ "\u{00A0}" }}: <span class="font-mono text-[12px]">{{ Str::limit($session->visitor->uuid, 20, '…') }}</span><x-analytics::copy-button :value="$session->visitor->uuid" /></span>
+                <x-analytics::visitor-id :uuid="$session->visitor->uuid" />
             @endif
         </div>
     </div>

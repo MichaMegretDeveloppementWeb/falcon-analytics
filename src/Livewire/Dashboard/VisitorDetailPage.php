@@ -7,8 +7,8 @@ namespace Falcon\Analytics\Livewire\Dashboard;
 use Falcon\Analytics\Actions\ForgetVisitorAction;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\RecoversFromReadFailure;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\ResolvesDashboardLayout;
-use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
+use Falcon\Analytics\Services\Dashboard\VisitorEngagementCalculator;
 use Falcon\Analytics\Services\SubjectResolver;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Log;
@@ -16,16 +16,18 @@ use Livewire\Component;
 
 /**
  * A single visitor in detail: their identity, headline figures and the list of
- * their sessions (each linking to the session detail). Read-only.
+ * their sessions (each linking to the session detail). Read-only apart from the
+ * GDPR erasure action.
  */
 final class VisitorDetailPage extends Component
 {
     use RecoversFromReadFailure;
     use ResolvesDashboardLayout;
 
-    public Visitor $visitor;
+    /** Upper bound on the sessions loaded for the profile, so a high-volume visitor never loads unbounded rows. */
+    private const SESSIONS_LIMIT = 100;
 
-    public string $deleteError = '';
+    public Visitor $visitor;
 
     public function mount(Visitor $visitor): void
     {
@@ -47,7 +49,7 @@ final class VisitorDetailPage extends Component
                 'exception' => $e,
             ]);
 
-            $this->deleteError = __('La suppression a échoué. Réessayez dans un instant.');
+            $this->addError('visitor-erasure-failed', __('La suppression a échoué. Réessayez dans un instant.'));
 
             return;
         }
@@ -57,28 +59,22 @@ final class VisitorDetailPage extends Component
         $this->redirect(route(config('analytics.dashboard.route_name', 'analytics').'.visitors'));
     }
 
-    public function render(SubjectResolver $subjects): View
+    public function render(SubjectResolver $subjects, VisitorEngagementCalculator $engagement): View
     {
         return $this->guardedRender(
-            function () use ($subjects): array {
+            function () use ($subjects, $engagement): array {
                 $sessions = $this->visitor->sessions()
                     ->select(['id', 'visitor_id', 'started_at', 'last_activity_at', 'pageview_count', 'device_type', 'browser', 'source', 'landing_route', 'landing_url', 'country', 'city'])
                     ->orderByDesc('started_at')
+                    ->limit(self::SESSIONS_LIMIT)
                     ->get();
 
                 $subjectType = $this->visitor->subject_type;
-                $count = $sessions->count();
-                $totalPageviews = (int) $sessions->sum('pageview_count');
-                $totalSeconds = (int) $sessions->sum(fn (Session $s): int => (int) $s->started_at->diffInSeconds($s->last_activity_at));
 
                 return [
                     'visitor' => $this->visitor,
                     'sessions' => $sessions,
-                    'totalPageviews' => $totalPageviews,
-                    'avgSeconds' => $count > 0 ? (int) round($totalSeconds / $count) : 0,
-                    'pagesPerSession' => $count > 0 ? round($totalPageviews / $count, 1) : 0.0,
-                    'devices' => $sessions->groupBy(fn (Session $s): string => (string) $s->device_type)->map->count()->sortDesc()->all(),
-                    'sources' => $sessions->groupBy(fn (Session $s): string => $s->source ?: 'direct')->map->count()->sortDesc()->all(),
+                    ...$engagement->summarize($sessions),
                     'subjectLabel' => $subjectType !== null ? $subjects->label($subjectType) : null,
                     'subjectName' => $subjectType !== null ? $subjects->name($subjectType, (int) $this->visitor->subject_id) : null,
                 ];

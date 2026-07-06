@@ -1,6 +1,5 @@
 @php
     use Falcon\Analytics\Support\DeviceLabel;
-    use Illuminate\Support\Str;
 
     $routeName = config('analytics.dashboard.route_name', 'analytics');
 
@@ -42,7 +41,7 @@
                 <x-ui.badge color="blue">{{ __('Récurrent') }}</x-ui.badge>
             @endif
             <span class="text-muted">·</span>
-            <span class="inline-flex items-center gap-1">{{ __('ID') }}{{ "\u{00A0}" }}: <span class="font-mono text-[12px]">{{ Str::limit($visitor->uuid, 20, '…') }}</span><x-analytics::copy-button :value="$visitor->uuid" /></span>
+            <x-analytics::visitor-id :uuid="$visitor->uuid" />
             <span class="text-muted">·</span>
             <span>{{ __('Première visite le :date', ['date' => $visitor->first_seen_at->translatedFormat('d M Y')]) }}</span>
         </div>
@@ -161,9 +160,9 @@
     <div class="pt-2">
         <x-ui.section-header :title="__('Zone de danger')" :danger="true" :description="__('L\'effacement des données de ce visiteur est définitif.')" class="mb-4" />
 
-        @if ($deleteError)
-            <x-ui.alert variant="danger" class="mb-4">{{ $deleteError }}</x-ui.alert>
-        @endif
+        @error('visitor-erasure-failed')
+            <x-ui.alert variant="danger" class="mb-4">{{ $message }}</x-ui.alert>
+        @enderror
 
         <div class="flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50/40 px-5 py-4 dark:border-red-500/20 dark:bg-red-500/[0.06] sm:flex-row sm:items-center sm:justify-between">
             <div>
