@@ -10,6 +10,7 @@ use Falcon\Analytics\Repositories\Dashboard\EngagementReadRepository;
 use Falcon\Analytics\Repositories\Dashboard\OverviewReadRepository;
 use Falcon\Analytics\Repositories\Dashboard\SessionListReadRepository;
 use Falcon\Analytics\Repositories\Dashboard\VisitorListReadRepository;
+use Falcon\Analytics\Repositories\Dashboard\VisitorProfileReadRepository;
 use Falcon\Analytics\Services\SubjectResolver;
 use Falcon\Analytics\Tests\Fixtures\Models\TestClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -342,4 +343,34 @@ it('fetches the visitors screen data within its query budget', function () {
     // Frozen plan: paginate (count + select) + counts x2 (totals + new) + daily (active + new) = 8.
     expect($queries)->toHaveCount(8)
         ->and($signatures)->toBe(array_values(array_unique($signatures))); // nothing fetched twice
+});
+
+it('aggregates a visitor engagement over all their sessions and scopes to them', function () {
+    $visitor = makeDashboardVisitor();
+    makeDashboardSession(['device_type' => 'mobile', 'source' => 'google', 'pageview_count' => 3], $visitor);
+    makeDashboardSession(['device_type' => 'mobile', 'source' => 'google', 'pageview_count' => 2], $visitor);
+    makeDashboardSession(['device_type' => 'desktop', 'source' => null, 'pageview_count' => 1], $visitor);
+
+    // Another visitor's session must never leak into the aggregate.
+    makeDashboardSession(['device_type' => 'tablet', 'source' => 'social', 'pageview_count' => 9]);
+
+    $engagement = app(VisitorProfileReadRepository::class)->engagement($visitor->id);
+
+    expect($engagement['sessions'])->toBe(3)
+        ->and($engagement['pageviews'])->toBe(6)
+        ->and($engagement['devices'])->toBe(['mobile' => 2, 'desktop' => 1])
+        ->and($engagement['sources'])->toBe(['google' => 2, 'direct' => 1]);
+});
+
+it('paginates a visitor sessions list', function () {
+    $visitor = makeDashboardVisitor();
+    foreach (range(1, 25) as $i) {
+        makeDashboardSession(['started_at' => now()->subMinutes($i)], $visitor);
+    }
+
+    $page = app(VisitorProfileReadRepository::class)->paginateSessions($visitor->id, 20);
+
+    expect($page->total())->toBe(25)
+        ->and($page->perPage())->toBe(20)
+        ->and($page->count())->toBe(20);
 });

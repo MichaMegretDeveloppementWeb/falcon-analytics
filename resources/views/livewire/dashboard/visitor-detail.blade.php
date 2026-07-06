@@ -128,7 +128,7 @@
                             $sessionUrl = route($routeName.'.sessions.show', $s);
                             $seconds = (int) $s->started_at->diffInSeconds($s->last_activity_at);
                         @endphp
-                        <x-ui.table.row onclick="if (!event.target.closest('a')) window.location='{{ $sessionUrl }}'" class="cursor-pointer">
+                        <x-ui.table.row wire:key="session-{{ $s->id }}" onclick="if (!event.target.closest('a')) window.location='{{ $sessionUrl }}'" class="cursor-pointer">
                             <x-ui.table.cell :first="true" variant="primary" class="whitespace-nowrap">
                                 <a href="{{ $sessionUrl }}" class="cursor-pointer hover:underline">{{ $s->started_at->translatedFormat('d M Y, H:i') }}</a>
                             </x-ui.table.cell>
@@ -153,6 +153,8 @@
                     @endforeach
                 </x-ui.table.body>
             </x-ui.table>
+
+            <div class="mt-6"><x-ui.pagination :paginator="$sessions" mode="livewire" /></div>
         @endif
     </div>
 
