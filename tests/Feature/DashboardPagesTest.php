@@ -4,6 +4,7 @@ use Carbon\CarbonImmutable;
 use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Livewire\Dashboard\OverviewPage;
 use Falcon\Analytics\Livewire\Dashboard\SessionsPage;
+use Falcon\Analytics\Livewire\Dashboard\VisitorDetailPage;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\TrendChart;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
@@ -178,6 +179,22 @@ it('renders a visitor detail with its sessions', function () {
         ->assertSeeText(__('Visiteur #:id', ['id' => $visitor->id]))
         ->assertSeeText(__('Sessions'))
         ->assertSeeText('Genève');
+});
+
+it('erases a visitor and all their data from the detail page', function () {
+    $visitor = Visitor::create(['uuid' => (string) Str::uuid(), 'first_seen_at' => now(), 'last_seen_at' => now(), 'session_count' => 1]);
+    $session = Session::create(['visitor_id' => $visitor->id, 'started_at' => now(), 'last_activity_at' => now(), 'is_bot' => false, 'pageview_count' => 1]);
+    Event::create(['session_id' => $session->id, 'visitor_id' => $visitor->id, 'occurred_at' => now(), 'type' => EventType::Pageview]);
+
+    $this->actingAs($this->admin, 'admin');
+
+    Livewire::test(VisitorDetailPage::class, ['visitor' => $visitor])
+        ->call('forget')
+        ->assertRedirect(route('analytics.visitors'));
+
+    expect(Visitor::count())->toBe(0)
+        ->and(Session::count())->toBe(0)
+        ->and(Event::count())->toBe(0);
 });
 
 it('renders the declared funnels for an authenticated admin', function () {

@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Livewire\Dashboard;
 
+use Falcon\Analytics\Actions\ForgetVisitorAction;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\RecoversFromReadFailure;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\ResolvesDashboardLayout;
 use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Services\SubjectResolver;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 
 /**
@@ -22,9 +24,36 @@ final class VisitorDetailPage extends Component
 
     public Visitor $visitor;
 
+    public string $deleteError = '';
+
     public function mount(Visitor $visitor): void
     {
         $this->visitor = $visitor;
+    }
+
+    /**
+     * Erase this visitor's data (GDPR right to erasure) and return to the list.
+     * Logged on the analytics channel for an audit trail; a failure degrades to
+     * an inline error rather than a raw 500.
+     */
+    public function forget(ForgetVisitorAction $action): void
+    {
+        try {
+            $action->execute($this->visitor);
+        } catch (\Throwable $e) {
+            Log::channel(config('analytics.log_channel'))->error('Analytics visitor erasure failed.', [
+                'visitor_id' => $this->visitor->id,
+                'exception' => $e,
+            ]);
+
+            $this->deleteError = __('La suppression a échoué. Réessayez dans un instant.');
+
+            return;
+        }
+
+        Log::channel(config('analytics.log_channel'))->info('Analytics visitor erased.', ['visitor_id' => $this->visitor->id]);
+
+        $this->redirect(route(config('analytics.dashboard.route_name', 'analytics').'.visitors'));
     }
 
     public function render(SubjectResolver $subjects): View

@@ -101,4 +101,31 @@
             </x-ui.table>
         @endif
     </div>
+
+    {{-- Zone de danger : effacement RGPD --}}
+    <div class="pt-2">
+        <x-ui.section-header :title="__('Zone de danger')" :danger="true" :description="__('L\'effacement des données de ce visiteur est définitif.')" class="mb-4" />
+
+        @if ($deleteError)
+            <x-ui.alert variant="danger" class="mb-4">{{ $deleteError }}</x-ui.alert>
+        @endif
+
+        <div class="flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50/40 px-5 py-4 dark:border-red-500/20 dark:bg-red-500/[0.06] sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <p class="text-[13px] font-medium text-primary">{{ __('Supprimer les données de ce visiteur') }}</p>
+                <p class="mt-0.5 text-[12px] text-secondary">{{ __('Efface le visiteur, ses sessions et ses évènements. Action irréversible (droit à l\'effacement).') }}</p>
+            </div>
+            <x-ui.button variant="danger" class="shrink-0" @click="$dispatch('open-modal', 'forget-visitor')">
+                <x-ui.icon name="trash" class="h-4 w-4" /> {{ __('Supprimer') }}
+            </x-ui.button>
+        </div>
+    </div>
+
+    <x-ui.modal name="forget-visitor" variant="confirm" :title="__('Supprimer ce visiteur ?')">
+        {{ __('Cette action est irréversible : le visiteur, ses :count session(s) et tous leurs évènements seront définitivement supprimés.', ['count' => $visitor->session_count]) }}
+        <x-slot:actions>
+            <x-ui.button variant="ghost" @click="$dispatch('close-modal', 'forget-visitor')">{{ __('Annuler') }}</x-ui.button>
+            <x-ui.button variant="danger" wire:click="forget" @click="$dispatch('close-modal', 'forget-visitor')">{{ __('Supprimer définitivement') }}</x-ui.button>
+        </x-slot:actions>
+    </x-ui.modal>
 </div>
