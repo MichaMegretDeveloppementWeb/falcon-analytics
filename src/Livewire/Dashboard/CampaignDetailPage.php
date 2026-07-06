@@ -7,6 +7,7 @@ namespace Falcon\Analytics\Livewire\Dashboard;
 use Falcon\Analytics\DTOs\Dashboard\MetricDelta;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
+use Falcon\Analytics\Livewire\Dashboard\Concerns\EditsAd;
 use Falcon\Analytics\Models\Ad;
 use Falcon\Analytics\Models\AdObjective;
 use Falcon\Analytics\Models\Campaign;
@@ -23,6 +24,8 @@ use Illuminate\Support\Facades\DB;
  */
 final class CampaignDetailPage extends DashboardComponent
 {
+    use EditsAd;
+
     public Campaign $campaign;
 
     /** '' | campaign | ad | delete-campaign | delete-ad */
@@ -35,16 +38,6 @@ final class CampaignDetailPage extends DashboardComponent
     /** @var list<array{param: string, value: string}> */
     public array $campaignConditions = [];
 
-    public ?int $adId = null;
-
-    public string $adName = '';
-
-    /** @var list<array{param: string, value: string}> */
-    public array $adConditions = [];
-
-    /** @var list<array{type: string, reference: string, label: string, value: string|null}> */
-    public array $objectives = [];
-
     public ?int $deleteAdId = null;
 
     public string $deleteAdLabel = '';
@@ -52,6 +45,11 @@ final class CampaignDetailPage extends DashboardComponent
     public function mount(Campaign $campaign): void
     {
         $this->campaign = $campaign;
+    }
+
+    protected function adFormCampaignId(): int
+    {
+        return $this->campaign->id;
     }
 
     public function editCampaign(): void
@@ -117,109 +115,15 @@ final class CampaignDetailPage extends DashboardComponent
 
     public function newAd(): void
     {
-        $this->resetAdForm();
-        $this->adConditions = [['param' => '', 'value' => '']];
+        $this->blankAdForm();
         $this->modal = 'ad';
     }
 
     public function editAd(int $id, FunnelRegistry $funnels, EventRegistry $events): void
     {
         $ad = Ad::with('objectives')->where('campaign_id', $this->campaign->id)->findOrFail($id);
-
-        $funnelLabels = [];
-        foreach ($funnels->all() as $funnel) {
-            $funnelLabels[$funnel->key] = $funnel->label;
-        }
-
-        $eventLabels = [];
-        foreach ($events->all() as $event) {
-            $eventLabels[$event->name] = $event->label;
-        }
-
-        $this->adId = $ad->id;
-        $this->adName = $ad->name;
-        $this->adConditions = $ad->match_conditions ?: [['param' => '', 'value' => '']];
-        $this->objectives = $ad->objectives->map(fn (AdObjective $objective): array => [
-            'type' => $objective->type->value,
-            'reference' => $objective->reference,
-            'label' => $objective->type->value === 'funnel'
-                ? ($funnelLabels[$objective->reference] ?? $objective->reference)
-                : ($eventLabels[$objective->reference] ?? $objective->reference),
-            'value' => $objective->type->value === 'event' ? (string) (float) $objective->value : null,
-        ])->all();
+        $this->fillAdForm($ad, $funnels, $events);
         $this->modal = 'ad';
-    }
-
-    public function addAdCondition(): void
-    {
-        $this->adConditions[] = ['param' => '', 'value' => ''];
-    }
-
-    public function removeAdCondition(int $index): void
-    {
-        unset($this->adConditions[$index]);
-        $this->adConditions = array_values($this->adConditions);
-    }
-
-    public function addObjective(string $type, string $reference, string $label, ?float $value = null): void
-    {
-        foreach ($this->objectives as $objective) {
-            if ($objective['type'] === $type && $objective['reference'] === $reference) {
-                return;
-            }
-        }
-
-        $this->objectives[] = [
-            'type' => $type,
-            'reference' => $reference,
-            'label' => $label,
-            'value' => $type === 'event' ? (string) ($value ?? 0) : null,
-        ];
-    }
-
-    public function removeObjective(int $index): void
-    {
-        unset($this->objectives[$index]);
-        $this->objectives = array_values($this->objectives);
-    }
-
-    public function saveAd(): void
-    {
-        $this->validate([
-            'adName' => ['required', 'string', 'max:150'],
-            'adConditions' => ['required', 'array', 'min:1'],
-            'adConditions.*.param' => ['required', 'string', 'max:100'],
-            'adConditions.*.value' => ['required', 'string', 'max:150'],
-            'objectives.*.value' => ['nullable', 'numeric', 'min:0'],
-        ], attributes: [
-            'adName' => __('nom'),
-            'adConditions.*.param' => __('paramètre'),
-            'adConditions.*.value' => __('valeur'),
-        ]);
-
-        $ad = $this->adId !== null
-            ? Ad::where('campaign_id', $this->campaign->id)->findOrFail($this->adId)
-            : new Ad(['campaign_id' => $this->campaign->id]);
-        $ad->fill([
-            'name' => $this->adName,
-            'match_conditions' => $this->cleanConditions($this->adConditions),
-        ])->save();
-
-        DB::transaction(function () use ($ad): void {
-            AdObjective::query()->where('ad_id', $ad->id)->delete();
-
-            foreach ($this->objectives as $objective) {
-                AdObjective::create([
-                    'ad_id' => $ad->id,
-                    'type' => $objective['type'],
-                    'reference' => $objective['reference'],
-                    'value' => $objective['type'] === 'event' ? (is_numeric($objective['value']) ? $objective['value'] : 0) : null,
-                ]);
-            }
-        });
-
-        $this->modal = '';
-        $this->resetAdForm();
     }
 
     public function confirmDeleteAd(int $id): void
@@ -250,11 +154,6 @@ final class CampaignDetailPage extends DashboardComponent
         $this->resetAdForm();
     }
 
-    private function resetAdForm(): void
-    {
-        $this->reset('adId', 'adName', 'adConditions', 'objectives');
-    }
-
     /**
      * @param  list<array{param: string, value: string}>  $conditions
      * @return list<array{param: string, value: string}>
@@ -273,16 +172,6 @@ final class CampaignDetailPage extends DashboardComponent
     {
         return $this->guardedRender(
             function () use ($funnels, $events, $marketing): array {
-                $selectedFunnels = [];
-                $selectedEvents = [];
-                foreach ($this->objectives as $objective) {
-                    if ($objective['type'] === 'funnel') {
-                        $selectedFunnels[] = $objective['reference'];
-                    } else {
-                        $selectedEvents[] = $objective['reference'];
-                    }
-                }
-
                 $period = $this->currentPeriod();
                 $subjectType = $this->subjectType();
                 $report = $marketing->campaignReport($period, $subjectType, $this->campaign);
@@ -316,14 +205,7 @@ final class CampaignDetailPage extends DashboardComponent
                     'trendData' => array_values($trend),
                     'ads' => $this->campaign->ads()->with('objectives')->orderBy('name')->get(),
                     'objectiveLabels' => $this->objectiveLabels($funnels, $events),
-                    'funnelOptions' => array_values(array_filter(
-                        array_map(fn ($f): array => ['reference' => $f->key, 'label' => $f->label], $funnels->all()),
-                        fn (array $o): bool => ! in_array($o['reference'], $selectedFunnels, true),
-                    )),
-                    'eventOptions' => array_values(array_filter(
-                        array_map(fn ($e): array => ['reference' => $e->name, 'label' => $e->label, 'value' => $e->value], $events->all()),
-                        fn (array $o): bool => ! in_array($o['reference'], $selectedEvents, true),
-                    )),
+                    ...$this->adFormOptions($funnels, $events),
                     ...$this->filterData(),
                 ];
             },

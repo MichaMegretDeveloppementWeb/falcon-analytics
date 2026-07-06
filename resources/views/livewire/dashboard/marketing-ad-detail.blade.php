@@ -15,14 +15,17 @@
     {{-- Ad header --}}
     <div class="flex flex-wrap items-start justify-between gap-4">
         <div class="min-w-0">
+            <div class="mb-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
+                <x-ui.icon name="rectangle-stack" class="h-3.5 w-3.5" /> {{ __('Pub') }}
+            </div>
             <h1 class="text-2xl font-semibold tracking-tight text-primary">{{ $ad->name }}</h1>
             <div class="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-secondary">
                 <span>{{ __('Campagne') }}</span>
                 <a href="{{ $campaignUrl }}" class="cursor-pointer font-medium text-primary hover:underline">{{ $ad->campaign->name }}</a>
-                @if ($ad->campaign->platform)<x-ui.badge color="blue">{{ $ad->campaign->platform }}</x-ui.badge>@endif
+                @if ($ad->campaign->platform)<x-ui.badge color="gray">{{ $ad->campaign->platform }}</x-ui.badge>@endif
             </div>
         </div>
-        <x-ui.button variant="secondary" :href="$campaignUrl"><x-ui.icon name="pencil-square" class="h-4 w-4" /> {{ __('Modifier dans la campagne') }}</x-ui.button>
+        <x-ui.button variant="secondary" wire:click="editAd"><x-ui.icon name="pencil-square" class="h-4 w-4" /> {{ __('Modifier la pub') }}</x-ui.button>
     </div>
 
     {{-- Performance --}}
@@ -82,6 +85,11 @@
                 @endforelse
             </div>
         </x-ui.card>
+    </div>
+
+    {{-- Ad edit modal --}}
+    <div x-on:keydown.escape.window="$wire.modal !== '' && $wire.closeModal()">
+        @include('analytics::livewire.dashboard.partials.marketing-ad-form')
     </div>
 
 </div>

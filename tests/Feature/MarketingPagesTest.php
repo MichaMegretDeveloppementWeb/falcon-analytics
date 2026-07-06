@@ -1,5 +1,6 @@
 <?php
 
+use Falcon\Analytics\Livewire\Dashboard\AdDetailPage;
 use Falcon\Analytics\Livewire\Dashboard\CampaignDetailPage;
 use Falcon\Analytics\Livewire\Dashboard\CampaignsPage;
 use Falcon\Analytics\Models\Ad;
@@ -85,6 +86,24 @@ it('manages ads and objectives from the campaign detail, in one save', function 
 
     expect($ad->campaign_id)->toBe($campaign->id)
         ->and(AdObjective::where('ad_id', $ad->id)->count())->toBe(2);
+});
+
+it('edits an ad and its objectives in place from the ad detail', function () {
+    $campaign = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
+    $ad = Ad::create(['campaign_id' => $campaign->id, 'name' => 'Cabrio', 'match_conditions' => [['param' => 'creative', 'value' => 'cabrio']]]);
+    $this->actingAs($this->admin, 'admin');
+
+    Livewire::test(AdDetailPage::class, ['ad' => $ad])
+        ->call('editAd')
+        ->assertSet('modal', 'ad')
+        ->set('adName', 'Cabriolet décapotable')
+        ->call('addObjective', 'event', 'Lead', 'Lead', 2.0)
+        ->call('saveAd')
+        ->assertHasNoErrors()
+        ->assertSet('modal', '');
+
+    expect($ad->fresh()->name)->toBe('Cabriolet décapotable')
+        ->and(AdObjective::where('ad_id', $ad->id)->where('reference', 'Lead')->exists())->toBeTrue();
 });
 
 it('excludes already-selected objectives from the pickers', function () {

@@ -7,6 +7,7 @@ namespace Falcon\Analytics\Livewire\Dashboard;
 use Falcon\Analytics\DTOs\Dashboard\MetricDelta;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
+use Falcon\Analytics\Livewire\Dashboard\Concerns\EditsAd;
 use Falcon\Analytics\Models\Ad;
 use Falcon\Analytics\Repositories\Dashboard\MarketingReadRepository;
 use Illuminate\Contracts\View\View;
@@ -14,16 +15,43 @@ use Illuminate\Support\Carbon;
 
 /**
  * A single ad in detail: its headline traffic over the period with a trend, its
- * parent campaign, URL conditions and conversion objectives. The ad is edited from
- * its campaign's detail page.
+ * parent campaign, URL conditions and conversion objectives. The ad, its conditions
+ * and objectives can be edited in place.
  */
 final class AdDetailPage extends DashboardComponent
 {
+    use EditsAd;
+
     public Ad $ad;
+
+    /** '' | ad */
+    public string $modal = '';
 
     public function mount(Ad $ad): void
     {
         $this->ad = $ad->load(['campaign', 'objectives']);
+    }
+
+    protected function adFormCampaignId(): int
+    {
+        return $this->ad->campaign_id;
+    }
+
+    public function editAd(FunnelRegistry $funnels, EventRegistry $events): void
+    {
+        $this->fillAdForm($this->ad, $funnels, $events);
+        $this->modal = 'ad';
+    }
+
+    public function closeModal(): void
+    {
+        $this->modal = '';
+        $this->resetAdForm();
+    }
+
+    protected function afterAdSaved(): void
+    {
+        $this->ad->refresh()->load(['campaign', 'objectives']);
     }
 
     public function render(FunnelRegistry $funnels, EventRegistry $events, MarketingReadRepository $marketing): View
@@ -69,6 +97,7 @@ final class AdDetailPage extends DashboardComponent
                     'trendLabels' => array_map(fn (string $d): string => Carbon::parse($d)->isoFormat('D MMM'), array_keys($trend)),
                     'trendData' => array_values($trend),
                     'objectiveLabels' => $labels,
+                    ...$this->adFormOptions($funnels, $events),
                     ...$this->filterData(),
                 ];
             },
