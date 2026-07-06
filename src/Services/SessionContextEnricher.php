@@ -16,6 +16,7 @@ final readonly class SessionContextEnricher
         private UserAgentParser $userAgent,
         private GeoResolver $geo,
         private SourceResolver $source,
+        private AdTagResolver $adTag,
     ) {}
 
     /**
@@ -32,6 +33,7 @@ final readonly class SessionContextEnricher
 
         $landing = $batch->events[0] ?? null;
         $acquisition = $this->source->resolve($landing?->url, $batch->referrer, $snapshot->host);
+        $adTag = $this->adTag->resolve($landing?->url);
 
         return new IngestionContext(
             isBot: $device->isBot,
@@ -57,6 +59,8 @@ final readonly class SessionContextEnricher
             utmTerm: $acquisition->utmTerm,
             landingRoute: $landing?->route,
             landingUrl: $landing?->url,
+            mktCampaign: $adTag->campaign,
+            mktAd: $adTag->ad,
             subjectType: $subject['type'] ?? null,
             subjectId: $subject['id'] ?? null,
         );

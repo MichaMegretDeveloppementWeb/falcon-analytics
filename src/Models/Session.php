@@ -40,6 +40,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $landing_route
  * @property string|null $landing_url
  * @property string|null $last_pageview_url
+ * @property string|null $mkt_campaign
+ * @property string|null $mkt_ad
  * @property string|null $subject_type
  * @property int|null $subject_id
  * @property int $pageview_count

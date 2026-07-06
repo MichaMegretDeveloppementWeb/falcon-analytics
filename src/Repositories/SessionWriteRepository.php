@@ -42,6 +42,8 @@ final readonly class SessionWriteRepository
             'utm_term' => $context->utmTerm,
             'landing_route' => $context->landingRoute,
             'landing_url' => $context->landingUrl,
+            'mkt_campaign' => $context->mktCampaign,
+            'mkt_ad' => $context->mktAd,
             'subject_type' => $context->subjectType,
             'subject_id' => $context->subjectId,
             'pageview_count' => 0,

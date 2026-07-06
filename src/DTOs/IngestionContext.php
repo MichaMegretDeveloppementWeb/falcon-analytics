@@ -35,6 +35,8 @@ final readonly class IngestionContext
         public ?string $utmTerm = null,
         public ?string $landingRoute = null,
         public ?string $landingUrl = null,
+        public ?string $mktCampaign = null,
+        public ?string $mktAd = null,
         public ?string $subjectType = null,
         public ?int $subjectId = null,
     ) {}

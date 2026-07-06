@@ -57,3 +57,16 @@ it('anonymises the ip when configured', function () {
 
     expect(app(SessionContextEnricher::class)->enrich($snapshot, pageviewBatch(), null)->ip)->toBe('85.4.12.0');
 });
+
+it('extracts the marketing campaign and ad tags from the landing url', function () {
+    $snapshot = new RequestSnapshot(ip: '85.4.12.66', userAgent: null, host: 'vantadrive.ch');
+
+    $context = app(SessionContextEnricher::class)->enrich(
+        $snapshot,
+        pageviewBatch('https://vantadrive.ch/?campaign=ete&ad=cabrio'),
+        null,
+    );
+
+    expect($context->mktCampaign)->toBe('ete')
+        ->and($context->mktAd)->toBe('cabrio');
+});
