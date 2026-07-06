@@ -27,8 +27,12 @@
                 <x-analytics::sparkline :values="$trendData" />
             </div>
         </x-analytics::kpi-card>
-        <x-analytics::kpi-card :label="__('Conversions')" :value="number_format($conversions, 0, ',', ' ')" icon="check-circle" :metric="$conversionsDelta" :description="__(':n campagnes · :m pubs', ['n' => number_format($campaignCount, 0, ',', ' '), 'm' => number_format($adCount, 0, ',', ' ')])" />
-        <x-analytics::kpi-card :label="__('Taux de conversion')" :value="$rateLabel" icon="arrow-trending-up" :metric="$rateDelta" :description="__('conversions / visiteurs issus de pubs')" />
+        <x-analytics::kpi-card :label="__('Conversions')" :value="number_format($conversions, 0, ',', ' ')" icon="check-circle" :metric="$conversionsDelta">
+            <div wire:key="spark-conv-{{ $range->days }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$conversionsTrend" color="#10b981" /></div>
+        </x-analytics::kpi-card>
+        <x-analytics::kpi-card :label="__('Taux de conversion')" :value="$rateLabel" icon="arrow-trending-up" :metric="$rateDelta">
+            <div wire:key="spark-rate-{{ $range->days }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$rateTrend" color="#10b981" /></div>
+        </x-analytics::kpi-card>
     </div>
 
     {{-- Trend --}}

@@ -218,7 +218,7 @@ final class MarketingReadRepository
      * (a tracked event they recorded, or a funnel they completed). Counts are
      * distinct visitors, so an ad's conversions never exceed its visitors.
      *
-     * @return array{total: int, campaigns: array<int, int>, ads: array<int, int>, objectives: array<int, array<string, int>>}
+     * @return array{total: int, campaigns: array<int, int>, ads: array<int, int>, objectives: array<int, array<string, int>>, daily: array<string, int>, campaignDaily: array<int, array<string, int>>, adDaily: array<int, array<string, int>>}
      */
     public function conversions(Period $period, ?string $subjectType, FunnelRegistry $funnels): array
     {
@@ -237,7 +237,7 @@ final class MarketingReadRepository
         }
 
         if ($visitorAds === []) {
-            return ['total' => 0, 'campaigns' => [], 'ads' => [], 'objectives' => []];
+            return ['total' => 0, 'campaigns' => [], 'ads' => [], 'objectives' => [], 'daily' => [], 'campaignDaily' => [], 'adDaily' => []];
         }
 
         $visitorIds = array_keys($visitorAds);
@@ -256,7 +256,7 @@ final class MarketingReadRepository
             }
         }
 
-        /** @var array<string, array<int, true>> $eventCompleters */
+        /** @var array<string, array<int, string>> $eventCompleters */
         $eventCompleters = [];
         if ($eventNames !== []) {
             $rows = Event::query()
@@ -264,14 +264,19 @@ final class MarketingReadRepository
                 ->whereIn('name', array_keys($eventNames))
                 ->whereBetween('occurred_at', [$period->from, $period->to])
                 ->whereHas('session', fn (Builder $session): Builder => $session->where('is_bot', false))
-                ->get(['visitor_id', 'name']);
+                ->get(['visitor_id', 'name', 'occurred_at']);
 
             foreach ($rows as $row) {
-                $eventCompleters[(string) $row->name][(int) $row->visitor_id] = true;
+                $name = (string) $row->name;
+                $visitorId = (int) $row->visitor_id;
+                $day = $row->occurred_at->toDateString();
+                if (! isset($eventCompleters[$name][$visitorId]) || $day < $eventCompleters[$name][$visitorId]) {
+                    $eventCompleters[$name][$visitorId] = $day;
+                }
             }
         }
 
-        /** @var array<string, array<int, true>> $funnelCompleters */
+        /** @var array<string, array<int, string>> $funnelCompleters */
         $funnelCompleters = [];
         foreach (array_keys($funnelKeys) as $key) {
             $funnel = $funnels->get($key);
@@ -288,6 +293,12 @@ final class MarketingReadRepository
         $objectiveConverters = [];
         /** @var array<int, true> $totalConverters */
         $totalConverters = [];
+        /** @var array<int, string> $visitorDay earliest conversion day per visitor, any ad */
+        $visitorDay = [];
+        /** @var array<int, array<int, string>> $adVisitorDay */
+        $adVisitorDay = [];
+        /** @var array<int, array<int, string>> $campaignVisitorDay */
+        $campaignVisitorDay = [];
 
         foreach ($visitorAds as $visitorId => $adIds) {
             foreach (array_keys($adIds) as $adId) {
@@ -296,22 +307,32 @@ final class MarketingReadRepository
                     continue;
                 }
 
-                $convertedForAd = false;
+                $day = null;
                 foreach ($ad->objectives as $objective) {
-                    $completed = $objective->type === ObjectiveType::Event
-                        ? isset($eventCompleters[$objective->reference][$visitorId])
-                        : isset($funnelCompleters[$objective->reference][$visitorId]);
+                    $completedOn = $objective->type === ObjectiveType::Event
+                        ? ($eventCompleters[$objective->reference][$visitorId] ?? null)
+                        : ($funnelCompleters[$objective->reference][$visitorId] ?? null);
 
-                    if ($completed) {
-                        $convertedForAd = true;
+                    if ($completedOn !== null) {
                         $objectiveConverters[$adId][$objective->reference][$visitorId] = true;
+                        if ($day === null || $completedOn < $day) {
+                            $day = $completedOn;
+                        }
                     }
                 }
 
-                if ($convertedForAd) {
+                if ($day !== null) {
                     $adConverters[$adId][$visitorId] = true;
                     $campaignConverters[$ad->campaign_id][$visitorId] = true;
                     $totalConverters[$visitorId] = true;
+                    $adVisitorDay[$adId][$visitorId] = $day;
+
+                    if (! isset($campaignVisitorDay[$ad->campaign_id][$visitorId]) || $day < $campaignVisitorDay[$ad->campaign_id][$visitorId]) {
+                        $campaignVisitorDay[$ad->campaign_id][$visitorId] = $day;
+                    }
+                    if (! isset($visitorDay[$visitorId]) || $day < $visitorDay[$visitorId]) {
+                        $visitorDay[$visitorId] = $day;
+                    }
                 }
             }
         }
@@ -324,7 +345,26 @@ final class MarketingReadRepository
                 fn (array $refs): array => array_map(fn (array $visitors): int => count($visitors), $refs),
                 $objectiveConverters,
             ),
+            'daily' => $this->dailyFromDays($visitorDay),
+            'campaignDaily' => array_map(fn (array $days): array => $this->dailyFromDays($days), $campaignVisitorDay),
+            'adDaily' => array_map(fn (array $days): array => $this->dailyFromDays($days), $adVisitorDay),
         ];
+    }
+
+    /**
+     * Counts of converting visitors per day.
+     *
+     * @param  array<int, string>  $daysByVisitor
+     * @return array<string, int>
+     */
+    private function dailyFromDays(array $daysByVisitor): array
+    {
+        $daily = [];
+        foreach ($daysByVisitor as $day) {
+            $daily[$day] = ($daily[$day] ?? 0) + 1;
+        }
+
+        return $daily;
     }
 
     /**
@@ -332,7 +372,7 @@ final class MarketingReadRepository
      * step in chronological order — over the period, mirroring the funnels screen.
      *
      * @param  list<int>  $visitorIds
-     * @return array<int, true>
+     * @return array<int, string> visitor id => completion day (Y-m-d)
      */
     private function funnelCompleters(Funnel $funnel, Period $period, ?string $subjectType, array $visitorIds): array
     {
@@ -379,7 +419,7 @@ final class MarketingReadRepository
 
         /** @var array<int, int> $pointer */
         $pointer = [];
-        /** @var array<int, true> $completers */
+        /** @var array<int, string> $completers */
         $completers = [];
 
         foreach ($query->cursor() as $event) {
@@ -396,7 +436,7 @@ final class MarketingReadRepository
                 $pointer[$visitorId] = $position;
 
                 if ($position === $stepCount) {
-                    $completers[$visitorId] = true;
+                    $completers[$visitorId] = $event->occurred_at->toDateString();
                 }
             }
         }

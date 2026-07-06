@@ -45,6 +45,16 @@ final class MarketingDashboardPage extends DashboardComponent
                     }
                 }
 
+                $conversionsTrend = [];
+                $rateTrend = [];
+                foreach ($period->eachDay() as $day) {
+                    $key = $day->toDateString();
+                    $dayConversions = $conversions['daily'][$key] ?? 0;
+                    $daySessions = $trend[$key] ?? 0;
+                    $conversionsTrend[] = $dayConversions;
+                    $rateTrend[] = $daySessions > 0 ? round($dayConversions / $daySessions * 100, 1) : 0;
+                }
+
                 $campaignNames = Campaign::query()->whereIn('id', array_keys($performance['campaigns']))->pluck('name', 'id');
                 $adModels = Ad::query()->with('campaign')->whereIn('id', array_keys($performance['ads']))->get();
 
@@ -85,8 +95,10 @@ final class MarketingDashboardPage extends DashboardComponent
                     'visitorsDelta' => new MetricDelta((float) $headline['visitors'], (float) $headlinePrevious['visitors']),
                     'conversions' => $conversions['total'],
                     'conversionsDelta' => new MetricDelta((float) $conversions['total'], (float) $conversionsPrevious['total']),
+                    'conversionsTrend' => $conversionsTrend,
                     'rateLabel' => number_format($rate, 1, ',', ' ')."\u{00A0}%",
                     'rateDelta' => new MetricDelta($rate, $ratePrevious),
+                    'rateTrend' => $rateTrend,
                     'campaignCount' => Campaign::query()->count(),
                     'adCount' => Ad::query()->count(),
                     'trendLabels' => array_map(fn (string $d): string => Carbon::parse($d)->isoFormat('D MMM'), array_keys($trend)),

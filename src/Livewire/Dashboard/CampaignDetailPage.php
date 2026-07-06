@@ -189,6 +189,17 @@ final class CampaignDetailPage extends DashboardComponent
                 $rate = $report['visitors'] > 0 ? $campaignConversions / $report['visitors'] * 100 : 0.0;
                 $ratePrevious = $previous['visitors'] > 0 ? $campaignConversionsPrevious / $previous['visitors'] * 100 : 0.0;
 
+                $campaignDaily = $conversions['campaignDaily'][$this->campaign->id] ?? [];
+                $conversionsTrend = [];
+                $rateTrend = [];
+                foreach ($period->eachDay() as $day) {
+                    $key = $day->toDateString();
+                    $dayConversions = $campaignDaily[$key] ?? 0;
+                    $daySessions = $report['daily'][$key] ?? 0;
+                    $conversionsTrend[] = $dayConversions;
+                    $rateTrend[] = $daySessions > 0 ? round($dayConversions / $daySessions * 100, 1) : 0;
+                }
+
                 return [
                     'range' => $period,
                     'sessions' => $report['sessions'],
@@ -197,8 +208,10 @@ final class CampaignDetailPage extends DashboardComponent
                     'visitorsDelta' => new MetricDelta((float) $report['visitors'], (float) $previous['visitors']),
                     'conversions' => $campaignConversions,
                     'conversionsDelta' => new MetricDelta((float) $campaignConversions, (float) $campaignConversionsPrevious),
+                    'conversionsTrend' => $conversionsTrend,
                     'rateLabel' => number_format($rate, 1, ',', ' ')."\u{00A0}%",
                     'rateDelta' => new MetricDelta($rate, $ratePrevious),
+                    'rateTrend' => $rateTrend,
                     'adMetrics' => $report['ads'],
                     'adConversions' => $conversions['ads'],
                     'trendLabels' => array_map(fn (string $d): string => Carbon::parse($d)->isoFormat('D MMM'), array_keys($trend)),

@@ -50,8 +50,12 @@
             <x-analytics::kpi-card :label="__('Visiteurs')" :value="number_format($visitors, 0, ',', ' ')" icon="users" :metric="$visitorsDelta">
                 <div wire:key="c-spark-v-{{ $range->days }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$trendData" /></div>
             </x-analytics::kpi-card>
-            <x-analytics::kpi-card :label="__('Conversions')" :value="number_format($conversions, 0, ',', ' ')" icon="check-circle" :metric="$conversionsDelta" />
-            <x-analytics::kpi-card :label="__('Taux de conversion')" :value="$rateLabel" icon="arrow-trending-up" :metric="$rateDelta" />
+            <x-analytics::kpi-card :label="__('Conversions')" :value="number_format($conversions, 0, ',', ' ')" icon="check-circle" :metric="$conversionsDelta">
+                <div wire:key="c-spark-conv-{{ $range->days }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$conversionsTrend" color="#10b981" /></div>
+            </x-analytics::kpi-card>
+            <x-analytics::kpi-card :label="__('Taux de conversion')" :value="$rateLabel" icon="arrow-trending-up" :metric="$rateDelta">
+                <div wire:key="c-spark-rate-{{ $range->days }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$rateTrend" color="#10b981" /></div>
+            </x-analytics::kpi-card>
         </div>
         <x-ui.card class="mt-6">
             <x-ui.section-header :title="__('Sessions au fil du temps')" class="mb-4" />
