@@ -34,6 +34,32 @@
         </div>
     </div>
 
+    {{-- Performance --}}
+    <div>
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <x-ui.section-header :title="__('Performance')" :description="__('du :from au :to', ['from' => $range->from->isoFormat('D MMM'), 'to' => $range->to->isoFormat('D MMM YYYY')])" />
+            @include('analytics::livewire.dashboard.partials.filters')
+        </div>
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <div class="grid grid-cols-2 gap-4 lg:grid-cols-1">
+                <x-analytics::kpi-card :label="__('Sessions')" :value="number_format($sessions, 0, ',', ' ')" icon="cursor-arrow-rays" :metric="$sessionsDelta">
+                    <div wire:key="c-spark-s-{{ $range->days }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$trendData" /></div>
+                </x-analytics::kpi-card>
+                <x-analytics::kpi-card :label="__('Visiteurs')" :value="number_format($visitors, 0, ',', ' ')" icon="users" :metric="$visitorsDelta">
+                    <div wire:key="c-spark-v-{{ $range->days }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$trendData" /></div>
+                </x-analytics::kpi-card>
+            </div>
+            <x-ui.card class="lg:col-span-2">
+                <x-ui.section-header :title="__('Sessions au fil du temps')" class="mb-4" />
+                @if (array_sum($trendData) > 0)
+                    <x-analytics::area-chart :labels="$trendLabels" :data="$trendData" :label="__('Sessions')" height="h-56" />
+                @else
+                    <div class="flex h-56 items-center justify-center rounded-lg bg-elevated text-[12px] text-muted">{{ __('Aucune session sur la période.') }}</div>
+                @endif
+            </x-ui.card>
+        </div>
+    </div>
+
     {{-- Ads --}}
     <div>
         <div class="mb-4 flex items-center justify-between">
@@ -49,12 +75,15 @@
                     <x-ui.table.header-cell :first="true">{{ __('Pub') }}</x-ui.table.header-cell>
                     <x-ui.table.header-cell>{{ __('Conditions') }}</x-ui.table.header-cell>
                     <x-ui.table.header-cell>{{ __('Objectifs') }}</x-ui.table.header-cell>
+                    <x-ui.table.header-cell align="right">{{ __('Sessions') }}</x-ui.table.header-cell>
                     <x-ui.table.header-cell :last="true" align="right">{{ __('Actions') }}</x-ui.table.header-cell>
                 </x-ui.table.head>
                 <x-ui.table.body>
                     @foreach ($ads as $ad)
                         <x-ui.table.row wire:key="ad-{{ $ad->id }}">
-                            <x-ui.table.cell :first="true" variant="primary">{{ $ad->name }}</x-ui.table.cell>
+                            <x-ui.table.cell :first="true" variant="primary">
+                                <a href="{{ route($routeName.'.ads.show', $ad->id) }}" class="cursor-pointer text-[13px] font-medium text-primary hover:underline">{{ $ad->name }}</a>
+                            </x-ui.table.cell>
                             <x-ui.table.cell>
                                 <div class="flex flex-wrap items-center gap-1.5">
                                     @foreach ($ad->match_conditions ?? [] as $condition)
@@ -74,6 +103,7 @@
                                     @endforelse
                                 </div>
                             </x-ui.table.cell>
+                            <x-ui.table.cell align="right" class="tabular-nums">{{ number_format($adMetrics[$ad->id]['sessions'] ?? 0, 0, ',', ' ') }}</x-ui.table.cell>
                             <x-ui.table.cell :last="true" align="right">
                                 <div class="flex items-center justify-end gap-1">
                                     <x-ui.button variant="ghost" size="compact" wire:click="editAd({{ $ad->id }})" aria-label="{{ __('Modifier') }}"><x-ui.icon name="pencil-square" class="h-3.5 w-3.5" /></x-ui.button>

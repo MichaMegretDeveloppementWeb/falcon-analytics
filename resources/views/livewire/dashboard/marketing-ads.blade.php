@@ -27,14 +27,19 @@
             </x-ui.table.head>
             <x-ui.table.body>
                 @foreach ($ads as $ad)
-                    @php $showUrl = route($routeName.'.campaigns.show', $ad->campaign_id); @endphp
+                    @php
+                        $adUrl = route($routeName.'.ads.show', $ad->id);
+                        $campaignUrl = route($routeName.'.campaigns.show', $ad->campaign_id);
+                    @endphp
                     <x-ui.table.row
                         wire:key="ad-{{ $ad->id }}"
-                        onclick="if (!event.target.closest('a')) window.location='{{ $showUrl }}'"
+                        onclick="if (!event.target.closest('a')) window.location='{{ $adUrl }}'"
                         class="cursor-pointer">
-                        <x-ui.table.cell :first="true" variant="primary">{{ $ad->name }}</x-ui.table.cell>
+                        <x-ui.table.cell :first="true" variant="primary">
+                            <a href="{{ $adUrl }}" class="cursor-pointer text-[13px] font-medium text-primary hover:underline">{{ $ad->name }}</a>
+                        </x-ui.table.cell>
                         <x-ui.table.cell>
-                            <a href="{{ $showUrl }}" class="cursor-pointer text-[13px] text-secondary hover:text-primary hover:underline">{{ $ad->campaign->name }}</a>
+                            <a href="{{ $campaignUrl }}" class="cursor-pointer text-[13px] text-secondary hover:text-primary hover:underline">{{ $ad->campaign->name }}</a>
                         </x-ui.table.cell>
                         <x-ui.table.cell>
                             <div class="flex flex-wrap items-center gap-1.5">

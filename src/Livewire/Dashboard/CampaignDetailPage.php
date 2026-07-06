@@ -4,27 +4,25 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Livewire\Dashboard;
 
+use Falcon\Analytics\DTOs\Dashboard\MetricDelta;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
-use Falcon\Analytics\Livewire\Dashboard\Concerns\RecoversFromReadFailure;
-use Falcon\Analytics\Livewire\Dashboard\Concerns\ResolvesDashboardLayout;
 use Falcon\Analytics\Models\Ad;
 use Falcon\Analytics\Models\AdObjective;
 use Falcon\Analytics\Models\Campaign;
+use Falcon\Analytics\Repositories\Dashboard\MarketingReadRepository;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Livewire\Component;
 
 /**
- * A single campaign in detail: its identity and URL conditions, and the table of
- * its ads with their conditions and conversion objectives. Ads and objectives are
- * created and edited here; the campaign itself can be edited or deleted.
+ * A single campaign in detail: its headline traffic over the period, its identity
+ * and URL conditions, and the table of its ads with per-ad traffic and conversion
+ * objectives. Ads and objectives are managed here; the campaign can be edited or
+ * deleted.
  */
-final class CampaignDetailPage extends Component
+final class CampaignDetailPage extends DashboardComponent
 {
-    use RecoversFromReadFailure;
-    use ResolvesDashboardLayout;
-
     public Campaign $campaign;
 
     /** '' | campaign | ad | delete-campaign | delete-ad */
@@ -271,10 +269,10 @@ final class CampaignDetailPage extends Component
         return array_values(array_filter($cleaned, fn (array $c): bool => $c['param'] !== '' && $c['value'] !== ''));
     }
 
-    public function render(FunnelRegistry $funnels, EventRegistry $events): View
+    public function render(FunnelRegistry $funnels, EventRegistry $events, MarketingReadRepository $marketing): View
     {
         return $this->guardedRender(
-            function () use ($funnels, $events): array {
+            function () use ($funnels, $events, $marketing): array {
                 $selectedFunnels = [];
                 $selectedEvents = [];
                 foreach ($this->objectives as $objective) {
@@ -285,7 +283,25 @@ final class CampaignDetailPage extends Component
                     }
                 }
 
+                $period = $this->currentPeriod();
+                $subjectType = $this->subjectType();
+                $report = $marketing->campaignReport($period, $subjectType, $this->campaign);
+                $previous = $marketing->campaignReport($period->previous(), $subjectType, $this->campaign);
+
+                $trend = [];
+                foreach ($period->eachDay() as $day) {
+                    $trend[$day->toDateString()] = $report['daily'][$day->toDateString()] ?? 0;
+                }
+
                 return [
+                    'range' => $period,
+                    'sessions' => $report['sessions'],
+                    'visitors' => $report['visitors'],
+                    'sessionsDelta' => new MetricDelta((float) $report['sessions'], (float) $previous['sessions']),
+                    'visitorsDelta' => new MetricDelta((float) $report['visitors'], (float) $previous['visitors']),
+                    'adMetrics' => $report['ads'],
+                    'trendLabels' => array_map(fn (string $d): string => Carbon::parse($d)->isoFormat('D MMM'), array_keys($trend)),
+                    'trendData' => array_values($trend),
                     'ads' => $this->campaign->ads()->with('objectives')->orderBy('name')->get(),
                     'objectiveLabels' => $this->objectiveLabels($funnels, $events),
                     'funnelOptions' => array_values(array_filter(
@@ -296,6 +312,7 @@ final class CampaignDetailPage extends Component
                         array_map(fn ($e): array => ['reference' => $e->name, 'label' => $e->label, 'value' => $e->value], $events->all()),
                         fn (array $o): bool => ! in_array($o['reference'], $selectedEvents, true),
                     )),
+                    ...$this->filterData(),
                 ];
             },
             fn (array $data): View => view('analytics::livewire.dashboard.marketing-campaign-detail', $data)

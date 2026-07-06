@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Falcon\Analytics\Http\Controllers\CollectorScriptController;
 use Falcon\Analytics\Http\Controllers\IngestController;
 use Falcon\Analytics\Http\Middleware\EnsureAnalyticsAccepts;
+use Falcon\Analytics\Livewire\Dashboard\AdDetailPage;
 use Falcon\Analytics\Livewire\Dashboard\AdsPage;
 use Falcon\Analytics\Livewire\Dashboard\CampaignDetailPage;
 use Falcon\Analytics\Livewire\Dashboard\CampaignsPage;
@@ -67,4 +68,5 @@ Route::prefix((string) ($marketing['route_prefix'] ?? 'admin/marketing'))
         Route::livewire('/campaigns', CampaignsPage::class)->name('campaigns');
         Route::livewire('/campaigns/{campaign}', CampaignDetailPage::class)->name('campaigns.show');
         Route::livewire('/ads', AdsPage::class)->name('ads');
+        Route::livewire('/ads/{ad}', AdDetailPage::class)->name('ads.show');
     });

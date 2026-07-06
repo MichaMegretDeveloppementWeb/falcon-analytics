@@ -19,7 +19,8 @@ it('mounts the marketing module at its own prefix and route names', function () 
     expect(route('marketing.dashboard', absolute: false))->toBe('/admin/marketing')
         ->and(route('marketing.campaigns', absolute: false))->toBe('/admin/marketing/campaigns')
         ->and(route('marketing.campaigns.show', ['campaign' => 1], absolute: false))->toBe('/admin/marketing/campaigns/1')
-        ->and(route('marketing.ads', absolute: false))->toBe('/admin/marketing/ads');
+        ->and(route('marketing.ads', absolute: false))->toBe('/admin/marketing/ads')
+        ->and(route('marketing.ads.show', ['ad' => 1], absolute: false))->toBe('/admin/marketing/ads/1');
 });
 
 it('protects the marketing module from guests', function () {
@@ -41,6 +42,12 @@ it('renders the four marketing screens for an admin', function () {
     $this->get(route('marketing.campaigns'))->assertSuccessful()->assertSeeText('Été 2026')->assertSeeText('meta_ete');
     $this->get(route('marketing.campaigns.show', $campaign))->assertSuccessful()->assertSeeText('Cabriolet')->assertSeeText('cabrio');
     $this->get(route('marketing.ads'))->assertSuccessful()->assertSeeText('Cabriolet');
+
+    $ad = Ad::where('name', 'Cabriolet')->firstOrFail();
+    $this->get(route('marketing.ads.show', $ad))->assertSuccessful()
+        ->assertSeeText('Cabriolet')
+        ->assertSeeText('Été 2026')
+        ->assertSeeText(__('Performance'));
 });
 
 it('creates a campaign from the campaigns table', function () {

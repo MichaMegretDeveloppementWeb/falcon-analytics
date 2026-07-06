@@ -126,6 +126,86 @@ final class MarketingReadRepository
     }
 
     /**
+     * One campaign's traffic over the period, its daily sessions for a trend, and
+     * its per-ad breakdown, all under most-specific attribution (matching the
+     * overview figures).
+     *
+     * @return array{sessions: int, visitors: int, daily: array<string, int>, ads: array<int, array{sessions: int, visitors: int}>}
+     */
+    public function campaignReport(Period $period, ?string $subjectType, Campaign $campaign): array
+    {
+        $campaigns = Campaign::query()->where('is_active', true)->get()->all();
+        $ads = $campaign->ads()->where('is_active', true)->get()->all();
+
+        $sessions = 0;
+        /** @var array<int, true> $visitors */
+        $visitors = [];
+        /** @var array<string, int> $daily */
+        $daily = [];
+        /** @var array<int, int> $adSessions */
+        $adSessions = [];
+        /** @var array<int, array<int, true>> $adVisitors */
+        $adVisitors = [];
+
+        foreach ($this->taggedSessions($period, $subjectType)->get(['visitor_id', 'mkt_params', 'started_at']) as $session) {
+            $params = $session->mkt_params ?? [];
+
+            $bestCampaign = $this->mostSpecific($campaigns, $params);
+            if (! ($bestCampaign instanceof Campaign) || $bestCampaign->id !== $campaign->id) {
+                continue;
+            }
+
+            $visitor = (int) $session->visitor_id;
+            $sessions++;
+            $visitors[$visitor] = true;
+            $daily[$session->started_at->toDateString()] = ($daily[$session->started_at->toDateString()] ?? 0) + 1;
+
+            $bestAd = $this->mostSpecific($ads, $params);
+            if ($bestAd instanceof Ad) {
+                $adSessions[$bestAd->id] = ($adSessions[$bestAd->id] ?? 0) + 1;
+                $adVisitors[$bestAd->id][$visitor] = true;
+            }
+        }
+
+        return [
+            'sessions' => $sessions,
+            'visitors' => count($visitors),
+            'daily' => $daily,
+            'ads' => $this->buildRows($adSessions, $adVisitors),
+        ];
+    }
+
+    /**
+     * One ad's traffic over the period and its daily sessions, under most-specific
+     * attribution among all ads.
+     *
+     * @return array{sessions: int, visitors: int, daily: array<string, int>}
+     */
+    public function adReport(Period $period, ?string $subjectType, Ad $ad): array
+    {
+        $ads = Ad::query()->where('is_active', true)->get()->all();
+
+        $sessions = 0;
+        /** @var array<int, true> $visitors */
+        $visitors = [];
+        /** @var array<string, int> $daily */
+        $daily = [];
+
+        foreach ($this->taggedSessions($period, $subjectType)->get(['visitor_id', 'mkt_params', 'started_at']) as $session) {
+            $bestAd = $this->mostSpecific($ads, $session->mkt_params ?? []);
+            if (! ($bestAd instanceof Ad) || $bestAd->id !== $ad->id) {
+                continue;
+            }
+
+            $sessions++;
+            $visitors[(int) $session->visitor_id] = true;
+            $daily[$session->started_at->toDateString()] = ($daily[$session->started_at->toDateString()] ?? 0) + 1;
+        }
+
+        return ['sessions' => $sessions, 'visitors' => count($visitors), 'daily' => $daily];
+    }
+
+    /**
      * @return Builder<Session>
      */
     private function taggedSessions(Period $period, ?string $subjectType): Builder
