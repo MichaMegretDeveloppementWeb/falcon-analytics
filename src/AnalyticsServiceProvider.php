@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics;
 
+use Falcon\Analytics\Console\CheckEventsCommand;
 use Falcon\Analytics\Console\GeoipDownloadCommand;
 use Falcon\Analytics\Console\InstallCommand;
 use Falcon\Analytics\Console\PruneCommand;
+use Falcon\Analytics\Console\ScanEventsCommand;
 use Falcon\Analytics\Console\SweepCommand;
+use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\TrendChart;
 use Falcon\Analytics\Support\GeoResolver;
@@ -38,6 +41,17 @@ final class AnalyticsServiceProvider extends ServiceProvider
 
             return $registry;
         });
+
+        $this->app->singleton(EventRegistry::class, function (): EventRegistry {
+            $registry = new EventRegistry;
+            $path = config('analytics.events_path') ?: base_path('app/Analytics/events.php');
+
+            if (is_string($path) && is_file($path)) {
+                $registry->load($path);
+            }
+
+            return $registry;
+        });
     }
 
     public function boot(): void
@@ -61,6 +75,8 @@ final class AnalyticsServiceProvider extends ServiceProvider
                 GeoipDownloadCommand::class,
                 PruneCommand::class,
                 SweepCommand::class,
+                ScanEventsCommand::class,
+                CheckEventsCommand::class,
             ]);
 
             // Self-schedule maintenance so a host only needs the standard

@@ -29,15 +29,24 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Funnels
+    | Funnels & tracked events
     |--------------------------------------------------------------------------
     |
-    | Path to the code-declared funnels file, loaded lazily. Null falls back to
-    | app/Analytics/funnels.php in the host.
+    | Paths to the code-declared funnels and tracked-events files, loaded lazily.
+    | Null falls back to app/Analytics/funnels.php and app/Analytics/events.php in
+    | the host. The events file is the single source of truth for the events
+    | offered as conversion objectives (name + label + optional value); keep it in
+    | sync with the code via `php artisan analytics:events:scan`.
     |
     */
 
     'funnels_path' => null,
+
+    'events_path' => null,
+
+    // Paths (relative to the base path) scanned by analytics:events:scan for
+    // data-track-event attributes and Analytics::record calls.
+    'events_scan_paths' => ['app', 'resources/views'],
 
     /*
     |--------------------------------------------------------------------------
