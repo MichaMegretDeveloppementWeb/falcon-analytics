@@ -7,6 +7,7 @@ namespace Falcon\Analytics\Livewire\Dashboard;
 use Falcon\Analytics\Actions\ForgetVisitorAction;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\RecoversFromReadFailure;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\ResolvesDashboardLayout;
+use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Services\SubjectResolver;
 use Illuminate\Contracts\View\View;
@@ -66,11 +67,18 @@ final class VisitorDetailPage extends Component
                     ->get();
 
                 $subjectType = $this->visitor->subject_type;
+                $count = $sessions->count();
+                $totalPageviews = (int) $sessions->sum('pageview_count');
+                $totalSeconds = (int) $sessions->sum(fn (Session $s): int => (int) $s->started_at->diffInSeconds($s->last_activity_at));
 
                 return [
                     'visitor' => $this->visitor,
                     'sessions' => $sessions,
-                    'totalPageviews' => (int) $sessions->sum('pageview_count'),
+                    'totalPageviews' => $totalPageviews,
+                    'avgSeconds' => $count > 0 ? (int) round($totalSeconds / $count) : 0,
+                    'pagesPerSession' => $count > 0 ? round($totalPageviews / $count, 1) : 0.0,
+                    'devices' => $sessions->groupBy(fn (Session $s): string => (string) $s->device_type)->map->count()->sortDesc()->all(),
+                    'sources' => $sessions->groupBy(fn (Session $s): string => $s->source ?: 'direct')->map->count()->sortDesc()->all(),
                     'subjectLabel' => $subjectType !== null ? $subjects->label($subjectType) : null,
                     'subjectName' => $subjectType !== null ? $subjects->name($subjectType, (int) $this->visitor->subject_id) : null,
                 ];

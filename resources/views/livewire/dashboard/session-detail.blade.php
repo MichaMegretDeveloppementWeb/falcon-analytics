@@ -105,7 +105,10 @@
             {{ __('Session') }} #{{ $session->id }} <span class="text-muted">·</span> {{ $session->started_at->translatedFormat('d F Y à H:i') }}
         </h1>
         <div class="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-sm text-secondary">
-            <span class="font-medium text-primary">{{ $visitorPrimary }}</span>
+            <a href="{{ route($routeName.'.visitors.show', $session->visitor_id) }}" class="inline-flex cursor-pointer items-center gap-1 font-medium text-primary hover:underline" title="{{ __('Voir le profil du visiteur') }}">
+                {{ $visitorPrimary }}
+                <x-ui.icon name="arrow-top-right-on-square" class="h-3 w-3 text-muted" />
+            </a>
             @if ($visitorName && $visitorLabel)
                 <span class="text-muted">·</span>
                 <span>{{ $visitorLabel }}</span>
@@ -115,7 +118,7 @@
             @endif
             @if ($session->visitor?->uuid)
                 <span class="text-muted">·</span>
-                <span>{{ __('ID') }}{{ "\u{00A0}" }}: {{ Str::limit($session->visitor->uuid, 24, '…') }}</span>
+                <span class="inline-flex items-center gap-1">{{ __('ID') }}{{ "\u{00A0}" }}: <span class="font-mono text-[12px]">{{ Str::limit($session->visitor->uuid, 20, '…') }}</span><x-analytics::copy-button :value="$session->visitor->uuid" /></span>
             @endif
         </div>
     </div>

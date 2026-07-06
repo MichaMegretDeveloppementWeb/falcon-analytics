@@ -18,6 +18,10 @@
 
         return "{$seconds}\u{00A0}s";
     };
+
+    $palette = ['#1684ea', '#4b9bf0', '#7cb8f2', '#a5cdf7', '#bcdcfa', '#d1d5db'];
+    $deviceTotal = array_sum($devices);
+    $sourceTotal = array_sum($sources);
 @endphp
 
 <div class="space-y-6">
@@ -38,16 +42,67 @@
                 <x-ui.badge color="blue">{{ __('Récurrent') }}</x-ui.badge>
             @endif
             <span class="text-muted">·</span>
-            <span>{{ __('ID') }}{{ "\u{00A0}" }}: {{ Str::limit($visitor->uuid, 24, '…') }}</span>
+            <span class="inline-flex items-center gap-1">{{ __('ID') }}{{ "\u{00A0}" }}: <span class="font-mono text-[12px]">{{ Str::limit($visitor->uuid, 20, '…') }}</span><x-analytics::copy-button :value="$visitor->uuid" /></span>
+            <span class="text-muted">·</span>
+            <span>{{ __('Première visite le :date', ['date' => $visitor->first_seen_at->translatedFormat('d M Y')]) }}</span>
         </div>
     </div>
 
-    {{-- Key figures --}}
+    {{-- Engagement figures --}}
     <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
         <x-ui.stat-card :label="__('Sessions')" :value="(string) $visitor->session_count" icon="rectangle-stack" />
         <x-ui.stat-card :label="__('Pages vues')" :value="(string) $totalPageviews" icon="document-text" />
-        <x-ui.stat-card :label="__('Première visite')" :value="$visitor->first_seen_at->translatedFormat('d M Y')" icon="flag" />
-        <x-ui.stat-card :label="__('Dernière activité')" :value="$visitor->last_seen_at->diffForHumans()" icon="clock" />
+        <x-ui.stat-card :label="__('Durée moy.')" :value="$formatSeconds($avgSeconds)" icon="clock" />
+        <x-ui.stat-card :label="__('Pages / session')" :value="number_format($pagesPerSession, 1, ',', ' ')" icon="chart-bar" />
+    </div>
+
+    {{-- Comportement : appareils + acquisition --}}
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <x-ui.card>
+            <x-ui.section-header :title="__('Appareils')" class="mb-4" />
+            @if ($deviceTotal > 0)
+                <div class="flex items-center gap-5">
+                    <x-analytics::donut
+                        :labels="collect($devices)->keys()->map(fn ($d) => DeviceLabel::for($d))->all()"
+                        :values="array_values($devices)"
+                        :colors="array_slice($palette, 0, count($devices))"
+                        :total="(string) $deviceTotal"
+                        :caption="__('sessions')" />
+                    <div class="flex-1 space-y-2.5">
+                        @foreach ($devices as $device => $c)
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="flex items-center gap-2 text-[13px] text-secondary"><span class="h-2 w-2 rounded-full" style="background:{{ $palette[$loop->index] ?? '#d1d5db' }}"></span>{{ DeviceLabel::for($device) }}</span>
+                                <span class="text-[13px]"><span class="font-semibold text-primary">{{ ((int) round($c / $deviceTotal * 100))."\u{00A0}%" }}</span> <span class="text-muted">{{ $c }}</span></span>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @else
+                <x-ui.empty-state icon="device-phone-mobile" :title="__('Aucune donnée')" />
+            @endif
+        </x-ui.card>
+
+        <x-ui.card>
+            <x-ui.section-header :title="__('Acquisition')" class="mb-4" />
+            @if ($sourceTotal > 0)
+                <div class="space-y-3">
+                    @foreach ($sources as $source => $c)
+                        @php $pct = (int) round($c / $sourceTotal * 100); @endphp
+                        <div>
+                            <div class="mb-1 flex items-center justify-between text-[13px]">
+                                <span class="text-secondary">@if ($source === 'direct'){{ __('Directe') }}@else<x-analytics::source :value="$source" />@endif</span>
+                                <span><span class="font-semibold text-primary">{{ $pct."\u{00A0}%" }}</span> <span class="text-muted">{{ $c }}</span></span>
+                            </div>
+                            <div class="h-1.5 w-full overflow-hidden rounded-full bg-elevated">
+                                <div class="h-full rounded-full bg-[#1684ea]" style="width: {{ $pct }}%"></div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <x-ui.empty-state icon="globe-alt" :title="__('Aucune donnée')" />
+            @endif
+        </x-ui.card>
     </div>
 
     {{-- Sessions --}}
