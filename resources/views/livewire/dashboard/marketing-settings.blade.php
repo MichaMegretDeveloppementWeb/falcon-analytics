@@ -8,8 +8,6 @@
     foreach ($eventOptions as $option) {
         $objectiveLabels['event:'.$option['reference']] = $option['label'];
     }
-
-    $selectedObjectiveLabel = $objReference !== '' ? ($objectiveLabels[$objType.':'.$objReference] ?? $objReference) : '';
 @endphp
 
 <div class="space-y-8">
@@ -20,7 +18,6 @@
 
     @forelse ($campaigns as $campaign)
         <x-ui.card wire:key="campaign-{{ $campaign->id }}">
-            {{-- Campaign header --}}
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div class="min-w-0">
                     <div class="flex items-center gap-2">
@@ -42,7 +39,6 @@
                 </div>
             </div>
 
-            {{-- Ads --}}
             @if ($campaign->ads->isNotEmpty())
                 <div class="mt-5 space-y-2.5">
                     @foreach ($campaign->ads as $ad)
@@ -83,14 +79,15 @@
         <x-ui.empty-state icon="megaphone" :title="__('Aucune campagne')" :description="__('Créez une campagne pour commencer à mesurer vos pubs.')" />
     @endforelse
 
-    {{-- Modals: visibility driven by Livewire state (Livewire-safe, no teleport) --}}
+    {{-- Modals: visibility driven by Livewire state (Livewire-safe, no teleport). The
+         root scrolls and the panel does not clip, so floating pickers overlay freely. --}}
     <div x-on:keydown.escape.window="$wire.modal !== '' && $wire.closeModal()">
 
         {{-- Campaign --}}
-        <div x-show="$wire.modal === 'campaign'" x-cloak class="fixed inset-0 z-50">
-            <div class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm dark:bg-black/60"></div>
+        <div x-show="$wire.modal === 'campaign'" x-cloak class="fixed inset-0 z-50 overflow-y-auto">
+            <div class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm dark:bg-black/60"></div>
             <div class="relative flex min-h-full items-center justify-center p-4" @click.self="$wire.closeModal()">
-                <div class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-base bg-surface p-5 shadow-xl">
+                <div class="w-full max-w-lg rounded-xl border border-base bg-surface p-5 shadow-xl">
                     <h3 class="text-[13px] font-semibold text-primary">{{ $campaignId ? __('Modifier la campagne') : __('Nouvelle campagne') }}</h3>
                     <form wire:submit="saveCampaign" class="mt-4 space-y-4">
                         <x-ui.form-group :label="__('Nom')" for="campaignName">
@@ -123,14 +120,14 @@
             </div>
         </div>
 
-        {{-- Ad + objectives --}}
-        <div x-show="$wire.modal === 'ad'" x-cloak class="fixed inset-0 z-50">
-            <div class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm dark:bg-black/60"></div>
+        {{-- Ad + objectives (single save) --}}
+        <div x-show="$wire.modal === 'ad'" x-cloak class="fixed inset-0 z-50 overflow-y-auto">
+            <div class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm dark:bg-black/60"></div>
             <div class="relative flex min-h-full items-center justify-center p-4" @click.self="$wire.closeModal()">
-                <div class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-base bg-surface p-5 shadow-xl">
+                <div class="w-full max-w-lg rounded-xl border border-base bg-surface p-5 shadow-xl">
                     <h3 class="text-[13px] font-semibold text-primary">{{ $adId ? __('Modifier la pub') : __('Nouvelle pub') }}</h3>
 
-                    <div class="mt-4 space-y-4">
+                    <form wire:submit="saveAd" class="mt-4 space-y-4">
                         <x-ui.form-group :label="__('Nom')" for="adName">
                             <x-ui.input wire:model="adName" id="adName" placeholder="{{ __('Ex. Cabriolet') }}" :error="$errors->has('adName')" />
                         </x-ui.form-group>
@@ -149,83 +146,82 @@
                             <x-ui.button type="button" variant="ghost" size="compact" wire:click="addAdCondition" class="mt-2"><x-ui.icon name="plus" class="h-3.5 w-3.5" /> {{ __('Ajouter une condition') }}</x-ui.button>
                         </x-ui.form-group>
 
-                        <div class="flex justify-end">
-                            <x-ui.button wire:click="saveAd">{{ $adId ? __('Enregistrer') : __('Créer la pub') }}</x-ui.button>
-                        </div>
-                    </div>
+                        {{-- Objectives, under the conditions, saved together with the ad --}}
+                        <div class="border-t border-subtle pt-4">
+                            <p class="text-[13px] font-medium text-primary">{{ __('Objectifs de conversion') }}</p>
+                            <p class="mb-3 mt-0.5 text-[12px] text-secondary">{{ __('Cette pub n\'est créditée que des conversions ci-dessous.') }}</p>
 
-                    @if ($editingAd)
-                        <div class="mt-5 border-t border-subtle pt-4">
-                            <x-ui.section-header :title="__('Objectifs de conversion')" class="mb-1" />
-                            <p class="mb-3 text-[12px] text-secondary">{{ __('Cette pub n\'est créditée que des conversions ci-dessous.') }}</p>
-
-                            @if ($editingAd->objectives->isNotEmpty())
+                            @if ($objectives !== [])
                                 <div class="mb-3 space-y-1.5">
-                                    @foreach ($editingAd->objectives as $objective)
-                                        <div wire:key="obj-{{ $objective->id }}" class="flex items-center justify-between gap-2 rounded-lg bg-elevated px-3 py-2">
-                                            <span class="inline-flex min-w-0 items-center gap-1.5 text-[12px] text-secondary">
-                                                <x-ui.icon :name="$objective->type->value === 'funnel' ? 'funnel' : 'bolt'" class="h-3.5 w-3.5 shrink-0 text-muted" />
-                                                <span class="truncate">{{ $objectiveLabels[$objective->type->value.':'.$objective->reference] ?? $objective->reference }}</span>
-                                                @if ($objective->type->value === 'event')<span class="shrink-0 text-muted">· {{ (float) $objective->value }} {{ __('pts') }}</span>@endif
-                                            </span>
-                                            <button type="button" wire:click="removeObjective({{ $objective->id }})" class="shrink-0 cursor-pointer text-muted transition-colors hover:text-red-600" aria-label="{{ __('Retirer') }}"><x-ui.icon name="x-mark" class="h-4 w-4" /></button>
+                                    @foreach ($objectives as $index => $objective)
+                                        <div wire:key="obj-{{ $index }}" class="flex items-center gap-2 rounded-lg bg-elevated px-3 py-2">
+                                            <x-ui.icon :name="$objective['type'] === 'funnel' ? 'funnel' : 'bolt'" class="h-3.5 w-3.5 shrink-0 text-muted" />
+                                            <span class="min-w-0 flex-1 truncate text-[12px] text-secondary">{{ $objective['label'] }}</span>
+                                            @if ($objective['type'] === 'event')
+                                                <div class="flex shrink-0 items-center gap-1">
+                                                    <input type="number" step="0.01" min="0" wire:model.blur="objectives.{{ $index }}.value" class="w-16 rounded-lg border border-base bg-surface px-2 py-1 text-[12px] text-primary focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-white/10" />
+                                                    <span class="text-[11px] text-muted">{{ __('pts') }}</span>
+                                                </div>
+                                            @endif
+                                            <button type="button" wire:click="removeObjective({{ $index }})" class="shrink-0 cursor-pointer text-muted transition-colors hover:text-red-600" aria-label="{{ __('Retirer') }}"><x-ui.icon name="x-mark" class="h-4 w-4" /></button>
                                         </div>
                                     @endforeach
                                 </div>
                             @endif
 
-                            {{-- Searchable objective picker --}}
-                            <div class="rounded-lg border border-subtle p-3">
+                            <div class="flex flex-wrap gap-2">
+                                {{-- Funnel picker --}}
                                 <div x-data="{ open: false, search: '' }" @click.outside="open = false" class="relative">
-                                    <button type="button" @click="open = !open" class="flex w-full cursor-pointer items-center justify-between rounded-lg border border-base bg-elevated px-3 py-2 text-left text-[13px] text-secondary transition-colors hover:bg-page">
-                                        <span>{{ $objReference !== '' ? $selectedObjectiveLabel : __('Choisir un entonnoir ou un événement...') }}</span>
-                                        <x-ui.icon name="chevron-down" class="h-4 w-4 text-muted" />
-                                    </button>
-                                    <div x-show="open" x-cloak x-transition.opacity class="absolute z-10 mt-1 w-full overflow-hidden rounded-lg border border-base bg-surface shadow-xl">
+                                    <x-ui.button type="button" variant="secondary" size="compact" x-on:click="open = ! open; search = ''"><x-ui.icon name="funnel" class="h-3.5 w-3.5" /> {{ __('Entonnoir') }}</x-ui.button>
+                                    <div x-show="open" x-cloak x-transition.opacity class="absolute bottom-full left-0 z-30 mb-1 w-72 overflow-hidden rounded-lg border border-base bg-surface shadow-xl">
                                         <div class="border-b border-subtle p-2">
-                                            <input x-model="search" @click.stop type="text" placeholder="{{ __('Rechercher...') }}" class="w-full rounded-lg border border-base bg-elevated px-2.5 py-1.5 text-[13px] text-primary placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-white/10">
+                                            <input x-model="search" x-on:click.stop type="text" placeholder="{{ __('Rechercher un entonnoir...') }}" class="w-full rounded-lg border border-base bg-elevated px-2.5 py-1.5 text-[13px] text-primary placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-white/10">
                                         </div>
-                                        <div class="max-h-56 overflow-y-auto p-1">
-                                            <p class="px-2 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted">{{ __('Entonnoirs') }}</p>
-                                            @foreach ($funnelOptions as $option)
-                                                <button type="button" x-show="@js(Str::lower($option['label'])).includes(search.toLowerCase())" wire:click="selectObjective('funnel', @js($option['reference']))" @click="open = false; search = ''" class="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12px] text-secondary transition-colors hover:bg-elevated">
+                                        <div class="max-h-52 overflow-y-auto p-1">
+                                            @forelse ($funnelOptions as $option)
+                                                <button type="button" x-show="@js(Str::lower($option['label'])).includes(search.toLowerCase())" wire:click="addObjective('funnel', @js($option['reference']), @js($option['label']))" x-on:click="open = false" class="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12px] text-secondary transition-colors hover:bg-elevated">
                                                     <x-ui.icon name="funnel" class="h-3.5 w-3.5 shrink-0 text-muted" /> <span class="truncate">{{ $option['label'] }}</span>
                                                 </button>
-                                            @endforeach
-                                            <p class="px-2 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wide text-muted">{{ __('Événements') }}</p>
-                                            @foreach ($eventOptions as $option)
-                                                <button type="button" x-show="@js(Str::lower($option['label'])).includes(search.toLowerCase())" wire:click="selectObjective('event', @js($option['reference']), @js($option['value']))" @click="open = false; search = ''" class="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12px] text-secondary transition-colors hover:bg-elevated">
-                                                    <x-ui.icon name="bolt" class="h-3.5 w-3.5 shrink-0 text-muted" /> <span class="truncate">{{ $option['label'] }}</span>
-                                                </button>
-                                            @endforeach
+                                            @empty
+                                                <p class="px-2 py-2 text-[12px] text-muted">{{ __('Aucun entonnoir déclaré.') }}</p>
+                                            @endforelse
                                         </div>
                                     </div>
                                 </div>
 
-                                @if ($objReference !== '')
-                                    <div class="mt-3 flex items-end gap-2">
-                                        @if ($objType === 'event')
-                                            <x-ui.form-group :label="__('Valeur (points)')" for="objValue" class="w-28">
-                                                <x-ui.input type="number" step="0.01" min="0" wire:model="objValue" id="objValue" :error="$errors->has('objValue')" />
-                                            </x-ui.form-group>
-                                        @endif
-                                        <x-ui.button type="button" wire:click="addObjective" class="shrink-0"><x-ui.icon name="plus" class="h-3.5 w-3.5" /> {{ __('Ajouter l\'objectif') }}</x-ui.button>
+                                {{-- Event picker --}}
+                                <div x-data="{ open: false, search: '' }" @click.outside="open = false" class="relative">
+                                    <x-ui.button type="button" variant="secondary" size="compact" x-on:click="open = ! open; search = ''"><x-ui.icon name="bolt" class="h-3.5 w-3.5" /> {{ __('Événement') }}</x-ui.button>
+                                    <div x-show="open" x-cloak x-transition.opacity class="absolute bottom-full left-0 z-30 mb-1 w-72 overflow-hidden rounded-lg border border-base bg-surface shadow-xl">
+                                        <div class="border-b border-subtle p-2">
+                                            <input x-model="search" x-on:click.stop type="text" placeholder="{{ __('Rechercher un événement...') }}" class="w-full rounded-lg border border-base bg-elevated px-2.5 py-1.5 text-[13px] text-primary placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-white/10">
+                                        </div>
+                                        <div class="max-h-52 overflow-y-auto p-1">
+                                            @forelse ($eventOptions as $option)
+                                                <button type="button" x-show="@js(Str::lower($option['label'])).includes(search.toLowerCase())" wire:click="addObjective('event', @js($option['reference']), @js($option['label']), @js($option['value']))" x-on:click="open = false" class="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12px] text-secondary transition-colors hover:bg-elevated">
+                                                    <x-ui.icon name="bolt" class="h-3.5 w-3.5 shrink-0 text-muted" /> <span class="truncate">{{ $option['label'] }}</span>
+                                                </button>
+                                            @empty
+                                                <p class="px-2 py-2 text-[12px] text-muted">{{ __('Aucun événement déclaré.') }}</p>
+                                            @endforelse
+                                        </div>
                                     </div>
-                                @endif
+                                </div>
                             </div>
                         </div>
-                    @endif
 
-                    <div class="mt-5 flex justify-end border-t border-subtle pt-4">
-                        <x-ui.button type="button" variant="ghost" wire:click="closeModal">{{ __('Fermer') }}</x-ui.button>
-                    </div>
+                        <div class="flex justify-end gap-2 pt-2">
+                            <x-ui.button type="button" variant="ghost" wire:click="closeModal">{{ __('Annuler') }}</x-ui.button>
+                            <x-ui.button type="submit">{{ __('Enregistrer') }}</x-ui.button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
 
         {{-- Delete confirmation --}}
-        <div x-show="$wire.modal === 'delete'" x-cloak class="fixed inset-0 z-50">
-            <div class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm dark:bg-black/60"></div>
+        <div x-show="$wire.modal === 'delete'" x-cloak class="fixed inset-0 z-50 overflow-y-auto">
+            <div class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm dark:bg-black/60"></div>
             <div class="relative flex min-h-full items-center justify-center p-4" @click.self="$wire.closeModal()">
                 <div class="w-full max-w-sm rounded-xl border border-base bg-surface p-5 shadow-xl">
                     <h3 class="text-[13px] font-semibold text-primary">{{ $deleteType === 'campaign' ? __('Supprimer la campagne ?') : __('Supprimer la pub ?') }}</h3>

@@ -13,14 +13,13 @@ use Falcon\Analytics\Models\AdObjective;
 use Falcon\Analytics\Models\Campaign;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 use Livewire\Component;
 
 /**
  * Manages the marketing definitions: campaigns, their ads, and each ad's
  * conversion objectives. A campaign or ad is identified by free URL-parameter
  * conditions (all must hold, AND); objectives come from the declared funnels and
- * tracked events.
+ * tracked events, chosen and saved together with the ad.
  */
 final class MarketingSettingsPage extends Component
 {
@@ -48,11 +47,8 @@ final class MarketingSettingsPage extends Component
     /** @var list<array{param: string, value: string}> */
     public array $adConditions = [];
 
-    public string $objType = '';
-
-    public string $objReference = '';
-
-    public string $objValue = '';
+    /** @var list<array{type: string, reference: string, label: string, value: string|null}> */
+    public array $objectives = [];
 
     public string $deleteType = '';
 
@@ -115,14 +111,32 @@ final class MarketingSettingsPage extends Component
         $this->modal = 'ad';
     }
 
-    public function editAd(int $id): void
+    public function editAd(int $id, FunnelRegistry $funnels, EventRegistry $events): void
     {
-        $ad = Ad::findOrFail($id);
+        $ad = Ad::with('objectives')->findOrFail($id);
+
+        $funnelLabels = [];
+        foreach ($funnels->all() as $funnel) {
+            $funnelLabels[$funnel->key] = $funnel->label;
+        }
+
+        $eventLabels = [];
+        foreach ($events->all() as $event) {
+            $eventLabels[$event->name] = $event->label;
+        }
 
         $this->adId = $ad->id;
         $this->adCampaignId = $ad->campaign_id;
         $this->adName = $ad->name;
         $this->adConditions = $ad->match_conditions ?: [['param' => '', 'value' => '']];
+        $this->objectives = $ad->objectives->map(fn (AdObjective $objective): array => [
+            'type' => $objective->type->value,
+            'reference' => $objective->reference,
+            'label' => $objective->type->value === 'funnel'
+                ? ($funnelLabels[$objective->reference] ?? $objective->reference)
+                : ($eventLabels[$objective->reference] ?? $objective->reference),
+            'value' => $objective->type->value === 'event' ? (string) (float) $objective->value : null,
+        ])->all();
         $this->modal = 'ad';
     }
 
@@ -137,10 +151,33 @@ final class MarketingSettingsPage extends Component
         $this->adConditions = array_values($this->adConditions);
     }
 
+    public function addObjective(string $type, string $reference, string $label, ?float $value = null): void
+    {
+        foreach ($this->objectives as $objective) {
+            if ($objective['type'] === $type && $objective['reference'] === $reference) {
+                return; // already chosen
+            }
+        }
+
+        $this->objectives[] = [
+            'type' => $type,
+            'reference' => $reference,
+            'label' => $label,
+            'value' => $type === 'event' ? (string) ($value ?? 0) : null,
+        ];
+    }
+
+    public function removeObjective(int $index): void
+    {
+        unset($this->objectives[$index]);
+        $this->objectives = array_values($this->objectives);
+    }
+
     public function saveAd(): void
     {
         $this->validate($this->conditionRules('adConditions') + [
             'adName' => ['required', 'string', 'max:150'],
+            'objectives.*.value' => ['nullable', 'numeric', 'min:0'],
         ], attributes: $this->conditionAttributes('adConditions') + ['adName' => __('nom')]);
 
         $ad = $this->adId !== null ? Ad::findOrFail($this->adId) : new Ad;
@@ -150,43 +187,21 @@ final class MarketingSettingsPage extends Component
             'match_conditions' => $this->cleanConditions($this->adConditions),
         ])->save();
 
-        // Stay in edit mode so objectives can be added straight away.
-        $this->adId = $ad->id;
-    }
+        DB::transaction(function () use ($ad): void {
+            AdObjective::query()->where('ad_id', $ad->id)->delete();
 
-    public function selectObjective(string $type, string $reference, ?float $value = null): void
-    {
-        $this->objType = $type;
-        $this->objReference = $reference;
-        $this->objValue = $type === 'event' && $value !== null ? (string) $value : '';
-        $this->resetErrorBag(['objReference', 'objValue']);
-    }
+            foreach ($this->objectives as $objective) {
+                AdObjective::create([
+                    'ad_id' => $ad->id,
+                    'type' => $objective['type'],
+                    'reference' => $objective['reference'],
+                    'value' => $objective['type'] === 'event' ? (is_numeric($objective['value']) ? $objective['value'] : 0) : null,
+                ]);
+            }
+        });
 
-    public function addObjective(): void
-    {
-        if ($this->adId === null) {
-            return;
-        }
-
-        $this->validate([
-            'objType' => ['required', Rule::in(['funnel', 'event'])],
-            'objReference' => ['required', 'string', 'max:191'],
-            'objValue' => [Rule::requiredIf($this->objType === 'event'), 'nullable', 'numeric', 'min:0'],
-        ], attributes: ['objReference' => __('objectif'), 'objValue' => __('valeur')]);
-
-        AdObjective::updateOrCreate(
-            ['ad_id' => $this->adId, 'type' => $this->objType, 'reference' => $this->objReference],
-            ['value' => $this->objType === 'event' ? $this->objValue : null],
-        );
-
-        $this->objType = '';
-        $this->objReference = '';
-        $this->objValue = '';
-    }
-
-    public function removeObjective(int $id): void
-    {
-        AdObjective::query()->whereKey($id)->where('ad_id', $this->adId)->delete();
+        $this->modal = '';
+        $this->resetAdForm();
     }
 
     public function confirmDelete(string $type, int $id): void
@@ -239,7 +254,7 @@ final class MarketingSettingsPage extends Component
 
     private function resetAdForm(): void
     {
-        $this->reset('adId', 'adCampaignId', 'adName', 'adConditions', 'objType', 'objReference', 'objValue');
+        $this->reset('adId', 'adCampaignId', 'adName', 'adConditions', 'objectives');
     }
 
     /**
@@ -285,13 +300,12 @@ final class MarketingSettingsPage extends Component
             function () use ($funnels, $events): array {
                 return [
                     'campaigns' => Campaign::query()->with(['ads.objectives'])->orderBy('name')->get(),
-                    'editingAd' => $this->adId !== null ? Ad::query()->with('objectives')->find($this->adId) : null,
                     'funnelOptions' => array_map(
-                        fn ($funnel): array => ['type' => 'funnel', 'reference' => $funnel->key, 'label' => $funnel->label, 'value' => null],
+                        fn ($funnel): array => ['reference' => $funnel->key, 'label' => $funnel->label],
                         $funnels->all(),
                     ),
                     'eventOptions' => array_map(
-                        fn ($event): array => ['type' => 'event', 'reference' => $event->name, 'label' => $event->label, 'value' => $event->value],
+                        fn ($event): array => ['reference' => $event->name, 'label' => $event->label, 'value' => $event->value],
                         $events->all(),
                     ),
                 ];

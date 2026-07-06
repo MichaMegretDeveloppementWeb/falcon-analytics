@@ -60,54 +60,56 @@ it('validates the campaign name and requires at least one condition', function (
     expect(Campaign::count())->toBe(0);
 });
 
-it('creates an ad with conditions then adds funnel and event objectives', function () {
+it('creates an ad with conditions and objectives in one save', function () {
+    $campaign = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
+    $this->actingAs($this->admin, 'admin');
+
+    Livewire::test(MarketingSettingsPage::class)
+        ->call('newAd', $campaign->id)
+        ->set('adName', 'Cabriolet')
+        ->set('adConditions.0.param', 'creative')
+        ->set('adConditions.0.value', 'cabrio')
+        ->call('addObjective', 'funnel', 'concours', 'Concours de parrainage')
+        ->call('addObjective', 'event', 'Lead', 'Demande de code', 3.0)
+        ->call('saveAd')
+        ->assertHasNoErrors()
+        ->assertSet('modal', '');
+
+    $ad = Ad::where('name', 'Cabriolet')->firstOrFail();
+
+    expect($ad->match_conditions)->toBe([['param' => 'creative', 'value' => 'cabrio']])
+        ->and(AdObjective::where('ad_id', $ad->id)->count())->toBe(2)
+        ->and((float) AdObjective::where('ad_id', $ad->id)->where('type', 'event')->value('value'))->toBe(3.0);
+});
+
+it('does not add the same objective twice', function () {
     $campaign = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
     $this->actingAs($this->admin, 'admin');
 
     $component = Livewire::test(MarketingSettingsPage::class)
         ->call('newAd', $campaign->id)
-        ->set('adName', 'Cabriolet')
-        ->set('adConditions.0.param', 'creative')
-        ->set('adConditions.0.value', 'cabrio')
+        ->call('addObjective', 'event', 'Lead', 'Lead', 3.0)
+        ->call('addObjective', 'event', 'Lead', 'Lead', 3.0);
+
+    expect($component->get('objectives'))->toHaveCount(1);
+});
+
+it('edits an ad and replaces its objectives on save', function () {
+    $campaign = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
+    $ad = Ad::create(['campaign_id' => $campaign->id, 'name' => 'Cabrio', 'match_conditions' => [['param' => 'creative', 'value' => 'cabrio']]]);
+    AdObjective::create(['ad_id' => $ad->id, 'type' => 'event', 'reference' => 'Lead', 'value' => 3]);
+
+    $this->actingAs($this->admin, 'admin');
+
+    Livewire::test(MarketingSettingsPage::class)
+        ->call('editAd', $ad->id)
+        ->call('removeObjective', 0)
+        ->call('addObjective', 'funnel', 'concours', 'Concours')
         ->call('saveAd')
         ->assertHasNoErrors();
 
-    $ad = Ad::where('name', 'Cabriolet')->firstOrFail();
-
-    expect($ad->match_conditions)->toBe([['param' => 'creative', 'value' => 'cabrio']]);
-
-    $component->call('selectObjective', 'funnel', 'concours')->call('addObjective')->assertHasNoErrors();
-    $component->call('selectObjective', 'event', 'Lead', 3.0)->call('addObjective')->assertHasNoErrors();
-
-    expect(AdObjective::where('ad_id', $ad->id)->count())->toBe(2)
-        ->and((float) AdObjective::where('ad_id', $ad->id)->where('type', 'event')->value('value'))->toBe(3.0);
-});
-
-it('requires a value for an event objective', function () {
-    $campaign = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
-    $ad = Ad::create(['campaign_id' => $campaign->id, 'name' => 'Cabrio', 'match_conditions' => [['param' => 'creative', 'value' => 'cabrio']]]);
-    $this->actingAs($this->admin, 'admin');
-
-    Livewire::test(MarketingSettingsPage::class)
-        ->call('editAd', $ad->id)
-        ->call('selectObjective', 'event', 'Lead')
-        ->set('objValue', '')
-        ->call('addObjective')
-        ->assertHasErrors('objValue');
-});
-
-it('removes an objective', function () {
-    $campaign = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
-    $ad = Ad::create(['campaign_id' => $campaign->id, 'name' => 'Cabrio', 'match_conditions' => [['param' => 'creative', 'value' => 'cabrio']]]);
-    $objective = AdObjective::create(['ad_id' => $ad->id, 'type' => 'event', 'reference' => 'Lead', 'value' => 3]);
-
-    $this->actingAs($this->admin, 'admin');
-
-    Livewire::test(MarketingSettingsPage::class)
-        ->call('editAd', $ad->id)
-        ->call('removeObjective', $objective->id);
-
-    expect(AdObjective::count())->toBe(0);
+    expect(AdObjective::where('ad_id', $ad->id)->count())->toBe(1)
+        ->and(AdObjective::where('ad_id', $ad->id)->first()->type->value)->toBe('funnel');
 });
 
 it('deletes a campaign and cascades to its ads and objectives, leaving others untouched', function () {
