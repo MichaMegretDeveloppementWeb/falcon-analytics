@@ -46,7 +46,7 @@ final class AdDetailPage extends DashboardComponent
     public function closeModal(): void
     {
         $this->modal = '';
-        $this->resetAdForm();
+        $this->resetValidation();
     }
 
     protected function afterAdSaved(): void

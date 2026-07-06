@@ -7,10 +7,10 @@
 <div
     class="{{ $height }} w-full"
     x-data="{
-        chart: null,
         init() {
             const color = @js($color);
-            this.chart = new window.Chart(this.$refs.canvas, {
+            {{-- Chart kept on the DOM node, not in Alpine's reactive state (see area-chart). --}}
+            this.$el._chart = new window.Chart(this.$refs.canvas, {
                 type: 'line',
                 data: {
                     labels: @js(array_keys(array_values($values))),
@@ -43,7 +43,7 @@
             });
         },
         destroy() {
-            this.chart?.destroy();
+            this.$el._chart?.destroy();
         },
     }"
 >

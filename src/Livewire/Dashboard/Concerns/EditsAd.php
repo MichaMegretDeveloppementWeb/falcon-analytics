@@ -68,8 +68,10 @@ trait EditsAd
 
     public function removeAdCondition(int $index): void
     {
+        // Keep the surviving rows' keys stable (no array_values reindex) so Livewire
+        // does not shift the wire:key of a wire:model input onto another row and
+        // break Alpine's cleanup on morph.
         unset($this->adConditions[$index]);
-        $this->adConditions = array_values($this->adConditions);
     }
 
     public function addObjective(string $type, string $reference, string $label, ?float $value = null): void
@@ -91,7 +93,6 @@ trait EditsAd
     public function removeObjective(int $index): void
     {
         unset($this->objectives[$index]);
-        $this->objectives = array_values($this->objectives);
     }
 
     public function saveAd(): void
@@ -129,8 +130,10 @@ trait EditsAd
             }
         });
 
+        // The modal only closes; the form is repopulated on the next open (newAd /
+        // editAd). Resetting the form arrays here would remove their wire:model rows
+        // during the same morph and break Alpine's pending model-update flush.
         $this->modal = '';
-        $this->resetAdForm();
         $this->afterAdSaved();
     }
 

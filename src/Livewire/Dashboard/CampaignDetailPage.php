@@ -68,7 +68,6 @@ final class CampaignDetailPage extends DashboardComponent
     public function removeCampaignCondition(int $index): void
     {
         unset($this->campaignConditions[$index]);
-        $this->campaignConditions = array_values($this->campaignConditions);
     }
 
     public function saveCampaign(): void
@@ -150,8 +149,7 @@ final class CampaignDetailPage extends DashboardComponent
     public function closeModal(): void
     {
         $this->modal = '';
-        $this->reset('campaignName', 'campaignPlatform', 'campaignConditions', 'deleteAdId', 'deleteAdLabel');
-        $this->resetAdForm();
+        $this->resetValidation();
     }
 
     /**

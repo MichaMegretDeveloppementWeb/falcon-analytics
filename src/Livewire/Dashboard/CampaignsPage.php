@@ -76,7 +76,6 @@ final class CampaignsPage extends Component
     public function removeCondition(int $index): void
     {
         unset($this->campaignConditions[$index]);
-        $this->campaignConditions = array_values($this->campaignConditions);
     }
 
     public function saveCampaign(): void
@@ -129,7 +128,7 @@ final class CampaignsPage extends Component
     public function closeModal(): void
     {
         $this->modal = '';
-        $this->reset('campaignId', 'campaignName', 'campaignPlatform', 'campaignConditions', 'deleteId', 'deleteLabel');
+        $this->resetValidation();
     }
 
     /**

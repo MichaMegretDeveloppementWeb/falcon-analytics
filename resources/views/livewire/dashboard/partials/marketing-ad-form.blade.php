@@ -8,7 +8,7 @@
         <div class="w-full max-w-lg rounded-xl border border-base bg-surface p-5 shadow-xl">
             <h3 class="text-[13px] font-semibold text-primary">{{ $adId ? __('Modifier la pub') : __('Nouvelle pub') }}</h3>
 
-            <form wire:submit="saveAd" class="mt-4 space-y-4">
+            <div class="mt-4 space-y-4">
                 <x-ui.form-group :label="__('Nom')" for="adName">
                     <x-ui.input wire:model="adName" id="adName" placeholder="{{ __('Ex. Cabriolet') }}" :error="$errors->has('adName')" />
                 </x-ui.form-group>
@@ -92,9 +92,9 @@
 
                 <div class="flex justify-end gap-2 pt-2">
                     <x-ui.button type="button" variant="ghost" wire:click="closeModal">{{ __('Annuler') }}</x-ui.button>
-                    <x-ui.button type="submit">{{ __('Enregistrer') }}</x-ui.button>
+                    <x-ui.button type="button" wire:click="saveAd">{{ __('Enregistrer') }}</x-ui.button>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 </div>

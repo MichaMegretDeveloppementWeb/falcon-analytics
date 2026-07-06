@@ -139,7 +139,7 @@
             <div class="relative flex min-h-full items-center justify-center p-4" @click.self="$wire.closeModal()">
                 <div class="w-full max-w-lg rounded-xl border border-base bg-surface p-5 shadow-xl">
                     <h3 class="text-[13px] font-semibold text-primary">{{ __('Modifier la campagne') }}</h3>
-                    <form wire:submit="saveCampaign" class="mt-4 space-y-4">
+                    <div class="mt-4 space-y-4">
                         <x-ui.form-group :label="__('Nom')" for="campaignName">
                             <x-ui.input wire:model="campaignName" id="campaignName" :error="$errors->has('campaignName')" />
                         </x-ui.form-group>
@@ -161,9 +161,9 @@
                         </x-ui.form-group>
                         <div class="flex justify-end gap-2 pt-2">
                             <x-ui.button type="button" variant="ghost" wire:click="closeModal">{{ __('Annuler') }}</x-ui.button>
-                            <x-ui.button type="submit">{{ __('Enregistrer') }}</x-ui.button>
+                            <x-ui.button type="button" wire:click="saveCampaign">{{ __('Enregistrer') }}</x-ui.button>
                         </div>
-                    </form>
+                    </div>
                 </div>
             </div>
         </div>

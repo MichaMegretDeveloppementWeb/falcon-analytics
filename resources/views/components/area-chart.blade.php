@@ -13,14 +13,17 @@
 --}}
 <div
     x-data="{
-        chart: null,
         observer: null,
         isDark: document.documentElement.classList.contains('dark'),
         muted() { return this.isDark ? '#6b7280' : '#9ca3af'; },
         grid() { return this.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(17,24,39,0.06)'; },
         init() {
             const color = @js($color);
-            this.chart = new window.Chart(this.$refs.canvas, {
+            {{-- The Chart instance is kept on the DOM node, not in Alpine's reactive
+                 state: its internal circular references would otherwise be wrapped in
+                 a reactive proxy and make Livewire's toRaw recurse to a stack overflow
+                 when the chart updates. --}}
+            this.$el._chart = new window.Chart(this.$refs.canvas, {
                 type: 'line',
                 data: {
                     labels: @js($labels),
@@ -85,9 +88,9 @@
 
             this.observer = new MutationObserver(() => {
                 const dark = document.documentElement.classList.contains('dark');
-                if (dark === this.isDark || !this.chart) return;
+                if (dark === this.isDark || !this.$el._chart) return;
                 this.isDark = dark;
-                const o = this.chart.options;
+                const o = this.$el._chart.options;
                 o.scales.x.ticks.color = this.muted();
                 o.scales.y.ticks.color = this.muted();
                 o.scales.y.grid.color = this.grid();
@@ -95,13 +98,13 @@
                 o.plugins.tooltip.titleColor = dark ? '#f3f4f6' : '#111827';
                 o.plugins.tooltip.bodyColor = dark ? '#d1d5db' : '#374151';
                 o.plugins.tooltip.borderColor = dark ? '#374151' : '#e5e7eb';
-                this.chart.update('none');
+                this.$el._chart.update('none');
             });
             this.observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
         },
         destroy() {
             this.observer?.disconnect();
-            this.chart?.destroy();
+            this.$el._chart?.destroy();
         },
     }"
     {{ $attributes->merge(['class' => 'relative '.$height]) }}
