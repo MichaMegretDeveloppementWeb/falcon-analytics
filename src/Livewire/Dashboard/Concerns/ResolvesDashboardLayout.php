@@ -10,9 +10,9 @@ namespace Falcon\Analytics\Livewire\Dashboard\Concerns;
  */
 trait ResolvesDashboardLayout
 {
-    protected function layoutName(): string
+    protected function layoutName(string $module = 'dashboard'): string
     {
-        $layout = config('analytics.dashboard.layout');
+        $layout = config("analytics.{$module}.layout");
 
         return is_string($layout) && $layout !== '' ? $layout : 'analytics::layouts.dashboard';
     }

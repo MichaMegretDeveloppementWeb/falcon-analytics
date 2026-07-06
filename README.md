@@ -113,7 +113,7 @@ own navigation, e.g.:
 <a href="{{ route('analytics.overview') }}">Vue d'ensemble</a>
 <a href="{{ route('analytics.visitors') }}">Visiteurs</a>
 <a href="{{ route('analytics.sessions') }}">Sessions</a>
-<a href="{{ route('analytics.funnels') }}">Entonnoirs</a>
+<a href="{{ route('analytics.funnels') }}">Tunnels</a>
 ```
 
 **Tailwind sources.** So the kit classes used by the dashboard are not purged,

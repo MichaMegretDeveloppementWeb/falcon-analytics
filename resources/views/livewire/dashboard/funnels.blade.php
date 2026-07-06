@@ -3,7 +3,7 @@
     @include('analytics::livewire.dashboard.partials.tooltip-host')
 
     <x-ui.page-header
-        :title="__('Entonnoirs')"
+        :title="__('Tunnels')"
         :description="__('du :from au :to', [
             'from' => $range->from->isoFormat('D MMM YYYY'),
             'to' => $range->to->isoFormat('D MMM YYYY'),
@@ -36,7 +36,7 @@
 
                 @if ($report->entrants === 0)
                     <div class="flex flex-1 items-center justify-center rounded-lg bg-elevated px-4 py-10 text-center">
-                        <p class="max-w-xs text-[12px] text-muted">{{ __('Aucun visiteur n\'est encore entré dans cet entonnoir sur la période.') }}</p>
+                        <p class="max-w-xs text-[12px] text-muted">{{ __('Aucun visiteur n\'est encore entré dans ce tunnel sur la période.') }}</p>
                     </div>
                 @else
                     <div class="space-y-1.5">
@@ -89,8 +89,8 @@
             <div class="lg:col-span-2">
                 <x-ui.empty-state
                     icon="funnel"
-                    :title="__('Aucun entonnoir')"
-                    :description="__('Aucun entonnoir n\'est déclaré dans app/Analytics/funnels.php.')" />
+                    :title="__('Aucun tunnel')"
+                    :description="__('Aucun tunnel n\'est déclaré dans app/Analytics/funnels.php.')" />
             </div>
         @endforelse
     </div>

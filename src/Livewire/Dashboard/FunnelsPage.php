@@ -30,7 +30,7 @@ final class FunnelsPage extends DashboardComponent
                 ];
             },
             fn (array $data): View => view('analytics::livewire.dashboard.funnels', $data)
-                ->layout($this->layoutName(), ['title' => __('Entonnoirs').' · '.__('Analytics')]),
+                ->layout($this->layoutName(), ['title' => __('Tunnels').' · '.__('Analytics')]),
         );
     }
 }

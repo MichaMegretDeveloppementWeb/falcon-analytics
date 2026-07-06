@@ -5,8 +5,11 @@ declare(strict_types=1);
 use Falcon\Analytics\Http\Controllers\CollectorScriptController;
 use Falcon\Analytics\Http\Controllers\IngestController;
 use Falcon\Analytics\Http\Middleware\EnsureAnalyticsAccepts;
+use Falcon\Analytics\Livewire\Dashboard\AdsPage;
+use Falcon\Analytics\Livewire\Dashboard\CampaignDetailPage;
+use Falcon\Analytics\Livewire\Dashboard\CampaignsPage;
 use Falcon\Analytics\Livewire\Dashboard\FunnelsPage;
-use Falcon\Analytics\Livewire\Dashboard\MarketingSettingsPage;
+use Falcon\Analytics\Livewire\Dashboard\MarketingDashboardPage;
 use Falcon\Analytics\Livewire\Dashboard\OverviewPage;
 use Falcon\Analytics\Livewire\Dashboard\SessionDetailPage;
 use Falcon\Analytics\Livewire\Dashboard\SessionsPage;
@@ -50,5 +53,18 @@ Route::prefix((string) ($dashboard['route_prefix'] ?? 'admin/analytics'))
         Route::livewire('/funnels', FunnelsPage::class)->name('funnels');
         Route::livewire('/sessions', SessionsPage::class)->name('sessions');
         Route::livewire('/sessions/{session}', SessionDetailPage::class)->name('sessions.show');
-        Route::livewire('/marketing/settings', MarketingSettingsPage::class)->name('marketing.settings');
+    });
+
+// Marketing. A separate top-level module (its own prefix, route names and menu),
+// mounted like the dashboard from its own config block.
+$marketing = config('analytics.marketing');
+
+Route::prefix((string) ($marketing['route_prefix'] ?? 'admin/marketing'))
+    ->middleware($marketing['middleware'] ?? ['web', 'auth'])
+    ->name(($marketing['route_name'] ?? 'marketing').'.')
+    ->group(function (): void {
+        Route::livewire('/', MarketingDashboardPage::class)->name('dashboard');
+        Route::livewire('/campaigns', CampaignsPage::class)->name('campaigns');
+        Route::livewire('/campaigns/{campaign}', CampaignDetailPage::class)->name('campaigns.show');
+        Route::livewire('/ads', AdsPage::class)->name('ads');
     });

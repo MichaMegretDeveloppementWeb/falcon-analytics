@@ -246,7 +246,7 @@ it('renders the declared funnels for an authenticated admin', function () {
     $this->actingAs($this->admin, 'admin')
         ->get(route('analytics.funnels'))
         ->assertSuccessful()
-        ->assertSeeText(__('Entonnoirs'))
+        ->assertSeeText(__('Tunnels'))
         ->assertSeeText('Sample funnel');
 });
 

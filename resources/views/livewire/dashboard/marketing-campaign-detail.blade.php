@@ -1,103 +1,109 @@
 @php
     use Illuminate\Support\Str;
 
-    $objectiveLabels = [];
-    foreach ($funnelOptions as $option) {
-        $objectiveLabels['funnel:'.$option['reference']] = $option['label'];
-    }
-    foreach ($eventOptions as $option) {
-        $objectiveLabels['event:'.$option['reference']] = $option['label'];
-    }
+    $routeName = config('analytics.marketing.route_name', 'marketing');
 @endphp
 
-<div class="space-y-8">
+<div class="space-y-6">
 
-    <x-ui.page-header :title="__('Marketing')" :description="__('Vos campagnes publicitaires, leurs pubs et leurs objectifs de conversion.')">
-        <x-ui.button wire:click="newCampaign"><x-ui.icon name="plus" class="h-4 w-4" /> {{ __('Nouvelle campagne') }}</x-ui.button>
-    </x-ui.page-header>
+    <div>
+        <a href="{{ route($routeName.'.campaigns') }}" class="inline-flex cursor-pointer items-center gap-x-1 text-[12px] font-medium text-secondary transition-colors hover:text-primary">
+            <x-ui.icon name="arrow-left" class="h-3.5 w-3.5" />
+            {{ __('Retour aux campagnes') }}
+        </a>
+    </div>
 
-    @forelse ($campaigns as $campaign)
-        <x-ui.card wire:key="campaign-{{ $campaign->id }}">
-            <div class="flex flex-wrap items-start justify-between gap-4">
-                <div class="min-w-0">
-                    <div class="flex items-center gap-2">
-                        <h2 class="text-[13px] font-semibold text-primary">{{ $campaign->name }}</h2>
-                        @if ($campaign->platform)<x-ui.badge color="blue">{{ $campaign->platform }}</x-ui.badge>@endif
-                    </div>
-                    <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
-                        @forelse ($campaign->match_conditions ?? [] as $condition)
-                            <x-analytics::condition-chip :param="$condition['param']" :value="$condition['value']" />
-                        @empty
-                            <span class="inline-flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400"><x-ui.icon name="exclamation-triangle" class="h-3.5 w-3.5" /> {{ __('Aucune condition : ne correspondra à aucun trafic') }}</span>
-                        @endforelse
-                    </div>
-                </div>
-                <div class="flex shrink-0 items-center gap-1">
-                    <x-ui.button variant="secondary" size="compact" wire:click="newAd({{ $campaign->id }})"><x-ui.icon name="plus" class="h-3.5 w-3.5" /> {{ __('Pub') }}</x-ui.button>
-                    <x-ui.button variant="ghost" size="compact" wire:click="editCampaign({{ $campaign->id }})" aria-label="{{ __('Modifier') }}"><x-ui.icon name="pencil-square" class="h-3.5 w-3.5" /></x-ui.button>
-                    <x-ui.button variant="ghost" size="compact" wire:click="confirmDelete('campaign', {{ $campaign->id }})" aria-label="{{ __('Supprimer') }}"><x-ui.icon name="trash" class="h-3.5 w-3.5" /></x-ui.button>
-                </div>
+    {{-- Campaign header --}}
+    <div class="flex flex-wrap items-start justify-between gap-4">
+        <div class="min-w-0">
+            <div class="flex items-center gap-2">
+                <h1 class="text-2xl font-semibold tracking-tight text-primary">{{ $campaign->name }}</h1>
+                @if ($campaign->platform)<x-ui.badge color="blue">{{ $campaign->platform }}</x-ui.badge>@endif
             </div>
+            <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
+                @forelse ($campaign->match_conditions ?? [] as $condition)
+                    <x-analytics::condition-chip :param="$condition['param']" :value="$condition['value']" />
+                @empty
+                    <span class="inline-flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400"><x-ui.icon name="exclamation-triangle" class="h-3.5 w-3.5" /> {{ __('Aucune condition : ne correspondra à aucun trafic') }}</span>
+                @endforelse
+            </div>
+        </div>
+        <div class="flex shrink-0 items-center gap-2">
+            <x-ui.button variant="secondary" wire:click="editCampaign"><x-ui.icon name="pencil-square" class="h-4 w-4" /> {{ __('Modifier') }}</x-ui.button>
+            <x-ui.button variant="ghost" wire:click="confirmDeleteCampaign" aria-label="{{ __('Supprimer') }}"><x-ui.icon name="trash" class="h-4 w-4" /></x-ui.button>
+        </div>
+    </div>
 
-            @if ($campaign->ads->isNotEmpty())
-                <div class="mt-5 space-y-2.5">
-                    @foreach ($campaign->ads as $ad)
-                        <div wire:key="ad-{{ $ad->id }}" class="rounded-lg border border-subtle bg-elevated px-4 py-3">
-                            <div class="flex flex-wrap items-start justify-between gap-3">
-                                <div class="min-w-0">
-                                    <span class="text-[13px] font-medium text-primary">{{ $ad->name }}</span>
-                                    <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
-                                        @foreach ($ad->match_conditions ?? [] as $condition)
-                                            <x-analytics::condition-chip :param="$condition['param']" :value="$condition['value']" />
-                                        @endforeach
-                                    </div>
+    {{-- Ads --}}
+    <div>
+        <div class="mb-4 flex items-center justify-between">
+            <x-ui.section-header :title="__('Pubs')" :description="__('Les objectifs de conversion se définissent par pub.')" />
+            <x-ui.button variant="secondary" size="compact" wire:click="newAd"><x-ui.icon name="plus" class="h-3.5 w-3.5" /> {{ __('Nouvelle pub') }}</x-ui.button>
+        </div>
+
+        @if ($ads->isEmpty())
+            <x-ui.empty-state icon="rectangle-stack" :title="__('Aucune pub')" :description="__('Ajoutez une pub à cette campagne pour la suivre.')" />
+        @else
+            <x-ui.table>
+                <x-ui.table.head>
+                    <x-ui.table.header-cell :first="true">{{ __('Pub') }}</x-ui.table.header-cell>
+                    <x-ui.table.header-cell>{{ __('Conditions') }}</x-ui.table.header-cell>
+                    <x-ui.table.header-cell>{{ __('Objectifs') }}</x-ui.table.header-cell>
+                    <x-ui.table.header-cell :last="true" align="right">{{ __('Actions') }}</x-ui.table.header-cell>
+                </x-ui.table.head>
+                <x-ui.table.body>
+                    @foreach ($ads as $ad)
+                        <x-ui.table.row wire:key="ad-{{ $ad->id }}">
+                            <x-ui.table.cell :first="true" variant="primary">{{ $ad->name }}</x-ui.table.cell>
+                            <x-ui.table.cell>
+                                <div class="flex flex-wrap items-center gap-1.5">
+                                    @foreach ($ad->match_conditions ?? [] as $condition)
+                                        <x-analytics::condition-chip :param="$condition['param']" :value="$condition['value']" />
+                                    @endforeach
                                 </div>
-                                <div class="flex shrink-0 items-center gap-1">
+                            </x-ui.table.cell>
+                            <x-ui.table.cell>
+                                <div class="flex flex-wrap items-center gap-1.5">
+                                    @forelse ($ad->objectives as $objective)
+                                        <x-ui.badge :color="$objective->type->value === 'funnel' ? 'blue' : 'emerald'">
+                                            <x-ui.icon :name="$objective->type->value === 'funnel' ? 'funnel' : 'bolt'" class="h-3 w-3" />
+                                            {{ $objectiveLabels[$objective->type->value.':'.$objective->reference] ?? $objective->reference }}
+                                        </x-ui.badge>
+                                    @empty
+                                        <span class="text-[11px] text-muted">{{ __('aucun') }}</span>
+                                    @endforelse
+                                </div>
+                            </x-ui.table.cell>
+                            <x-ui.table.cell :last="true" align="right">
+                                <div class="flex items-center justify-end gap-1">
                                     <x-ui.button variant="ghost" size="compact" wire:click="editAd({{ $ad->id }})" aria-label="{{ __('Modifier') }}"><x-ui.icon name="pencil-square" class="h-3.5 w-3.5" /></x-ui.button>
-                                    <x-ui.button variant="ghost" size="compact" wire:click="confirmDelete('ad', {{ $ad->id }})" aria-label="{{ __('Supprimer') }}"><x-ui.icon name="trash" class="h-3.5 w-3.5" /></x-ui.button>
+                                    <x-ui.button variant="ghost" size="compact" wire:click="confirmDeleteAd({{ $ad->id }})" aria-label="{{ __('Supprimer') }}"><x-ui.icon name="trash" class="h-3.5 w-3.5" /></x-ui.button>
                                 </div>
-                            </div>
-                            <div class="mt-2.5 flex flex-wrap items-center gap-1.5 border-t border-base pt-2.5">
-                                <span class="text-[11px] font-medium text-muted">{{ __('Objectifs') }}</span>
-                                @forelse ($ad->objectives as $objective)
-                                    <x-ui.badge :color="$objective->type->value === 'funnel' ? 'blue' : 'emerald'">
-                                        <x-ui.icon :name="$objective->type->value === 'funnel' ? 'funnel' : 'bolt'" class="h-3 w-3" />
-                                        {{ $objectiveLabels[$objective->type->value.':'.$objective->reference] ?? $objective->reference }}
-                                    </x-ui.badge>
-                                @empty
-                                    <span class="text-[11px] text-muted">{{ __('aucun') }}</span>
-                                @endforelse
-                            </div>
-                        </div>
+                            </x-ui.table.cell>
+                        </x-ui.table.row>
                     @endforeach
-                </div>
-            @else
-                <p class="mt-5 text-[12px] text-muted">{{ __('Aucune pub dans cette campagne. Ajoutez-en une pour la suivre.') }}</p>
-            @endif
-        </x-ui.card>
-    @empty
-        <x-ui.empty-state icon="megaphone" :title="__('Aucune campagne')" :description="__('Créez une campagne pour commencer à mesurer vos pubs.')" />
-    @endforelse
+                </x-ui.table.body>
+            </x-ui.table>
+        @endif
+    </div>
 
-    {{-- Modals: visibility driven by Livewire state (Livewire-safe, no teleport). The
-         root scrolls and the panel does not clip, so floating pickers overlay freely. --}}
+    {{-- Modals --}}
     <div x-on:keydown.escape.window="$wire.modal !== '' && $wire.closeModal()">
 
-        {{-- Campaign --}}
+        {{-- Campaign edit --}}
         <div x-show="$wire.modal === 'campaign'" x-cloak class="fixed inset-0 z-50 overflow-y-auto">
             <div class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm dark:bg-black/60"></div>
             <div class="relative flex min-h-full items-center justify-center p-4" @click.self="$wire.closeModal()">
                 <div class="w-full max-w-lg rounded-xl border border-base bg-surface p-5 shadow-xl">
-                    <h3 class="text-[13px] font-semibold text-primary">{{ $campaignId ? __('Modifier la campagne') : __('Nouvelle campagne') }}</h3>
+                    <h3 class="text-[13px] font-semibold text-primary">{{ __('Modifier la campagne') }}</h3>
                     <form wire:submit="saveCampaign" class="mt-4 space-y-4">
                         <x-ui.form-group :label="__('Nom')" for="campaignName">
-                            <x-ui.input wire:model="campaignName" id="campaignName" placeholder="{{ __('Ex. Été 2026') }}" :error="$errors->has('campaignName')" />
+                            <x-ui.input wire:model="campaignName" id="campaignName" :error="$errors->has('campaignName')" />
                         </x-ui.form-group>
                         <x-ui.form-group :label="__('Plateforme')" for="campaignPlatform" :hint="__('Optionnel : Meta, Google...')">
                             <x-ui.input wire:model="campaignPlatform" id="campaignPlatform" :error="$errors->has('campaignPlatform')" />
                         </x-ui.form-group>
-
-                        <x-ui.form-group :label="__('Conditions d\'URL')" :hint="__('La campagne correspond si TOUS ces paramètres sont présents dans l\'URL de la visite.')">
+                        <x-ui.form-group :label="__('Conditions d\'URL')" :hint="__('La campagne correspond si TOUS ces paramètres sont présents dans l\'URL.')">
                             <div class="space-y-2">
                                 @foreach ($campaignConditions as $index => $condition)
                                     <div wire:key="cc-{{ $index }}" class="flex items-center gap-2">
@@ -110,7 +116,6 @@
                             </div>
                             <x-ui.button type="button" variant="ghost" size="compact" wire:click="addCampaignCondition" class="mt-2"><x-ui.icon name="plus" class="h-3.5 w-3.5" /> {{ __('Ajouter une condition') }}</x-ui.button>
                         </x-ui.form-group>
-
                         <div class="flex justify-end gap-2 pt-2">
                             <x-ui.button type="button" variant="ghost" wire:click="closeModal">{{ __('Annuler') }}</x-ui.button>
                             <x-ui.button type="submit">{{ __('Enregistrer') }}</x-ui.button>
@@ -120,7 +125,7 @@
             </div>
         </div>
 
-        {{-- Ad + objectives (single save) --}}
+        {{-- Ad + objectives --}}
         <div x-show="$wire.modal === 'ad'" x-cloak class="fixed inset-0 z-50 overflow-y-auto">
             <div class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm dark:bg-black/60"></div>
             <div class="relative flex min-h-full items-center justify-center p-4" @click.self="$wire.closeModal()">
@@ -146,7 +151,6 @@
                             <x-ui.button type="button" variant="ghost" size="compact" wire:click="addAdCondition" class="mt-2"><x-ui.icon name="plus" class="h-3.5 w-3.5" /> {{ __('Ajouter une condition') }}</x-ui.button>
                         </x-ui.form-group>
 
-                        {{-- Objectives, under the conditions, saved together with the ad --}}
                         <div class="border-t border-subtle pt-4">
                             <p class="text-[13px] font-medium text-primary">{{ __('Objectifs de conversion') }}</p>
                             <p class="mb-3 mt-0.5 text-[12px] text-secondary">{{ __('Cette pub n\'est créditée que des conversions ci-dessous.') }}</p>
@@ -170,12 +174,12 @@
                             @endif
 
                             <div class="flex flex-wrap gap-2">
-                                {{-- Funnel picker --}}
+                                {{-- Tunnel picker --}}
                                 <div x-data="{ open: false, search: '' }" @click.outside="open = false" class="relative">
-                                    <x-ui.button type="button" variant="secondary" size="compact" x-on:click="open = ! open; search = ''"><x-ui.icon name="funnel" class="h-3.5 w-3.5" /> {{ __('Entonnoir') }}</x-ui.button>
+                                    <x-ui.button type="button" variant="secondary" size="compact" x-on:click="open = ! open; search = ''"><x-ui.icon name="funnel" class="h-3.5 w-3.5" /> {{ __('Tunnel') }}</x-ui.button>
                                     <div x-show="open" x-cloak x-transition.opacity class="absolute bottom-full left-0 z-30 mb-1 w-72 overflow-hidden rounded-lg border border-base bg-surface shadow-xl">
                                         <div class="border-b border-subtle p-2">
-                                            <input x-model="search" x-on:click.stop type="text" placeholder="{{ __('Rechercher un entonnoir...') }}" class="w-full rounded-lg border border-base bg-elevated px-2.5 py-1.5 text-[13px] text-primary placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-white/10">
+                                            <input x-model="search" x-on:click.stop type="text" placeholder="{{ __('Rechercher un tunnel...') }}" class="w-full rounded-lg border border-base bg-elevated px-2.5 py-1.5 text-[13px] text-primary placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-white/10">
                                         </div>
                                         <div class="max-h-52 overflow-y-auto p-1">
                                             @forelse ($funnelOptions as $option)
@@ -183,7 +187,7 @@
                                                     <x-ui.icon name="funnel" class="h-3.5 w-3.5 shrink-0 text-muted" /> <span class="truncate">{{ $option['label'] }}</span>
                                                 </button>
                                             @empty
-                                                <p class="px-2 py-2 text-[12px] text-muted">{{ __('Aucun entonnoir déclaré.') }}</p>
+                                                <p class="px-2 py-2 text-[12px] text-muted">{{ __('Aucun tunnel disponible.') }}</p>
                                             @endforelse
                                         </div>
                                     </div>
@@ -202,7 +206,7 @@
                                                     <x-ui.icon name="bolt" class="h-3.5 w-3.5 shrink-0 text-muted" /> <span class="truncate">{{ $option['label'] }}</span>
                                                 </button>
                                             @empty
-                                                <p class="px-2 py-2 text-[12px] text-muted">{{ __('Aucun événement déclaré.') }}</p>
+                                                <p class="px-2 py-2 text-[12px] text-muted">{{ __('Aucun événement disponible.') }}</p>
                                             @endforelse
                                         </div>
                                     </div>
@@ -219,22 +223,31 @@
             </div>
         </div>
 
-        {{-- Delete confirmation --}}
-        <div x-show="$wire.modal === 'delete'" x-cloak class="fixed inset-0 z-50 overflow-y-auto">
+        {{-- Delete campaign --}}
+        <div x-show="$wire.modal === 'delete-campaign'" x-cloak class="fixed inset-0 z-50 overflow-y-auto">
             <div class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm dark:bg-black/60"></div>
             <div class="relative flex min-h-full items-center justify-center p-4" @click.self="$wire.closeModal()">
                 <div class="w-full max-w-sm rounded-xl border border-base bg-surface p-5 shadow-xl">
-                    <h3 class="text-[13px] font-semibold text-primary">{{ $deleteType === 'campaign' ? __('Supprimer la campagne ?') : __('Supprimer la pub ?') }}</h3>
-                    <p class="mt-1.5 text-[12px] text-secondary">
-                        @if ($deleteType === 'campaign')
-                            {{ __('« :name » et toutes ses pubs et objectifs seront supprimés. Le trafic déjà capté reste en base.', ['name' => $deleteLabel]) }}
-                        @else
-                            {{ __('« :name » et ses objectifs seront supprimés. Le trafic déjà capté reste en base.', ['name' => $deleteLabel]) }}
-                        @endif
-                    </p>
+                    <h3 class="text-[13px] font-semibold text-primary">{{ __('Supprimer la campagne ?') }}</h3>
+                    <p class="mt-1.5 text-[12px] text-secondary">{{ __('« :name » et toutes ses pubs et objectifs seront supprimés. Le trafic déjà capté reste en base.', ['name' => $campaign->name]) }}</p>
                     <div class="mt-5 flex justify-end gap-2">
                         <x-ui.button type="button" variant="ghost" wire:click="closeModal">{{ __('Annuler') }}</x-ui.button>
-                        <x-ui.button type="button" variant="danger" wire:click="deleteConfirmed">{{ __('Supprimer') }}</x-ui.button>
+                        <x-ui.button type="button" variant="danger" wire:click="deleteCampaignConfirmed">{{ __('Supprimer') }}</x-ui.button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Delete ad --}}
+        <div x-show="$wire.modal === 'delete-ad'" x-cloak class="fixed inset-0 z-50 overflow-y-auto">
+            <div class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm dark:bg-black/60"></div>
+            <div class="relative flex min-h-full items-center justify-center p-4" @click.self="$wire.closeModal()">
+                <div class="w-full max-w-sm rounded-xl border border-base bg-surface p-5 shadow-xl">
+                    <h3 class="text-[13px] font-semibold text-primary">{{ __('Supprimer la pub ?') }}</h3>
+                    <p class="mt-1.5 text-[12px] text-secondary">{{ __('« :name » et ses objectifs seront supprimés. Le trafic déjà capté reste en base.', ['name' => $deleteAdLabel]) }}</p>
+                    <div class="mt-5 flex justify-end gap-2">
+                        <x-ui.button type="button" variant="ghost" wire:click="closeModal">{{ __('Annuler') }}</x-ui.button>
+                        <x-ui.button type="button" variant="danger" wire:click="deleteAdConfirmed">{{ __('Supprimer') }}</x-ui.button>
                     </div>
                 </div>
             </div>

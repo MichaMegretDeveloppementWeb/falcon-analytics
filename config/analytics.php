@@ -50,21 +50,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Marketing (ad attribution)
+    | Marketing module
     |--------------------------------------------------------------------------
     |
-    | URL query parameters that identify paid traffic. Their raw values are stored
-    | on each new session (mkt_campaign / mkt_ad); campaigns and ads are then named
-    | and given conversion objectives from the dashboard, matched to those values
-    | at report time (so an ad defined after the fact still sees its full history).
+    | The marketing screens (dashboard, campaigns, ads) mount as their own
+    | top-level module, separate from the analytics dashboard, mirroring the
+    | dashboard block below. A campaign or ad is matched to a session by the free
+    | URL-parameter conditions captured on it (mkt_params), at report time.
     |
     */
 
     'marketing' => [
-        'params' => [
-            'campaign' => 'campaign',
-            'ad' => 'ad',
-        ],
+        'route_prefix' => 'admin/marketing',
+        'route_name' => 'marketing',
+        'middleware' => ['web', 'auth'],
+        'layout' => null,
     ],
 
     /*

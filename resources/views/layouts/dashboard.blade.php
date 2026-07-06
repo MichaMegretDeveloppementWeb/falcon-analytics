@@ -35,14 +35,7 @@
                 :href="route($routeName.'.funnels')"
                 icon="funnel"
                 :active="request()->routeIs($routeName.'.funnels')">
-                {{ __('Entonnoirs') }}
-            </x-ui.sidebar.link>
-
-            <x-ui.sidebar.link
-                :href="route($routeName.'.marketing.settings')"
-                icon="megaphone"
-                :active="request()->routeIs($routeName.'.marketing*')">
-                {{ __('Marketing') }}
+                {{ __('Tunnels') }}
             </x-ui.sidebar.link>
 
             <x-ui.sidebar.link
