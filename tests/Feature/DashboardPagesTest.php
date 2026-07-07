@@ -3,7 +3,6 @@
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Livewire\Dashboard\EventsPage;
-use Falcon\Analytics\Livewire\Dashboard\OverviewPage;
 use Falcon\Analytics\Livewire\Dashboard\SessionsPage;
 use Falcon\Analytics\Livewire\Dashboard\VisitorDetailPage;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\EventsTrendChart;
@@ -14,7 +13,9 @@ use Falcon\Analytics\Livewire\Dashboard\Widgets\OverviewAcquisition;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\OverviewAudience;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\OverviewContent;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\OverviewEvents;
+use Falcon\Analytics\Livewire\Dashboard\Widgets\OverviewHeadline;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\TrendChart;
+use Falcon\Analytics\Livewire\Dashboard\Widgets\VisitorsHeadline;
 use Falcon\Analytics\Models\Campaign;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
@@ -145,10 +146,11 @@ it('renders the overview digest for an authenticated admin', function () {
     $session = seedSession(['source' => 'google']);
     Event::create(['session_id' => $session->id, 'visitor_id' => $session->visitor_id, 'occurred_at' => now()->subMinute(), 'type' => EventType::Pageview, 'route' => 'accueil', 'url' => 'https://vantadrive.test/accueil']);
 
-    $this->actingAs($this->admin, 'admin')
-        ->get(route('analytics.overview'))
-        ->assertSuccessful()
-        ->assertSeeText(__('Vue d\'ensemble'))
+    $this->actingAs($this->admin, 'admin');
+
+    $this->get(route('analytics.overview'))->assertSuccessful()->assertSeeText(__('Vue d\'ensemble'));
+
+    Livewire::test(OverviewHeadline::class, ['period' => 30])->call('$refresh')
         ->assertSeeText(__('Visiteurs'))
         ->assertSeeText(__('Durée moy. session'))
         ->assertSeeText(__('Taux de rebond'))
@@ -207,14 +209,16 @@ it('renders the visitors list for an authenticated admin', function () {
         'source' => 'google',
     ]);
 
-    $this->actingAs($this->admin, 'admin')
-        ->get(route('analytics.visitors'))
-        ->assertSuccessful()
+    $this->actingAs($this->admin, 'admin');
+
+    $this->get(route('analytics.visitors'))->assertSuccessful()
         ->assertSeeText(__('Visiteurs'))
-        ->assertSeeText(__('Nouveaux'))
-        ->assertSeeText(__('Sessions / visiteur'))
         ->assertSeeText('Client #1')
         ->assertSeeText('Genève');
+
+    Livewire::test(VisitorsHeadline::class, ['period' => 30])->call('$refresh')
+        ->assertSeeText(__('Nouveaux'))
+        ->assertSeeText(__('Sessions / visiteur'));
 });
 
 it('renders a session detail with its information and event timeline', function () {
@@ -334,12 +338,15 @@ it('defers the trend chart behind a skeleton placeholder', function () {
         ->assertSee('animate-pulse', escape: false);
 });
 
-it('renders the overview within its query budget with no duplicate query', function () {
+it('renders the overview headline within its query budget with no duplicate query', function () {
     seedSession(['source' => 'google', 'country' => 'FR', 'city' => 'Paris']);
 
     $this->actingAs($this->admin, 'admin');
 
-    $budget = analyticsQueryBudget(fn () => Livewire::test(OverviewPage::class));
+    // The deferred headline widget owns the engagement reads; the page shell itself
+    // issues none. headlineCounts (current + previous), sparklineRows and the
+    // spotlight are each read once.
+    $budget = analyticsQueryBudget(fn () => Livewire::test(OverviewHeadline::class, ['period' => 30])->call('$refresh'));
 
     expect($budget['count'])->toBeLessThanOrEqual(8)
         ->and($budget['duplicates'])->toBe(0);
@@ -362,10 +369,11 @@ it('recomputes the overview metrics when the period changes', function () {
 
     $this->actingAs($this->admin, 'admin');
 
-    Livewire::test(OverviewPage::class)
-        ->assertSet('period', 30)
-        ->assertViewHas('headline', fn ($headline) => $headline['sessions']->current === 1.0)
-        ->set('period', 90)
+    // The page swaps the deferred headline widget's period prop (via wire:key), so
+    // the widget recomputes per window.
+    Livewire::test(OverviewHeadline::class, ['period' => 30])->call('$refresh')
+        ->assertViewHas('headline', fn ($headline) => $headline['sessions']->current === 1.0);
+    Livewire::test(OverviewHeadline::class, ['period' => 90])->call('$refresh')
         ->assertViewHas('headline', fn ($headline) => $headline['sessions']->current === 2.0);
 });
 
@@ -375,9 +383,9 @@ it('filters the overview metrics by subject type', function () {
 
     $this->actingAs($this->admin, 'admin');
 
-    Livewire::test(OverviewPage::class)
-        ->assertViewHas('headline', fn ($headline) => $headline['sessions']->current === 2.0)
-        ->set('subject', 'client')
+    Livewire::test(OverviewHeadline::class, ['period' => 30])->call('$refresh')
+        ->assertViewHas('headline', fn ($headline) => $headline['sessions']->current === 2.0);
+    Livewire::test(OverviewHeadline::class, ['period' => 30, 'subject' => 'client'])->call('$refresh')
         ->assertViewHas('headline', fn ($headline) => $headline['sessions']->current === 1.0);
 });
 

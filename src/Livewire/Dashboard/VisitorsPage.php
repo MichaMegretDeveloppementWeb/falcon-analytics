@@ -7,7 +7,6 @@ namespace Falcon\Analytics\Livewire\Dashboard;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\ResolvesSubjectNames;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\SortsAndSearchesList;
 use Falcon\Analytics\Repositories\Dashboard\VisitorListReadRepository;
-use Falcon\Analytics\Services\Dashboard\VisitorMetricsCalculator;
 use Falcon\Analytics\Services\SubjectResolver;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Url;
@@ -33,10 +32,10 @@ final class VisitorsPage extends DashboardComponent
     #[Url]
     public string $direction = 'desc';
 
-    public function render(VisitorListReadRepository $repository, SubjectResolver $subjects, VisitorMetricsCalculator $metrics): View
+    public function render(VisitorListReadRepository $repository, SubjectResolver $subjects): View
     {
         return $this->guardedRender(
-            function () use ($repository, $subjects, $metrics): array {
+            function () use ($repository, $subjects): array {
                 $period = $this->currentPeriod();
                 $subjectType = $this->subjectType();
 
@@ -44,12 +43,6 @@ final class VisitorsPage extends DashboardComponent
 
                 return [
                     'range' => $period,
-                    'metrics' => $metrics->compute(
-                        $repository->visitorCounts($period, $subjectType),
-                        $repository->visitorCounts($period->previous(), $subjectType),
-                        $repository->visitorDailyRows($period, $subjectType),
-                        $period,
-                    ),
                     'visitors' => $visitors,
                     'subjectNames' => $this->resolveSubjectNames($visitors, $subjects),
                     'sort' => $this->sort,

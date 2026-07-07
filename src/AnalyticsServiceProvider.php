@@ -21,7 +21,10 @@ use Falcon\Analytics\Livewire\Dashboard\Widgets\OverviewAcquisition;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\OverviewAudience;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\OverviewContent;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\OverviewEvents;
+use Falcon\Analytics\Livewire\Dashboard\Widgets\OverviewHeadline;
+use Falcon\Analytics\Livewire\Dashboard\Widgets\SessionsHeadline;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\TrendChart;
+use Falcon\Analytics\Livewire\Dashboard\Widgets\VisitorsHeadline;
 use Falcon\Analytics\Support\GeoResolver;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Blade;
@@ -78,10 +81,13 @@ final class AnalyticsServiceProvider extends ServiceProvider
         Livewire::component('analytics-marketing-dashboard-content', MarketingDashboardContent::class);
         Livewire::component('analytics-funnels-content', FunnelsContent::class);
         Livewire::component('analytics-ad-detail-content', AdDetailContent::class);
+        Livewire::component('analytics-overview-headline', OverviewHeadline::class);
         Livewire::component('analytics-overview-audience', OverviewAudience::class);
         Livewire::component('analytics-overview-acquisition', OverviewAcquisition::class);
         Livewire::component('analytics-overview-content', OverviewContent::class);
         Livewire::component('analytics-overview-events', OverviewEvents::class);
+        Livewire::component('analytics-sessions-headline', SessionsHeadline::class);
+        Livewire::component('analytics-visitors-headline', VisitorsHeadline::class);
 
         if ($this->app->runningInConsole()) {
             $this->publishes([
