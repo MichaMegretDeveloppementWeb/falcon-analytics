@@ -198,6 +198,9 @@ final class CampaignDetailPage extends DashboardComponent
                     $rateTrend[] = $daySessions > 0 ? round($dayConversions / $daySessions * 100, 1) : 0;
                 }
 
+                $campaignAds = $this->campaign->ads()->with('objectives')->orderBy('name')->get();
+                $conversionElements = $marketing->conversionElements($period, $subjectType, $funnels, $events, $campaignAds->where('is_active', true)->values()->all());
+
                 return [
                     'range' => $period,
                     'sessions' => $report['sessions'],
@@ -214,7 +217,8 @@ final class CampaignDetailPage extends DashboardComponent
                     'adConversions' => $conversions['ads'],
                     'trendLabels' => array_map(fn (string $d): string => Carbon::parse($d)->isoFormat('D MMM'), array_keys($trend)),
                     'trendData' => array_values($trend),
-                    'ads' => $this->campaign->ads()->with('objectives')->orderBy('name')->get(),
+                    'ads' => $campaignAds,
+                    'conversionElements' => $conversionElements,
                     'objectiveLabels' => $this->objectiveLabels($funnels, $events),
                     ...$this->adFormOptions($funnels, $events),
                     ...$this->filterData(),

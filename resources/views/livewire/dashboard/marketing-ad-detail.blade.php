@@ -49,47 +49,29 @@
             </x-analytics::kpi-card>
         </div>
         <x-ui.card class="mt-6">
-            <x-ui.section-header :title="__('Sessions au fil du temps')" class="mb-4" />
+            <x-ui.section-header :title="__('Sessions et conversions au fil du temps')" class="mb-4" />
             @if (array_sum($trendData) > 0)
-                <x-analytics::area-chart wire:key="mkt-atrend-{{ $range->days }}-{{ $subject }}" :labels="$trendLabels" :data="$trendData" :label="__('Sessions')" height="h-56" />
+                <x-analytics::area-chart wire:key="mkt-atrend-{{ $range->days }}-{{ $subject }}" :labels="$trendLabels" :data="$trendData" :label="__('Sessions')" :data2="$conversionsTrend" :label2="__('Conversions')" height="h-56" />
             @else
                 <div class="flex h-56 items-center justify-center rounded-lg bg-elevated text-[12px] text-muted">{{ __('Aucune session sur la période.') }}</div>
             @endif
         </x-ui.card>
     </div>
 
-    {{-- Objectives + conditions --}}
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <x-ui.card>
-            <x-ui.section-header :title="__('Objectifs de conversion')" :description="__('Conversions créditées à cette pub.')" class="mb-4" />
-            @forelse ($ad->objectives as $objective)
-                <div wire:key="obj-{{ $objective->id }}" class="flex items-center gap-2 py-1.5">
-                    <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-elevated">
-                        <x-ui.icon :name="$objective->type->value === 'funnel' ? 'funnel' : 'bolt'" class="h-3.5 w-3.5 text-secondary" />
-                    </span>
-                    <span class="min-w-0 flex-1 truncate text-[13px] text-primary">{{ $objectiveLabels[$objective->type->value.':'.$objective->reference] ?? $objective->reference }}</span>
-                    <span class="shrink-0 text-[12px] tabular-nums"><span class="font-semibold text-primary">{{ number_format($objectiveConversions[$objective->reference] ?? 0, 0, ',', ' ') }}</span> <span class="text-muted">{{ __('conv.') }}</span></span>
-                    <x-ui.badge :color="$objective->type->value === 'funnel' ? 'blue' : 'emerald'">{{ $objective->type->value === 'funnel' ? __('Tunnel') : __('Événement') }}</x-ui.badge>
-                    @if ($objective->type->value === 'event')
-                        <span class="text-[11px] text-muted tabular-nums">{{ rtrim(rtrim(number_format((float) $objective->value, 2, ',', ' '), '0'), ',') }} {{ __('pts') }}</span>
-                    @endif
-                </div>
-            @empty
-                <p class="py-4 text-[12px] text-muted">{{ __('Aucun objectif. Cette pub ne crédite aucune conversion.') }}</p>
-            @endforelse
-        </x-ui.card>
+    {{-- Conversions --}}
+    @include('analytics::livewire.dashboard.partials.marketing-conversions', ['showAd' => false])
 
-        <x-ui.card>
-            <x-ui.section-header :title="__('Conditions d\'URL')" :description="__('La pub correspond si tous ces paramètres sont présents.')" class="mb-4" />
-            <div class="flex flex-wrap items-center gap-1.5">
-                @forelse ($ad->match_conditions ?? [] as $condition)
-                    <x-analytics::condition-chip :param="$condition['param']" :value="$condition['value']" />
-                @empty
-                    <span class="inline-flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400"><x-ui.icon name="exclamation-triangle" class="h-3.5 w-3.5" /> {{ __('Aucune condition : ne correspondra à aucun trafic') }}</span>
-                @endforelse
-            </div>
-        </x-ui.card>
-    </div>
+    {{-- Conditions --}}
+    <x-ui.card>
+        <x-ui.section-header :title="__('Conditions d\'URL')" :description="__('La pub correspond si tous ces paramètres sont présents dans l\'URL de la visite.')" class="mb-4" />
+        <div class="flex flex-wrap items-center gap-1.5">
+            @forelse ($ad->match_conditions ?? [] as $condition)
+                <x-analytics::condition-chip :param="$condition['param']" :value="$condition['value']" />
+            @empty
+                <span class="inline-flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400"><x-ui.icon name="exclamation-triangle" class="h-3.5 w-3.5" /> {{ __('Aucune condition : ne correspondra à aucun trafic') }}</span>
+            @endforelse
+        </div>
+    </x-ui.card>
 
     {{-- Ad edit modal --}}
     <div x-on:keydown.escape.window="$wire.modal !== '' && $wire.closeModal()">

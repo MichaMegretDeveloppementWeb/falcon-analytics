@@ -2,6 +2,7 @@
 
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\DTOs\Dashboard\Period;
+use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Models\Ad;
 use Falcon\Analytics\Models\AdObjective;
@@ -104,4 +105,33 @@ it('credits an ad with a conversion when its visitor completes an event objectiv
         ->and($result['ads'][$ad->id])->toBe(1)
         ->and($result['campaigns'][$ete->id])->toBe(1)
         ->and($result['objectives'][$ad->id]['Lead'])->toBe(1);
+});
+
+it('lists conversion elements with their count and source ad, sorted', function () {
+    $this->travelTo(CarbonImmutable::parse('2026-06-15 12:00:00'));
+
+    $ete = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
+    $ad = Ad::create(['campaign_id' => $ete->id, 'name' => 'Cabrio', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
+    AdObjective::create(['ad_id' => $ad->id, 'type' => 'event', 'reference' => 'Lead', 'value' => 3]);
+
+    foreach (range(1, 2) as $ignored) {
+        $visitor = Visitor::create(['uuid' => (string) Str::uuid(), 'first_seen_at' => now(), 'last_seen_at' => now()]);
+        $session = taggedSession(['src' => 'meta_ete'], $visitor);
+        Event::create(['session_id' => $session->id, 'visitor_id' => $visitor->id, 'type' => 'custom', 'name' => 'Lead', 'occurred_at' => now()]);
+    }
+
+    $elements = (new MarketingReadRepository)->conversionElements(
+        Period::ofDays(30),
+        null,
+        app(FunnelRegistry::class),
+        app(EventRegistry::class),
+        Ad::query()->with('objectives')->get()->all(),
+    );
+
+    expect($elements)->toHaveCount(1)
+        ->and($elements[0]['type'])->toBe('event')
+        ->and($elements[0]['reference'])->toBe('Lead')
+        ->and($elements[0]['conversions'])->toBe(2)
+        ->and($elements[0]['adName'])->toBe('Cabrio')
+        ->and($elements[0]['steps'])->toBeNull();
 });

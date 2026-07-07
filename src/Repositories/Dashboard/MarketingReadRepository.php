@@ -7,6 +7,7 @@ namespace Falcon\Analytics\Repositories\Dashboard;
 use Falcon\Analytics\DTOs\Dashboard\Period;
 use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Enums\ObjectiveType;
+use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\Funnel;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Funnels\FunnelStep;
@@ -442,6 +443,163 @@ final class MarketingReadRepository
         }
 
         return $completers;
+    }
+
+    /**
+     * The detailed conversion elements for a set of ads (a campaign's ads, or a
+     * single ad): each objective with its conversions and, for a funnel, its
+     * per-step reach. Sorted by conversions, descending.
+     *
+     * @param  list<Ad>  $ads  active ads with their objectives loaded
+     * @return list<array{type: string, reference: string, label: string, adId: int, adName: string, conversions: int, steps: list<array{label: string, count: int}>|null}>
+     */
+    public function conversionElements(Period $period, ?string $subjectType, FunnelRegistry $funnels, EventRegistry $events, array $ads): array
+    {
+        if ($ads === []) {
+            return [];
+        }
+
+        $allAds = Ad::query()->where('is_active', true)->get()->all();
+        $wantedIds = array_map(fn (Ad $ad): int => $ad->id, $ads);
+
+        /** @var array<int, array<int, true>> $adVisitors */
+        $adVisitors = [];
+        foreach ($this->taggedSessions($period, $subjectType)->get(['visitor_id', 'mkt_params']) as $session) {
+            $ad = $this->mostSpecific($allAds, $session->mkt_params ?? []);
+            if ($ad instanceof Ad && in_array($ad->id, $wantedIds, true)) {
+                $adVisitors[$ad->id][(int) $session->visitor_id] = true;
+            }
+        }
+
+        $eventLabels = [];
+        foreach ($events->all() as $event) {
+            $eventLabels[$event->name] = $event->label;
+        }
+        $funnelLabels = [];
+        foreach ($funnels->all() as $funnel) {
+            $funnelLabels[$funnel->key] = $funnel->label;
+        }
+
+        $elements = [];
+        foreach ($ads as $ad) {
+            $visitorIds = array_keys($adVisitors[$ad->id] ?? []);
+
+            foreach ($ad->objectives as $objective) {
+                if ($objective->type === ObjectiveType::Event) {
+                    $count = $visitorIds === [] ? 0 : Event::query()
+                        ->whereIn('visitor_id', $visitorIds)
+                        ->where('name', $objective->reference)
+                        ->whereBetween('occurred_at', [$period->from, $period->to])
+                        ->whereHas('session', fn (Builder $session): Builder => $session->where('is_bot', false))
+                        ->distinct()
+                        ->count('visitor_id');
+
+                    $elements[] = [
+                        'type' => 'event',
+                        'reference' => $objective->reference,
+                        'label' => $eventLabels[$objective->reference] ?? $objective->reference,
+                        'adId' => $ad->id,
+                        'adName' => $ad->name,
+                        'conversions' => $count,
+                        'steps' => null,
+                    ];
+
+                    continue;
+                }
+
+                $funnel = $funnels->get($objective->reference);
+                if (! ($funnel instanceof Funnel)) {
+                    continue;
+                }
+
+                $reach = $this->funnelStepReach($funnel, $period, $subjectType, $visitorIds);
+                $steps = [];
+                foreach ($funnel->steps() as $index => $step) {
+                    $steps[] = ['label' => $step->label, 'count' => $reach[$index] ?? 0];
+                }
+
+                $elements[] = [
+                    'type' => 'funnel',
+                    'reference' => $objective->reference,
+                    'label' => $funnelLabels[$objective->reference] ?? $objective->reference,
+                    'adId' => $ad->id,
+                    'adName' => $ad->name,
+                    'conversions' => $reach === [] ? 0 : (int) end($reach),
+                    'steps' => $steps,
+                ];
+            }
+        }
+
+        usort($elements, fn (array $a, array $b): int => $b['conversions'] <=> $a['conversions']);
+
+        return $elements;
+    }
+
+    /**
+     * How many of the given visitors reached each funnel step (monotonically
+     * decreasing), over the period. Index i = visitors who reached step i.
+     *
+     * @param  list<int>  $visitorIds
+     * @return list<int>
+     */
+    private function funnelStepReach(Funnel $funnel, Period $period, ?string $subjectType, array $visitorIds): array
+    {
+        $steps = $funnel->steps();
+        $stepCount = count($steps);
+        $reached = array_fill(0, $stepCount, 0);
+
+        if ($stepCount === 0 || $visitorIds === []) {
+            return $reached;
+        }
+
+        $names = [];
+        $routes = [];
+        foreach ($steps as $step) {
+            if ($step->event !== null) {
+                $names[] = $step->event;
+            }
+            if ($step->route !== null) {
+                $routes[] = $step->route;
+            }
+        }
+
+        $query = Event::query()
+            ->select(['id', 'visitor_id', 'type', 'name', 'route', 'occurred_at'])
+            ->whereIn('visitor_id', $visitorIds)
+            ->whereBetween('occurred_at', [$period->from, $period->to])
+            ->whereHas('session', fn (Builder $session): Builder => $session->where('is_bot', false))
+            ->where(function (Builder $matcher) use ($names, $routes): void {
+                if ($names !== []) {
+                    $matcher->whereIn('name', $names);
+                }
+                if ($routes !== []) {
+                    $matcher->orWhere(function (Builder $inner) use ($routes): void {
+                        $inner->where('type', EventType::Pageview)->whereIn('route', $routes);
+                    });
+                }
+            })
+            ->when($subjectType !== null, fn (Builder $q): Builder => $q->whereHas(
+                'visitor',
+                fn (Builder $visitor): Builder => $visitor->where('subject_type', $subjectType),
+            ))
+            ->orderBy('visitor_id')
+            ->orderBy('occurred_at')
+            ->orderBy('id');
+
+        /** @var array<int, int> $pointer */
+        $pointer = [];
+
+        foreach ($query->cursor() as $event) {
+            $visitorId = (int) $event->visitor_id;
+            $position = $pointer[$visitorId] ?? 0;
+
+            if ($position < $stepCount && $this->stepMatches($steps[$position], $event)) {
+                $reached[$position]++;
+                $pointer[$visitorId] = $position + 1;
+            }
+        }
+
+        return $reached;
     }
 
     private function stepMatches(FunnelStep $step, Event $event): bool

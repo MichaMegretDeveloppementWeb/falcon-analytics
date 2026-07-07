@@ -86,13 +86,7 @@ final class AdDetailPage extends DashboardComponent
                     $rateTrend[] = $daySessions > 0 ? round($dayConversions / $daySessions * 100, 1) : 0;
                 }
 
-                $labels = [];
-                foreach ($funnels->all() as $funnel) {
-                    $labels['funnel:'.$funnel->key] = $funnel->label;
-                }
-                foreach ($events->all() as $event) {
-                    $labels['event:'.$event->name] = $event->label;
-                }
+                $conversionElements = $marketing->conversionElements($period, $subjectType, $funnels, $events, [$this->ad]);
 
                 return [
                     'range' => $period,
@@ -106,10 +100,9 @@ final class AdDetailPage extends DashboardComponent
                     'rateLabel' => number_format($rate, 1, ',', ' ')."\u{00A0}%",
                     'rateDelta' => new MetricDelta($rate, $ratePrevious),
                     'rateTrend' => $rateTrend,
-                    'objectiveConversions' => $conversions['objectives'][$this->ad->id] ?? [],
+                    'conversionElements' => $conversionElements,
                     'trendLabels' => array_map(fn (string $d): string => Carbon::parse($d)->isoFormat('D MMM'), array_keys($trend)),
                     'trendData' => array_values($trend),
-                    'objectiveLabels' => $labels,
                     ...$this->adFormOptions($funnels, $events),
                     ...$this->filterData(),
                 ];
