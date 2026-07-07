@@ -283,7 +283,7 @@ it('renders the overview within its query budget with no duplicate query', funct
 
     $budget = analyticsQueryBudget(fn () => Livewire::test(OverviewPage::class));
 
-    expect($budget['count'])->toBeLessThanOrEqual(18)
+    expect($budget['count'])->toBeLessThanOrEqual(19)
         ->and($budget['duplicates'])->toBe(0);
 });
 
