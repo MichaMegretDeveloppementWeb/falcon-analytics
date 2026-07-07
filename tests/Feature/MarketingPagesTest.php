@@ -39,7 +39,7 @@ it('renders the four marketing screens for an admin', function () {
 
     $this->actingAs($this->admin, 'admin');
 
-    $this->get(route('marketing.dashboard'))->assertSuccessful()->assertSeeText(__('Vue d\'ensemble'))->assertSeeText(__('Sessions issues de pubs'));
+    $this->get(route('marketing.dashboard'))->assertSuccessful()->assertSeeText(__('Vue d\'ensemble'));
     $this->get(route('marketing.campaigns'))->assertSuccessful()->assertSeeText('Été 2026')->assertSeeText('meta_ete');
     $this->get(route('marketing.campaigns.show', $campaign))->assertSuccessful()->assertSeeText('Cabriolet')->assertSeeText('cabrio');
     $this->get(route('marketing.ads'))->assertSuccessful()->assertSeeText('Cabriolet');

@@ -8,6 +8,7 @@ use Falcon\Analytics\Livewire\Dashboard\OverviewPage;
 use Falcon\Analytics\Livewire\Dashboard\SessionsPage;
 use Falcon\Analytics\Livewire\Dashboard\VisitorDetailPage;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\EventsTrendChart;
+use Falcon\Analytics\Livewire\Dashboard\Widgets\MarketingDashboardContent;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\MarketingTrendChart;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\OverviewAcquisition;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\OverviewAudience;
@@ -104,18 +105,18 @@ it('renders the events screen within its query budget with no duplicate query', 
         ->and($budget['duplicates'])->toBe(0);
 });
 
-it('renders the marketing dashboard within its query budget with no duplicate query', function () {
+it('renders the marketing dashboard content within its query budget with no duplicate query', function () {
     Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta']]]);
     seedSession(['mkt_params' => ['src' => 'meta'], 'source' => 'social']);
     seedSession(['mkt_params' => ['src' => 'meta'], 'source' => 'social']);
 
     $this->actingAs($this->admin, 'admin');
 
-    $budget = analyticsQueryBudget(fn () => Livewire::test(MarketingDashboardPage::class));
+    // The deferred content widget owns the heavy reads. Active campaigns/ads and the
+    // ad-tagged session set are each loaded once and reused across headline/
+    // dailySessions/performance/conversions, so no read query repeats.
+    $budget = analyticsQueryBudget(fn () => Livewire::test(MarketingDashboardContent::class, ['period' => 30])->call('$refresh'));
 
-    // Active campaigns/ads and the ad-tagged session set are each loaded once per
-    // render and reused across headline/dailySessions/performance/conversions, so no
-    // read query repeats.
     expect($budget['count'])->toBeLessThanOrEqual(12)
         ->and($budget['duplicates'])->toBe(0);
 });
