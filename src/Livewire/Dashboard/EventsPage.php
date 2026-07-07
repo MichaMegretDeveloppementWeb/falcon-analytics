@@ -22,7 +22,8 @@ final class EventsPage extends DashboardComponent
                 $period = $this->currentPeriod();
                 $subjectType = $this->subjectType();
 
-                $headline = $repository->headline($period, $subjectType, $events);
+                $breakdown = $repository->eventBreakdown($period, $subjectType, $events);
+                $headline = $repository->totals($breakdown);
                 $headlinePrevious = $repository->headline($period->previous(), $subjectType, $events);
                 $daily = $repository->daily($period, $subjectType, $events);
 
@@ -47,7 +48,7 @@ final class EventsPage extends DashboardComponent
                     'trendLabels' => $trendLabels,
                     'eventsTrend' => $eventsTrend,
                     'conversionsTrend' => $conversionsTrend,
-                    'breakdown' => $repository->eventBreakdown($period, $subjectType, $events),
+                    'breakdown' => $breakdown,
                     ...$this->filterData(),
                 ];
             },

@@ -69,11 +69,23 @@ final class EventReadRepository
      */
     public function headline(Period $period, ?string $subjectType, EventRegistry $events): array
     {
+        return $this->totals($this->eventBreakdown($period, $subjectType, $events));
+    }
+
+    /**
+     * Headline totals derived from an already-computed breakdown, so a caller that
+     * also needs the breakdown does not pay for a second aggregation query.
+     *
+     * @param  list<array{name: string, label: string, isConversion: bool, value: float|null, count: int, visitors: int, valueTotal: float}>  $breakdown
+     * @return array{events: int, conversions: int, value: float}
+     */
+    public function totals(array $breakdown): array
+    {
         $eventsTotal = 0;
         $conversionsTotal = 0;
         $value = 0.0;
 
-        foreach ($this->eventBreakdown($period, $subjectType, $events) as $row) {
+        foreach ($breakdown as $row) {
             $eventsTotal += $row['count'];
             if ($row['isConversion']) {
                 $conversionsTotal += $row['count'];
