@@ -22,8 +22,10 @@ final readonly class SessionListReadRepository
 
     /**
      * Paginated session list, newest first, optionally filtered by a free-text
-     * term (name / locality / id), device type and source.
+     * term (name / locality / id), device type and source. Each row carries the
+     * count of named events and of conversions it produced (subqueries, no N+1).
      *
+     * @param  list<string>  $conversionNames
      * @return LengthAwarePaginator<int, Session>
      */
     public function paginateSessions(
@@ -36,12 +38,17 @@ final readonly class SessionListReadRepository
         string $sort = 'started_at',
         string $direction = 'desc',
         int $perPage = 20,
+        array $conversionNames = [],
     ): LengthAwarePaginator {
         $direction = $direction === 'asc' ? 'asc' : 'desc';
 
         $query = $this->sessionScope($period, $subjectType)
             ->select(['id', 'visitor_id', 'subject_type', 'subject_id', 'started_at', 'last_activity_at', 'pageview_count', 'source', 'landing_route', 'landing_url', 'device_type', 'browser', 'country', 'city'])
             ->with('visitor:id,uuid,subject_type,subject_id')
+            ->withCount([
+                'events as events_count' => fn (Builder $q): Builder => $q->whereNotNull('name'),
+                'events as conversions_count' => fn (Builder $q): Builder => $q->whereIn('name', $conversionNames),
+            ])
             ->when($device !== null && $device !== '', fn (Builder $q): Builder => $q->where('device_type', $device))
             ->when($source !== null && $source !== '', fn (Builder $q): Builder => $q->where('source', $source))
             ->when($search !== null && $search !== '', function (Builder $query) use ($search, $subjects): void {

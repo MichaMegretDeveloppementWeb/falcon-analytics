@@ -127,10 +127,12 @@
     </div>
 
     {{-- Key figures --}}
-    <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+    <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
         <x-ui.stat-card :label="__('Durée')" :value="$duration" icon="clock" />
         <x-ui.stat-card :label="__('Pages vues')" :value="(string) $session->pageview_count" icon="document-text" />
         <x-ui.stat-card :label="__('Clics')" :value="(string) $clicksCount" icon="cursor-arrow-rays" />
+        <x-ui.stat-card :label="__('Événements')" :value="(string) $eventsCount" icon="bolt" />
+        <x-ui.stat-card :label="__('Conversions')" :value="(string) $conversionsCount" icon="check-circle" />
         <x-ui.stat-card :label="__('Temps moy./page')" :value="$formatSeconds($avgPageSeconds)" icon="clock" />
     </div>
 

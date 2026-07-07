@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Livewire\Dashboard;
 
+use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\ResolvesSubjectNames;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\SortsAndSearchesList;
 use Falcon\Analytics\Repositories\Dashboard\EngagementReadRepository;
@@ -54,12 +55,21 @@ final class SessionsPage extends DashboardComponent
         SessionListReadRepository $sessionsRepository,
         SubjectResolver $subjects,
         EngagementMetricsCalculator $engagement,
+        EventRegistry $events,
     ): View {
         return $this->guardedRender(
-            function () use ($engagementRepository, $sessionsRepository, $subjects, $engagement): array {
+            function () use ($engagementRepository, $sessionsRepository, $subjects, $engagement, $events): array {
                 $period = $this->currentPeriod();
                 $subjectType = $this->subjectType();
-                $sessions = $sessionsRepository->paginateSessions($period, $subjectType, $this->search, $this->device ?: null, $this->source ?: null, $subjects, $this->sort, $this->direction);
+
+                $conversionNames = [];
+                foreach ($events->all() as $event) {
+                    if ($event->isConversion()) {
+                        $conversionNames[] = $event->name;
+                    }
+                }
+
+                $sessions = $sessionsRepository->paginateSessions($period, $subjectType, $this->search, $this->device ?: null, $this->source ?: null, $subjects, $this->sort, $this->direction, conversionNames: $conversionNames);
 
                 return [
                     'range' => $period,

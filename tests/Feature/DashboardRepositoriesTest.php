@@ -170,6 +170,21 @@ it('breaks down events by name and flags declared conversions', function () {
         ->and($breakdown[1])->toMatchArray(['name' => 'cta.contact', 'count' => 1, 'isConversion' => false]);
 });
 
+it('counts named events and conversions per session in the list', function () {
+    $session = makeDashboardSession();
+    makeDashboardEvent($session, EventType::Click, ['name' => 'cta.contact']);
+    makeDashboardEvent($session, EventType::Click, ['name' => 'Lead']);
+    makeDashboardEvent($session, EventType::Pageview); // unnamed → excluded
+
+    $result = (new SessionListReadRepository)->paginateSessions(
+        $this->period, null, null, null, null, app(SubjectResolver::class), conversionNames: ['Lead'],
+    );
+    $row = $result->first();
+
+    expect((int) $row->events_count)->toBe(2)
+        ->and((int) $row->conversions_count)->toBe(1);
+});
+
 it('ranks the top localities (country + city)', function () {
     makeDashboardSession(['country' => 'FR', 'city' => 'Paris']);
     makeDashboardSession(['country' => 'FR', 'city' => 'Paris']);
