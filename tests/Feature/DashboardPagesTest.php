@@ -5,6 +5,8 @@ use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Livewire\Dashboard\EventsPage;
 use Falcon\Analytics\Livewire\Dashboard\OverviewPage;
 use Falcon\Analytics\Livewire\Dashboard\SessionsPage;
+use Falcon\Analytics\Livewire\Dashboard\Widgets\EventsTrendChart;
+use Falcon\Analytics\Livewire\Dashboard\Widgets\MarketingTrendChart;
 use Falcon\Analytics\Livewire\Dashboard\VisitorDetailPage;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\TrendChart;
 use Falcon\Analytics\Models\Event;
@@ -82,6 +84,15 @@ it('renders the events screen with the per-event breakdown', function () {
     Livewire::test(EventsPage::class)
         ->assertSuccessful()
         ->assertSeeText('cta.contact');
+});
+
+it('renders the deferred events and marketing trend chart widgets', function () {
+    seedSession();
+
+    $this->actingAs($this->admin, 'admin');
+
+    Livewire::test(EventsTrendChart::class, ['period' => 30, 'subject' => ''])->assertSuccessful();
+    Livewire::test(MarketingTrendChart::class, ['period' => 30, 'subject' => '', 'scope' => 'overview'])->assertSuccessful();
 });
 
 it('protects the dashboard from guests', function () {

@@ -48,14 +48,9 @@
                 <div wire:key="a-spark-rate-{{ $range->days }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$rateTrend" color="#10b981" /></div>
             </x-analytics::kpi-card>
         </div>
-        <x-ui.card class="mt-6">
-            <x-ui.section-header :title="__('Sessions et conversions au fil du temps')" class="mb-4" />
-            @if (array_sum($trendData) > 0)
-                <x-analytics::area-chart wire:key="mkt-atrend-{{ $range->days }}-{{ $subject }}" :labels="$trendLabels" :data="$trendData" :label="__('Sessions')" :data2="$conversionsTrend" :label2="__('Conversions')" height="h-56" />
-            @else
-                <div class="flex h-56 items-center justify-center rounded-lg bg-elevated text-[12px] text-muted">{{ __('Aucune session sur la période.') }}</div>
-            @endif
-        </x-ui.card>
+        <div class="mt-6">
+            <livewire:analytics-marketing-trend-chart :period="$period" :subject="$subject" scope="ad" :ref-id="$ad->id" :key="'mkt-trend-a-'.$ad->id.'-'.$period.'-'.$subject" />
+        </div>
     </div>
 
     {{-- Conversions --}}

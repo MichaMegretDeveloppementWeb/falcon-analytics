@@ -12,6 +12,8 @@ use Falcon\Analytics\Console\ScanEventsCommand;
 use Falcon\Analytics\Console\SweepCommand;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
+use Falcon\Analytics\Livewire\Dashboard\Widgets\EventsTrendChart;
+use Falcon\Analytics\Livewire\Dashboard\Widgets\MarketingTrendChart;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\TrendChart;
 use Falcon\Analytics\Support\GeoResolver;
 use Illuminate\Console\Scheduling\Schedule;
@@ -64,6 +66,8 @@ final class AnalyticsServiceProvider extends ServiceProvider
         Blade::directive('analyticsScripts', fn (): string => '<?php echo \Falcon\Analytics\View\Collector::render(); ?>');
 
         Livewire::component('analytics-trend-chart', TrendChart::class);
+        Livewire::component('analytics-events-trend-chart', EventsTrendChart::class);
+        Livewire::component('analytics-marketing-trend-chart', MarketingTrendChart::class);
 
         if ($this->app->runningInConsole()) {
             $this->publishes([

@@ -19,14 +19,7 @@
         <x-analytics::kpi-card :label="__('Valeur des conversions')" :value="number_format($value, 0, ',', ' ').' pts'" icon="sparkles" :metric="$valueDelta" :description="__('somme des valeurs des conversions')" />
     </div>
 
-    <x-ui.card>
-        <x-ui.section-header :title="__('Événements et conversions au fil du temps')" class="mb-4" />
-        @if (array_sum($eventsTrend) > 0)
-            <x-analytics::area-chart wire:key="ev-trend-{{ $range->days }}-{{ $subject }}" :labels="$trendLabels" :data="$eventsTrend" :label="__('Événements')" :data2="$conversionsTrend" :label2="__('Conversions')" />
-        @else
-            <div class="flex h-48 items-center justify-center rounded-lg bg-elevated text-[12px] text-muted">{{ __('Aucun événement sur la période.') }}</div>
-        @endif
-    </x-ui.card>
+    <livewire:analytics-events-trend-chart :period="$period" :subject="$subject" :key="'ev-trend-'.$period.'-'.$subject" />
 
 
     <div>
