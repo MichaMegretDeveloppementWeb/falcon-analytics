@@ -60,35 +60,72 @@ final class MarketingReadRepository
     }
 
     /**
-     * Total ad-driven traffic over the period.
+     * Total ad-driven traffic over the period: sessions matching a defined campaign
+     * (not merely any tagged session), so the headline reconciles with the
+     * per-campaign figures.
      *
      * @return array{sessions: int, visitors: int}
      */
     public function headline(Period $period, ?string $subjectType): array
     {
-        $base = $this->taggedSessions($period, $subjectType);
+        $campaigns = Campaign::query()->where('is_active', true)->get()->all();
 
-        return [
-            'sessions' => (clone $base)->count(),
-            'visitors' => (clone $base)->distinct()->count('visitor_id'),
-        ];
+        $sessions = 0;
+        /** @var array<int, true> $visitors */
+        $visitors = [];
+
+        foreach ($this->taggedSessions($period, $subjectType)->get(['visitor_id', 'mkt_params']) as $session) {
+            if ($this->mostSpecific($campaigns, $session->mkt_params ?? []) instanceof Campaign) {
+                $sessions++;
+                $visitors[(int) $session->visitor_id] = true;
+            }
+        }
+
+        return ['sessions' => $sessions, 'visitors' => count($visitors)];
     }
 
     /**
-     * Ad-driven sessions per day, keyed by Y-m-d.
+     * Campaign-matched sessions per day, keyed by Y-m-d.
      *
      * @return array<string, int>
      */
     public function dailySessions(Period $period, ?string $subjectType): array
     {
-        $day = $this->dayExpression('started_at');
+        $campaigns = Campaign::query()->where('is_active', true)->get()->all();
 
-        return $this->taggedSessions($period, $subjectType)
-            ->selectRaw("{$day} as day, COUNT(*) as total")
-            ->groupBy('day')
-            ->get()
-            ->mapWithKeys(fn (Session $row): array => [(string) $row->getAttribute('day') => (int) $row->getAttribute('total')])
-            ->all();
+        /** @var array<string, int> $daily */
+        $daily = [];
+
+        foreach ($this->taggedSessions($period, $subjectType)->get(['mkt_params', 'started_at']) as $session) {
+            if ($this->mostSpecific($campaigns, $session->mkt_params ?? []) instanceof Campaign) {
+                $day = $session->started_at->toDateString();
+                $daily[$day] = ($daily[$day] ?? 0) + 1;
+            }
+        }
+
+        return $daily;
+    }
+
+    /**
+     * The generic source of every ad-tagged session that matches a defined
+     * campaign, so a channel breakdown can reclassify them as paid. The active
+     * campaigns can be passed in to avoid re-loading them across periods.
+     *
+     * @param  list<Campaign>|null  $campaigns
+     * @return array<int, string> session id => source
+     */
+    public function matchedSessionSources(Period $period, ?string $subjectType, ?array $campaigns = null): array
+    {
+        $campaigns ??= Campaign::query()->where('is_active', true)->get()->all();
+
+        $sources = [];
+        foreach ($this->taggedSessions($period, $subjectType)->get(['id', 'source', 'mkt_params']) as $session) {
+            if ($this->mostSpecific($campaigns, $session->mkt_params ?? []) instanceof Campaign) {
+                $sources[(int) $session->id] = (string) ($session->source ?? 'direct');
+            }
+        }
+
+        return $sources;
     }
 
     /**

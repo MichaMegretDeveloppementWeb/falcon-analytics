@@ -77,7 +77,8 @@ it('aggregates ad-driven traffic per campaign and ad over the period', function 
     $repo = new MarketingReadRepository;
     $period = Period::ofDays(30);
 
-    expect($repo->headline($period, null))->toBe(['sessions' => 4, 'visitors' => 3]);
+    // Only campaign-matched sessions count as ad-driven: the src=other session is excluded.
+    expect($repo->headline($period, null))->toBe(['sessions' => 3, 'visitors' => 2]);
 
     $performance = $repo->performance($period, null);
 

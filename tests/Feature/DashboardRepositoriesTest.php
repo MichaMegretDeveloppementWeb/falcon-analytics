@@ -3,10 +3,12 @@
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\DTOs\Dashboard\Period;
 use Falcon\Analytics\Enums\EventType;
+use Falcon\Analytics\Models\Campaign;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Repositories\Dashboard\EngagementReadRepository;
+use Falcon\Analytics\Repositories\Dashboard\MarketingReadRepository;
 use Falcon\Analytics\Repositories\Dashboard\OverviewReadRepository;
 use Falcon\Analytics\Repositories\Dashboard\SessionListReadRepository;
 use Falcon\Analytics\Repositories\Dashboard\VisitorListReadRepository;
@@ -54,7 +56,7 @@ function makeDashboardEvent(Session $session, EventType $type, array $attrs = []
 beforeEach(function () {
     $this->travelTo(CarbonImmutable::parse('2026-06-15 12:00:00'));
     $this->engagement = new EngagementReadRepository;
-    $this->overview = new OverviewReadRepository;
+    $this->overview = new OverviewReadRepository(new MarketingReadRepository);
     $this->sessions = new SessionListReadRepository;
     $this->visitors = new VisitorListReadRepository;
     $this->period = Period::ofDays(30);
@@ -133,6 +135,20 @@ it('ranks the top sources with previous-period counts', function () {
         ['label' => 'google', 'total' => 2, 'previous' => 1],
         ['label' => 'facebook', 'total' => 1, 'previous' => 0],
     ]);
+});
+
+it('reclassifies campaign-matched sessions as paid in the channel breakdown', function () {
+    Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
+
+    // Two organic-classified sessions that actually match the campaign, plus one that does not.
+    makeDashboardSession(['source' => 'organic', 'mkt_params' => ['src' => 'meta_ete']]);
+    makeDashboardSession(['source' => 'organic', 'mkt_params' => ['src' => 'meta_ete']]);
+    makeDashboardSession(['source' => 'organic']);
+
+    $sources = collect($this->overview->topSources($this->period, null))->pluck('total', 'label');
+
+    expect($sources['paid'] ?? 0)->toBe(2)
+        ->and($sources['organic'] ?? 0)->toBe(1);
 });
 
 it('ranks the top localities (country + city)', function () {

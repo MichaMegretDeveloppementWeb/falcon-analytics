@@ -6,6 +6,7 @@ namespace Falcon\Analytics\Repositories\Dashboard;
 
 use Falcon\Analytics\DTOs\Dashboard\Period;
 use Falcon\Analytics\Enums\EventType;
+use Falcon\Analytics\Models\Campaign;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Repositories\Concerns\ScopesSessionQueries;
 use Illuminate\Database\Eloquent\Builder;
@@ -20,6 +21,8 @@ use Illuminate\Support\Facades\DB;
 final readonly class OverviewReadRepository
 {
     use ScopesSessionQueries;
+
+    public function __construct(private MarketingReadRepository $marketing) {}
 
     /**
      * New (first ever seen within the period) vs returning visitor counts.
@@ -79,13 +82,66 @@ final readonly class OverviewReadRepository
     }
 
     /**
-     * Top acquisition sources with their previous-period counts.
+     * Top acquisition channels with their previous-period counts. Every session
+     * matching a defined marketing campaign is counted as paid (deduplicated with
+     * the generic paid signals), and the residual 'campaign' source folds into
+     * referral, so the channel mix reconciles with the marketing module.
      *
      * @return list<array{label: string, total: int, previous: int}>
      */
     public function topSources(Period $period, ?string $subjectType, int $limit = 6): array
     {
-        return $this->rankedSessionColumn('source', $period, $subjectType, $limit);
+        $campaigns = Campaign::query()->where('is_active', true)->get()->all();
+
+        return $this->mergeRanked(
+            $this->channelCounts($period, $subjectType, $campaigns),
+            $this->channelCounts($period->previous(), $subjectType, $campaigns),
+            $limit,
+        );
+    }
+
+    /**
+     * Session counts per acquisition channel: the raw source, with 'campaign'
+     * folded into referral and every campaign-matched session reclassified as paid.
+     *
+     * @param  list<Campaign>  $campaigns
+     * @return Collection<string, int>
+     */
+    private function channelCounts(Period $period, ?string $subjectType, array $campaigns): Collection
+    {
+        /** @var array<string, int> $counts */
+        $counts = [];
+
+        $raw = $this->sessionScope($period, $subjectType)
+            ->toBase()
+            ->whereNotNull('source')
+            ->selectRaw('source as label, COUNT(*) as total')
+            ->groupBy('source')
+            ->pluck('total', 'label');
+
+        foreach ($raw as $source => $total) {
+            $channel = $source === 'campaign' ? 'referral' : (string) $source;
+            $counts[$channel] = ($counts[$channel] ?? 0) + (int) $total;
+        }
+
+        if ($campaigns === []) {
+            return collect($counts);
+        }
+
+        foreach ($this->marketing->matchedSessionSources($period, $subjectType, $campaigns) as $source) {
+            $channel = $source === 'campaign' ? 'referral' : $source;
+            if ($channel === 'paid') {
+                continue;
+            }
+
+            $counts[$channel] = max(0, ($counts[$channel] ?? 0) - 1);
+            if ($counts[$channel] === 0) {
+                unset($counts[$channel]);
+            }
+            $counts['paid'] = ($counts['paid'] ?? 0) + 1;
+        }
+
+        return collect($counts);
     }
 
     /**
@@ -163,23 +219,6 @@ final readonly class OverviewReadRepository
                 'total' => (int) $row->total,
             ])
             ->all();
-    }
-
-    /**
-     * Rank a session column by count with previous-period comparison.
-     *
-     * @return list<array{label: string, total: int, previous: int}>
-     */
-    private function rankedSessionColumn(string $column, Period $period, ?string $subjectType, int $limit): array
-    {
-        $count = fn (Period $p): Collection => $this->sessionScope($p, $subjectType)
-            ->toBase()
-            ->whereNotNull($column)
-            ->selectRaw("{$column} as label, COUNT(*) as total")
-            ->groupBy($column)
-            ->pluck('total', 'label');
-
-        return $this->mergeRanked($count($period), $count($period->previous()), $limit);
     }
 
     /**

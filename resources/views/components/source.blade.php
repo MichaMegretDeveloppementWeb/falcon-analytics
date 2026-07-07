@@ -5,12 +5,12 @@
 @php
     $labels = [
         'direct' => 'Direct',
-        'organic' => 'Naturel',
-        'social' => 'Réseaux sociaux',
+        'organic' => 'Recherche naturelle',
+        'social' => 'Social naturel',
         'paid' => 'Payant',
         'referral' => 'Référent',
         'email' => 'E-mail',
-        'campaign' => 'Campagne',
+        'campaign' => 'Référent',
     ];
     $key = strtolower((string) $value);
     $sourceLabel = __($labels[$key] ?? \Illuminate\Support\Str::headline((string) $value));
