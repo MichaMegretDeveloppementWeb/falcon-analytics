@@ -30,6 +30,64 @@ final class MarketingReadRepository
     use ScopesSessionQueries;
 
     /**
+     * Active campaigns and ads, loaded once per instance. A dashboard render calls
+     * several read methods that each need the same lists; the repository is resolved
+     * once per request (not a singleton), so memoizing here avoids reloading them.
+     *
+     * @var list<Campaign>|null
+     */
+    private ?array $activeCampaigns = null;
+
+    /** @var list<Ad>|null */
+    private ?array $activeAds = null;
+
+    /** @var Collection<int, Ad>|null */
+    private ?Collection $activeAdsWithObjectives = null;
+
+    /** @var array<string, Collection<int, Session>> */
+    private array $taggedSessionCache = [];
+
+    /**
+     * Ad-tagged sessions for a period, loaded once and reused. headline,
+     * dailySessions, performance and conversions all scan the same tagged sessions
+     * to match them to campaigns/ads; fetching a superset of the columns they need
+     * once (per period + subject) avoids repeating that query on every render.
+     *
+     * @return Collection<int, Session>
+     */
+    private function taggedSessionRows(Period $period, ?string $subjectType): Collection
+    {
+        $key = $period->from->format('c').'|'.$period->to->format('c').'|'.($subjectType ?? '');
+
+        return $this->taggedSessionCache[$key] ??= $this->taggedSessions($period, $subjectType)
+            ->get(['id', 'visitor_id', 'source', 'mkt_params', 'started_at']);
+    }
+
+    /**
+     * @return list<Campaign>
+     */
+    private function activeCampaigns(): array
+    {
+        return $this->activeCampaigns ??= Campaign::query()->where('is_active', true)->get()->all();
+    }
+
+    /**
+     * @return list<Ad>
+     */
+    private function activeAds(): array
+    {
+        return $this->activeAds ??= $this->activeAdsWithObjectives()->all();
+    }
+
+    /**
+     * @return Collection<int, Ad>
+     */
+    private function activeAdsWithObjectives(): Collection
+    {
+        return $this->activeAdsWithObjectives ??= Ad::query()->where('is_active', true)->with('objectives')->get();
+    }
+
+    /**
      * @param  array<string, string>|null  $params
      */
     public function resolveAd(?array $params): ?Ad
@@ -54,7 +112,7 @@ final class MarketingReadRepository
         }
 
         /** @var Campaign|null $campaign */
-        $campaign = $this->mostSpecific(Campaign::query()->where('is_active', true)->get()->all(), $params);
+        $campaign = $this->mostSpecific($this->activeCampaigns(), $params);
 
         return $campaign;
     }
@@ -68,13 +126,13 @@ final class MarketingReadRepository
      */
     public function headline(Period $period, ?string $subjectType): array
     {
-        $campaigns = Campaign::query()->where('is_active', true)->get()->all();
+        $campaigns = $this->activeCampaigns();
 
         $sessions = 0;
         /** @var array<int, true> $visitors */
         $visitors = [];
 
-        foreach ($this->taggedSessions($period, $subjectType)->get(['visitor_id', 'mkt_params']) as $session) {
+        foreach ($this->taggedSessionRows($period, $subjectType) as $session) {
             if ($this->mostSpecific($campaigns, $session->mkt_params ?? []) instanceof Campaign) {
                 $sessions++;
                 $visitors[(int) $session->visitor_id] = true;
@@ -91,12 +149,12 @@ final class MarketingReadRepository
      */
     public function dailySessions(Period $period, ?string $subjectType): array
     {
-        $campaigns = Campaign::query()->where('is_active', true)->get()->all();
+        $campaigns = $this->activeCampaigns();
 
         /** @var array<string, int> $daily */
         $daily = [];
 
-        foreach ($this->taggedSessions($period, $subjectType)->get(['mkt_params', 'started_at']) as $session) {
+        foreach ($this->taggedSessionRows($period, $subjectType) as $session) {
             if ($this->mostSpecific($campaigns, $session->mkt_params ?? []) instanceof Campaign) {
                 $day = $session->started_at->toDateString();
                 $daily[$day] = ($daily[$day] ?? 0) + 1;
@@ -116,10 +174,10 @@ final class MarketingReadRepository
      */
     public function matchedSessionSources(Period $period, ?string $subjectType, ?array $campaigns = null): array
     {
-        $campaigns ??= Campaign::query()->where('is_active', true)->get()->all();
+        $campaigns ??= $this->activeCampaigns();
 
         $sources = [];
-        foreach ($this->taggedSessions($period, $subjectType)->get(['id', 'source', 'mkt_params']) as $session) {
+        foreach ($this->taggedSessionRows($period, $subjectType) as $session) {
             if ($this->mostSpecific($campaigns, $session->mkt_params ?? []) instanceof Campaign) {
                 $sources[(int) $session->id] = (string) ($session->source ?? 'direct');
             }
@@ -135,8 +193,8 @@ final class MarketingReadRepository
      */
     public function performance(Period $period, ?string $subjectType): array
     {
-        $campaigns = Campaign::query()->where('is_active', true)->get()->all();
-        $ads = Ad::query()->where('is_active', true)->get()->all();
+        $campaigns = $this->activeCampaigns();
+        $ads = $this->activeAds();
 
         /** @var array<int, int> $campaignSessions */
         $campaignSessions = [];
@@ -147,7 +205,7 @@ final class MarketingReadRepository
         /** @var array<int, array<int, true>> $adVisitors */
         $adVisitors = [];
 
-        foreach ($this->taggedSessions($period, $subjectType)->get(['visitor_id', 'mkt_params']) as $session) {
+        foreach ($this->taggedSessionRows($period, $subjectType) as $session) {
             $params = $session->mkt_params ?? [];
             $visitor = (int) $session->visitor_id;
 
@@ -179,7 +237,7 @@ final class MarketingReadRepository
      */
     public function campaignReport(Period $period, ?string $subjectType, Campaign $campaign): array
     {
-        $campaigns = Campaign::query()->where('is_active', true)->get()->all();
+        $campaigns = $this->activeCampaigns();
         $ads = $campaign->ads()->where('is_active', true)->get()->all();
 
         $sessions = 0;
@@ -192,7 +250,7 @@ final class MarketingReadRepository
         /** @var array<int, array<int, true>> $adVisitors */
         $adVisitors = [];
 
-        foreach ($this->taggedSessions($period, $subjectType)->get(['visitor_id', 'mkt_params', 'started_at']) as $session) {
+        foreach ($this->taggedSessionRows($period, $subjectType) as $session) {
             $params = $session->mkt_params ?? [];
 
             $bestCampaign = $this->mostSpecific($campaigns, $params);
@@ -228,7 +286,7 @@ final class MarketingReadRepository
      */
     public function adReport(Period $period, ?string $subjectType, Ad $ad): array
     {
-        $ads = Ad::query()->where('is_active', true)->get()->all();
+        $ads = $this->activeAds();
 
         $sessions = 0;
         /** @var array<int, true> $visitors */
@@ -236,7 +294,7 @@ final class MarketingReadRepository
         /** @var array<string, int> $daily */
         $daily = [];
 
-        foreach ($this->taggedSessions($period, $subjectType)->get(['visitor_id', 'mkt_params', 'started_at']) as $session) {
+        foreach ($this->taggedSessionRows($period, $subjectType) as $session) {
             $bestAd = $this->mostSpecific($ads, $session->mkt_params ?? []);
             if (! ($bestAd instanceof Ad) || $bestAd->id !== $ad->id) {
                 continue;
@@ -260,14 +318,13 @@ final class MarketingReadRepository
      */
     public function conversions(Period $period, ?string $subjectType, FunnelRegistry $funnels): array
     {
-        /** @var Collection<int, Ad> $ads */
-        $ads = Ad::query()->where('is_active', true)->with('objectives')->get();
+        $ads = $this->activeAdsWithObjectives();
         $adList = $ads->all();
         $adById = $ads->keyBy('id');
 
         /** @var array<int, array<int, true>> $visitorAds */
         $visitorAds = [];
-        foreach ($this->taggedSessions($period, $subjectType)->get(['visitor_id', 'mkt_params']) as $session) {
+        foreach ($this->taggedSessionRows($period, $subjectType) as $session) {
             $ad = $this->mostSpecific($adList, $session->mkt_params ?? []);
             if ($ad instanceof Ad) {
                 $visitorAds[(int) $session->visitor_id][$ad->id] = true;
@@ -496,12 +553,12 @@ final class MarketingReadRepository
             return [];
         }
 
-        $allAds = Ad::query()->where('is_active', true)->get()->all();
+        $allAds = $this->activeAds();
         $wantedIds = array_map(fn (Ad $ad): int => $ad->id, $ads);
 
         /** @var array<int, array<int, true>> $adVisitors */
         $adVisitors = [];
-        foreach ($this->taggedSessions($period, $subjectType)->get(['visitor_id', 'mkt_params']) as $session) {
+        foreach ($this->taggedSessionRows($period, $subjectType) as $session) {
             $ad = $this->mostSpecific($allAds, $session->mkt_params ?? []);
             if ($ad instanceof Ad && in_array($ad->id, $wantedIds, true)) {
                 $adVisitors[$ad->id][(int) $session->visitor_id] = true;

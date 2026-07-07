@@ -3,12 +3,14 @@
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Livewire\Dashboard\EventsPage;
+use Falcon\Analytics\Livewire\Dashboard\MarketingDashboardPage;
 use Falcon\Analytics\Livewire\Dashboard\OverviewPage;
 use Falcon\Analytics\Livewire\Dashboard\SessionsPage;
 use Falcon\Analytics\Livewire\Dashboard\VisitorDetailPage;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\EventsTrendChart;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\MarketingTrendChart;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\TrendChart;
+use Falcon\Analytics\Models\Campaign;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
@@ -84,6 +86,34 @@ it('renders the events screen with the per-event breakdown', function () {
     Livewire::test(EventsPage::class)
         ->assertSuccessful()
         ->assertSeeText('cta.contact');
+});
+
+it('renders the events screen within its query budget with no duplicate query', function () {
+    $session = seedSession();
+    Event::create(['session_id' => $session->id, 'visitor_id' => $session->visitor_id, 'type' => EventType::Click, 'name' => 'cta.contact', 'occurred_at' => now()]);
+
+    $this->actingAs($this->admin, 'admin');
+
+    $budget = analyticsQueryBudget(fn () => Livewire::test(EventsPage::class));
+
+    expect($budget['count'])->toBeLessThanOrEqual(6)
+        ->and($budget['duplicates'])->toBe(0);
+});
+
+it('renders the marketing dashboard within its query budget with no duplicate query', function () {
+    Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta']]]);
+    seedSession(['mkt_params' => ['src' => 'meta'], 'source' => 'social']);
+    seedSession(['mkt_params' => ['src' => 'meta'], 'source' => 'social']);
+
+    $this->actingAs($this->admin, 'admin');
+
+    $budget = analyticsQueryBudget(fn () => Livewire::test(MarketingDashboardPage::class));
+
+    // Active campaigns/ads and the ad-tagged session set are each loaded once per
+    // render and reused across headline/dailySessions/performance/conversions, so no
+    // read query repeats.
+    expect($budget['count'])->toBeLessThanOrEqual(12)
+        ->and($budget['duplicates'])->toBe(0);
 });
 
 it('renders the deferred events and marketing trend chart widgets', function () {
