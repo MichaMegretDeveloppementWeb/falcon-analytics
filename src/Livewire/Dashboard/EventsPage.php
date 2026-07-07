@@ -25,17 +25,6 @@ final class EventsPage extends DashboardComponent
                 $breakdown = $repository->eventBreakdown($period, $subjectType, $events);
                 $headline = $repository->totals($breakdown);
                 $headlinePrevious = $repository->headline($period->previous(), $subjectType, $events);
-                $daily = $repository->daily($period, $subjectType, $events);
-
-                $trendLabels = [];
-                $eventsTrend = [];
-                $conversionsTrend = [];
-                foreach ($period->eachDay() as $day) {
-                    $key = $day->toDateString();
-                    $trendLabels[] = $day->isoFormat('D MMM');
-                    $eventsTrend[] = $daily['events'][$key] ?? 0;
-                    $conversionsTrend[] = $daily['conversions'][$key] ?? 0;
-                }
 
                 return [
                     'range' => $period,
@@ -45,9 +34,6 @@ final class EventsPage extends DashboardComponent
                     'eventsDelta' => new MetricDelta((float) $headline['events'], (float) $headlinePrevious['events']),
                     'conversionsDelta' => new MetricDelta((float) $headline['conversions'], (float) $headlinePrevious['conversions']),
                     'valueDelta' => new MetricDelta($headline['value'], $headlinePrevious['value']),
-                    'trendLabels' => $trendLabels,
-                    'eventsTrend' => $eventsTrend,
-                    'conversionsTrend' => $conversionsTrend,
                     'breakdown' => $breakdown,
                     ...$this->filterData(),
                 ];

@@ -10,12 +10,8 @@
     </x-ui.page-header>
 
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <x-analytics::kpi-card :label="__('Événements')" :value="number_format($events, 0, ',', ' ')" icon="bolt" :metric="$eventsDelta">
-            <div wire:key="ev-spark-e-{{ $range->days }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$eventsTrend" /></div>
-        </x-analytics::kpi-card>
-        <x-analytics::kpi-card :label="__('Conversions')" :value="number_format($conversions, 0, ',', ' ')" icon="check-circle" :metric="$conversionsDelta">
-            <div wire:key="ev-spark-c-{{ $range->days }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$conversionsTrend" color="#10b981" /></div>
-        </x-analytics::kpi-card>
+        <x-analytics::kpi-card :label="__('Événements')" :value="number_format($events, 0, ',', ' ')" icon="bolt" :metric="$eventsDelta" />
+        <x-analytics::kpi-card :label="__('Conversions')" :value="number_format($conversions, 0, ',', ' ')" icon="check-circle" :metric="$conversionsDelta" />
         <x-analytics::kpi-card :label="__('Valeur des conversions')" :value="number_format($value, 0, ',', ' ').' pts'" icon="sparkles" :metric="$valueDelta" :description="__('somme des valeurs des conversions')" />
     </div>
 

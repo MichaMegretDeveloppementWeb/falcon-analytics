@@ -96,7 +96,7 @@ it('renders the events screen within its query budget with no duplicate query', 
 
     $budget = analyticsQueryBudget(fn () => Livewire::test(EventsPage::class));
 
-    expect($budget['count'])->toBeLessThanOrEqual(6)
+    expect($budget['count'])->toBeLessThanOrEqual(4)
         ->and($budget['duplicates'])->toBe(0);
 });
 
