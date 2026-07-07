@@ -238,7 +238,6 @@
                         <div class="relative h-1.5 flex-1 overflow-hidden rounded-full bg-elevated">
                             <div class="absolute inset-y-0 left-0 rounded-full bg-[#1684ea]/70" style="width: {{ $pct }}%"></div>
                         </div>
-                        @if ($item['isConversion'])<x-ui.icon name="check-circle" class="h-3.5 w-3.5 shrink-0 text-emerald-500" />@endif
                         <span class="w-10 shrink-0 text-right text-[12px] font-medium text-secondary">{{ number_format($item['count'], 0, ',', ' ') }}</span>
                     </div>
                 @empty

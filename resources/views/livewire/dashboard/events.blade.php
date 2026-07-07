@@ -28,6 +28,7 @@
         @endif
     </x-ui.card>
 
+
     <div>
         <x-ui.section-header :title="__('Détail des événements')" :description="__('Chaque événement du site et le nombre de fois qu\'il s\'est produit — du plus au moins fréquent.')" class="mb-4" />
         @if ($breakdown === [])
@@ -39,7 +40,8 @@
                     <x-ui.table.header-cell>{{ __('Type') }}</x-ui.table.header-cell>
                     <x-ui.table.header-cell align="right">{{ __('Occurrences') }}</x-ui.table.header-cell>
                     <x-ui.table.header-cell align="right">{{ __('Visiteurs') }}</x-ui.table.header-cell>
-                    <x-ui.table.header-cell :last="true" align="right">{{ __('Valeur') }}</x-ui.table.header-cell>
+                    <x-ui.table.header-cell align="right">{{ __('Valeur unit.') }}</x-ui.table.header-cell>
+                    <x-ui.table.header-cell :last="true" align="right">{{ __('Valeur totale') }}</x-ui.table.header-cell>
                 </x-ui.table.head>
                 <x-ui.table.body>
                     @foreach ($breakdown as $row)
@@ -59,7 +61,8 @@
                             </x-ui.table.cell>
                             <x-ui.table.cell align="right" class="font-medium tabular-nums text-primary">{{ number_format($row['count'], 0, ',', ' ') }}</x-ui.table.cell>
                             <x-ui.table.cell align="right" class="tabular-nums">{{ number_format($row['visitors'], 0, ',', ' ') }}</x-ui.table.cell>
-                            <x-ui.table.cell :last="true" align="right" class="tabular-nums text-secondary">{{ $row['value'] !== null ? number_format($row['valueTotal'], 0, ',', ' ')."\u{00A0}pts" : '—' }}</x-ui.table.cell>
+                            <x-ui.table.cell align="right" class="tabular-nums text-secondary">{{ $row['value'] !== null ? number_format($row['value'], 0, ',', ' ')."\u{00A0}pts" : '—' }}</x-ui.table.cell>
+                            <x-ui.table.cell :last="true" align="right" class="tabular-nums">{{ $row['value'] !== null ? number_format($row['valueTotal'], 0, ',', ' ')."\u{00A0}pts" : '—' }}</x-ui.table.cell>
                         </x-ui.table.row>
                     @endforeach
                 </x-ui.table.body>
