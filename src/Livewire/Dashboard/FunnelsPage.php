@@ -4,31 +4,22 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Livewire\Dashboard;
 
-use Falcon\Analytics\Funnels\FunnelEvaluator;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Collection;
 
 /**
- * Conversion funnels: every declared funnel evaluated over the selected period,
- * with per-step reach, conversion rates, weighted score and a period-over-period
- * delta per step.
+ * Conversion funnels shell: the header and filters paint immediately; evaluating
+ * every declared funnel over the current and previous period — the whole weight of
+ * the screen — happens in a deferred widget.
  */
 final class FunnelsPage extends DashboardComponent
 {
-    public function render(FunnelEvaluator $evaluator): View
+    public function render(): View
     {
         return $this->guardedRender(
-            function () use ($evaluator): array {
-                $period = $this->currentPeriod();
-                $subjectType = $this->subjectType();
-
-                return [
-                    'range' => $period,
-                    'reports' => $evaluator->evaluateAll($period, $subjectType),
-                    'previousReports' => Collection::make($evaluator->evaluateAll($period->previous(), $subjectType))->keyBy('key'),
-                    ...$this->filterData(),
-                ];
-            },
+            fn (): array => [
+                'range' => $this->currentPeriod(),
+                ...$this->filterData(),
+            ],
             fn (array $data): View => view('analytics::livewire.dashboard.funnels', $data)
                 ->layout($this->layoutName(), ['title' => __('Tunnels').' · '.__('Analytics')]),
         );

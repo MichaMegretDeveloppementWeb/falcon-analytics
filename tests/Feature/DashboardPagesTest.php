@@ -3,11 +3,11 @@
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Livewire\Dashboard\EventsPage;
-use Falcon\Analytics\Livewire\Dashboard\MarketingDashboardPage;
 use Falcon\Analytics\Livewire\Dashboard\OverviewPage;
 use Falcon\Analytics\Livewire\Dashboard\SessionsPage;
 use Falcon\Analytics\Livewire\Dashboard\VisitorDetailPage;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\EventsTrendChart;
+use Falcon\Analytics\Livewire\Dashboard\Widgets\FunnelsContent;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\MarketingDashboardContent;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\MarketingTrendChart;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\OverviewAcquisition;
@@ -320,11 +320,11 @@ it('renders the declared funnels for an authenticated admin', function () {
     Event::create(['session_id' => $session->id, 'visitor_id' => $visitor->id, 'occurred_at' => now()->subMinutes(2), 'type' => EventType::Pageview, 'route' => 'home']);
     Event::create(['session_id' => $session->id, 'visitor_id' => $visitor->id, 'occurred_at' => now()->subMinute(), 'type' => EventType::Custom, 'name' => 'sample.action']);
 
-    $this->actingAs($this->admin, 'admin')
-        ->get(route('analytics.funnels'))
-        ->assertSuccessful()
-        ->assertSeeText(__('Tunnels'))
-        ->assertSeeText('Sample funnel');
+    $this->actingAs($this->admin, 'admin');
+
+    $this->get(route('analytics.funnels'))->assertSuccessful()->assertSeeText(__('Tunnels'));
+
+    Livewire::test(FunnelsContent::class, ['period' => 30])->call('$refresh')->assertSeeText('Sample funnel');
 });
 
 it('defers the trend chart behind a skeleton placeholder', function () {

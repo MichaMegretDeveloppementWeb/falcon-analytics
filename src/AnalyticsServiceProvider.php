@@ -13,6 +13,7 @@ use Falcon\Analytics\Console\SweepCommand;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\EventsTrendChart;
+use Falcon\Analytics\Livewire\Dashboard\Widgets\FunnelsContent;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\MarketingDashboardContent;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\MarketingTrendChart;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\OverviewAcquisition;
@@ -74,6 +75,7 @@ final class AnalyticsServiceProvider extends ServiceProvider
         Livewire::component('analytics-events-trend-chart', EventsTrendChart::class);
         Livewire::component('analytics-marketing-trend-chart', MarketingTrendChart::class);
         Livewire::component('analytics-marketing-dashboard-content', MarketingDashboardContent::class);
+        Livewire::component('analytics-funnels-content', FunnelsContent::class);
         Livewire::component('analytics-overview-audience', OverviewAudience::class);
         Livewire::component('analytics-overview-acquisition', OverviewAcquisition::class);
         Livewire::component('analytics-overview-content', OverviewContent::class);
