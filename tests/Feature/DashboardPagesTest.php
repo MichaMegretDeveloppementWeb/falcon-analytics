@@ -9,6 +9,10 @@ use Falcon\Analytics\Livewire\Dashboard\SessionsPage;
 use Falcon\Analytics\Livewire\Dashboard\VisitorDetailPage;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\EventsTrendChart;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\MarketingTrendChart;
+use Falcon\Analytics\Livewire\Dashboard\Widgets\OverviewAcquisition;
+use Falcon\Analytics\Livewire\Dashboard\Widgets\OverviewAudience;
+use Falcon\Analytics\Livewire\Dashboard\Widgets\OverviewContent;
+use Falcon\Analytics\Livewire\Dashboard\Widgets\OverviewEvents;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\TrendChart;
 use Falcon\Analytics\Models\Campaign;
 use Falcon\Analytics\Models\Event;
@@ -147,8 +151,20 @@ it('renders the overview digest for an authenticated admin', function () {
         ->assertSeeText(__('Visiteurs'))
         ->assertSeeText(__('Durée moy. session'))
         ->assertSeeText(__('Taux de rebond'))
-        ->assertSeeText('Google')
-        ->assertSeeText('/accueil');
+        ->assertSeeText(__('Pages vues'));
+});
+
+it('renders the deferred overview section widgets with their data', function () {
+    $session = seedSession(['source' => 'google', 'country' => 'FR', 'city' => 'Paris', 'device_type' => 'desktop']);
+    Event::create(['session_id' => $session->id, 'visitor_id' => $session->visitor_id, 'type' => EventType::Pageview, 'route' => 'catalog', 'url' => 'https://x.test/catalog', 'occurred_at' => now()]);
+    Event::create(['session_id' => $session->id, 'visitor_id' => $session->visitor_id, 'type' => EventType::Click, 'name' => 'cta.contact', 'target_text' => 'Contact', 'occurred_at' => now()]);
+
+    $this->actingAs($this->admin, 'admin');
+
+    Livewire::test(OverviewAudience::class, ['period' => 30])->call('$refresh')->assertSeeText(__('Appareils'));
+    Livewire::test(OverviewAcquisition::class, ['period' => 30])->call('$refresh')->assertSeeText('Google');
+    Livewire::test(OverviewContent::class, ['period' => 30])->call('$refresh')->assertSeeText('/catalog');
+    Livewire::test(OverviewEvents::class, ['period' => 30])->call('$refresh')->assertSuccessful();
 });
 
 it('renders a graceful error state instead of a 500 when a dashboard read fails', function () {
@@ -157,7 +173,7 @@ it('renders a graceful error state instead of a 500 when a dashboard read fails'
     // Force a real read failure: an aggregation query hits a missing table.
     Schema::drop('falcon_analytics_events');
 
-    Livewire::test(OverviewPage::class)->assertSee(__('Données indisponibles'));
+    Livewire::test(EventsPage::class)->assertSee(__('Données indisponibles'));
 });
 
 it('renders the sessions list for an authenticated admin', function () {
@@ -324,7 +340,7 @@ it('renders the overview within its query budget with no duplicate query', funct
 
     $budget = analyticsQueryBudget(fn () => Livewire::test(OverviewPage::class));
 
-    expect($budget['count'])->toBeLessThanOrEqual(19)
+    expect($budget['count'])->toBeLessThanOrEqual(8)
         ->and($budget['duplicates'])->toBe(0);
 });
 

@@ -14,6 +14,10 @@ use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\EventsTrendChart;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\MarketingTrendChart;
+use Falcon\Analytics\Livewire\Dashboard\Widgets\OverviewAcquisition;
+use Falcon\Analytics\Livewire\Dashboard\Widgets\OverviewAudience;
+use Falcon\Analytics\Livewire\Dashboard\Widgets\OverviewContent;
+use Falcon\Analytics\Livewire\Dashboard\Widgets\OverviewEvents;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\TrendChart;
 use Falcon\Analytics\Support\GeoResolver;
 use Illuminate\Console\Scheduling\Schedule;
@@ -68,6 +72,10 @@ final class AnalyticsServiceProvider extends ServiceProvider
         Livewire::component('analytics-trend-chart', TrendChart::class);
         Livewire::component('analytics-events-trend-chart', EventsTrendChart::class);
         Livewire::component('analytics-marketing-trend-chart', MarketingTrendChart::class);
+        Livewire::component('analytics-overview-audience', OverviewAudience::class);
+        Livewire::component('analytics-overview-acquisition', OverviewAcquisition::class);
+        Livewire::component('analytics-overview-content', OverviewContent::class);
+        Livewire::component('analytics-overview-events', OverviewEvents::class);
 
         if ($this->app->runningInConsole()) {
             $this->publishes([
