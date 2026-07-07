@@ -4,19 +4,16 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Livewire\Dashboard;
 
-use Falcon\Analytics\DTOs\Dashboard\MetricDelta;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\EditsAd;
 use Falcon\Analytics\Models\Ad;
-use Falcon\Analytics\Repositories\Dashboard\MarketingReadRepository;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Carbon;
 
 /**
- * A single ad in detail: its headline traffic over the period with a trend, its
- * parent campaign, URL conditions and conversion objectives. The ad, its conditions
- * and objectives can be edited in place.
+ * A single ad in detail: its parent campaign, URL conditions and an in-place editor
+ * render immediately; its headline traffic, trend and conversion breakdown load in a
+ * deferred widget after the shell paints.
  */
 final class AdDetailPage extends DashboardComponent
 {
@@ -54,59 +51,14 @@ final class AdDetailPage extends DashboardComponent
         $this->ad->refresh()->load(['campaign', 'objectives']);
     }
 
-    public function render(FunnelRegistry $funnels, EventRegistry $events, MarketingReadRepository $marketing): View
+    public function render(FunnelRegistry $funnels, EventRegistry $events): View
     {
         return $this->guardedRender(
-            function () use ($funnels, $events, $marketing): array {
-                $period = $this->currentPeriod();
-                $subjectType = $this->subjectType();
-                $report = $marketing->adReport($period, $subjectType, $this->ad);
-                $previous = $marketing->adReport($period->previous(), $subjectType, $this->ad);
-
-                $trend = [];
-                foreach ($period->eachDay() as $day) {
-                    $trend[$day->toDateString()] = $report['daily'][$day->toDateString()] ?? 0;
-                }
-
-                $conversions = $marketing->conversions($period, $subjectType, $funnels);
-                $conversionsPrevious = $marketing->conversions($period->previous(), $subjectType, $funnels);
-                $adConversions = $conversions['ads'][$this->ad->id] ?? 0;
-                $adConversionsPrevious = $conversionsPrevious['ads'][$this->ad->id] ?? 0;
-                $rate = $report['visitors'] > 0 ? $adConversions / $report['visitors'] * 100 : 0.0;
-                $ratePrevious = $previous['visitors'] > 0 ? $adConversionsPrevious / $previous['visitors'] * 100 : 0.0;
-
-                $adDaily = $conversions['adDaily'][$this->ad->id] ?? [];
-                $conversionsTrend = [];
-                $rateTrend = [];
-                foreach ($period->eachDay() as $day) {
-                    $key = $day->toDateString();
-                    $dayConversions = $adDaily[$key] ?? 0;
-                    $daySessions = $report['daily'][$key] ?? 0;
-                    $conversionsTrend[] = $dayConversions;
-                    $rateTrend[] = $daySessions > 0 ? round($dayConversions / $daySessions * 100, 1) : 0;
-                }
-
-                $conversionElements = $marketing->conversionElements($period, $subjectType, $funnels, $events, [$this->ad]);
-
-                return [
-                    'range' => $period,
-                    'sessions' => $report['sessions'],
-                    'visitors' => $report['visitors'],
-                    'sessionsDelta' => new MetricDelta((float) $report['sessions'], (float) $previous['sessions']),
-                    'visitorsDelta' => new MetricDelta((float) $report['visitors'], (float) $previous['visitors']),
-                    'conversions' => $adConversions,
-                    'conversionsDelta' => new MetricDelta((float) $adConversions, (float) $adConversionsPrevious),
-                    'conversionsTrend' => $conversionsTrend,
-                    'rateLabel' => number_format($rate, 1, ',', ' ')."\u{00A0}%",
-                    'rateDelta' => new MetricDelta($rate, $ratePrevious),
-                    'rateTrend' => $rateTrend,
-                    'conversionElements' => $conversionElements,
-                    'trendLabels' => array_map(fn (string $d): string => Carbon::parse($d)->isoFormat('D MMM'), array_keys($trend)),
-                    'trendData' => array_values($trend),
-                    ...$this->adFormOptions($funnels, $events),
-                    ...$this->filterData(),
-                ];
-            },
+            fn (): array => [
+                'range' => $this->currentPeriod(),
+                ...$this->adFormOptions($funnels, $events),
+                ...$this->filterData(),
+            ],
             fn (array $data): View => view('analytics::livewire.dashboard.marketing-ad-detail', $data)
                 ->layout($this->layoutName('marketing'), ['title' => $this->ad->name.' · '.__('Marketing')]),
         );

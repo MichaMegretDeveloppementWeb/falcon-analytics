@@ -28,33 +28,14 @@
         <x-ui.button variant="secondary" wire:click="editAd"><x-ui.icon name="pencil-square" class="h-4 w-4" /> {{ __('Modifier la pub') }}</x-ui.button>
     </div>
 
-    {{-- Performance --}}
+    {{-- Performance (deferred content) --}}
     <div>
         <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
             <x-ui.section-header :title="__('Performance')" :description="__('du :from au :to', ['from' => $range->from->isoFormat('D MMM'), 'to' => $range->to->isoFormat('D MMM YYYY')])" />
             @include('analytics::livewire.dashboard.partials.filters')
         </div>
-        <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <x-analytics::kpi-card :label="__('Sessions')" :value="number_format($sessions, 0, ',', ' ')" icon="cursor-arrow-rays" :metric="$sessionsDelta">
-                <div wire:key="a-spark-s-{{ $range->days }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$trendData" /></div>
-            </x-analytics::kpi-card>
-            <x-analytics::kpi-card :label="__('Visiteurs')" :value="number_format($visitors, 0, ',', ' ')" icon="users" :metric="$visitorsDelta">
-                <div wire:key="a-spark-v-{{ $range->days }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$trendData" /></div>
-            </x-analytics::kpi-card>
-            <x-analytics::kpi-card :label="__('Conversions')" :value="number_format($conversions, 0, ',', ' ')" icon="check-circle" :metric="$conversionsDelta">
-                <div wire:key="a-spark-conv-{{ $range->days }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$conversionsTrend" color="#10b981" /></div>
-            </x-analytics::kpi-card>
-            <x-analytics::kpi-card :label="__('Taux de conversion')" :value="$rateLabel" icon="arrow-trending-up" :metric="$rateDelta">
-                <div wire:key="a-spark-rate-{{ $range->days }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$rateTrend" color="#10b981" /></div>
-            </x-analytics::kpi-card>
-        </div>
-        <div class="mt-6">
-            <livewire:analytics-marketing-trend-chart :period="$period" :subject="$subject" scope="ad" :ref-id="$ad->id" :key="'mkt-trend-a-'.$ad->id.'-'.$period.'-'.$subject" />
-        </div>
+        <livewire:analytics-ad-detail-content :period="$period" :subject="$subject" :ref-id="$ad->id" :key="'ad-content-'.$ad->id.'-'.$period.'-'.$subject" />
     </div>
-
-    {{-- Conversions --}}
-    @include('analytics::livewire.dashboard.partials.marketing-conversions', ['showAd' => false])
 
     {{-- Conditions --}}
     <x-ui.card>
