@@ -49,19 +49,23 @@
     $sourceDescription = [
         'direct' => 'Accès direct',
         'organic' => 'Recherche naturelle',
-        'social' => 'Réseaux sociaux',
+        'social' => 'Social naturel',
         'paid' => 'Trafic publicitaire',
         'referral' => 'Site référent',
         'email' => 'Campagne e-mail',
-        'campaign' => 'Campagne balisée',
+        'campaign' => 'Site référent',
     ][$sourceKey] ?? 'Provenance inconnue';
 
-    // Search keyword: UTM term, or the query of a search-engine referrer.
-    $searchKeyword = $value($session->utm_term);
-    if ($searchKeyword === null && filled($session->referrer)) {
+    // A real search query is almost never available on modern engines (they strip it
+    // from the referrer for privacy). utm_term is an advertiser-set campaign
+    // parameter — often a numeric keyword/ad id, not the user's query — so it is kept
+    // distinct from a genuine search term rather than mislabelled as a keyword.
+    $searchQuery = null;
+    if (filled($session->referrer)) {
         parse_str((string) (parse_url($session->referrer, PHP_URL_QUERY) ?: ''), $refParams);
-        $searchKeyword = $value($refParams['q'] ?? ($refParams['query'] ?? null));
+        $searchQuery = $value($refParams['q'] ?? ($refParams['query'] ?? null));
     }
+    $campaignTerm = $value($session->utm_term);
 
     $utm = collect([
         __('Campagne') => $session->utm_campaign,
@@ -232,8 +236,11 @@
                     </div>
                 </div>
                 <dl class="mt-3 space-y-2.5">
-                    @if ($searchKeyword)
-                        <x-analytics::detail-row :label="__('Mot-clé')" :value="$searchKeyword" icon="magnifying-glass" />
+                    @if ($searchQuery)
+                        <x-analytics::detail-row :label="__('Terme de recherche')" :value="$searchQuery" icon="magnifying-glass" />
+                    @endif
+                    @if ($campaignTerm)
+                        <x-analytics::detail-row :label="__('Terme de campagne (utm_term)')" :value="$campaignTerm" icon="tag" />
                     @endif
                     <x-analytics::detail-row :label="__('Page d\'entrée')" icon="document-text">@if ($session->landing_route || $session->landing_url)<x-analytics::page-url :route="$session->landing_route" :url="$session->landing_url" />@endif</x-analytics::detail-row>
                     <x-analytics::detail-row :label="__('Référent')" :value="$value($session->referrer)" icon="arrow-top-right-on-square" />
