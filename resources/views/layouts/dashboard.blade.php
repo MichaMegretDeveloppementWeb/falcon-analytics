@@ -32,6 +32,13 @@
             </x-ui.sidebar.link>
 
             <x-ui.sidebar.link
+                :href="route($routeName.'.events')"
+                icon="bolt"
+                :active="request()->routeIs($routeName.'.events')">
+                {{ __('Événements') }}
+            </x-ui.sidebar.link>
+
+            <x-ui.sidebar.link
                 :href="route($routeName.'.funnels')"
                 icon="funnel"
                 :active="request()->routeIs($routeName.'.funnels')">

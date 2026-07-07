@@ -3,11 +3,14 @@
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\DTOs\Dashboard\Period;
 use Falcon\Analytics\Enums\EventType;
+use Falcon\Analytics\Events\EventRegistry;
+use Falcon\Analytics\Events\TrackedEvent;
 use Falcon\Analytics\Models\Campaign;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Repositories\Dashboard\EngagementReadRepository;
+use Falcon\Analytics\Repositories\Dashboard\EventReadRepository;
 use Falcon\Analytics\Repositories\Dashboard\MarketingReadRepository;
 use Falcon\Analytics\Repositories\Dashboard\OverviewReadRepository;
 use Falcon\Analytics\Repositories\Dashboard\SessionListReadRepository;
@@ -149,6 +152,22 @@ it('reclassifies campaign-matched sessions as paid in the channel breakdown', fu
 
     expect($sources['paid'] ?? 0)->toBe(2)
         ->and($sources['organic'] ?? 0)->toBe(1);
+});
+
+it('breaks down events by name and flags declared conversions', function () {
+    $session = makeDashboardSession();
+    makeDashboardEvent($session, EventType::Click, ['name' => 'Lead']);
+    makeDashboardEvent($session, EventType::Click, ['name' => 'Lead']);
+    makeDashboardEvent($session, EventType::Click, ['name' => 'cta.contact']);
+
+    $registry = new EventRegistry;
+    $registry->register(new TrackedEvent('Lead', 'Demande de code', 3.0));
+
+    $breakdown = (new EventReadRepository)->eventBreakdown($this->period, null, $registry);
+
+    expect($breakdown)->toHaveCount(2)
+        ->and($breakdown[0])->toMatchArray(['name' => 'Lead', 'label' => 'Demande de code', 'count' => 2, 'isConversion' => true, 'valueTotal' => 6.0])
+        ->and($breakdown[1])->toMatchArray(['name' => 'cta.contact', 'count' => 1, 'isConversion' => false]);
 });
 
 it('ranks the top localities (country + city)', function () {

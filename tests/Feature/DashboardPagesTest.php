@@ -2,6 +2,7 @@
 
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\Enums\EventType;
+use Falcon\Analytics\Livewire\Dashboard\EventsPage;
 use Falcon\Analytics\Livewire\Dashboard\OverviewPage;
 use Falcon\Analytics\Livewire\Dashboard\SessionsPage;
 use Falcon\Analytics\Livewire\Dashboard\VisitorDetailPage;
@@ -60,9 +61,27 @@ it('mounts the dashboard at the configured prefix and route names', function () 
     expect(route('analytics.overview', absolute: false))->toBe('/admin/analytics')
         ->and(route('analytics.visitors', absolute: false))->toBe('/admin/analytics/visitors')
         ->and(route('analytics.funnels', absolute: false))->toBe('/admin/analytics/funnels')
+        ->and(route('analytics.events', absolute: false))->toBe('/admin/analytics/events')
         ->and(route('analytics.sessions', absolute: false))->toBe('/admin/analytics/sessions')
         ->and(route('analytics.sessions.show', ['session' => 1], absolute: false))->toBe('/admin/analytics/sessions/1')
         ->and(route('analytics.visitors.show', ['visitor' => 1], absolute: false))->toBe('/admin/analytics/visitors/1');
+});
+
+it('renders the events screen with the per-event breakdown', function () {
+    $session = seedSession();
+    Event::create([
+        'session_id' => $session->id,
+        'visitor_id' => $session->visitor_id,
+        'type' => EventType::Click,
+        'name' => 'cta.contact',
+        'occurred_at' => now(),
+    ]);
+
+    $this->actingAs($this->admin, 'admin');
+
+    Livewire::test(EventsPage::class)
+        ->assertSuccessful()
+        ->assertSeeText('cta.contact');
 });
 
 it('protects the dashboard from guests', function () {

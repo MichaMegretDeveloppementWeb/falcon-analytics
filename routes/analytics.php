@@ -9,6 +9,7 @@ use Falcon\Analytics\Livewire\Dashboard\AdDetailPage;
 use Falcon\Analytics\Livewire\Dashboard\AdsPage;
 use Falcon\Analytics\Livewire\Dashboard\CampaignDetailPage;
 use Falcon\Analytics\Livewire\Dashboard\CampaignsPage;
+use Falcon\Analytics\Livewire\Dashboard\EventsPage;
 use Falcon\Analytics\Livewire\Dashboard\FunnelsPage;
 use Falcon\Analytics\Livewire\Dashboard\MarketingDashboardPage;
 use Falcon\Analytics\Livewire\Dashboard\OverviewPage;
@@ -51,6 +52,7 @@ Route::prefix((string) ($dashboard['route_prefix'] ?? 'admin/analytics'))
         Route::livewire('/', OverviewPage::class)->name('overview');
         Route::livewire('/visitors', VisitorsPage::class)->name('visitors');
         Route::livewire('/visitors/{visitor}', VisitorDetailPage::class)->name('visitors.show');
+        Route::livewire('/events', EventsPage::class)->name('events');
         Route::livewire('/funnels', FunnelsPage::class)->name('funnels');
         Route::livewire('/sessions', SessionsPage::class)->name('sessions');
         Route::livewire('/sessions/{session}', SessionDetailPage::class)->name('sessions.show');
