@@ -16,7 +16,7 @@ use Livewire\Component;
  * Deferred events content: the KPI row (with sparklines), the events/conversions
  * trend and the full per-event breakdown table. The daily series feeds both the
  * sparklines and the trend, and the breakdown feeds both the KPI totals and the
- * table, so a single read of each backs the whole screen — no duplicate query.
+ * table, so a single read of each backs the whole screen, no duplicate query.
  */
 #[Lazy]
 final class EventsContent extends Component

@@ -58,7 +58,7 @@
 
     // A real search query is almost never available on modern engines (they strip it
     // from the referrer for privacy). utm_term is an advertiser-set campaign
-    // parameter — often a numeric keyword/ad id, not the user's query — so it is kept
+    // parameter (often a numeric keyword/ad id, not the user's query) so it is kept
     // distinct from a genuine search term rather than mislabelled as a keyword.
     $searchQuery = null;
     if (filled($session->referrer)) {

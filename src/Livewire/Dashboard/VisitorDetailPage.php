@@ -56,7 +56,10 @@ final class VisitorDetailPage extends Component
             return;
         }
 
-        Log::channel(config('analytics.log_channel'))->info('Analytics visitor erased.', ['visitor_id' => $this->visitor->id]);
+        Log::channel(config('analytics.log_channel'))->notice('Visitor.erased', [
+            'visitor_id' => $this->visitor->id,
+            'actor_user_id' => auth()->id(),
+        ]);
 
         $this->redirect(route(config('analytics.dashboard.route_name', 'analytics').'.visitors'));
     }

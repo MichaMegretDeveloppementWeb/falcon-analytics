@@ -39,7 +39,7 @@
                             <a href="{{ $showUrl }}" class="cursor-pointer text-[13px] font-medium text-primary hover:underline">{{ $campaign->name }}</a>
                         </x-ui.table.cell>
                         <x-ui.table.cell>
-                            @if ($campaign->platform)<x-ui.badge color="blue">{{ $campaign->platform }}</x-ui.badge>@else<span class="text-muted">—</span>@endif
+                            @if ($campaign->platform)<x-ui.badge color="blue">{{ $campaign->platform }}</x-ui.badge>@else<span class="text-muted">·</span>@endif
                         </x-ui.table.cell>
                         <x-ui.table.cell>
                             <div class="flex flex-wrap items-center gap-1.5">
@@ -79,7 +79,7 @@
                         <x-ui.form-group :label="__('Nom')" for="campaignName">
                             <x-ui.input wire:model="campaignName" id="campaignName" placeholder="{{ __('Ex. Été 2026') }}" :error="$errors->has('campaignName')" />
                         </x-ui.form-group>
-                        <x-ui.form-group :label="__('Plateforme')" for="campaignPlatform" :hint="__('Optionnel : Meta, Google...')">
+                        <x-ui.form-group :label="__('Plateforme')" for="campaignPlatform" :hint="__('Optionnel : Meta, Google...')">
                             <x-ui.input wire:model="campaignPlatform" id="campaignPlatform" :error="$errors->has('campaignPlatform')" />
                         </x-ui.form-group>
                         <x-ui.form-group :label="__('Conditions d\'URL')" :hint="__('La campagne correspond si TOUS ces paramètres sont présents dans l\'URL de la visite.')">
@@ -108,7 +108,7 @@
             <div class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm dark:bg-black/60"></div>
             <div class="relative flex min-h-full items-center justify-center p-4" @click.self="$wire.closeModal()">
                 <div class="w-full max-w-sm rounded-xl border border-base bg-surface p-5 shadow-xl">
-                    <h3 class="text-[13px] font-semibold text-primary">{{ __('Supprimer la campagne ?') }}</h3>
+                    <h3 class="text-[13px] font-semibold text-primary">{{ __('Supprimer la campagne ?') }}</h3>
                     <p class="mt-1.5 text-[12px] text-secondary">{{ __('« :name » et toutes ses pubs et objectifs seront supprimés. Le trafic déjà capté reste en base.', ['name' => $deleteLabel]) }}</p>
                     <div class="mt-5 flex justify-end gap-2">
                         <x-ui.button type="button" variant="ghost" wire:click="closeModal">{{ __('Annuler') }}</x-ui.button>

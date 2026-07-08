@@ -101,7 +101,7 @@ final class ScanEventsCommand extends Command
             return self::FAILURE;
         }
 
-        $lines = "\n// Added by analytics:events:scan — review each label.\n";
+        $lines = "\n// Added by analytics:events:scan. Review each label.\n";
 
         foreach ($names as $name) {
             $lines .= sprintf('TrackedEvent::define(%s, %s);'.PHP_EOL, var_export($name, true), var_export($name, true));

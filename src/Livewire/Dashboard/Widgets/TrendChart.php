@@ -11,21 +11,20 @@ use Falcon\Analytics\Repositories\Dashboard\OverviewReadRepository;
 use Falcon\Analytics\Services\Dashboard\TrendSeriesCalculator;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Lazy;
-use Livewire\Attributes\Reactive;
 use Livewire\Component;
 
 /**
  * Deferred traffic trend: loads after the page paints (skeleton placeholder
- * meanwhile) and stays in sync with the parent's period and subject filters.
- * Its query is a single indexed range scan on started_at.
+ * meanwhile). The parent gives it a wire:key built from the period and subject, so a
+ * filter change re-mounts it with the new values (non-reactive props, so nothing
+ * leaks onto sibling components). Its query is a single indexed range scan on
+ * started_at.
  */
 #[Lazy]
 final class TrendChart extends Component
 {
-    #[Reactive]
     public int $period = Period::DEFAULT_DAYS;
 
-    #[Reactive]
     public string $subject = '';
 
     public function placeholder(): View

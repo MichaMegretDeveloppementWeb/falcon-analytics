@@ -8,8 +8,8 @@ use Illuminate\Contracts\View\View;
 
 /**
  * Conversion funnels shell: the header and filters paint immediately; evaluating
- * every declared funnel over the current and previous period — the whole weight of
- * the screen — happens in a deferred widget.
+ * every declared funnel over the current and previous period (the whole weight of
+ * the screen) happens in a deferred widget.
  */
 final class FunnelsPage extends DashboardComponent
 {

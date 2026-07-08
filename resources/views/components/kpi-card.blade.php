@@ -9,7 +9,7 @@
 
 @php
     // Delta badge computed here so the arrow always follows the value's direction
-    // while the colour follows whether that direction is good — the two are
+    // while the colour follows whether that direction is good, the two are
     // independent (the ui-kit stat-card couples them, which misreads inverse
     // metrics). An "up from an empty previous period" reads as +100 %.
     $badge = null;

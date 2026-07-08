@@ -44,7 +44,7 @@
             @forelse ($ad->match_conditions ?? [] as $condition)
                 <x-analytics::condition-chip :param="$condition['param']" :value="$condition['value']" />
             @empty
-                <span class="inline-flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400"><x-ui.icon name="exclamation-triangle" class="h-3.5 w-3.5" /> {{ __('Aucune condition : ne correspondra à aucun trafic') }}</span>
+                <span class="inline-flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400"><x-ui.icon name="exclamation-triangle" class="h-3.5 w-3.5" /> {{ __('Aucune condition : ne correspondra à aucun trafic') }}</span>
             @endforelse
         </div>
     </x-ui.card>

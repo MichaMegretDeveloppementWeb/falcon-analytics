@@ -161,7 +161,7 @@ the context is excluded (e.g. an admin), and never throws to the caller.
 ## Instrumentation (`data-track-*`)
 
 Page views are captured on every load. **Clicks are only captured on genuinely
-interactive elements** — a click on plain text or empty space carries no signal
+interactive elements**: a click on plain text or empty space carries no signal
 and is never recorded. An element counts as interactive when it is:
 
 - a native control: `<a>`, `<button>`, `<summary>`, or an actionable `<input>`
@@ -207,7 +207,7 @@ Further publish groups (views, funnels, assets) are documented as they ship.
 
 ## Geolocation
 
-Localities are resolved from the visitor IP against **MaxMind GeoLite2 City** — free,
+Localities are resolved from the visitor IP against **MaxMind GeoLite2 City**, free,
 accurate and **fully local**, so an IP never leaves the server (no third-party call).
 
 1. Create a free account and licence key: <https://www.maxmind.com/en/geolite2/signup>
@@ -217,7 +217,7 @@ accurate and **fully local**, so an IP never leaves the server (no third-party c
 The `.mmdb` lands at `storage/app/analytics/GeoLite2-City.mmdb` (override with
 `ANALYTICS_GEOIP_DATABASE`). Re-run the command monthly (cron) to refresh it; geolocation
 degrades silently to "unknown" when the database is missing. IP geolocation is inherently
-city/region level — it will not pinpoint an exact street.
+city/region level; it will not pinpoint an exact street.
 
 ## License
 

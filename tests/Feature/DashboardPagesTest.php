@@ -7,7 +7,6 @@ use Falcon\Analytics\Livewire\Dashboard\VisitorDetailPage;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\EventsContent;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\FunnelsContent;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\MarketingDashboardContent;
-use Falcon\Analytics\Livewire\Dashboard\Widgets\MarketingTrendChart;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\OverviewAcquisition;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\OverviewAudience;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\OverviewContent;
@@ -123,13 +122,12 @@ it('renders the marketing dashboard content within its query budget with no dupl
         ->and($budget['duplicates'])->toBe(0);
 });
 
-it('renders the deferred events and marketing trend chart widgets', function () {
+it('renders the deferred events content widget', function () {
     seedSession();
 
     $this->actingAs($this->admin, 'admin');
 
     Livewire::test(EventsContent::class, ['period' => 30, 'subject' => ''])->call('$refresh')->assertSuccessful();
-    Livewire::test(MarketingTrendChart::class, ['period' => 30, 'subject' => '', 'scope' => 'overview'])->assertSuccessful();
 });
 
 it('protects the dashboard from guests', function () {

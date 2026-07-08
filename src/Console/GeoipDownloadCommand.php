@@ -28,7 +28,7 @@ final class GeoipDownloadCommand extends Command
         $target = (string) config('analytics.geoip.database_path');
 
         if ($key === '') {
-            $this->components->error('Set ANALYTICS_GEOIP_LICENSE_KEY in your .env — get a free key at https://www.maxmind.com/en/geolite2/signup');
+            $this->components->error('Set ANALYTICS_GEOIP_LICENSE_KEY in your .env. Get a free key at https://www.maxmind.com/en/geolite2/signup');
 
             return self::FAILURE;
         }

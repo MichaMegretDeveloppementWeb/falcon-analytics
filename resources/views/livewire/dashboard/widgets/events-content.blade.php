@@ -25,7 +25,7 @@
 
     {{-- Per-event breakdown --}}
     <div>
-        <x-ui.section-header :title="__('Détail des événements')" :description="__('Chaque événement du site et le nombre de fois qu\'il s\'est produit — du plus au moins fréquent.')" class="mb-4" />
+        <x-ui.section-header :title="__('Détail des événements')" :description="__('Chaque événement du site et le nombre de fois qu\'il s\'est produit, du plus au moins fréquent.')" class="mb-4" />
         @if ($breakdown === [])
             <x-ui.empty-state icon="bolt" :title="__('Aucun événement sur la période')" :description="__('Les événements déclarés apparaîtront ici dès qu\'ils se produiront sur le site.')" />
         @else
@@ -56,8 +56,8 @@
                             </x-ui.table.cell>
                             <x-ui.table.cell align="right" class="font-medium tabular-nums text-primary">{{ number_format($row['count'], 0, ',', ' ') }}</x-ui.table.cell>
                             <x-ui.table.cell align="right" class="tabular-nums">{{ number_format($row['visitors'], 0, ',', ' ') }}</x-ui.table.cell>
-                            <x-ui.table.cell align="right" class="tabular-nums text-secondary">{{ $row['value'] !== null ? number_format($row['value'], 0, ',', ' ')."\u{00A0}pts" : '—' }}</x-ui.table.cell>
-                            <x-ui.table.cell :last="true" align="right" class="tabular-nums">{{ $row['value'] !== null ? number_format($row['valueTotal'], 0, ',', ' ')."\u{00A0}pts" : '—' }}</x-ui.table.cell>
+                            <x-ui.table.cell align="right" class="tabular-nums text-secondary">{{ $row['value'] !== null ? number_format($row['value'], 0, ',', ' ')."\u{00A0}pts" : '·' }}</x-ui.table.cell>
+                            <x-ui.table.cell :last="true" align="right" class="tabular-nums">{{ $row['value'] !== null ? number_format($row['valueTotal'], 0, ',', ' ')."\u{00A0}pts" : '·' }}</x-ui.table.cell>
                         </x-ui.table.row>
                     @endforeach
                 </x-ui.table.body>

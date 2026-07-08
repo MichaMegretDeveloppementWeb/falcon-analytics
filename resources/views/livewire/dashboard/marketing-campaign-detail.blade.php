@@ -27,7 +27,7 @@
                 @forelse ($campaign->match_conditions ?? [] as $condition)
                     <x-analytics::condition-chip :param="$condition['param']" :value="$condition['value']" />
                 @empty
-                    <span class="inline-flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400"><x-ui.icon name="exclamation-triangle" class="h-3.5 w-3.5" /> {{ __('Aucune condition : ne correspondra à aucun trafic') }}</span>
+                    <span class="inline-flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400"><x-ui.icon name="exclamation-triangle" class="h-3.5 w-3.5" /> {{ __('Aucune condition : ne correspondra à aucun trafic') }}</span>
                 @endforelse
             </div>
         </div>
@@ -122,7 +122,7 @@
                         <x-ui.form-group :label="__('Nom')" for="campaignName">
                             <x-ui.input wire:model="campaignName" id="campaignName" :error="$errors->has('campaignName')" />
                         </x-ui.form-group>
-                        <x-ui.form-group :label="__('Plateforme')" for="campaignPlatform" :hint="__('Optionnel : Meta, Google...')">
+                        <x-ui.form-group :label="__('Plateforme')" for="campaignPlatform" :hint="__('Optionnel : Meta, Google...')">
                             <x-ui.input wire:model="campaignPlatform" id="campaignPlatform" :error="$errors->has('campaignPlatform')" />
                         </x-ui.form-group>
                         <x-ui.form-group :label="__('Conditions d\'URL')" :hint="__('La campagne correspond si TOUS ces paramètres sont présents dans l\'URL.')">
@@ -155,7 +155,7 @@
             <div class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm dark:bg-black/60"></div>
             <div class="relative flex min-h-full items-center justify-center p-4" @click.self="$wire.closeModal()">
                 <div class="w-full max-w-sm rounded-xl border border-base bg-surface p-5 shadow-xl">
-                    <h3 class="text-[13px] font-semibold text-primary">{{ __('Supprimer la campagne ?') }}</h3>
+                    <h3 class="text-[13px] font-semibold text-primary">{{ __('Supprimer la campagne ?') }}</h3>
                     <p class="mt-1.5 text-[12px] text-secondary">{{ __('« :name » et toutes ses pubs et objectifs seront supprimés. Le trafic déjà capté reste en base.', ['name' => $campaign->name]) }}</p>
                     <div class="mt-5 flex justify-end gap-2">
                         <x-ui.button type="button" variant="ghost" wire:click="closeModal">{{ __('Annuler') }}</x-ui.button>
@@ -170,7 +170,7 @@
             <div class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm dark:bg-black/60"></div>
             <div class="relative flex min-h-full items-center justify-center p-4" @click.self="$wire.closeModal()">
                 <div class="w-full max-w-sm rounded-xl border border-base bg-surface p-5 shadow-xl">
-                    <h3 class="text-[13px] font-semibold text-primary">{{ __('Supprimer la pub ?') }}</h3>
+                    <h3 class="text-[13px] font-semibold text-primary">{{ __('Supprimer la pub ?') }}</h3>
                     <p class="mt-1.5 text-[12px] text-secondary">{{ __('« :name » et ses objectifs seront supprimés. Le trafic déjà capté reste en base.', ['name' => $deleteAdLabel]) }}</p>
                     <div class="mt-5 flex justify-end gap-2">
                         <x-ui.button type="button" variant="ghost" wire:click="closeModal">{{ __('Annuler') }}</x-ui.button>

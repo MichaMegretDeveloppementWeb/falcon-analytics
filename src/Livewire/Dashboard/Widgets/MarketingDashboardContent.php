@@ -73,7 +73,7 @@ final class MarketingDashboardContent extends Component
         $campaignRows = collect($performance['campaigns'])
             ->map(fn (array $row, int $id): array => [
                 'id' => $id,
-                'name' => (string) ($campaignNames[$id] ?? '—'),
+                'name' => (string) ($campaignNames[$id] ?? '·'),
                 'conversions' => $conversions['campaigns'][$id] ?? 0,
                 'rate' => $row['visitors'] > 0 ? ($conversions['campaigns'][$id] ?? 0) / $row['visitors'] * 100 : 0.0,
                 ...$row,

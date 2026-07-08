@@ -17,7 +17,7 @@
     <livewire:analytics-overview-headline :period="$period" :subject="$subject" :key="'ov-headline-'.$period.'-'.$subject" />
 
     {{-- Traffic trend (deferred) --}}
-    <livewire:analytics-trend-chart :period="$period" :subject="$subject" />
+    <livewire:analytics-trend-chart :period="$period" :subject="$subject" :key="'ov-trend-'.$period.'-'.$subject" />
 
     {{-- Deferred heavy sections : each loads independently after paint --}}
     <div>

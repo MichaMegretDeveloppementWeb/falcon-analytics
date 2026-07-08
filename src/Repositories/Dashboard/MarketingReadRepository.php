@@ -463,8 +463,8 @@ final class MarketingReadRepository
     }
 
     /**
-     * The subset of the given visitors who completed the funnel — reached its last
-     * step in chronological order — over the period, mirroring the funnels screen.
+     * The subset of the given visitors who completed the funnel (reached its last
+     * step in chronological order) over the period, mirroring the funnels screen.
      *
      * @param  list<int>  $visitorIds
      * @return array<int, string> visitor id => completion day (Y-m-d)
