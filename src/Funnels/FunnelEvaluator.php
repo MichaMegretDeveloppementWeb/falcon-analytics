@@ -46,7 +46,7 @@ final readonly class FunnelEvaluator
                     break;
                 }
 
-                if ($this->matches($steps[$pointer], $event)) {
+                if ($steps[$pointer]->matches($event)) {
                     $pointer++;
                 }
             }
@@ -137,14 +137,5 @@ final readonly class FunnelEvaluator
         }
 
         return $grouped;
-    }
-
-    private function matches(FunnelStep $step, Event $event): bool
-    {
-        if ($step->event !== null) {
-            return $event->name === $step->event;
-        }
-
-        return $event->type === EventType::Pageview && $event->route === $step->route;
     }
 }

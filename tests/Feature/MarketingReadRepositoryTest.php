@@ -108,6 +108,51 @@ it('credits an ad with a conversion when its visitor completes an event objectiv
         ->and($result['objectives'][$ad->id]['Lead'])->toBe(1);
 });
 
+it('credits an ad with a conversion when its visitor completes a funnel objective, and reports per-step reach', function () {
+    config(['analytics.funnels_path' => __DIR__.'/../Fixtures/analytics-funnels.php']);
+    $this->app->forgetInstance(FunnelRegistry::class);
+    $this->travelTo(CarbonImmutable::parse('2026-06-15 12:00:00'));
+
+    $ete = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
+    $ad = Ad::create(['campaign_id' => $ete->id, 'name' => 'Cabrio', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
+    AdObjective::create(['ad_id' => $ad->id, 'type' => 'funnel', 'reference' => 'sample', 'value' => null]);
+
+    // A visitor tagged to the ad who walks the funnel in order: pageview home, then sample.action.
+    $converter = Visitor::create(['uuid' => (string) Str::uuid(), 'first_seen_at' => now(), 'last_seen_at' => now()]);
+    $session = taggedSession(['src' => 'meta_ete'], $converter);
+    Event::create(['session_id' => $session->id, 'visitor_id' => $converter->id, 'type' => 'pageview', 'route' => 'home', 'occurred_at' => now()->subMinutes(2)]);
+    Event::create(['session_id' => $session->id, 'visitor_id' => $converter->id, 'type' => 'custom', 'name' => 'sample.action', 'occurred_at' => now()->subMinute()]);
+
+    // Another ad-driven visitor who only reached the first step (no conversion).
+    $halfway = Visitor::create(['uuid' => (string) Str::uuid(), 'first_seen_at' => now(), 'last_seen_at' => now()]);
+    $halfSession = taggedSession(['src' => 'meta_ete'], $halfway);
+    Event::create(['session_id' => $halfSession->id, 'visitor_id' => $halfway->id, 'type' => 'pageview', 'route' => 'home', 'occurred_at' => now()->subMinutes(2)]);
+
+    $funnels = app(FunnelRegistry::class);
+    $result = (new MarketingReadRepository)->conversions(Period::ofDays(30), null, $funnels);
+
+    expect($result['total'])->toBe(1)
+        ->and($result['ads'][$ad->id])->toBe(1)
+        ->and($result['campaigns'][$ete->id])->toBe(1);
+
+    $elements = (new MarketingReadRepository)->conversionElements(
+        Period::ofDays(30),
+        null,
+        $funnels,
+        app(EventRegistry::class),
+        Ad::query()->with('objectives')->get()->all(),
+    );
+
+    expect($elements)->toHaveCount(1)
+        ->and($elements[0]['type'])->toBe('funnel')
+        ->and($elements[0]['reference'])->toBe('sample')
+        ->and($elements[0]['conversions'])->toBe(1)
+        ->and($elements[0]['steps'])->toBe([
+            ['label' => 'Viewed', 'count' => 2],
+            ['label' => 'Acted', 'count' => 1],
+        ]);
+});
+
 it('lists conversion elements with their count and source ad, sorted', function () {
     $this->travelTo(CarbonImmutable::parse('2026-06-15 12:00:00'));
 

@@ -10,12 +10,12 @@ use Falcon\Analytics\Enums\ObjectiveType;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\Funnel;
 use Falcon\Analytics\Funnels\FunnelRegistry;
-use Falcon\Analytics\Funnels\FunnelStep;
 use Falcon\Analytics\Models\Ad;
 use Falcon\Analytics\Models\Campaign;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Repositories\Concerns\ScopesSessionQueries;
+use Falcon\Analytics\Services\Dashboard\AttributionResolver;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -46,6 +46,12 @@ final class MarketingReadRepository
 
     /** @var array<string, Collection<int, Session>> */
     private array $taggedSessionCache = [];
+
+    /**
+     * The attribution rule defaults so a plain `new MarketingReadRepository` still
+     * works (tests, ad-hoc use); the container injects the shared service otherwise.
+     */
+    public function __construct(private AttributionResolver $attribution = new AttributionResolver) {}
 
     /**
      * Ad-tagged sessions for a period, loaded once and reused. headline,
@@ -97,7 +103,7 @@ final class MarketingReadRepository
         }
 
         /** @var Ad|null $ad */
-        $ad = $this->mostSpecific(Ad::query()->where('is_active', true)->with('campaign')->get()->all(), $params);
+        $ad = $this->attribution->mostSpecific(Ad::query()->where('is_active', true)->with('campaign')->get()->all(), $params);
 
         return $ad;
     }
@@ -112,7 +118,7 @@ final class MarketingReadRepository
         }
 
         /** @var Campaign|null $campaign */
-        $campaign = $this->mostSpecific($this->activeCampaigns(), $params);
+        $campaign = $this->attribution->mostSpecific($this->activeCampaigns(), $params);
 
         return $campaign;
     }
@@ -133,7 +139,7 @@ final class MarketingReadRepository
         $visitors = [];
 
         foreach ($this->taggedSessionRows($period, $subjectType) as $session) {
-            if ($this->mostSpecific($campaigns, $session->mkt_params ?? []) instanceof Campaign) {
+            if ($this->attribution->mostSpecific($campaigns, $session->mkt_params ?? []) instanceof Campaign) {
                 $sessions++;
                 $visitors[(int) $session->visitor_id] = true;
             }
@@ -155,7 +161,7 @@ final class MarketingReadRepository
         $daily = [];
 
         foreach ($this->taggedSessionRows($period, $subjectType) as $session) {
-            if ($this->mostSpecific($campaigns, $session->mkt_params ?? []) instanceof Campaign) {
+            if ($this->attribution->mostSpecific($campaigns, $session->mkt_params ?? []) instanceof Campaign) {
                 $day = $session->started_at->toDateString();
                 $daily[$day] = ($daily[$day] ?? 0) + 1;
             }
@@ -178,7 +184,7 @@ final class MarketingReadRepository
 
         $sources = [];
         foreach ($this->taggedSessionRows($period, $subjectType) as $session) {
-            if ($this->mostSpecific($campaigns, $session->mkt_params ?? []) instanceof Campaign) {
+            if ($this->attribution->mostSpecific($campaigns, $session->mkt_params ?? []) instanceof Campaign) {
                 $sources[(int) $session->id] = (string) ($session->source ?? 'direct');
             }
         }
@@ -209,13 +215,13 @@ final class MarketingReadRepository
             $params = $session->mkt_params ?? [];
             $visitor = (int) $session->visitor_id;
 
-            $campaign = $this->mostSpecific($campaigns, $params);
+            $campaign = $this->attribution->mostSpecific($campaigns, $params);
             if ($campaign instanceof Campaign) {
                 $campaignSessions[$campaign->id] = ($campaignSessions[$campaign->id] ?? 0) + 1;
                 $campaignVisitors[$campaign->id][$visitor] = true;
             }
 
-            $ad = $this->mostSpecific($ads, $params);
+            $ad = $this->attribution->mostSpecific($ads, $params);
             if ($ad instanceof Ad) {
                 $adSessions[$ad->id] = ($adSessions[$ad->id] ?? 0) + 1;
                 $adVisitors[$ad->id][$visitor] = true;
@@ -253,7 +259,7 @@ final class MarketingReadRepository
         foreach ($this->taggedSessionRows($period, $subjectType) as $session) {
             $params = $session->mkt_params ?? [];
 
-            $bestCampaign = $this->mostSpecific($campaigns, $params);
+            $bestCampaign = $this->attribution->mostSpecific($campaigns, $params);
             if (! ($bestCampaign instanceof Campaign) || $bestCampaign->id !== $campaign->id) {
                 continue;
             }
@@ -263,7 +269,7 @@ final class MarketingReadRepository
             $visitors[$visitor] = true;
             $daily[$session->started_at->toDateString()] = ($daily[$session->started_at->toDateString()] ?? 0) + 1;
 
-            $bestAd = $this->mostSpecific($ads, $params);
+            $bestAd = $this->attribution->mostSpecific($ads, $params);
             if ($bestAd instanceof Ad) {
                 $adSessions[$bestAd->id] = ($adSessions[$bestAd->id] ?? 0) + 1;
                 $adVisitors[$bestAd->id][$visitor] = true;
@@ -295,7 +301,7 @@ final class MarketingReadRepository
         $daily = [];
 
         foreach ($this->taggedSessionRows($period, $subjectType) as $session) {
-            $bestAd = $this->mostSpecific($ads, $session->mkt_params ?? []);
+            $bestAd = $this->attribution->mostSpecific($ads, $session->mkt_params ?? []);
             if (! ($bestAd instanceof Ad) || $bestAd->id !== $ad->id) {
                 continue;
             }
@@ -325,7 +331,7 @@ final class MarketingReadRepository
         /** @var array<int, array<int, true>> $visitorAds */
         $visitorAds = [];
         foreach ($this->taggedSessionRows($period, $subjectType) as $session) {
-            $ad = $this->mostSpecific($adList, $session->mkt_params ?? []);
+            $ad = $this->attribution->mostSpecific($adList, $session->mkt_params ?? []);
             if ($ad instanceof Ad) {
                 $visitorAds[(int) $session->visitor_id][$ad->id] = true;
             }
@@ -526,7 +532,7 @@ final class MarketingReadRepository
 
             $position = $pointer[$visitorId] ?? 0;
 
-            if ($position < $stepCount && $this->stepMatches($steps[$position], $event)) {
+            if ($position < $stepCount && $steps[$position]->matches($event)) {
                 $position++;
                 $pointer[$visitorId] = $position;
 
@@ -559,7 +565,7 @@ final class MarketingReadRepository
         /** @var array<int, array<int, true>> $adVisitors */
         $adVisitors = [];
         foreach ($this->taggedSessionRows($period, $subjectType) as $session) {
-            $ad = $this->mostSpecific($allAds, $session->mkt_params ?? []);
+            $ad = $this->attribution->mostSpecific($allAds, $session->mkt_params ?? []);
             if ($ad instanceof Ad && in_array($ad->id, $wantedIds, true)) {
                 $adVisitors[$ad->id][(int) $session->visitor_id] = true;
             }
@@ -687,22 +693,13 @@ final class MarketingReadRepository
             $visitorId = (int) $event->visitor_id;
             $position = $pointer[$visitorId] ?? 0;
 
-            if ($position < $stepCount && $this->stepMatches($steps[$position], $event)) {
+            if ($position < $stepCount && $steps[$position]->matches($event)) {
                 $reached[$position]++;
                 $pointer[$visitorId] = $position + 1;
             }
         }
 
         return $reached;
-    }
-
-    private function stepMatches(FunnelStep $step, Event $event): bool
-    {
-        if ($step->event !== null) {
-            return $event->name === $step->event;
-        }
-
-        return $event->type === EventType::Pageview && $event->route === $step->route;
     }
 
     /**
@@ -715,46 +712,6 @@ final class MarketingReadRepository
             ->whereNotNull('mkt_params')
             ->whereBetween('started_at', [$period->from, $period->to])
             ->when($subjectType !== null, fn (Builder $query): Builder => $query->where('subject_type', $subjectType));
-    }
-
-    /**
-     * @param  list<Campaign>|list<Ad>  $candidates
-     * @param  array<string, string>  $params
-     */
-    private function mostSpecific(array $candidates, array $params): Campaign|Ad|null
-    {
-        $best = null;
-        $bestSpecificity = 0;
-
-        foreach ($candidates as $candidate) {
-            $conditions = $candidate->match_conditions ?? [];
-
-            if ($conditions === [] || ! $this->matches($conditions, $params)) {
-                continue;
-            }
-
-            if (count($conditions) > $bestSpecificity) {
-                $best = $candidate;
-                $bestSpecificity = count($conditions);
-            }
-        }
-
-        return $best;
-    }
-
-    /**
-     * @param  array<int, array{param: string, value: string}>  $conditions
-     * @param  array<string, string>  $params
-     */
-    private function matches(array $conditions, array $params): bool
-    {
-        foreach ($conditions as $condition) {
-            if (($params[$condition['param']] ?? null) !== $condition['value']) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     /**
