@@ -6,6 +6,7 @@ namespace Falcon\Analytics\Livewire\Dashboard\Widgets;
 
 use Falcon\Analytics\DTOs\Dashboard\Period;
 use Falcon\Analytics\Funnels\FunnelEvaluator;
+use Falcon\Analytics\Livewire\Dashboard\Concerns\GuardsWidgetRead;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Lazy;
@@ -19,6 +20,8 @@ use Livewire\Component;
 #[Lazy]
 final class FunnelsContent extends Component
 {
+    use GuardsWidgetRead;
+
     public int $period = Period::DEFAULT_DAYS;
 
     public string $subject = '';
@@ -30,12 +33,14 @@ final class FunnelsContent extends Component
 
     public function render(FunnelEvaluator $evaluator): View
     {
-        $period = Period::ofDays($this->period);
-        $subjectType = $this->subject !== '' ? $this->subject : null;
+        return $this->guardedWidget(function () use ($evaluator): array {
+            $period = Period::ofDays($this->period);
+            $subjectType = $this->subject !== '' ? $this->subject : null;
 
-        return view('analytics::livewire.dashboard.widgets.funnels-content', [
-            'reports' => $evaluator->evaluateAll($period, $subjectType),
-            'previousReports' => Collection::make($evaluator->evaluateAll($period->previous(), $subjectType))->keyBy('key'),
-        ]);
+            return [
+                'reports' => $evaluator->evaluateAll($period, $subjectType),
+                'previousReports' => Collection::make($evaluator->evaluateAll($period->previous(), $subjectType))->keyBy('key'),
+            ];
+        }, fn (array $data): View => view('analytics::livewire.dashboard.widgets.funnels-content', $data));
     }
 }

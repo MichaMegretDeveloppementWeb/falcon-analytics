@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Livewire\Dashboard\Widgets;
 
 use Falcon\Analytics\DTOs\Dashboard\Period;
+use Falcon\Analytics\Livewire\Dashboard\Concerns\GuardsWidgetRead;
 use Falcon\Analytics\Repositories\Dashboard\VisitorListReadRepository;
 use Falcon\Analytics\Services\Dashboard\VisitorMetricsCalculator;
 use Illuminate\Contracts\View\View;
@@ -19,6 +20,8 @@ use Livewire\Component;
 #[Lazy]
 final class VisitorsHeadline extends Component
 {
+    use GuardsWidgetRead;
+
     public int $period = Period::DEFAULT_DAYS;
 
     public string $subject = '';
@@ -30,16 +33,18 @@ final class VisitorsHeadline extends Component
 
     public function render(VisitorListReadRepository $repository, VisitorMetricsCalculator $metrics): View
     {
-        $period = Period::ofDays($this->period);
-        $subjectType = $this->subject !== '' ? $this->subject : null;
+        return $this->guardedWidget(function () use ($repository, $metrics): array {
+            $period = Period::ofDays($this->period);
+            $subjectType = $this->subject !== '' ? $this->subject : null;
 
-        return view('analytics::livewire.dashboard.widgets.visitors-headline', [
-            'metrics' => $metrics->compute(
-                $repository->visitorCounts($period, $subjectType),
-                $repository->visitorCounts($period->previous(), $subjectType),
-                $repository->visitorDailyRows($period, $subjectType),
-                $period,
-            ),
-        ]);
+            return [
+                'metrics' => $metrics->compute(
+                    $repository->visitorCounts($period, $subjectType),
+                    $repository->visitorCounts($period->previous(), $subjectType),
+                    $repository->visitorDailyRows($period, $subjectType),
+                    $period,
+                ),
+            ];
+        }, fn (array $data): View => view('analytics::livewire.dashboard.widgets.visitors-headline', $data));
     }
 }

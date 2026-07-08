@@ -179,6 +179,15 @@ it('renders a graceful error state instead of a 500 when a dashboard read fails'
     Livewire::test(SessionsPage::class)->assertSee(__('Données indisponibles'));
 });
 
+it('degrades a deferred widget to an inline error when its read fails', function () {
+    $this->actingAs($this->admin, 'admin');
+
+    // The heavy reads live in the lazy widgets now, so they carry their own guard.
+    Schema::drop('falcon_analytics_sessions');
+
+    Livewire::test(OverviewHeadline::class, ['period' => 30])->call('$refresh')->assertSee(__('Données indisponibles'));
+});
+
 it('renders the sessions list for an authenticated admin', function () {
     seedSession(['city' => 'Genève', 'subject_type' => 'client', 'subject_id' => 1]);
 

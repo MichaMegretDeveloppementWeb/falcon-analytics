@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Livewire\Dashboard\Widgets;
 
 use Falcon\Analytics\DTOs\Dashboard\Period;
+use Falcon\Analytics\Livewire\Dashboard\Concerns\GuardsWidgetRead;
 use Falcon\Analytics\Repositories\Dashboard\EngagementReadRepository;
 use Falcon\Analytics\Services\Dashboard\EngagementMetricsCalculator;
 use Illuminate\Contracts\View\View;
@@ -20,6 +21,8 @@ use Livewire\Component;
 #[Lazy]
 final class OverviewHeadline extends Component
 {
+    use GuardsWidgetRead;
+
     public int $period = Period::DEFAULT_DAYS;
 
     public string $subject = '';
@@ -31,18 +34,20 @@ final class OverviewHeadline extends Component
 
     public function render(EngagementReadRepository $engagementRepository, EngagementMetricsCalculator $engagement): View
     {
-        $period = Period::ofDays($this->period);
-        $subjectType = $this->subject !== '' ? $this->subject : null;
-        $spotlight = $engagementRepository->spotlightCounts($subjectType);
+        return $this->guardedWidget(function () use ($engagementRepository, $engagement): array {
+            $period = Period::ofDays($this->period);
+            $subjectType = $this->subject !== '' ? $this->subject : null;
+            $spotlight = $engagementRepository->spotlightCounts($subjectType);
 
-        return view('analytics::livewire.dashboard.widgets.overview-headline', [
-            'range' => $period,
-            'headline' => $engagement->headline(
-                $engagementRepository->headlineCounts($period, $subjectType),
-                $engagementRepository->headlineCounts($period->previous(), $subjectType),
-            ),
-            'sparklines' => $engagement->sparklines($engagementRepository->sparklineRows($period, $subjectType), $period),
-            'spotlight' => $engagement->spotlight($spotlight['today'], $spotlight['yesterday']),
-        ]);
+            return [
+                'range' => $period,
+                'headline' => $engagement->headline(
+                    $engagementRepository->headlineCounts($period, $subjectType),
+                    $engagementRepository->headlineCounts($period->previous(), $subjectType),
+                ),
+                'sparklines' => $engagement->sparklines($engagementRepository->sparklineRows($period, $subjectType), $period),
+                'spotlight' => $engagement->spotlight($spotlight['today'], $spotlight['yesterday']),
+            ];
+        }, fn (array $data): View => view('analytics::livewire.dashboard.widgets.overview-headline', $data));
     }
 }

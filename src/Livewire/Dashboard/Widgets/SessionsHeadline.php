@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Livewire\Dashboard\Widgets;
 
 use Falcon\Analytics\DTOs\Dashboard\Period;
+use Falcon\Analytics\Livewire\Dashboard\Concerns\GuardsWidgetRead;
 use Falcon\Analytics\Repositories\Dashboard\EngagementReadRepository;
 use Falcon\Analytics\Services\Dashboard\EngagementMetricsCalculator;
 use Illuminate\Contracts\View\View;
@@ -19,6 +20,8 @@ use Livewire\Component;
 #[Lazy]
 final class SessionsHeadline extends Component
 {
+    use GuardsWidgetRead;
+
     public int $period = Period::DEFAULT_DAYS;
 
     public string $subject = '';
@@ -30,15 +33,17 @@ final class SessionsHeadline extends Component
 
     public function render(EngagementReadRepository $engagementRepository, EngagementMetricsCalculator $engagement): View
     {
-        $period = Period::ofDays($this->period);
-        $subjectType = $this->subject !== '' ? $this->subject : null;
+        return $this->guardedWidget(function () use ($engagementRepository, $engagement): array {
+            $period = Period::ofDays($this->period);
+            $subjectType = $this->subject !== '' ? $this->subject : null;
 
-        return view('analytics::livewire.dashboard.widgets.sessions-headline', [
-            'headline' => $engagement->headline(
-                $engagementRepository->headlineCounts($period, $subjectType),
-                $engagementRepository->headlineCounts($period->previous(), $subjectType),
-            ),
-            'sparklines' => $engagement->sparklines($engagementRepository->sparklineRows($period, $subjectType), $period),
-        ]);
+            return [
+                'headline' => $engagement->headline(
+                    $engagementRepository->headlineCounts($period, $subjectType),
+                    $engagementRepository->headlineCounts($period->previous(), $subjectType),
+                ),
+                'sparklines' => $engagement->sparklines($engagementRepository->sparklineRows($period, $subjectType), $period),
+            ];
+        }, fn (array $data): View => view('analytics::livewire.dashboard.widgets.sessions-headline', $data));
     }
 }

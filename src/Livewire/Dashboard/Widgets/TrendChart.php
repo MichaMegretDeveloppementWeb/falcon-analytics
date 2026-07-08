@@ -6,6 +6,7 @@ namespace Falcon\Analytics\Livewire\Dashboard\Widgets;
 
 use Falcon\Analytics\DTOs\Dashboard\Period;
 use Falcon\Analytics\Events\EventRegistry;
+use Falcon\Analytics\Livewire\Dashboard\Concerns\GuardsWidgetRead;
 use Falcon\Analytics\Repositories\Dashboard\EventReadRepository;
 use Falcon\Analytics\Repositories\Dashboard\OverviewReadRepository;
 use Falcon\Analytics\Services\Dashboard\TrendSeriesCalculator;
@@ -23,6 +24,8 @@ use Livewire\Component;
 #[Lazy]
 final class TrendChart extends Component
 {
+    use GuardsWidgetRead;
+
     public int $period = Period::DEFAULT_DAYS;
 
     public string $subject = '';
@@ -38,16 +41,18 @@ final class TrendChart extends Component
         TrendSeriesCalculator $trends,
         EventRegistry $events,
     ): View {
-        $range = Period::ofDays($this->period);
-        $subjectType = $this->subject !== '' ? $this->subject : null;
+        return $this->guardedWidget(function () use ($repository, $eventRepository, $trends, $events): array {
+            $range = Period::ofDays($this->period);
+            $subjectType = $this->subject !== '' ? $this->subject : null;
 
-        $trend = $trends->points($repository->trendRows($range, $subjectType), $range);
-        $conversionsDaily = $eventRepository->daily($range, $subjectType, $events)['conversions'];
+            $trend = $trends->points($repository->trendRows($range, $subjectType), $range);
+            $conversionsDaily = $eventRepository->daily($range, $subjectType, $events)['conversions'];
 
-        return view('analytics::livewire.dashboard.widgets.trend-chart', [
-            'labels' => array_map(fn ($point) => $point->date->isoFormat('D MMM'), $trend),
-            'points' => array_map(fn ($point) => $point->sessions, $trend),
-            'conversions' => array_map(fn ($point) => $conversionsDaily[$point->date->toDateString()] ?? 0, $trend),
-        ]);
+            return [
+                'labels' => array_map(fn ($point) => $point->date->isoFormat('D MMM'), $trend),
+                'points' => array_map(fn ($point) => $point->sessions, $trend),
+                'conversions' => array_map(fn ($point) => $conversionsDaily[$point->date->toDateString()] ?? 0, $trend),
+            ];
+        }, fn (array $data): View => view('analytics::livewire.dashboard.widgets.trend-chart', $data));
     }
 }

@@ -6,6 +6,7 @@ namespace Falcon\Analytics\Livewire\Dashboard\Widgets;
 
 use Falcon\Analytics\DTOs\Dashboard\Period;
 use Falcon\Analytics\Events\EventRegistry;
+use Falcon\Analytics\Livewire\Dashboard\Concerns\GuardsWidgetRead;
 use Falcon\Analytics\Repositories\Dashboard\EventReadRepository;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Lazy;
@@ -18,6 +19,8 @@ use Livewire\Component;
 #[Lazy]
 final class OverviewEvents extends Component
 {
+    use GuardsWidgetRead;
+
     public int $period = Period::DEFAULT_DAYS;
 
     public string $subject = '';
@@ -29,16 +32,18 @@ final class OverviewEvents extends Component
 
     public function render(EventReadRepository $repository, EventRegistry $events): View
     {
-        $range = Period::ofDays($this->period);
-        $subjectType = $this->subject !== '' ? $this->subject : null;
+        return $this->guardedWidget(function () use ($repository, $events): array {
+            $range = Period::ofDays($this->period);
+            $subjectType = $this->subject !== '' ? $this->subject : null;
 
-        $breakdown = $repository->eventBreakdown($range, $subjectType, $events);
-        $conversions = array_values(array_filter($breakdown, fn (array $row): bool => $row['isConversion']));
+            $breakdown = $repository->eventBreakdown($range, $subjectType, $events);
+            $conversions = array_values(array_filter($breakdown, fn (array $row): bool => $row['isConversion']));
 
-        return view('analytics::livewire.dashboard.widgets.overview-events', [
-            'topConversions' => array_slice($conversions, 0, 6),
-            'topEvents' => array_slice($breakdown, 0, 6),
-            'eventsRoute' => route(config('analytics.dashboard.route_name', 'analytics').'.events'),
-        ]);
+            return [
+                'topConversions' => array_slice($conversions, 0, 6),
+                'topEvents' => array_slice($breakdown, 0, 6),
+                'eventsRoute' => route(config('analytics.dashboard.route_name', 'analytics').'.events'),
+            ];
+        }, fn (array $data): View => view('analytics::livewire.dashboard.widgets.overview-events', $data));
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Livewire\Dashboard\Widgets;
 
 use Falcon\Analytics\DTOs\Dashboard\Period;
+use Falcon\Analytics\Livewire\Dashboard\Concerns\GuardsWidgetRead;
 use Falcon\Analytics\Repositories\Dashboard\OverviewReadRepository;
 use Falcon\Analytics\Services\Dashboard\OverviewMetricsCalculator;
 use Illuminate\Contracts\View\View;
@@ -18,6 +19,8 @@ use Livewire\Component;
 #[Lazy]
 final class OverviewAudience extends Component
 {
+    use GuardsWidgetRead;
+
     public int $period = Period::DEFAULT_DAYS;
 
     public string $subject = '';
@@ -29,15 +32,17 @@ final class OverviewAudience extends Component
 
     public function render(OverviewReadRepository $repository, OverviewMetricsCalculator $overview): View
     {
-        $range = Period::ofDays($this->period);
-        $subjectType = $this->subject !== '' ? $this->subject : null;
+        return $this->guardedWidget(function () use ($repository, $overview): array {
+            $range = Period::ofDays($this->period);
+            $subjectType = $this->subject !== '' ? $this->subject : null;
 
-        $newVsReturning = $repository->newVsReturning($range, $subjectType);
+            $newVsReturning = $repository->newVsReturning($range, $subjectType);
 
-        return view('analytics::livewire.dashboard.widgets.overview-audience', [
-            'newVsReturning' => $newVsReturning,
-            'devices' => $repository->sessionsByDevice($range, $subjectType),
-            'newVisitorRate' => $overview->newVisitorRate($newVsReturning, $repository->newVsReturning($range->previous(), $subjectType)),
-        ]);
+            return [
+                'newVsReturning' => $newVsReturning,
+                'devices' => $repository->sessionsByDevice($range, $subjectType),
+                'newVisitorRate' => $overview->newVisitorRate($newVsReturning, $repository->newVsReturning($range->previous(), $subjectType)),
+            ];
+        }, fn (array $data): View => view('analytics::livewire.dashboard.widgets.overview-audience', $data));
     }
 }
