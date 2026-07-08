@@ -2,10 +2,9 @@
 
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\Enums\EventType;
-use Falcon\Analytics\Livewire\Dashboard\EventsPage;
 use Falcon\Analytics\Livewire\Dashboard\SessionsPage;
 use Falcon\Analytics\Livewire\Dashboard\VisitorDetailPage;
-use Falcon\Analytics\Livewire\Dashboard\Widgets\EventsTrendChart;
+use Falcon\Analytics\Livewire\Dashboard\Widgets\EventsContent;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\FunnelsContent;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\MarketingDashboardContent;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\MarketingTrendChart;
@@ -89,20 +88,22 @@ it('renders the events screen with the per-event breakdown', function () {
 
     $this->actingAs($this->admin, 'admin');
 
-    Livewire::test(EventsPage::class)
+    Livewire::test(EventsContent::class, ['period' => 30])->call('$refresh')
         ->assertSuccessful()
         ->assertSeeText('cta.contact');
 });
 
-it('renders the events screen within its query budget with no duplicate query', function () {
+it('renders the events content within its query budget with no duplicate query', function () {
     $session = seedSession();
     Event::create(['session_id' => $session->id, 'visitor_id' => $session->visitor_id, 'type' => EventType::Click, 'name' => 'cta.contact', 'occurred_at' => now()]);
 
     $this->actingAs($this->admin, 'admin');
 
-    $budget = analyticsQueryBudget(fn () => Livewire::test(EventsPage::class));
+    // The deferred content widget reads the breakdown (current + previous) and the
+    // daily series; the events page shell itself issues no query.
+    $budget = analyticsQueryBudget(fn () => Livewire::test(EventsContent::class, ['period' => 30])->call('$refresh'));
 
-    expect($budget['count'])->toBeLessThanOrEqual(4)
+    expect($budget['count'])->toBeLessThanOrEqual(6)
         ->and($budget['duplicates'])->toBe(0);
 });
 
@@ -127,7 +128,7 @@ it('renders the deferred events and marketing trend chart widgets', function () 
 
     $this->actingAs($this->admin, 'admin');
 
-    Livewire::test(EventsTrendChart::class, ['period' => 30, 'subject' => ''])->assertSuccessful();
+    Livewire::test(EventsContent::class, ['period' => 30, 'subject' => ''])->call('$refresh')->assertSuccessful();
     Livewire::test(MarketingTrendChart::class, ['period' => 30, 'subject' => '', 'scope' => 'overview'])->assertSuccessful();
 });
 
@@ -173,10 +174,11 @@ it('renders the deferred overview section widgets with their data', function () 
 it('renders a graceful error state instead of a 500 when a dashboard read fails', function () {
     $this->actingAs($this->admin, 'admin');
 
-    // Force a real read failure: an aggregation query hits a missing table.
-    Schema::drop('falcon_analytics_events');
+    // Force a real read failure: the session list query hits a missing table. The
+    // sessions page shell still reads (the list), so its guardedRender degrades.
+    Schema::drop('falcon_analytics_sessions');
 
-    Livewire::test(EventsPage::class)->assertSee(__('Données indisponibles'));
+    Livewire::test(SessionsPage::class)->assertSee(__('Données indisponibles'));
 });
 
 it('renders the sessions list for an authenticated admin', function () {

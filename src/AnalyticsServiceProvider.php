@@ -13,7 +13,7 @@ use Falcon\Analytics\Console\SweepCommand;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\AdDetailContent;
-use Falcon\Analytics\Livewire\Dashboard\Widgets\EventsTrendChart;
+use Falcon\Analytics\Livewire\Dashboard\Widgets\EventsContent;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\FunnelsContent;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\MarketingDashboardContent;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\MarketingTrendChart;
@@ -76,7 +76,7 @@ final class AnalyticsServiceProvider extends ServiceProvider
         Blade::directive('analyticsScripts', fn (): string => '<?php echo \Falcon\Analytics\View\Collector::render(); ?>');
 
         Livewire::component('analytics-trend-chart', TrendChart::class);
-        Livewire::component('analytics-events-trend-chart', EventsTrendChart::class);
+        Livewire::component('analytics-events-content', EventsContent::class);
         Livewire::component('analytics-marketing-trend-chart', MarketingTrendChart::class);
         Livewire::component('analytics-marketing-dashboard-content', MarketingDashboardContent::class);
         Livewire::component('analytics-funnels-content', FunnelsContent::class);
