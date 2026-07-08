@@ -4,15 +4,18 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Livewire\Dashboard;
 
+use Falcon\Analytics\Actions\DeleteAdAction;
+use Falcon\Analytics\Actions\DeleteCampaignAction;
+use Falcon\Analytics\Actions\SaveCampaignAction;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\EditsAd;
 use Falcon\Analytics\Models\Ad;
-use Falcon\Analytics\Models\AdObjective;
 use Falcon\Analytics\Models\Campaign;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\On;
+use Throwable;
 
 /**
  * A single campaign in detail: its headline traffic over the period, its identity
@@ -68,7 +71,7 @@ final class CampaignDetailPage extends DashboardComponent
         unset($this->campaignConditions[$index]);
     }
 
-    public function saveCampaign(): void
+    public function saveCampaign(SaveCampaignAction $action): void
     {
         $this->validate([
             'campaignName' => ['required', 'string', 'max:150'],
@@ -76,17 +79,36 @@ final class CampaignDetailPage extends DashboardComponent
             'campaignConditions' => ['required', 'array', 'min:1'],
             'campaignConditions.*.param' => ['required', 'string', 'max:100'],
             'campaignConditions.*.value' => ['required', 'string', 'max:150'],
+        ], messages: [
+            'campaignName.required' => __('Le nom est obligatoire.'),
+            'campaignName.max' => __('Le nom ne doit pas dépasser :max caractères.'),
+            'campaignConditions.required' => __('Ajoutez au moins une condition.'),
+            'campaignConditions.min' => __('Ajoutez au moins une condition.'),
+            'campaignConditions.*.param.required' => __('Le paramètre est obligatoire.'),
+            'campaignConditions.*.value.required' => __('La valeur est obligatoire.'),
         ], attributes: [
             'campaignName' => __('nom'),
             'campaignConditions.*.param' => __('paramètre'),
             'campaignConditions.*.value' => __('valeur'),
         ]);
 
-        $this->campaign->fill([
-            'name' => $this->campaignName,
-            'platform' => $this->campaignPlatform !== '' ? $this->campaignPlatform : null,
-            'match_conditions' => $this->cleanConditions($this->campaignConditions),
-        ])->save();
+        try {
+            $action->execute(
+                $this->campaign->id,
+                $this->campaignName,
+                $this->campaignPlatform !== '' ? $this->campaignPlatform : null,
+                $this->cleanConditions($this->campaignConditions),
+            );
+            $this->campaign->refresh();
+        } catch (Throwable $e) {
+            Log::channel(config('analytics.log_channel'))->error('Campaign.save_failed', [
+                'campaign_id' => $this->campaign->id,
+                'exception' => $e,
+            ]);
+            $this->dispatch('toast', type: 'danger', title: __('L\'enregistrement de la campagne a échoué. Réessayez.'));
+
+            return;
+        }
 
         $this->modal = '';
     }
@@ -96,16 +118,19 @@ final class CampaignDetailPage extends DashboardComponent
         $this->modal = 'delete-campaign';
     }
 
-    public function deleteCampaignConfirmed(): void
+    public function deleteCampaignConfirmed(DeleteCampaignAction $action): void
     {
-        $campaignId = $this->campaign->id;
+        try {
+            $action->execute($this->campaign->id);
+        } catch (Throwable $e) {
+            Log::channel(config('analytics.log_channel'))->error('Campaign.delete_failed', [
+                'campaign_id' => $this->campaign->id,
+                'exception' => $e,
+            ]);
+            $this->dispatch('toast', type: 'danger', title: __('La suppression de la campagne a échoué. Réessayez.'));
 
-        DB::transaction(function () use ($campaignId): void {
-            $adIds = Ad::query()->where('campaign_id', $campaignId)->pluck('id');
-            AdObjective::query()->whereIn('ad_id', $adIds)->delete();
-            Ad::query()->where('campaign_id', $campaignId)->delete();
-            Campaign::query()->whereKey($campaignId)->delete();
-        });
+            return;
+        }
 
         $this->redirect(route(config('analytics.marketing.route_name', 'marketing').'.campaigns'));
     }
@@ -130,15 +155,20 @@ final class CampaignDetailPage extends DashboardComponent
         $this->modal = 'delete-ad';
     }
 
-    public function deleteAdConfirmed(): void
+    public function deleteAdConfirmed(DeleteAdAction $action): void
     {
         if ($this->deleteAdId !== null) {
-            $adId = $this->deleteAdId;
+            try {
+                $action->execute($this->deleteAdId, $this->campaign->id);
+            } catch (Throwable $e) {
+                Log::channel(config('analytics.log_channel'))->error('Ad.delete_failed', [
+                    'ad_id' => $this->deleteAdId,
+                    'exception' => $e,
+                ]);
+                $this->dispatch('toast', type: 'danger', title: __('La suppression de la pub a échoué. Réessayez.'));
 
-            DB::transaction(function () use ($adId): void {
-                AdObjective::query()->where('ad_id', $adId)->delete();
-                Ad::query()->whereKey($adId)->where('campaign_id', $this->campaign->id)->delete();
-            });
+                return;
+            }
         }
 
         $this->closeModal();

@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Livewire\Dashboard\Concerns;
 
+use Falcon\Analytics\Actions\SaveAdAction;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Models\Ad;
 use Falcon\Analytics\Models\AdObjective;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 /**
  * Shared ad-editing form (name, URL conditions and conversion objectives) used by
@@ -95,7 +97,7 @@ trait EditsAd
         unset($this->objectives[$index]);
     }
 
-    public function saveAd(): void
+    public function saveAd(SaveAdAction $action): void
     {
         $this->validate([
             'adName' => ['required', 'string', 'max:150'],
@@ -103,32 +105,38 @@ trait EditsAd
             'adConditions.*.param' => ['required', 'string', 'max:100'],
             'adConditions.*.value' => ['required', 'string', 'max:150'],
             'objectives.*.value' => ['nullable', 'numeric', 'min:0'],
+        ], messages: [
+            'adName.required' => __('Le nom est obligatoire.'),
+            'adName.max' => __('Le nom ne doit pas dépasser :max caractères.'),
+            'adConditions.required' => __('Ajoutez au moins une condition.'),
+            'adConditions.min' => __('Ajoutez au moins une condition.'),
+            'adConditions.*.param.required' => __('Le paramètre est obligatoire.'),
+            'adConditions.*.value.required' => __('La valeur est obligatoire.'),
+            'objectives.*.value.numeric' => __('La valeur doit être un nombre.'),
+            'objectives.*.value.min' => __('La valeur doit être positive.'),
         ], attributes: [
             'adName' => __('nom'),
             'adConditions.*.param' => __('paramètre'),
             'adConditions.*.value' => __('valeur'),
         ]);
 
-        $ad = $this->adId !== null
-            ? Ad::findOrFail($this->adId)
-            : new Ad(['campaign_id' => $this->adFormCampaignId()]);
-        $ad->fill([
-            'name' => $this->adName,
-            'match_conditions' => $this->cleanAdConditions($this->adConditions),
-        ])->save();
+        try {
+            $action->execute(
+                $this->adId,
+                $this->adFormCampaignId(),
+                $this->adName,
+                $this->cleanAdConditions($this->adConditions),
+                $this->objectives,
+            );
+        } catch (Throwable $e) {
+            Log::channel(config('analytics.log_channel'))->error('Ad.save_failed', [
+                'ad_id' => $this->adId,
+                'exception' => $e,
+            ]);
+            $this->dispatch('toast', type: 'danger', title: __('L\'enregistrement de la pub a échoué. Réessayez.'));
 
-        DB::transaction(function () use ($ad): void {
-            AdObjective::query()->where('ad_id', $ad->id)->delete();
-
-            foreach ($this->objectives as $objective) {
-                AdObjective::create([
-                    'ad_id' => $ad->id,
-                    'type' => $objective['type'],
-                    'reference' => $objective['reference'],
-                    'value' => $objective['type'] === 'event' ? (is_numeric($objective['value']) ? $objective['value'] : 0) : null,
-                ]);
-            }
-        });
+            return;
+        }
 
         // The modal only closes; the form is repopulated on the next open (newAd /
         // editAd). Resetting the form arrays here would remove their wire:model rows
