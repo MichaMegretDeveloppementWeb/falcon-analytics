@@ -27,7 +27,7 @@ trait EditsAd
     /** @var list<array{param: string, value: string}> */
     public array $adConditions = [];
 
-    /** @var list<array{type: string, reference: string, label: string, value: string|null}> */
+    /** @var list<array{type: string, reference: string, label: string}> */
     public array $objectives = [];
 
     abstract protected function adFormCampaignId(): int;
@@ -59,7 +59,6 @@ trait EditsAd
             'label' => $objective->type->value === 'funnel'
                 ? ($funnelLabels[$objective->reference] ?? $objective->reference)
                 : ($eventLabels[$objective->reference] ?? $objective->reference),
-            'value' => $objective->type->value === 'event' ? (string) (float) $objective->value : null,
         ])->all();
     }
 
@@ -76,7 +75,7 @@ trait EditsAd
         unset($this->adConditions[$index]);
     }
 
-    public function addObjective(string $type, string $reference, string $label, ?float $value = null): void
+    public function addObjective(string $type, string $reference, string $label): void
     {
         foreach ($this->objectives as $objective) {
             if ($objective['type'] === $type && $objective['reference'] === $reference) {
@@ -88,7 +87,6 @@ trait EditsAd
             'type' => $type,
             'reference' => $reference,
             'label' => $label,
-            'value' => $type === 'event' ? (string) ($value ?? 0) : null,
         ];
     }
 
@@ -104,7 +102,6 @@ trait EditsAd
             'adConditions' => ['required', 'array', 'min:1'],
             'adConditions.*.param' => ['required', 'string', 'max:100'],
             'adConditions.*.value' => ['required', 'string', 'max:150'],
-            'objectives.*.value' => ['nullable', 'numeric', 'min:0'],
         ], messages: [
             'adName.required' => __('Le nom est obligatoire.'),
             'adName.max' => __('Le nom ne doit pas dépasser :max caractères.'),
@@ -112,8 +109,6 @@ trait EditsAd
             'adConditions.min' => __('Ajoutez au moins une condition.'),
             'adConditions.*.param.required' => __('Le paramètre est obligatoire.'),
             'adConditions.*.value.required' => __('La valeur est obligatoire.'),
-            'objectives.*.value.numeric' => __('La valeur doit être un nombre.'),
-            'objectives.*.value.min' => __('La valeur doit être positive.'),
         ], attributes: [
             'adName' => __('nom'),
             'adConditions.*.param' => __('paramètre'),
@@ -156,7 +151,7 @@ trait EditsAd
      * The tunnel and event options offered by the objective pickers, excluding the
      * ones already selected on the ad.
      *
-     * @return array{funnelOptions: list<array{reference: string, label: string}>, eventOptions: list<array{reference: string, label: string, value: float|null}>}
+     * @return array{funnelOptions: list<array{reference: string, label: string}>, eventOptions: list<array{reference: string, label: string}>}
      */
     protected function adFormOptions(FunnelRegistry $funnels, EventRegistry $events): array
     {
@@ -176,7 +171,7 @@ trait EditsAd
                 fn (array $option): bool => ! in_array($option['reference'], $selectedFunnels, true),
             )),
             'eventOptions' => array_values(array_filter(
-                array_map(fn ($event): array => ['reference' => $event->name, 'label' => $event->label, 'value' => $event->value], $events->all()),
+                array_map(fn ($event): array => ['reference' => $event->name, 'label' => $event->label], $events->all()),
                 fn (array $option): bool => ! in_array($option['reference'], $selectedEvents, true),
             )),
         ];

@@ -37,12 +37,6 @@
                                 <div wire:key="obj-{{ $index }}" class="flex items-center gap-2 rounded-lg bg-elevated px-3 py-2">
                                     <x-ui.icon :name="$objective['type'] === 'funnel' ? 'funnel' : 'bolt'" class="h-3.5 w-3.5 shrink-0 text-muted" />
                                     <span class="min-w-0 flex-1 truncate text-[12px] text-secondary">{{ $objective['label'] }}</span>
-                                    @if ($objective['type'] === 'event')
-                                        <div class="flex shrink-0 items-center gap-1">
-                                            <input type="number" step="0.01" min="0" wire:model.blur="objectives.{{ $index }}.value" class="w-16 rounded-lg border border-base bg-surface px-2 py-1 text-[12px] text-primary focus:outline-none focus:ring-2 focus:ring-gray-900/10 dark:focus:ring-white/10" />
-                                            <span class="text-[11px] text-muted">{{ __('pts') }}</span>
-                                        </div>
-                                    @endif
                                     <button type="button" wire:click="removeObjective({{ $index }})" class="shrink-0 cursor-pointer text-muted transition-colors hover:text-red-600" aria-label="{{ __('Retirer') }}"><x-ui.icon name="x-mark" class="h-4 w-4" /></button>
                                 </div>
                             @endforeach
@@ -78,7 +72,7 @@
                                 </div>
                                 <div class="max-h-52 overflow-y-auto p-1">
                                     @forelse ($eventOptions as $option)
-                                        <button type="button" x-show="@js(Str::lower($option['label'])).includes(search.toLowerCase())" wire:click="addObjective('event', @js($option['reference']), @js($option['label']), @js($option['value']))" x-on:click="open = false" class="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12px] text-secondary transition-colors hover:bg-elevated">
+                                        <button type="button" x-show="@js(Str::lower($option['label'])).includes(search.toLowerCase())" wire:click="addObjective('event', @js($option['reference']), @js($option['label']))" x-on:click="open = false" class="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12px] text-secondary transition-colors hover:bg-elevated">
                                             <x-ui.icon name="bolt" class="h-3.5 w-3.5 shrink-0 text-muted" /> <span class="truncate">{{ $option['label'] }}</span>
                                         </button>
                                     @empty

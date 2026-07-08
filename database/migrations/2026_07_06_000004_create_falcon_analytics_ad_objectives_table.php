@@ -7,9 +7,11 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Conversion objectives of an ad: either a funnel (credited its weighted score,
- * scoped to the ad's traffic) or a named custom event (credited its own value per
- * occurrence). Scoped per ad so one ad never scores another funnel's conversions.
+ * Conversion objectives of an ad: either a funnel (the visitor completed its steps
+ * in order) or a named custom event (the visitor fired it). Either way the ad is
+ * credited one converting visitor, scoped to the ad's own attributed traffic so one
+ * ad never scores another's conversions. (The value column added here was never used
+ * for scoring and is dropped by a later migration.)
  */
 return new class extends Migration
 {

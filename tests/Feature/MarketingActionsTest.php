@@ -30,8 +30,8 @@ it('saves an ad and rebuilds its objectives in one transaction', function () {
     $campaign = Campaign::create(['name' => 'C', 'match_conditions' => [['param' => 'src', 'value' => 'meta']]]);
 
     $ad = (new SaveAdAction)->execute(null, $campaign->id, 'Cabrio', [['param' => 'creative', 'value' => 'cabrio']], [
-        ['type' => 'event', 'reference' => 'Lead', 'label' => 'Lead', 'value' => '5'],
-        ['type' => 'funnel', 'reference' => 'concours', 'label' => 'Concours', 'value' => null],
+        ['type' => 'event', 'reference' => 'Lead', 'label' => 'Lead'],
+        ['type' => 'funnel', 'reference' => 'concours', 'label' => 'Concours'],
     ]);
 
     expect($ad->name)->toBe('Cabrio')
@@ -40,7 +40,7 @@ it('saves an ad and rebuilds its objectives in one transaction', function () {
 
     // Re-saving replaces the objective set rather than appending to it.
     (new SaveAdAction)->execute($ad->id, $campaign->id, 'Cabrio', [['param' => 'creative', 'value' => 'cabrio']], [
-        ['type' => 'event', 'reference' => 'Lead', 'label' => 'Lead', 'value' => '3'],
+        ['type' => 'event', 'reference' => 'Lead', 'label' => 'Lead'],
     ]);
 
     expect(AdObjective::query()->where('ad_id', $ad->id)->count())->toBe(1);
@@ -49,7 +49,7 @@ it('saves an ad and rebuilds its objectives in one transaction', function () {
 it('deletes a campaign with its ads and objectives', function () {
     $campaign = Campaign::create(['name' => 'C', 'match_conditions' => [['param' => 'src', 'value' => 'meta']]]);
     $ad = Ad::create(['campaign_id' => $campaign->id, 'name' => 'A', 'match_conditions' => [['param' => 'x', 'value' => 'y']]]);
-    AdObjective::create(['ad_id' => $ad->id, 'type' => 'event', 'reference' => 'Lead', 'value' => 1]);
+    AdObjective::create(['ad_id' => $ad->id, 'type' => 'event', 'reference' => 'Lead']);
 
     (new DeleteCampaignAction)->execute($campaign->id);
 
@@ -61,7 +61,7 @@ it('deletes a campaign with its ads and objectives', function () {
 it('deletes an ad only when it belongs to the given campaign', function () {
     $campaign = Campaign::create(['name' => 'C', 'match_conditions' => [['param' => 'src', 'value' => 'meta']]]);
     $ad = Ad::create(['campaign_id' => $campaign->id, 'name' => 'A', 'match_conditions' => [['param' => 'x', 'value' => 'y']]]);
-    AdObjective::create(['ad_id' => $ad->id, 'type' => 'event', 'reference' => 'Lead', 'value' => 1]);
+    AdObjective::create(['ad_id' => $ad->id, 'type' => 'event', 'reference' => 'Lead']);
 
     // Wrong campaign id: the ad and its objectives stay intact.
     (new DeleteAdAction)->execute($ad->id, $campaign->id + 999);

@@ -17,7 +17,7 @@ final readonly class SaveAdAction
 {
     /**
      * @param  list<array{param: string, value: string}>  $conditions
-     * @param  list<array{type: string, reference: string, label: string, value: string|null}>  $objectives
+     * @param  list<array{type: string, reference: string, label: string}>  $objectives
      */
     public function execute(?int $adId, int $campaignId, string $name, array $conditions, array $objectives): Ad
     {
@@ -38,9 +38,6 @@ final readonly class SaveAdAction
                     'ad_id' => $ad->id,
                     'type' => $objective['type'],
                     'reference' => $objective['reference'],
-                    'value' => $objective['type'] === 'event'
-                        ? (is_numeric($objective['value']) ? $objective['value'] : 0)
-                        : null,
                 ]);
             }
 

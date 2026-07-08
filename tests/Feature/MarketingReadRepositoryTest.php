@@ -92,7 +92,7 @@ it('credits an ad with a conversion when its visitor completes an event objectiv
 
     $ete = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
     $ad = Ad::create(['campaign_id' => $ete->id, 'name' => 'Cabrio', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
-    AdObjective::create(['ad_id' => $ad->id, 'type' => 'event', 'reference' => 'Lead', 'value' => 3]);
+    AdObjective::create(['ad_id' => $ad->id, 'type' => 'event', 'reference' => 'Lead']);
 
     $converter = Visitor::create(['uuid' => (string) Str::uuid(), 'first_seen_at' => now(), 'last_seen_at' => now()]);
     $session = taggedSession(['src' => 'meta_ete'], $converter);
@@ -116,7 +116,7 @@ it('credits an ad with a conversion when its visitor completes a funnel objectiv
 
     $ete = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
     $ad = Ad::create(['campaign_id' => $ete->id, 'name' => 'Cabrio', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
-    AdObjective::create(['ad_id' => $ad->id, 'type' => 'funnel', 'reference' => 'sample', 'value' => null]);
+    AdObjective::create(['ad_id' => $ad->id, 'type' => 'funnel', 'reference' => 'sample']);
 
     // A visitor tagged to the ad who walks the funnel in order: pageview home, then sample.action.
     $converter = Visitor::create(['uuid' => (string) Str::uuid(), 'first_seen_at' => now(), 'last_seen_at' => now()]);
@@ -160,8 +160,8 @@ it('batches event-objective conversions into one query and buckets them per ad',
     $ete = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
     $ad1 = Ad::create(['campaign_id' => $ete->id, 'name' => 'A1', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete'], ['param' => 'creative', 'value' => 'c1']]]);
     $ad2 = Ad::create(['campaign_id' => $ete->id, 'name' => 'A2', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete'], ['param' => 'creative', 'value' => 'c2']]]);
-    AdObjective::create(['ad_id' => $ad1->id, 'type' => 'event', 'reference' => 'Lead', 'value' => 1]);
-    AdObjective::create(['ad_id' => $ad2->id, 'type' => 'event', 'reference' => 'Lead', 'value' => 1]);
+    AdObjective::create(['ad_id' => $ad1->id, 'type' => 'event', 'reference' => 'Lead']);
+    AdObjective::create(['ad_id' => $ad2->id, 'type' => 'event', 'reference' => 'Lead']);
 
     $v1 = Visitor::create(['uuid' => (string) Str::uuid(), 'first_seen_at' => now(), 'last_seen_at' => now()]);
     $s1 = taggedSession(['src' => 'meta_ete', 'creative' => 'c1'], $v1);
@@ -192,7 +192,7 @@ it('lists conversion elements with their count and source ad, sorted', function 
 
     $ete = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
     $ad = Ad::create(['campaign_id' => $ete->id, 'name' => 'Cabrio', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
-    AdObjective::create(['ad_id' => $ad->id, 'type' => 'event', 'reference' => 'Lead', 'value' => 3]);
+    AdObjective::create(['ad_id' => $ad->id, 'type' => 'event', 'reference' => 'Lead']);
 
     foreach (range(1, 2) as $ignored) {
         $visitor = Visitor::create(['uuid' => (string) Str::uuid(), 'first_seen_at' => now(), 'last_seen_at' => now()]);

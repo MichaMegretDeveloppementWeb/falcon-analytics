@@ -14,7 +14,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $ad_id
  * @property ObjectiveType $type
  * @property string $reference
- * @property string|null $value
  * @property CarbonImmutable $created_at
  * @property CarbonImmutable $updated_at
  * @property-read Ad $ad
@@ -24,7 +23,7 @@ final class AdObjective extends Model
     protected $table = 'falcon_analytics_ad_objectives';
 
     /** @var list<string> */
-    protected $fillable = ['ad_id', 'type', 'reference', 'value'];
+    protected $fillable = ['ad_id', 'type', 'reference'];
 
     /** @return BelongsTo<Ad, $this> */
     public function ad(): BelongsTo
