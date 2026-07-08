@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Services;
 
-use Illuminate\Support\Facades\DB;
+use Falcon\Analytics\Repositories\SubjectReadRepository;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Throwable;
@@ -17,10 +17,10 @@ use Throwable;
 final class SubjectResolver
 {
     /**
-     * Upper bound on ids returned by a subject search, so a broad term can never
-     * pull an unbounded set into the WHERE IN of the caller.
+     * The DB reads default so a plain `new SubjectResolver` still works (tests,
+     * ad-hoc use); the container injects the shared repository otherwise.
      */
-    private const MATCH_LIMIT = 200;
+    public function __construct(private SubjectReadRepository $subjects = new SubjectReadRepository) {}
 
     public function label(string $guard): string
     {
@@ -70,22 +70,7 @@ final class SubjectResolver
 
         [$table, $key] = $source;
 
-        try {
-            return DB::table($table)
-                ->where(function ($query) use ($columns, $term): void {
-                    foreach ($columns as $column) {
-                        $query->orWhere($column, 'like', '%'.$term.'%');
-                    }
-                })
-                ->limit(self::MATCH_LIMIT)
-                ->pluck($key)
-                ->map(fn ($value): int => (int) $value)
-                ->all();
-        } catch (Throwable $e) {
-            Log::channel(config('analytics.log_channel'))->warning('Analytics subject id search failed.', ['exception' => $e]);
-
-            return [];
-        }
+        return $this->subjects->matchingIds($table, $key, $columns, $term);
     }
 
     /**
@@ -120,15 +105,7 @@ final class SubjectResolver
 
         [$table, $key] = $source;
 
-        try {
-            $rows = DB::table($table)
-                ->whereIn($key, $ids)
-                ->get(array_values(array_unique([$key, ...$columns, ...$fallback])));
-        } catch (Throwable $e) {
-            Log::channel(config('analytics.log_channel'))->warning('Analytics subject name lookup failed.', ['exception' => $e]);
-
-            return [];
-        }
+        $rows = $this->subjects->rows($table, $key, $ids, array_values(array_unique([$key, ...$columns, ...$fallback])));
 
         $names = [];
         foreach ($rows as $row) {
