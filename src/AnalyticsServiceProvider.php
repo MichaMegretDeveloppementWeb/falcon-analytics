@@ -13,6 +13,7 @@ use Falcon\Analytics\Console\SweepCommand;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\AdDetailContent;
+use Falcon\Analytics\Livewire\Dashboard\Widgets\CampaignDetailContent;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\EventsContent;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\FunnelsContent;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\MarketingDashboardContent;
@@ -81,6 +82,7 @@ final class AnalyticsServiceProvider extends ServiceProvider
         Livewire::component('analytics-marketing-dashboard-content', MarketingDashboardContent::class);
         Livewire::component('analytics-funnels-content', FunnelsContent::class);
         Livewire::component('analytics-ad-detail-content', AdDetailContent::class);
+        Livewire::component('analytics-campaign-detail-content', CampaignDetailContent::class);
         Livewire::component('analytics-overview-headline', OverviewHeadline::class);
         Livewire::component('analytics-overview-audience', OverviewAudience::class);
         Livewire::component('analytics-overview-acquisition', OverviewAcquisition::class);

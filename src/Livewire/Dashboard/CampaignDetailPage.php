@@ -4,17 +4,15 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Livewire\Dashboard;
 
-use Falcon\Analytics\DTOs\Dashboard\MetricDelta;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\EditsAd;
 use Falcon\Analytics\Models\Ad;
 use Falcon\Analytics\Models\AdObjective;
 use Falcon\Analytics\Models\Campaign;
-use Falcon\Analytics\Repositories\Dashboard\MarketingReadRepository;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\On;
 
 /**
  * A single campaign in detail: its headline traffic over the period, its identity
@@ -166,59 +164,38 @@ final class CampaignDetailPage extends DashboardComponent
         return array_values(array_filter($cleaned, fn (array $c): bool => $c['param'] !== '' && $c['value'] !== ''));
     }
 
-    public function render(FunnelRegistry $funnels, EventRegistry $events, MarketingReadRepository $marketing): View
+    /**
+     * Per-ad traffic (sessions/visitors) keyed by ad id, filled from the deferred
+     * content widget so the inline ads table shows metrics without the page shell
+     * carrying the heavy campaignReport read.
+     *
+     * @var array<int, array{sessions: int, visitors: int}>
+     */
+    public array $adMetrics = [];
+
+    /** @var array<int, int> */
+    public array $adConversions = [];
+
+    /**
+     * @param  array<int, array{sessions: int, visitors: int}>  $adMetrics
+     * @param  array<int, int>  $adConversions
+     */
+    #[On('campaign-metrics-loaded')]
+    public function fillAdMetrics(array $adMetrics, array $adConversions): void
+    {
+        $this->adMetrics = $adMetrics;
+        $this->adConversions = $adConversions;
+    }
+
+    public function render(FunnelRegistry $funnels, EventRegistry $events): View
     {
         return $this->guardedRender(
-            function () use ($funnels, $events, $marketing): array {
-                $period = $this->currentPeriod();
-                $subjectType = $this->subjectType();
-                $report = $marketing->campaignReport($period, $subjectType, $this->campaign);
-                $previous = $marketing->campaignReport($period->previous(), $subjectType, $this->campaign);
-
-                $trend = [];
-                foreach ($period->eachDay() as $day) {
-                    $trend[$day->toDateString()] = $report['daily'][$day->toDateString()] ?? 0;
-                }
-
-                $conversions = $marketing->conversions($period, $subjectType, $funnels);
-                $conversionsPrevious = $marketing->conversions($period->previous(), $subjectType, $funnels);
-                $campaignConversions = $conversions['campaigns'][$this->campaign->id] ?? 0;
-                $campaignConversionsPrevious = $conversionsPrevious['campaigns'][$this->campaign->id] ?? 0;
-                $rate = $report['visitors'] > 0 ? $campaignConversions / $report['visitors'] * 100 : 0.0;
-                $ratePrevious = $previous['visitors'] > 0 ? $campaignConversionsPrevious / $previous['visitors'] * 100 : 0.0;
-
-                $campaignDaily = $conversions['campaignDaily'][$this->campaign->id] ?? [];
-                $conversionsTrend = [];
-                $rateTrend = [];
-                foreach ($period->eachDay() as $day) {
-                    $key = $day->toDateString();
-                    $dayConversions = $campaignDaily[$key] ?? 0;
-                    $daySessions = $report['daily'][$key] ?? 0;
-                    $conversionsTrend[] = $dayConversions;
-                    $rateTrend[] = $daySessions > 0 ? round($dayConversions / $daySessions * 100, 1) : 0;
-                }
-
+            function () use ($funnels, $events): array {
                 $campaignAds = $this->campaign->ads()->with('objectives')->orderBy('name')->get();
-                $conversionElements = $marketing->conversionElements($period, $subjectType, $funnels, $events, $campaignAds->where('is_active', true)->values()->all());
 
                 return [
-                    'range' => $period,
-                    'sessions' => $report['sessions'],
-                    'visitors' => $report['visitors'],
-                    'sessionsDelta' => new MetricDelta((float) $report['sessions'], (float) $previous['sessions']),
-                    'visitorsDelta' => new MetricDelta((float) $report['visitors'], (float) $previous['visitors']),
-                    'conversions' => $campaignConversions,
-                    'conversionsDelta' => new MetricDelta((float) $campaignConversions, (float) $campaignConversionsPrevious),
-                    'conversionsTrend' => $conversionsTrend,
-                    'rateLabel' => number_format($rate, 1, ',', ' ')."\u{00A0}%",
-                    'rateDelta' => new MetricDelta($rate, $ratePrevious),
-                    'rateTrend' => $rateTrend,
-                    'adMetrics' => $report['ads'],
-                    'adConversions' => $conversions['ads'],
-                    'trendLabels' => array_map(fn (string $d): string => Carbon::parse($d)->isoFormat('D MMM'), array_keys($trend)),
-                    'trendData' => array_values($trend),
+                    'range' => $this->currentPeriod(),
                     'ads' => $campaignAds,
-                    'conversionElements' => $conversionElements,
                     'objectiveLabels' => $this->objectiveLabels($funnels, $events),
                     ...$this->adFormOptions($funnels, $events),
                     ...$this->filterData(),

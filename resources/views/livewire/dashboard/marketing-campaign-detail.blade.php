@@ -37,33 +37,14 @@
         </div>
     </div>
 
-    {{-- Performance --}}
+    {{-- Performance (deferred content : KPIs, trend and conversions) --}}
     <div>
         <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
             <x-ui.section-header :title="__('Performance')" :description="__('du :from au :to', ['from' => $range->from->isoFormat('D MMM'), 'to' => $range->to->isoFormat('D MMM YYYY')])" />
             @include('analytics::livewire.dashboard.partials.filters')
         </div>
-        <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <x-analytics::kpi-card :label="__('Sessions')" :value="number_format($sessions, 0, ',', ' ')" icon="cursor-arrow-rays" :metric="$sessionsDelta">
-                <div wire:key="c-spark-s-{{ $range->days }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$trendData" /></div>
-            </x-analytics::kpi-card>
-            <x-analytics::kpi-card :label="__('Visiteurs')" :value="number_format($visitors, 0, ',', ' ')" icon="users" :metric="$visitorsDelta">
-                <div wire:key="c-spark-v-{{ $range->days }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$trendData" /></div>
-            </x-analytics::kpi-card>
-            <x-analytics::kpi-card :label="__('Conversions')" :value="number_format($conversions, 0, ',', ' ')" icon="check-circle" :metric="$conversionsDelta">
-                <div wire:key="c-spark-conv-{{ $range->days }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$conversionsTrend" color="#10b981" /></div>
-            </x-analytics::kpi-card>
-            <x-analytics::kpi-card :label="__('Taux de conversion')" :value="$rateLabel" icon="arrow-trending-up" :metric="$rateDelta">
-                <div wire:key="c-spark-rate-{{ $range->days }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$rateTrend" color="#10b981" /></div>
-            </x-analytics::kpi-card>
-        </div>
-        <div class="mt-6">
-            <livewire:analytics-marketing-trend-chart :period="$period" :subject="$subject" scope="campaign" :ref-id="$campaign->id" :key="'mkt-trend-c-'.$campaign->id.'-'.$period.'-'.$subject" />
-        </div>
+        <livewire:analytics-campaign-detail-content :period="$period" :subject="$subject" :ref-id="$campaign->id" :key="'campaign-content-'.$campaign->id.'-'.$period.'-'.$subject" />
     </div>
-
-    {{-- Conversions --}}
-    @include('analytics::livewire.dashboard.partials.marketing-conversions', ['showAd' => true])
 
     {{-- Ads --}}
     <div>
@@ -113,8 +94,8 @@
                                     @endforelse
                                 </div>
                             </x-ui.table.cell>
-                            <x-ui.table.cell align="right" class="tabular-nums">{{ number_format($adMetrics[$ad->id]['sessions'] ?? 0, 0, ',', ' ') }}</x-ui.table.cell>
-                            <x-ui.table.cell align="right" class="font-medium tabular-nums text-primary">{{ number_format($adConversions[$ad->id] ?? 0, 0, ',', ' ') }}</x-ui.table.cell>
+                            <x-ui.table.cell align="right" class="tabular-nums">@if ($adMetrics === [])<span class="inline-block h-3 w-8 animate-pulse rounded bg-elevated align-middle"></span>@else{{ number_format($adMetrics[$ad->id]['sessions'] ?? 0, 0, ',', ' ') }}@endif</x-ui.table.cell>
+                            <x-ui.table.cell align="right" class="font-medium tabular-nums text-primary">@if ($adMetrics === [])<span class="inline-block h-3 w-6 animate-pulse rounded bg-elevated align-middle"></span>@else{{ number_format($adConversions[$ad->id] ?? 0, 0, ',', ' ') }}@endif</x-ui.table.cell>
                             <x-ui.table.cell :last="true" align="right">
                                 <div class="flex items-center justify-end gap-1">
                                     <x-ui.button variant="ghost" size="compact" wire:click="editAd({{ $ad->id }})" aria-label="{{ __('Modifier') }}"><x-ui.icon name="pencil-square" class="h-3.5 w-3.5" /></x-ui.button>

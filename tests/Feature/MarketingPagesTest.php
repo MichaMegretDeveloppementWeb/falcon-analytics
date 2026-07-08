@@ -3,6 +3,7 @@
 use Falcon\Analytics\Livewire\Dashboard\AdDetailPage;
 use Falcon\Analytics\Livewire\Dashboard\CampaignDetailPage;
 use Falcon\Analytics\Livewire\Dashboard\CampaignsPage;
+use Falcon\Analytics\Livewire\Dashboard\Widgets\CampaignDetailContent;
 use Falcon\Analytics\Models\Ad;
 use Falcon\Analytics\Models\AdObjective;
 use Falcon\Analytics\Models\Campaign;
@@ -31,6 +32,30 @@ it('protects the marketing module from guests', function () {
     $this->get(route('marketing.campaigns'))->assertRedirect(route('login'));
     $this->get(route('marketing.campaigns.show', $campaign))->assertRedirect(route('login'));
     $this->get(route('marketing.ads'))->assertRedirect(route('login'));
+});
+
+it('defers the campaign performance and dispatches the ads table metrics', function () {
+    $campaign = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta']]]);
+
+    $this->actingAs($this->admin, 'admin');
+
+    Livewire::test(CampaignDetailContent::class, ['refId' => $campaign->id, 'period' => 30])
+        ->call('$refresh')
+        ->assertDispatched('campaign-metrics-loaded')
+        ->assertSeeText(__('Sessions'))
+        ->assertSeeText(__('Taux de conversion'));
+});
+
+it('fills its inline ads table metrics from the dispatched event', function () {
+    $campaign = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta']]]);
+
+    $this->actingAs($this->admin, 'admin');
+
+    Livewire::test(CampaignDetailPage::class, ['campaign' => $campaign])
+        ->assertSet('adMetrics', [])
+        ->call('fillAdMetrics', [7 => ['sessions' => 12, 'visitors' => 9]], [7 => 4])
+        ->assertSet('adMetrics', [7 => ['sessions' => 12, 'visitors' => 9]])
+        ->assertSet('adConversions', [7 => 4]);
 });
 
 it('renders the four marketing screens for an admin', function () {
