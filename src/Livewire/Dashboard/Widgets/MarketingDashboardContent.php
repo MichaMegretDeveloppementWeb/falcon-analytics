@@ -11,8 +11,8 @@ use Falcon\Analytics\Livewire\Dashboard\Concerns\GuardsWidgetRead;
 use Falcon\Analytics\Models\Ad;
 use Falcon\Analytics\Models\Campaign;
 use Falcon\Analytics\Repositories\Dashboard\MarketingReadRepository;
+use Falcon\Analytics\Services\Dashboard\MarketingMetricsCalculator;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Carbon;
 use Livewire\Attributes\Lazy;
 use Livewire\Component;
 
@@ -35,9 +35,9 @@ final class MarketingDashboardContent extends Component
         return view('analytics::livewire.dashboard.widgets.dashboard-content-skeleton');
     }
 
-    public function render(MarketingReadRepository $marketing, FunnelRegistry $funnels): View
+    public function render(MarketingReadRepository $marketing, FunnelRegistry $funnels, MarketingMetricsCalculator $metrics): View
     {
-        return $this->guardedWidget(function () use ($marketing, $funnels): array {
+        return $this->guardedWidget(function () use ($marketing, $funnels, $metrics): array {
             $period = Period::ofDays($this->period);
             $previous = $period->previous();
             $subjectType = $this->subject !== '' ? $this->subject : null;
@@ -48,28 +48,10 @@ final class MarketingDashboardContent extends Component
             $conversions = $marketing->conversions($period, $subjectType, $funnels);
             $conversionsPrevious = $marketing->conversions($previous, $subjectType, $funnels);
 
-            $rate = $headline['visitors'] > 0 ? $conversions['total'] / $headline['visitors'] * 100 : 0.0;
-            $ratePrevious = $headlinePrevious['visitors'] > 0 ? $conversionsPrevious['total'] / $headlinePrevious['visitors'] * 100 : 0.0;
+            $rate = $metrics->rate((float) $conversions['total'], (float) $headline['visitors']);
+            $ratePrevious = $metrics->rate((float) $conversionsPrevious['total'], (float) $headlinePrevious['visitors']);
 
-            $trend = [];
-            foreach ($period->eachDay() as $day) {
-                $trend[$day->toDateString()] = 0;
-            }
-            foreach ($marketing->dailySessions($period, $subjectType) as $day => $count) {
-                if (array_key_exists($day, $trend)) {
-                    $trend[$day] = $count;
-                }
-            }
-
-            $conversionsTrend = [];
-            $rateTrend = [];
-            foreach ($period->eachDay() as $day) {
-                $key = $day->toDateString();
-                $dayConversions = $conversions['daily'][$key] ?? 0;
-                $daySessions = $trend[$key] ?? 0;
-                $conversionsTrend[] = $dayConversions;
-                $rateTrend[] = $daySessions > 0 ? round($dayConversions / $daySessions * 100, 1) : 0;
-            }
+            $trend = $metrics->trend($period, $marketing->dailySessions($period, $subjectType), $conversions['daily']);
 
             $campaignNames = Campaign::query()->whereIn('id', array_keys($performance['campaigns']))->pluck('name', 'id');
             $adModels = Ad::query()->with('campaign')->whereIn('id', array_keys($performance['ads']))->get();
@@ -79,7 +61,7 @@ final class MarketingDashboardContent extends Component
                     'id' => $id,
                     'name' => (string) ($campaignNames[$id] ?? '·'),
                     'conversions' => $conversions['campaigns'][$id] ?? 0,
-                    'rate' => $row['visitors'] > 0 ? ($conversions['campaigns'][$id] ?? 0) / $row['visitors'] * 100 : 0.0,
+                    'rate' => $metrics->rate((float) ($conversions['campaigns'][$id] ?? 0), (float) $row['visitors']),
                     ...$row,
                 ])
                 ->sortByDesc('sessions')
@@ -111,12 +93,12 @@ final class MarketingDashboardContent extends Component
                 'visitorsDelta' => new MetricDelta((float) $headline['visitors'], (float) $headlinePrevious['visitors']),
                 'conversions' => $conversions['total'],
                 'conversionsDelta' => new MetricDelta((float) $conversions['total'], (float) $conversionsPrevious['total']),
-                'conversionsTrend' => $conversionsTrend,
-                'rateLabel' => number_format($rate, 1, ',', ' ')."\u{00A0}%",
+                'conversionsTrend' => $trend['conversions'],
+                'rateLabel' => $metrics->rateLabel($rate),
                 'rateDelta' => new MetricDelta($rate, $ratePrevious),
-                'rateTrend' => $rateTrend,
-                'trendLabels' => array_map(fn (string $d): string => Carbon::parse($d)->isoFormat('D MMM'), array_keys($trend)),
-                'trendData' => array_values($trend),
+                'rateTrend' => $trend['rates'],
+                'trendLabels' => $trend['labels'],
+                'trendData' => $trend['sessions'],
                 'campaignRows' => $campaignRows,
                 'adRows' => array_slice($adRows, 0, 6),
             ];
