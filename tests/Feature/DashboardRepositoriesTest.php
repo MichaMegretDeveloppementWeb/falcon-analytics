@@ -185,6 +185,22 @@ it('counts named events and conversions per session in the list', function () {
         ->and((int) $row->conversions_count)->toBe(1);
 });
 
+it('sorts the session list by the event count', function () {
+    $quiet = makeDashboardSession();
+    makeDashboardEvent($quiet, EventType::Click, ['name' => 'cta.contact']);
+
+    $busy = makeDashboardSession();
+    makeDashboardEvent($busy, EventType::Click, ['name' => 'cta.contact']);
+    makeDashboardEvent($busy, EventType::Click, ['name' => 'Lead']);
+
+    $subjects = app(SubjectResolver::class);
+    $result = (new SessionListReadRepository)->paginateSessions(
+        $this->period, null, null, null, null, $subjects, 'events_count', 'desc', 20, ['Lead'],
+    );
+
+    expect($result->first()->id)->toBe($busy->id);
+});
+
 it('ranks the top localities (country + city)', function () {
     makeDashboardSession(['country' => 'FR', 'city' => 'Paris']);
     makeDashboardSession(['country' => 'FR', 'city' => 'Paris']);

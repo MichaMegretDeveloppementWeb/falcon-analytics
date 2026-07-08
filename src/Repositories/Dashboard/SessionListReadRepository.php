@@ -81,7 +81,9 @@ final readonly class SessionListReadRepository
         if ($sort === 'duration') {
             $query->orderByRaw($this->durationSecondsExpression('started_at', 'last_activity_at').' '.$direction);
         } else {
-            $sortable = ['started_at', 'pageview_count', 'source', 'country', 'device_type', 'landing_route'];
+            // events_count / conversions_count are withCount aliases already in the
+            // SELECT, so they sort without an extra query.
+            $sortable = ['started_at', 'pageview_count', 'source', 'country', 'device_type', 'landing_route', 'events_count', 'conversions_count'];
             $query->orderBy(in_array($sort, $sortable, true) ? $sort : 'started_at', $direction);
         }
 
