@@ -12,6 +12,7 @@ use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Repositories\Dashboard\MarketingReadRepository;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
@@ -151,6 +152,39 @@ it('credits an ad with a conversion when its visitor completes a funnel objectiv
             ['label' => 'Viewed', 'count' => 2],
             ['label' => 'Acted', 'count' => 1],
         ]);
+});
+
+it('batches event-objective conversions into one query and buckets them per ad', function () {
+    $this->travelTo(CarbonImmutable::parse('2026-06-15 12:00:00'));
+
+    $ete = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
+    $ad1 = Ad::create(['campaign_id' => $ete->id, 'name' => 'A1', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete'], ['param' => 'creative', 'value' => 'c1']]]);
+    $ad2 = Ad::create(['campaign_id' => $ete->id, 'name' => 'A2', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete'], ['param' => 'creative', 'value' => 'c2']]]);
+    AdObjective::create(['ad_id' => $ad1->id, 'type' => 'event', 'reference' => 'Lead', 'value' => 1]);
+    AdObjective::create(['ad_id' => $ad2->id, 'type' => 'event', 'reference' => 'Lead', 'value' => 1]);
+
+    $v1 = Visitor::create(['uuid' => (string) Str::uuid(), 'first_seen_at' => now(), 'last_seen_at' => now()]);
+    $s1 = taggedSession(['src' => 'meta_ete', 'creative' => 'c1'], $v1);
+    Event::create(['session_id' => $s1->id, 'visitor_id' => $v1->id, 'type' => 'custom', 'name' => 'Lead', 'occurred_at' => now()]);
+
+    $v2 = Visitor::create(['uuid' => (string) Str::uuid(), 'first_seen_at' => now(), 'last_seen_at' => now()]);
+    $s2 = taggedSession(['src' => 'meta_ete', 'creative' => 'c2'], $v2);
+    Event::create(['session_id' => $s2->id, 'visitor_id' => $v2->id, 'type' => 'custom', 'name' => 'Lead', 'occurred_at' => now()]);
+
+    DB::enableQueryLog();
+    $elements = (new MarketingReadRepository)->conversionElements(
+        Period::ofDays(30), null, app(FunnelRegistry::class), app(EventRegistry::class),
+        Ad::query()->with('objectives')->get()->all(),
+    );
+    $eventQueries = collect(DB::getQueryLog())->filter(fn (array $q): bool => str_contains($q['query'], 'falcon_analytics_events'))->count();
+    DB::disableQueryLog();
+
+    $byAd = collect($elements)->keyBy('adId');
+
+    // Each ad is credited only its own visitor's conversion, from a single batched read.
+    expect($byAd[$ad1->id]['conversions'])->toBe(1)
+        ->and($byAd[$ad2->id]['conversions'])->toBe(1)
+        ->and($eventQueries)->toBeLessThanOrEqual(1);
 });
 
 it('lists conversion elements with their count and source ad, sorted', function () {

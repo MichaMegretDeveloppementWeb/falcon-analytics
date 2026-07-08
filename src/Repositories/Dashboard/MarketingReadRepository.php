@@ -580,19 +580,53 @@ final class MarketingReadRepository
             $funnelLabels[$funnel->key] = $funnel->label;
         }
 
+        // Batch every event-objective completion into one query: the visitors who
+        // fired each referenced event, instead of a count query per ad per objective.
+        $eventRefs = [];
+        foreach ($ads as $ad) {
+            foreach ($ad->objectives as $objective) {
+                if ($objective->type === ObjectiveType::Event) {
+                    $eventRefs[$objective->reference] = true;
+                }
+            }
+        }
+
+        $allVisitorIds = [];
+        foreach ($adVisitors as $visitors) {
+            foreach (array_keys($visitors) as $visitorId) {
+                $allVisitorIds[$visitorId] = true;
+            }
+        }
+
+        /** @var array<string, array<int, true>> $eventVisitors */
+        $eventVisitors = [];
+        if ($eventRefs !== [] && $allVisitorIds !== []) {
+            $rows = Event::query()
+                ->whereIn('visitor_id', array_keys($allVisitorIds))
+                ->whereIn('name', array_keys($eventRefs))
+                ->whereBetween('occurred_at', [$period->from, $period->to])
+                ->whereHas('session', fn (Builder $session): Builder => $session->where('is_bot', false))
+                ->distinct()
+                ->get(['visitor_id', 'name']);
+
+            foreach ($rows as $row) {
+                $eventVisitors[(string) $row->name][(int) $row->visitor_id] = true;
+            }
+        }
+
         $elements = [];
         foreach ($ads as $ad) {
             $visitorIds = array_keys($adVisitors[$ad->id] ?? []);
 
             foreach ($ad->objectives as $objective) {
                 if ($objective->type === ObjectiveType::Event) {
-                    $count = $visitorIds === [] ? 0 : Event::query()
-                        ->whereIn('visitor_id', $visitorIds)
-                        ->where('name', $objective->reference)
-                        ->whereBetween('occurred_at', [$period->from, $period->to])
-                        ->whereHas('session', fn (Builder $session): Builder => $session->where('is_bot', false))
-                        ->distinct()
-                        ->count('visitor_id');
+                    $refVisitors = $eventVisitors[$objective->reference] ?? [];
+                    $count = 0;
+                    foreach ($visitorIds as $visitorId) {
+                        if (isset($refVisitors[$visitorId])) {
+                            $count++;
+                        }
+                    }
 
                     $elements[] = [
                         'type' => 'event',
