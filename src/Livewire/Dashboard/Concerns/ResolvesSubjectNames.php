@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Livewire\Dashboard\Concerns;
 
+use Falcon\Analytics\DTOs\Dashboard\SessionSubjectAttribution;
 use Falcon\Analytics\Services\SubjectResolver;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Model;
@@ -33,6 +34,32 @@ trait ResolvesSubjectNames
             }
         }
 
+        return $this->namesByGuard($byGuard, $subjects);
+    }
+
+    /**
+     * Same map, but from session attributions (own subject or the visitor's
+     * stitched subject), so retroactively named sessions resolve too.
+     *
+     * @param  array<int, SessionSubjectAttribution>  $attributions
+     * @return array<string, string>
+     */
+    protected function resolveAttributedNames(array $attributions, SubjectResolver $subjects): array
+    {
+        $byGuard = [];
+        foreach ($attributions as $attribution) {
+            $byGuard[$attribution->guard][] = $attribution->id;
+        }
+
+        return $this->namesByGuard($byGuard, $subjects);
+    }
+
+    /**
+     * @param  array<string, list<int>>  $byGuard
+     * @return array<string, string>
+     */
+    private function namesByGuard(array $byGuard, SubjectResolver $subjects): array
+    {
         $names = [];
         foreach ($byGuard as $guard => $ids) {
             foreach ($subjects->names($guard, $ids) as $id => $name) {

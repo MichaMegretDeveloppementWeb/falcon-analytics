@@ -23,18 +23,30 @@ final class SubjectReadRepository
     private const MATCH_LIMIT = 200;
 
     /**
-     * Ids from the table whose columns match the term (LIKE), capped at a safe bound.
+     * Ids from the table matching the term, capped at a safe bound. The term is
+     * split on whitespace and every word must match one of the columns (LIKE),
+     * so a full name spanning two columns ("René Roy") matches too.
      *
      * @param  list<string>  $columns
      * @return list<int>
      */
     public function matchingIds(string $table, string $key, array $columns, string $term): array
     {
+        $words = preg_split('/\s+/', trim($term), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        if ($words === []) {
+            return [];
+        }
+
         try {
             return DB::table($table)
-                ->where(function ($query) use ($columns, $term): void {
-                    foreach ($columns as $column) {
-                        $query->orWhere($column, 'like', '%'.$term.'%');
+                ->where(function ($query) use ($columns, $words): void {
+                    foreach ($words as $word) {
+                        $query->where(function ($inner) use ($columns, $word): void {
+                            foreach ($columns as $column) {
+                                $inner->orWhere($column, 'like', '%'.$word.'%');
+                            }
+                        });
                     }
                 })
                 ->limit(self::MATCH_LIMIT)

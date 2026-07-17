@@ -8,6 +8,7 @@ use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\ResolvesSubjectNames;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\SortsAndSearchesList;
 use Falcon\Analytics\Repositories\Dashboard\SessionListReadRepository;
+use Falcon\Analytics\Services\Dashboard\SessionSubjectAttributor;
 use Falcon\Analytics\Services\SubjectResolver;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Url;
@@ -51,10 +52,11 @@ final class SessionsPage extends DashboardComponent
     public function render(
         SessionListReadRepository $sessionsRepository,
         SubjectResolver $subjects,
+        SessionSubjectAttributor $attributor,
         EventRegistry $events,
     ): View {
         return $this->guardedRender(
-            function () use ($sessionsRepository, $subjects, $events): array {
+            function () use ($sessionsRepository, $subjects, $attributor, $events): array {
                 $period = $this->currentPeriod();
                 $subjectType = $this->subjectType();
 
@@ -66,11 +68,13 @@ final class SessionsPage extends DashboardComponent
                 }
 
                 $sessions = $sessionsRepository->paginateSessions($period, $subjectType, $this->search, $this->device ?: null, $this->source ?: null, $subjects, $this->sort, $this->direction, conversionNames: $conversionNames);
+                $attributions = $attributor->attribute($sessions->items());
 
                 return [
                     'range' => $period,
                     'sessions' => $sessions,
-                    'subjectNames' => $this->resolveSubjectNames($sessions, $subjects),
+                    'attributions' => $attributions,
+                    'subjectNames' => $this->resolveAttributedNames($attributions, $subjects),
                     'sort' => $this->sort,
                     'direction' => $this->direction,
                     'filterOptions' => $sessionsRepository->sessionFilterOptions($period, $subjectType),

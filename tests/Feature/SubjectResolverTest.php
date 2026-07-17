@@ -32,6 +32,27 @@ it('batch-resolves several names in a single map', function () {
         ->toBe([$a->id => 'Alice Martin', $b->id => 'Bob Durand']);
 });
 
+it('matches subject ids by a single word on any name column', function () {
+    $rene = TestClient::create(['first_name' => 'René', 'last_name' => 'Roy']);
+    TestClient::create(['first_name' => 'Marie', 'last_name' => 'Dupont']);
+
+    expect($this->resolver->matchIds('client', 'Roy'))->toBe([$rene->id]);
+});
+
+it('matches subject ids by a full name spanning several columns, in any order', function () {
+    $rene = TestClient::create(['first_name' => 'René', 'last_name' => 'Roy']);
+    TestClient::create(['first_name' => 'Marie', 'last_name' => 'Dupont']);
+
+    expect($this->resolver->matchIds('client', 'René Roy'))->toBe([$rene->id])
+        ->and($this->resolver->matchIds('client', 'Roy René'))->toBe([$rene->id]);
+});
+
+it('matches no subject id for a blank term', function () {
+    TestClient::create(['first_name' => 'René', 'last_name' => 'Roy']);
+
+    expect($this->resolver->matchIds('client', '   '))->toBe([]);
+});
+
 it('falls back to the configured fallback columns when the name columns are empty', function () {
     config()->set('analytics.identity.subjects.client', [
         'label' => 'Client', 'name' => ['last_name'], 'fallback' => ['first_name'],

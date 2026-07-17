@@ -64,15 +64,24 @@ final readonly class SessionListReadRepository
                         $inner->orWhereIn('country', $countryCodes);
                     }
 
+                    // Anonymous sessions display the subject stitched on their
+                    // visitor (retroactive naming), so a subject match must also
+                    // surface them: hence each subject clause below pairs a match
+                    // on the session's own subject with a match on the visitor's
+                    // stitched subject restricted to anonymous sessions.
                     if (ctype_digit($search)) {
-                        $inner->orWhere('subject_id', (int) $search);
+                        $inner->orWhere('subject_id', (int) $search)
+                            ->orWhere(fn (Builder $q): Builder => $q->whereNull('subject_id')
+                                ->whereHas('visitor', fn (Builder $visitor): Builder => $visitor->where('subject_id', (int) $search)));
                     }
 
                     foreach ($subjects->guards() as $guard) {
                         $ids = $subjects->matchIds($guard, $search);
 
                         if ($ids !== []) {
-                            $inner->orWhere(fn (Builder $q): Builder => $q->where('subject_type', $guard)->whereIn('subject_id', $ids));
+                            $inner->orWhere(fn (Builder $q): Builder => $q->where('subject_type', $guard)->whereIn('subject_id', $ids))
+                                ->orWhere(fn (Builder $q): Builder => $q->whereNull('subject_id')
+                                    ->whereHas('visitor', fn (Builder $visitor): Builder => $visitor->where('subject_type', $guard)->whereIn('subject_id', $ids)));
                         }
                     }
                 });

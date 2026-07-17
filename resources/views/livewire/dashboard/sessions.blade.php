@@ -92,13 +92,14 @@
                         class="cursor-pointer">
                         <x-ui.table.cell :first="true" variant="primary">
                             <div class="flex flex-col">
-                                @if ($session->subject_type)
+                                @php $attribution = $attributions[$session->id] ?? null; @endphp
+                                @if ($attribution)
                                     @php
-                                        $subjectName = $subjectNames[$session->subject_type.':'.$session->subject_id] ?? null;
-                                        $subjectLabel = $subjectResolver->label($session->subject_type);
+                                        $subjectName = $subjectNames[$attribution->guard.':'.$attribution->id] ?? null;
+                                        $subjectLabel = $subjectResolver->label($attribution->guard);
                                     @endphp
-                                    <a href="{{ $sessionUrl }}" class="cursor-pointer text-[13px] font-medium text-primary hover:underline">{{ $subjectName ?? $subjectLabel.' #'.$session->subject_id }}</a>
-                                    <span class="text-[11px] text-muted">@if ($subjectName){{ $subjectLabel }} · @endif{{ substr($session->visitor?->uuid ?? '', 0, 8) }}</span>
+                                    <a href="{{ $sessionUrl }}" class="cursor-pointer text-[13px] font-medium text-primary hover:underline">{{ $subjectName ?? $subjectLabel.' #'.$attribution->id }}</a>
+                                    <span class="text-[11px] text-muted">@if ($subjectName){{ $subjectLabel }} · @endif{{ substr($session->visitor?->uuid ?? '', 0, 8) }}@if ($attribution->viaVisitor) · {{ __('Non connecté') }}@endif</span>
                                 @else
                                     <a href="{{ $sessionUrl }}" class="cursor-pointer text-[13px] font-medium text-primary hover:underline">{{ __('Visiteur #:id', ['id' => $session->visitor_id]) }}</a>
                                     <span class="text-[11px] text-muted">{{ substr($session->visitor?->uuid ?? '', 0, 8) }}</span>

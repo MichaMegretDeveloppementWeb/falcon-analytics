@@ -130,7 +130,12 @@
                         @endphp
                         <x-ui.table.row wire:key="session-{{ $s->id }}" onclick="if (!event.target.closest('a')) window.location='{{ $sessionUrl }}'" class="cursor-pointer">
                             <x-ui.table.cell :first="true" variant="primary" class="whitespace-nowrap">
-                                <a href="{{ $sessionUrl }}" class="cursor-pointer hover:underline">{{ $s->started_at->translatedFormat('d M Y, H:i') }}</a>
+                                <span class="inline-flex items-center gap-x-2">
+                                    <a href="{{ $sessionUrl }}" class="cursor-pointer hover:underline">{{ $s->started_at->translatedFormat('d M Y, H:i') }}</a>
+                                    @if ($visitor->subject_type && $s->subject_type)
+                                        <x-ui.badge color="blue">{{ __('Connecté') }}</x-ui.badge>
+                                    @endif
+                                </span>
                             </x-ui.table.cell>
                             <x-ui.table.cell class="whitespace-nowrap">{{ $formatSeconds($seconds) }}</x-ui.table.cell>
                             <x-ui.table.cell class="tabular-nums">{{ $s->pageview_count }}</x-ui.table.cell>

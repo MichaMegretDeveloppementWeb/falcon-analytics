@@ -6,7 +6,7 @@
     $value = fn ($raw) => filled($raw) ? $raw : null;
     $visitorLabel = $subjectLabel;
     $visitorName = $subjectName;
-    $visitorPrimary = $visitorName ?? ($session->subject_type ? $visitorLabel.' #'.$session->subject_id : __('Visiteur anonyme'));
+    $visitorPrimary = $visitorName ?? ($visitorLabel !== null ? $visitorLabel.' #'.$subjectId : __('Visiteur anonyme'));
 
     $formatSeconds = function (int $seconds): string {
         $minutes = intdiv($seconds, 60);
@@ -115,6 +115,11 @@
             @if ($visitorName && $visitorLabel)
                 <span class="text-muted">·</span>
                 <span>{{ $visitorLabel }}</span>
+            @endif
+            @if ($subjectViaVisitor)
+                <span title="{{ __('Le visiteur ne s\'est pas connecté à son compte durant cette session ; il est identifié par ses autres sessions.') }}">
+                    <x-ui.badge color="gray">{{ __('Non connecté') }}</x-ui.badge>
+                </span>
             @endif
             @if ($isReturning)
                 <x-ui.badge color="blue">{{ __('Récurrent') }}</x-ui.badge>

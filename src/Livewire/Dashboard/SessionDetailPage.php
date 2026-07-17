@@ -10,6 +10,7 @@ use Falcon\Analytics\Livewire\Dashboard\Concerns\RecoversFromReadFailure;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\ResolvesDashboardLayout;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Services\Dashboard\SessionJourneyBuilder;
+use Falcon\Analytics\Services\Dashboard\SessionSubjectAttributor;
 use Falcon\Analytics\Services\SubjectResolver;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
@@ -30,17 +31,17 @@ final class SessionDetailPage extends Component
         $this->session = $session->load('visitor:id,uuid,subject_type,subject_id,session_count,first_seen_at,last_seen_at');
     }
 
-    public function render(SubjectResolver $subjects, SessionJourneyBuilder $journeys, EventRegistry $eventRegistry): View
+    public function render(SubjectResolver $subjects, SessionSubjectAttributor $attributor, SessionJourneyBuilder $journeys, EventRegistry $eventRegistry): View
     {
         return $this->guardedRender(
-            function () use ($subjects, $journeys, $eventRegistry): array {
+            function () use ($subjects, $attributor, $journeys, $eventRegistry): array {
                 $events = $this->session->events()
                     ->orderBy('occurred_at')
                     ->orderBy('id')
                     ->get();
 
                 $journey = $journeys->build($events, $this->session->started_at, $this->session->last_activity_at);
-                $subjectType = $this->session->subject_type;
+                $attribution = $attributor->attribute([$this->session])[$this->session->id] ?? null;
 
                 $conversionNames = [];
                 foreach ($eventRegistry->all() as $declared) {
@@ -56,8 +57,10 @@ final class SessionDetailPage extends Component
                     'eventsCount' => $events->whereNotNull('name')->count(),
                     'conversionsCount' => $events->whereIn('name', $conversionNames)->count(),
                     'timePerPage' => $journeys->timePerPage($journey),
-                    'subjectLabel' => $subjectType !== null ? $subjects->label($subjectType) : null,
-                    'subjectName' => $subjectType !== null ? $subjects->name($subjectType, (int) $this->session->subject_id) : null,
+                    'subjectLabel' => $attribution !== null ? $subjects->label($attribution->guard) : null,
+                    'subjectName' => $attribution !== null ? $subjects->name($attribution->guard, $attribution->id) : null,
+                    'subjectId' => $attribution?->id,
+                    'subjectViaVisitor' => $attribution !== null && $attribution->viaVisitor,
                 ];
             },
             fn (array $data): View => view('analytics::livewire.dashboard.session-detail', $data)

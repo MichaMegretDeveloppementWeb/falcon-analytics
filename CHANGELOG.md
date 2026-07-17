@@ -3,6 +3,21 @@
 Notable milestones of `falcon/analytics`. Versions are git tags; earlier per-tier
 patch tags (v0.1.x) hold the individual steps.
 
+## [0.2.1] - Retroactive session naming (2026-07-17)
+
+An anonymous session of an identified visitor now displays the person's name.
+
+### Added / changed
+- **SessionSubjectAttributor**: sessions display under their own subject when
+  authenticated, otherwise under the subject stitched on their visitor, flagged
+  "Non connecté" (list sub-line, detail badge with tooltip). The fallback is
+  withheld when the visitor's identified sessions point to several distinct
+  subjects (shared browser).
+- **Visitor detail**: identified sessions carry a "Connecté" badge.
+- **Search**: a full name spanning several columns now matches ("René Roy" —
+  every word must match one of the name columns), and a subject match also
+  surfaces the anonymous sessions named through their visitor.
+
 ## [0.2.0] - Audit & hardening (2026-07-08)
 
 A full audit of the package (architecture/SOLID, error handling, query optimisation,
