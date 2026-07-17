@@ -3,6 +3,27 @@
 Notable milestones of `falcon/analytics`. Versions are git tags; earlier per-tier
 patch tags (v0.1.x) hold the individual steps.
 
+## [0.2.3] - Realtime screen, phase A (2026-07-17)
+
+Who is online now and what happened in the recent window, on any host.
+
+### Added
+- **Realtime page** (`analytics.realtime`): online-now and recent-window KPIs,
+  per-minute pageview chart, device and source doughnuts with legends, top
+  pages, and a bounded scrollable activity feed naming visitors through the
+  retroactive attribution (conversions highlighted). No filters by design.
+- **Refresh**: plain Livewire polling (`wire:poll.visible`, 10 s default),
+  suspended while the tab is hidden; no worker, websocket or external service,
+  so it runs on any host. Configurable `analytics.realtime` block (poll,
+  online window, recent window, feed bound).
+- **Live charts**: `live-line` and `live-donut` components sit under
+  `wire:ignore` and update in place from the page's tick event, so a poll
+  never destroys or re-animates a chart.
+- **Budget**: the whole tick renders in at most 11 bounded, indexed queries,
+  frozen by a budget test.
+- **SourceLabel** support class: the acquisition-channel labels move out of the
+  source Blade component into one shared source of truth.
+
 ## [0.2.2] - Identity merging & visitor directory (2026-07-17)
 
 One known person = one visitor profile, and the visitors screen becomes an

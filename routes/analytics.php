@@ -13,6 +13,7 @@ use Falcon\Analytics\Livewire\Dashboard\EventsPage;
 use Falcon\Analytics\Livewire\Dashboard\FunnelsPage;
 use Falcon\Analytics\Livewire\Dashboard\MarketingDashboardPage;
 use Falcon\Analytics\Livewire\Dashboard\OverviewPage;
+use Falcon\Analytics\Livewire\Dashboard\RealtimePage;
 use Falcon\Analytics\Livewire\Dashboard\SessionDetailPage;
 use Falcon\Analytics\Livewire\Dashboard\SessionsPage;
 use Falcon\Analytics\Livewire\Dashboard\VisitorDetailPage;
@@ -50,6 +51,7 @@ Route::prefix((string) ($dashboard['route_prefix'] ?? 'admin/analytics'))
     ->name(($dashboard['route_name'] ?? 'analytics').'.')
     ->group(function (): void {
         Route::livewire('/', OverviewPage::class)->name('overview');
+        Route::livewire('/realtime', RealtimePage::class)->name('realtime');
         Route::livewire('/visitors', VisitorsPage::class)->name('visitors');
         Route::livewire('/visitors/{visitor}', VisitorDetailPage::class)->name('visitors.show');
         Route::livewire('/events', EventsPage::class)->name('events');

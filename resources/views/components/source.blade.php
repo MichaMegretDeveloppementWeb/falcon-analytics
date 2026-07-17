@@ -3,16 +3,6 @@
 ])
 
 @php
-    $labels = [
-        'direct' => 'Direct',
-        'organic' => 'Recherche naturelle',
-        'social' => 'Social naturel',
-        'paid' => 'Payant',
-        'referral' => 'Référent',
-        'email' => 'E-mail',
-        'campaign' => 'Référent',
-    ];
-    $key = strtolower((string) $value);
-    $sourceLabel = __($labels[$key] ?? \Illuminate\Support\Str::headline((string) $value));
+    $sourceLabel = \Falcon\Analytics\Support\SourceLabel::for($value !== null ? (string) $value : null);
 @endphp
 <span data-tooltip="{{ $sourceLabel }}">{{ $sourceLabel }}</span>

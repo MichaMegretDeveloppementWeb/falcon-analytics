@@ -55,6 +55,21 @@ trait ScopesSessionQueries
     }
 
     /**
+     * Driver-aware SQL truncating a timestamp to a 'YYYY-MM-DD HH:MM' string so
+     * per-minute buckets group identically on every database. The column is a
+     * trusted internal constant, never user input.
+     */
+    private function minuteExpression(string $column): string
+    {
+        return match ($this->driver()) {
+            'mysql', 'mariadb' => "DATE_FORMAT({$column}, '%Y-%m-%d %H:%i')",
+            'pgsql' => "to_char({$column}, 'YYYY-MM-DD HH24:MI')",
+            'sqlsrv' => "FORMAT({$column}, 'yyyy-MM-dd HH:mm')",
+            default => "strftime('%Y-%m-%d %H:%M', {$column})",
+        };
+    }
+
+    /**
      * Driver-aware SQL for the difference in seconds between two timestamp
      * columns (both trusted internal constants).
      */

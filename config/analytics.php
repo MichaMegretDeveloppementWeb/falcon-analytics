@@ -162,6 +162,31 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Realtime screen
+    |--------------------------------------------------------------------------
+    |
+    | The realtime page refreshes through plain Livewire polling (no worker,
+    | websocket or external service), suspended while the tab is hidden.
+    |
+    */
+
+    'realtime' => [
+        // Refresh interval of the realtime page.
+        'poll_seconds' => 10,
+
+        // A session is "online now" when its last activity is within this
+        // window (the collector heartbeats every heartbeat_seconds).
+        'online_seconds' => 60,
+
+        // The "recent" window every realtime block reads (KPIs, feed, charts).
+        'window_minutes' => 30,
+
+        // Hard bound of the activity feed, so a tick never grows with traffic.
+        'feed_limit' => 25,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Privacy
     |--------------------------------------------------------------------------
     */
