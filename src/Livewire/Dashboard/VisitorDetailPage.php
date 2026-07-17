@@ -34,6 +34,15 @@ final class VisitorDetailPage extends Component
     public function mount(Visitor $visitor): void
     {
         $this->visitor = $visitor;
+
+        // A folded profile has no data of its own anymore: an old link or
+        // bookmark lands on the canonical profile instead.
+        if ($visitor->merged_into_id !== null) {
+            $this->redirect(route(
+                config('analytics.dashboard.route_name', 'analytics').'.visitors.show',
+                $visitor->merged_into_id,
+            ));
+        }
     }
 
     /**

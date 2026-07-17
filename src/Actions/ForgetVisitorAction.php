@@ -10,9 +10,10 @@ use Falcon\Analytics\Models\Visitor;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Erase a visitor and everything attached to them (sessions, events), for a GDPR
- * right-to-erasure request. Deletes explicitly inside a transaction rather than
- * relying on the FK cascade, so it behaves identically on every driver.
+ * Erase a visitor and everything attached to them (sessions, events, merged
+ * aliases), for a GDPR right-to-erasure request. Deletes explicitly inside a
+ * transaction rather than relying on the FK cascade, so it behaves identically
+ * on every driver.
  */
 final readonly class ForgetVisitorAction
 {
@@ -21,6 +22,7 @@ final readonly class ForgetVisitorAction
         DB::transaction(function () use ($visitor): void {
             Event::query()->where('visitor_id', $visitor->id)->delete();
             Session::query()->where('visitor_id', $visitor->id)->delete();
+            Visitor::query()->where('merged_into_id', $visitor->id)->delete();
             $visitor->delete();
         });
     }

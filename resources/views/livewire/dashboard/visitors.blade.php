@@ -8,17 +8,41 @@
 
     @include('analytics::livewire.dashboard.partials.tooltip-host')
 
-    <x-ui.page-header
-        :title="__('Visiteurs')"
-        :description="__('du :from au :to', [
-            'from' => $range->from->isoFormat('D MMM YYYY'),
-            'to' => $range->to->isoFormat('D MMM YYYY'),
-        ])">
-        @include('analytics::livewire.dashboard.partials.filters')
+    @php
+        $visitorsTotal = number_format($visitors->total(), 0, ',', ' ');
+        $visitorsCount = $visitors->total() <= 1
+            ? __(':count visiteur', ['count' => $visitorsTotal])
+            : __(':count visiteurs', ['count' => $visitorsTotal]);
+    @endphp
+
+    {{-- Le filtre de rôle s'applique à toute la page ; la période, uniquement au bloc Activité. --}}
+    <x-ui.page-header :title="__('Visiteurs')" :description="$visitorsCount">
+        @if (count($subjectOptions) > 1)
+            <div class="w-40">
+                <x-ui.select wire:model.live="subject" :options="$subjectOptions" />
+            </div>
+        @endif
     </x-ui.page-header>
 
-    {{-- Headline metrics (deferred) --}}
-    <livewire:analytics-visitors-headline :period="$period" :subject="$subject" :key="'visitors-headline-'.$period.'-'.$subject" />
+    {{-- Activité de la période (KPI seulement : la liste ci-dessous est tous temps) --}}
+    <div>
+        <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
+            <x-ui.section-header
+                :title="__('Activité')"
+                :description="__('du :from au :to', [
+                    'from' => $range->from->isoFormat('D MMM YYYY'),
+                    'to' => $range->to->isoFormat('D MMM YYYY'),
+                ])" />
+            <div class="w-44">
+                <x-ui.select wire:model.live="period" :options="$periodOptions" />
+            </div>
+        </div>
+
+        <livewire:analytics-visitors-headline :period="$period" :subject="$subject" :key="'visitors-headline-'.$period.'-'.$subject" />
+    </div>
+
+    {{-- Annuaire tous temps --}}
+    <x-ui.section-header :title="__('Tous les visiteurs')" class="pt-2" />
 
     <x-ui.search-input wire:model.live.debounce.300ms="search" :placeholder="__('Rechercher un nom, un ID…')" class="w-full sm:max-w-xs" />
 
@@ -32,7 +56,7 @@
             <x-ui.table.head>
                 <x-ui.table.header-cell :first="true">{{ __('Visiteur') }}</x-ui.table.header-cell>
                 <x-ui.table.header-cell>{{ __('Type') }}</x-ui.table.header-cell>
-                <x-ui.table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'period_sessions', 'label' => __('Sessions')])</x-ui.table.header-cell>
+                <x-ui.table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'session_count', 'label' => __('Sessions')])</x-ui.table.header-cell>
                 <x-ui.table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'first_seen_at', 'label' => __('Première visite')])</x-ui.table.header-cell>
                 <x-ui.table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'last_seen_at', 'label' => __('Dernière visite')])</x-ui.table.header-cell>
                 <x-ui.table.header-cell>{{ __('Localité') }}</x-ui.table.header-cell>
@@ -65,7 +89,7 @@
                                 <x-ui.badge color="gray">{{ __('Anonyme') }}</x-ui.badge>
                             @endif
                         </x-ui.table.cell>
-                        <x-ui.table.cell class="tabular-nums">{{ number_format((int) $visitor->period_sessions, 0, ',', ' ') }}</x-ui.table.cell>
+                        <x-ui.table.cell class="tabular-nums">{{ number_format((int) $visitor->session_count, 0, ',', ' ') }}</x-ui.table.cell>
                         <x-ui.table.cell class="whitespace-nowrap">{{ $visitor->first_seen_at->translatedFormat('d M Y') }}</x-ui.table.cell>
                         <x-ui.table.cell class="whitespace-nowrap text-secondary">{{ $visitor->last_seen_at->diffForHumans() }}</x-ui.table.cell>
                         <x-ui.table.cell class="whitespace-nowrap">

@@ -42,9 +42,10 @@ it('starts a session mapping the resolved context', function () {
         subjectId: 7,
     );
 
-    $session = $repo->start($visitor, $context, CarbonImmutable::parse('2026-06-30 09:00:00'))->fresh();
+    $session = $repo->start($visitor, $context, CarbonImmutable::parse('2026-06-30 09:00:00'), $visitor->uuid)->fresh();
 
     expect($session->visitor_id)->toBe($visitor->id)
+        ->and($session->browser_key)->toBe($visitor->uuid)
         ->and($session->started_at->toDateTimeString())->toBe('2026-06-30 09:00:00')
         ->and($session->last_activity_at->toDateTimeString())->toBe('2026-06-30 09:00:00')
         ->and($session->ended_at)->toBeNull()
@@ -66,7 +67,7 @@ it('starts a session mapping the resolved context', function () {
 it('records activity atomically with counters', function () {
     $repo = new SessionWriteRepository;
     $visitor = visitorRow();
-    $session = $repo->start($visitor, new IngestionContext, CarbonImmutable::parse('2026-06-30 09:00:00'));
+    $session = $repo->start($visitor, new IngestionContext, CarbonImmutable::parse('2026-06-30 09:00:00'), $visitor->uuid);
 
     $repo->recordActivity($session, CarbonImmutable::parse('2026-06-30 09:05:00'), pageviewDelta: 2, eventDelta: 5, lastPageviewUrl: 'https://x.test/a');
     $repo->recordActivity($session, CarbonImmutable::parse('2026-06-30 09:08:00'), pageviewDelta: 1, eventDelta: 3, lastPageviewUrl: 'https://x.test/b');

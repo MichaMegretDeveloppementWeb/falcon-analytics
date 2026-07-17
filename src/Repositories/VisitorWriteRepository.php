@@ -35,7 +35,8 @@ final readonly class VisitorWriteRepository
     /**
      * Race-safe find-or-create by uuid: firstOrCreate re-queries on a concurrent
      * unique-key violation, so two beacons with the same fresh uuid can't lose a
-     * batch. Existing visitors get their last-seen refreshed and subject stitched.
+     * batch. A uuid folded into another profile resolves to its canonical, which
+     * gets the last-seen refresh and subject stitch instead.
      *
      * @param  array{type: string, id: int}|null  $subject
      */
@@ -52,10 +53,42 @@ final readonly class VisitorWriteRepository
             ],
         );
 
-        if (! $visitor->wasRecentlyCreated) {
-            $this->markSeen($visitor, $seenAt, $subject);
+        if ($visitor->wasRecentlyCreated) {
+            return $visitor;
         }
 
+        if ($visitor->merged_into_id !== null) {
+            $visitor = $this->canonicalOf($visitor);
+        }
+
+        $this->markSeen($visitor, $seenAt, $subject);
+
         return $visitor;
+    }
+
+    /**
+     * The profile an alias points to. Aliases always point at a root (never at
+     * another alias), so one hop resolves; a dangling pointer falls back to the
+     * alias itself rather than failing the ingestion.
+     */
+    public function canonicalOf(Visitor $visitor): Visitor
+    {
+        return Visitor::query()->find($visitor->merged_into_id) ?? $visitor;
+    }
+
+    /**
+     * The subject's canonical profile (oldest non-merged row stitched to them),
+     * optionally excluding one visitor id.
+     */
+    public function canonicalFor(string $subjectType, int $subjectId, ?int $excludeId = null): ?Visitor
+    {
+        return Visitor::query()
+            ->where('subject_type', $subjectType)
+            ->where('subject_id', $subjectId)
+            ->whereNull('merged_into_id')
+            ->when($excludeId !== null, fn ($query) => $query->whereKeyNot($excludeId))
+            ->orderBy('first_seen_at')
+            ->orderBy('id')
+            ->first();
     }
 }

@@ -85,9 +85,12 @@ final readonly class VisitorListReadRepository
     }
 
     /**
-     * Paginated visitor list: visitors active in the period, with their period
-     * session count, all-time first/last seen, the locality of their latest
-     * session and their acquisition source (the very first session's source).
+     * Paginated visitor directory: every real profile, with their all-time
+     * session count, first/last seen, the locality of their latest session and
+     * their acquisition source (the very first session's source). Deliberately
+     * NOT bounded to the dashboard period: the directory reflects the general
+     * state of the population, only the headline KPIs read the period. Merged
+     * aliases and bot-only visitors are excluded.
      *
      * Search covers visitor-level attributes (uuid, subject id and resolved
      * name); locality is intentionally excluded, as it is a per-session
@@ -96,7 +99,6 @@ final readonly class VisitorListReadRepository
      * @return LengthAwarePaginator<int, Visitor>
      */
     public function paginateVisitors(
-        Period $period,
         ?string $subjectType,
         ?string $search,
         SubjectResolver $subjects,
@@ -106,9 +108,6 @@ final readonly class VisitorListReadRepository
     ): LengthAwarePaginator {
         $direction = $direction === 'asc' ? 'asc' : 'desc';
 
-        $inPeriod = fn (Builder $query): Builder => $query->where('is_bot', false)
-            ->whereBetween('started_at', [$period->from, $period->to]);
-
         $latest = fn (string $column): Builder => Session::query()
             ->select($column)
             ->whereColumn('visitor_id', 'falcon_analytics_visitors.id')
@@ -117,10 +116,10 @@ final readonly class VisitorListReadRepository
             ->limit(1);
 
         $query = Visitor::query()
-            ->select(['falcon_analytics_visitors.id', 'uuid', 'first_seen_at', 'last_seen_at', 'subject_type', 'subject_id'])
+            ->select(['falcon_analytics_visitors.id', 'uuid', 'first_seen_at', 'last_seen_at', 'subject_type', 'subject_id', 'session_count'])
+            ->whereNull('merged_into_id')
             ->when($subjectType !== null, fn (Builder $q): Builder => $q->where('subject_type', $subjectType))
-            ->whereHas('sessions', $inPeriod)
-            ->withCount(['sessions as period_sessions' => $inPeriod])
+            ->whereHas('sessions', fn (Builder $q): Builder => $q->where('is_bot', false))
             ->addSelect([
                 'last_country' => $latest('country'),
                 'last_city' => $latest('city'),
@@ -151,7 +150,7 @@ final readonly class VisitorListReadRepository
                 });
             });
 
-        $sortable = ['last_seen_at', 'first_seen_at', 'period_sessions'];
+        $sortable = ['last_seen_at', 'first_seen_at', 'session_count'];
         $query->orderBy(in_array($sort, $sortable, true) ? $sort : 'last_seen_at', $direction);
 
         return $query->paginate($perPage);

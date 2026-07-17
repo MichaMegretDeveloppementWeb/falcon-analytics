@@ -16,12 +16,14 @@ use Falcon\Analytics\Repositories\SessionReadRepository;
 use Falcon\Analytics\Repositories\SessionWriteRepository;
 use Falcon\Analytics\Repositories\VisitorWriteRepository;
 use Falcon\Analytics\Services\SessionContextEnricher;
+use Falcon\Analytics\Services\VisitorProfileResolver;
 use Falcon\Analytics\Support\PropsEncoder;
 use Illuminate\Support\Facades\DB;
 
 final readonly class IngestEventsAction
 {
     public function __construct(
+        private VisitorProfileResolver $profiles,
         private VisitorWriteRepository $visitors,
         private SessionReadRepository $sessionReads,
         private SessionWriteRepository $sessions,
@@ -38,21 +40,26 @@ final readonly class IngestEventsAction
         $now = CarbonImmutable::now();
 
         // Resolved outside the transaction: firstOrCreate is race-safe, and a
-        // conflicting insert must not poison the transaction below.
-        $visitor = $this->visitors->resolve($visitorUuid, $now, $subject);
+        // conflicting insert must not poison the transaction below. The resolver
+        // returns the canonical profile (identity merging), while the raw uuid
+        // stays the session's browser key below.
+        $visitor = $this->profiles->resolve($visitorUuid, $now, $subject);
 
-        DB::transaction(function () use ($subject, $snapshot, $batch, $visitor, $now): void {
+        DB::transaction(function () use ($visitorUuid, $subject, $snapshot, $batch, $visitor, $now): void {
             // Serialize concurrent beacons for this visitor so two tabs cannot each
             // start a session (which would duplicate sessions and inflate counts).
             $locked = $visitor->newQuery()->whereKey($visitor->getKey())->lockForUpdate()->firstOrFail();
 
+            // The open session is scoped to the physical browser (browser key):
+            // two devices of the same person browsing at once must never blend
+            // into one session, even though they share the canonical profile.
             $timeout = (int) config('analytics.session.timeout_minutes');
-            $session = $this->sessionReads->findOpenForVisitor($locked->id, $now->subMinutes($timeout));
+            $session = $this->sessionReads->findOpenForVisitor($locked->id, $now->subMinutes($timeout), $visitorUuid);
 
             if ($session === null) {
                 // Heavy UA/geo/source enrichment runs only when a session starts.
                 $context = $this->enricher->enrich($snapshot, $batch, $subject);
-                $session = $this->sessions->start($locked, $context, $now);
+                $session = $this->sessions->start($locked, $context, $now, $visitorUuid);
                 $this->visitors->incrementSessionCount($locked);
             }
 

@@ -13,9 +13,10 @@ use Livewire\Attributes\Url;
 use Livewire\WithPagination;
 
 /**
- * Visitor explorer: headline metrics for the period plus a paginated, filterable
- * list of visitors active in the range, each row summarising their sessions,
- * first and last visit, locality and acquisition source.
+ * Visitor directory: period-scoped headline metrics on top, then the all-time
+ * list of every visitor profile, each row summarising their sessions, first and
+ * last visit, locality and acquisition source. The period filter deliberately
+ * drives ONLY the headline: the directory reflects the general state.
  */
 final class VisitorsPage extends DashboardComponent
 {
@@ -36,13 +37,12 @@ final class VisitorsPage extends DashboardComponent
     {
         return $this->guardedRender(
             function () use ($repository, $subjects): array {
-                $period = $this->currentPeriod();
                 $subjectType = $this->subjectType();
 
-                $visitors = $repository->paginateVisitors($period, $subjectType, $this->search, $subjects, $this->sort, $this->direction);
+                $visitors = $repository->paginateVisitors($subjectType, $this->search, $subjects, $this->sort, $this->direction);
 
                 return [
-                    'range' => $period,
+                    'range' => $this->currentPeriod(),
                     'visitors' => $visitors,
                     'subjectNames' => $this->resolveSubjectNames($visitors, $subjects),
                     'sort' => $this->sort,

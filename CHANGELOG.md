@@ -3,6 +3,29 @@
 Notable milestones of `falcon/analytics`. Versions are git tags; earlier per-tier
 patch tags (v0.1.x) hold the individual steps.
 
+## [0.2.2] - Identity merging & visitor directory (2026-07-17)
+
+One known person = one visitor profile, and the visitors screen becomes an
+all-time directory.
+
+### Added / changed
+- **Identity merging**: when a browser gets identified and the subject already
+  owns a profile, the two fold together (oldest survives); the folded row
+  becomes an alias (`merged_into_id`) whose uuid keeps routing beacons to the
+  canonical profile. Sessions record their physical browser (`browser_key`), so
+  two devices of one person browsing at once still yield two sessions, and an
+  open session survives the merge. A login on a shared browser lands on the
+  logged-in person's own profile; the browser keeps its owner. Identified stray
+  sessions relocate to their subject's canonical profile.
+- **Migration**: adds the two columns, backfills `browser_key` and consolidates
+  every pre-existing duplicate profile of the host (no leftover command).
+- **GDPR**: erasing a profile also erases its merged aliases. An alias detail
+  URL redirects to the canonical profile.
+- **Visitors screen**: the list is now the all-time directory of every real
+  profile (aliases and bot-only visitors excluded, all-time session counts);
+  the period selector visually belongs to the headline "Activité" block and
+  drives only it. The role filter stays global.
+
 ## [0.2.1] - Retroactive session naming (2026-07-17)
 
 An anonymous session of an identified visitor now displays the person's name.

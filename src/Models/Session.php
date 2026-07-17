@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * @property int $id
  * @property int $visitor_id
+ * @property string|null $browser_key
  * @property CarbonImmutable $started_at
  * @property CarbonImmutable $last_activity_at
  * @property CarbonImmutable|null $ended_at

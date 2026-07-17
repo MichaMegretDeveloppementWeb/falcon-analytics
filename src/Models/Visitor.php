@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $subject_type
  * @property int|null $subject_id
  * @property int $session_count
+ * @property int|null $merged_into_id
  * @property-read Collection<int, Session> $sessions
  * @property-read Collection<int, Event> $events
  */
@@ -55,6 +56,7 @@ final class Visitor extends Model
             'last_seen_at' => 'immutable_datetime',
             'subject_id' => 'integer',
             'session_count' => 'integer',
+            'merged_into_id' => 'integer',
         ];
     }
 }

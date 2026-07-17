@@ -36,6 +36,7 @@ function makeDashboardVisitor(): Visitor
 function makeDashboardSession(array $attrs = [], ?Visitor $visitor = null): Session
 {
     $visitor ??= makeDashboardVisitor();
+    $visitor->increment('session_count');
 
     return Session::create(array_merge([
         'visitor_id' => $visitor->id,
@@ -304,6 +305,21 @@ it('searches sessions by visitor name resolved from the guard model', function (
         ->and($found->first()->subject_id)->toBe($marie->id);
 });
 
+it('searches anonymous sessions by the subject stitched on their visitor', function () {
+    config()->set('analytics.identity.subjects.client', ['label' => 'Client', 'name' => ['first_name', 'last_name']]);
+
+    $marie = TestClient::create(['first_name' => 'Marie', 'last_name' => 'Dupont']);
+    $visitor = makeDashboardVisitor();
+    $visitor->update(['subject_type' => 'client', 'subject_id' => $marie->id]);
+    $anonymous = makeDashboardSession([], $visitor);
+    makeDashboardSession();
+
+    $found = $this->sessions->paginateSessions($this->period, null, 'Marie', null, null, new SubjectResolver);
+
+    expect($found->total())->toBe(1)
+        ->and($found->first()->id)->toBe($anonymous->id);
+});
+
 it('searches sessions by the visitor uuid shown as the ID', function () {
     $visitor = Visitor::create(['uuid' => 'vd-known-42', 'first_seen_at' => now(), 'last_seen_at' => now()]);
     makeDashboardSession([], $visitor);
@@ -325,7 +341,7 @@ it('searches sessions by country name, resolving the stored ISO code', function 
         ->and($found->first()->country)->toBe('FR');
 });
 
-it('paginates visitors active in the period with their derived columns', function () {
+it('paginates the all-time visitor directory with its derived columns', function () {
     $visitor = makeDashboardVisitor();
     makeDashboardSession(['source' => 'organic', 'started_at' => now()->subDays(60)], $visitor); // first-ever = acquisition
     makeDashboardSession(['city' => 'Lyon', 'source' => 'referral', 'started_at' => now()->subDays(3)], $visitor);
@@ -333,26 +349,29 @@ it('paginates visitors active in the period with their derived columns', functio
 
     makeDashboardSession(['is_bot' => true], makeDashboardVisitor()); // bot-only visitor: excluded
 
-    $result = $this->visitors->paginateVisitors($this->period, null, null, new SubjectResolver);
+    $alias = makeDashboardVisitor(); // merged alias: excluded
+    $alias->update(['merged_into_id' => $visitor->id]);
+
+    $result = $this->visitors->paginateVisitors(null, null, new SubjectResolver);
 
     expect($result->total())->toBe(1);
 
     $row = $result->first();
     expect((int) $row->id)->toBe($visitor->id)
-        ->and((int) $row->period_sessions)->toBe(2)       // only the two in-period sessions
+        ->and((int) $row->session_count)->toBe(3)         // all-time, the 60-day-old one included
         ->and($row->last_city)->toBe('Paris')             // latest session
         ->and($row->acquisition_source)->toBe('organic'); // first-ever session
 });
 
-it('sorts visitors by their period session count', function () {
+it('sorts visitors by their all-time session count', function () {
     $busy = makeDashboardVisitor();
     makeDashboardSession([], $busy);
     makeDashboardSession([], $busy);
     makeDashboardSession([], makeDashboardVisitor());
 
-    $desc = $this->visitors->paginateVisitors($this->period, null, null, new SubjectResolver, 'period_sessions', 'desc');
+    $desc = $this->visitors->paginateVisitors(null, null, new SubjectResolver, 'session_count', 'desc');
 
-    expect((int) $desc->first()->period_sessions)->toBe(2)
+    expect((int) $desc->first()->session_count)->toBe(2)
         ->and((int) $desc->first()->id)->toBe($busy->id);
 });
 
@@ -398,7 +417,7 @@ it('fetches the visitors screen data within its query budget', function () {
     DB::enableQueryLog();
     DB::flushQueryLog();
 
-    $this->visitors->paginateVisitors($this->period, null, null, new SubjectResolver);
+    $this->visitors->paginateVisitors(null, null, new SubjectResolver);
     $this->visitors->visitorCounts($this->period, null);
     $this->visitors->visitorCounts($this->period->previous(), null);
     $this->visitors->visitorDailyRows($this->period, null);

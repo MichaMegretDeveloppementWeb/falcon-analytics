@@ -13,10 +13,11 @@ use Illuminate\Support\Facades\DB;
 
 final readonly class SessionWriteRepository
 {
-    public function start(Visitor $visitor, IngestionContext $context, CarbonImmutable $startedAt): Session
+    public function start(Visitor $visitor, IngestionContext $context, CarbonImmutable $startedAt, string $browserKey): Session
     {
         return Session::create([
             'visitor_id' => $visitor->id,
+            'browser_key' => $browserKey,
             'started_at' => $startedAt,
             'last_activity_at' => $startedAt,
             'ip' => $context->ip,
