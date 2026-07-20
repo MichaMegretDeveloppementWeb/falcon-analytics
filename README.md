@@ -1,61 +1,165 @@
 # Falcon Analytics
 
 First-party, privacy-aware web analytics for Laravel admin spaces. Self-contained,
-non-intrusive, and portable: install it, drop a script tag, wire a few callbacks,
-and you get deep behavioural analytics (page views, clicks, sessions, funnels)
-rendered in an admin dashboard. All data stays in your own database. No third party.
+non-intrusive, and portable: install it, drop a script tag, set a few config
+values, and you get deep behavioural analytics — page views, clicks, sessions,
+visitor profiles, realtime, funnels, conversions and ad attribution — rendered in
+an admin dashboard. All data stays in your own database. No third party, no
+external service, no worker: everything runs wherever Laravel runs, shared
+hosting included.
 
-> The collection layer (JS collector + ingestion + storage) is framework-agnostic.
-> The dashboard is built with Livewire + Blade; on a non-Livewire host you only need
-> `composer require livewire/livewire` for those screens.
+## Contents
+
+1. [Requirements](#requirements)
+2. [Installation](#installation)
+3. [Host integration](#host-integration)
+   - [Identity](#1-identity)
+   - [Collector script](#2-collector-script)
+   - [Dashboard mounting & navigation](#3-dashboard-mounting--navigation)
+   - [Styling (Tailwind sources)](#4-styling-tailwind-sources)
+4. [Instrumentation (`data-track-*`)](#instrumentation-data-track-)
+5. [Named events & conversions](#named-events--conversions)
+6. [Server-sent events](#server-sent-events)
+7. [Funnels](#funnels)
+8. [Marketing module](#marketing-module)
+9. [Realtime](#realtime)
+10. [Commands & scheduling](#commands--scheduling)
+11. [Geolocation](#geolocation)
+12. [Privacy & GDPR](#privacy--gdpr)
+13. [Configuration reference](#configuration-reference)
+14. [Data model](#data-model)
 
 ## Requirements
 
 - PHP >= 8.4
 - Laravel 13
+- Livewire 4 and `falcon/ui-kit` 2 are composer dependencies of the package and
+  install automatically; the dashboard is styled by the ui-kit design system
+  (see [Styling](#4-styling-tailwind-sources)).
 
 ## Installation
 
-Add the repository and require the package.
+### 1. Composer
+
+The package is distributed from a private git repository. Composer only reads
+`repositories` from the **root** `composer.json`, so the host must declare the
+package repository **and** the repository of its `falcon/ui-kit` dependency:
 
 ```jsonc
-// composer.json (during development, from this monorepo)
+// composer.json of the host application
 "repositories": [
-    { "type": "path", "url": "packages/falcon/analytics", "options": { "symlink": true } }
+    { "type": "vcs", "url": "https://github.com/MichaMegretDeveloppementWeb/falcon-analytics.git" },
+    { "type": "vcs", "url": "https://github.com/MichaMegretDeveloppementWeb/falcon-ui-kit.git" }
 ]
 ```
 
 ```bash
 composer require falcon/analytics
+```
+
+(For development inside a monorepo, a `path` repository with `"symlink": true`
+pointing at the package directory works the same way.)
+
+### 2. Install command
+
+```bash
 php artisan analytics:install
 ```
 
-`analytics:install` publishes `config/analytics.php` and runs the migrations
-(tables are prefixed `falcon_analytics_*`).
+This publishes `config/analytics.php`, appends the `ANALYTICS_*` variables to
+`.env` / `.env.example`, and runs the migrations (tables are prefixed
+`falcon_analytics_*`). Re-run with `--force` to overwrite the published config.
 
-For consumption from another project, push this package to its own git repository
-and require it through a `vcs` repository entry (same model as `falcon/ui-kit`).
+### 3. Design system assets
+
+The dashboard is built on `falcon/ui-kit` (Tailwind 4, DM Sans, dark mode,
+Chart.js). If the host does not already use the kit:
+
+```bash
+php artisan ui-kit:install
+```
+
+which creates the `resources/css/ui-kit.css` and `resources/js/ui-kit.js` Vite
+entrypoints, patches `vite.config.js`, installs the npm dependencies and caches
+the icons. The package's standalone dashboard shell loads exactly those two
+entrypoints.
+
+Then declare the package views as a Tailwind source so the classes used by the
+dashboard are compiled, next to the existing ui-kit `@source` line in
+`resources/css/ui-kit.css`:
+
+```css
+@source '../../vendor/falcon/analytics/resources/views/**/*.blade.php';
+```
+
+and rebuild the assets:
+
+```bash
+npm run build
+```
+
+### 4. Wire the host
+
+Follow the [Host integration](#host-integration) checklist below. The short
+version:
+
+1. Set your guards (and consent cookie, if any) in the `identity` block of
+   `config/analytics.php`.
+2. If you use a consent cookie, exclude it from encryption
+   (`bootstrap/app.php` → `encryptCookies(except: [...])`).
+3. Behind a proxy or load balancer, configure `trustProxies` so the real
+   client IP reaches the package (geolocation and exclusions depend on it).
+4. Add `@analyticsScripts` to the layouts you want to track.
+5. Protect the dashboard with your admin middleware and link to it from your
+   navigation (or rely on the package's standalone shell).
+6. Ensure the standard scheduler cron (`php artisan schedule:run` every
+   minute) is active: maintenance is self-scheduled by the package.
+7. Optional: set up [geolocation](#geolocation) (local database, one command).
 
 ## Host integration
 
-The package never touches your application code. Installation is minimal: a few
-config values plus the `@analyticsScripts` directive.
+The package never touches your application code, routes or navigation. All
+integration is declarative config plus one Blade directive.
 
 ### 1. Identity
 
-Publish the config and set your guards and consent cookie in `config/analytics.php`
-(the defaults suit a standard Laravel app). The subject type is the guard name:
+The subject type is the guard name. Declare which authenticated users are
+tracked as identified subjects, and which are internal staff to exclude
+entirely:
 
 ```php
 'identity' => [
     'subject_guards' => ['client', 'lessor'], // authenticated users tracked as subjects
     'exclude_guards' => ['admin'],            // internal staff, never stored
-    'consent_cookie' => 'consent_marketing',  // cookie whose "1" grants the persistent id
+    'consent_cookie' => 'consent_marketing',  // cookie whose value "1" grants the persistent visitor id
+    'subjects' => [
+        // Display metadata per guard, resolved at render time only (never stored).
+        'client' => ['label' => 'Client', 'name' => ['first_name', 'last_name']],
+        'lessor' => ['label' => 'Loueur', 'name' => ['company_name'], 'fallback' => ['first_name', 'last_name']],
+    ],
 ],
 ```
 
+- **`subject_guards`** — when a user authenticated on one of these guards
+  browses, their sessions are stitched to a subject (`type` = guard name,
+  `id` = user id). One known person always resolves to **one visitor
+  profile**: when a browser gets identified and the subject already owns a
+  profile, the profiles merge automatically (see [Privacy](#privacy--gdpr)).
+- **`exclude_guards`** — nothing is collected while such a user is
+  authenticated, and the collector script is not even rendered on their pages.
+- **`consent_cookie`** — when set, a visitor only receives the *persistent*
+  cross-visit id if the cookie holds `"1"`; otherwise tracking is
+  session-scoped. `null` means the persistent id is always granted (use this
+  when consent is handled at a different level, or not required).
+- **`subjects`** — how identified visitors are displayed in the dashboard.
+  For each guard: an optional `label` (defaults to the guard name) and a
+  `name` column list concatenated into a display name, read from the guard's
+  own model (derived from `config/auth.php`, or overridable with explicit
+  `model` / `table` / `key` entries). `fallback` columns are used when the
+  `name` columns are all empty.
+
 For dynamic logic, register closures on the `Analytics` manager from a service
-provider (they take precedence):
+provider — they take precedence over the declarative config:
 
 ```php
 use Falcon\Analytics\Facades\Analytics;
@@ -65,98 +169,124 @@ Analytics::consentUsing(fn () => ...);        // bool
 Analytics::excludeUsing(fn () => ...);        // bool
 ```
 
-> **Host requirements.** The consent cookie must be excluded from encryption
-> (`bootstrap/app.php` → `encryptCookies(except: [...])`) so the server can read it;
-> behind a proxy, configure `TrustProxies` so the real client IP is used.
+> **Host requirements.** A consent cookie must be excluded from encryption
+> (`bootstrap/app.php` → `encryptCookies(except: [...])`) so the server can
+> read it. Behind a proxy, configure `trustProxies` so the real client IP is
+> used — otherwise every visitor shares the proxy's IP (breaks geolocation,
+> `exclude_ips` and the realtime map).
+
+Additional exclusions: `exclude_ips` accepts IPs and CIDR ranges (office
+network, uptime monitors). Bot traffic is detected server-side
+(device-detector) and excluded from every dashboard read.
 
 ### 2. Collector script
 
-Add the directive to the layouts you want to track:
+Add the directive to the layouts you want to track (typically the public
+layout, before `</body>` or in `<head>`):
 
 ```blade
 @analyticsScripts
 ```
 
-### 3. Dashboard
+It renders an inline config object plus one cached, content-hashed script tag.
+It renders **nothing at all** when tracking is disabled or the current context
+is excluded (e.g. an authenticated admin), and degrades to an empty string on
+any internal failure — it can never break a host page.
 
-The dashboard is a **separate**, admin-only area with its own shell, styled with
-the shared `falcon/ui-kit` design system. It mounts entirely from config, so it
-fits any host:
+The collector then captures automatically, no code required:
+
+- **Page views** on every load (URL, route name, referrer);
+- **Clicks on genuinely interactive elements** (see
+  [Instrumentation](#instrumentation-data-track-));
+- **Heartbeats** while the tab is visible, which drive session activity,
+  duration and the realtime screen;
+- **Acquisition** (referrer domain, `utm_*` and ad URL parameters) and
+  **device** (type, browser) per session.
+
+Events are buffered client-side and flushed in batches (default every 5 s) to
+the ingestion endpoint (`/__analytics` by default), which is rate-limited and
+origin-checked. No cookie banner dependency: the collector always works, and
+the consent setting only decides whether the visitor id persists across
+visits.
+
+### 3. Dashboard mounting & navigation
+
+Two independent admin modules are registered, each mounted entirely from
+config — URL prefix, route-name prefix, middleware and layout:
 
 ```php
 'dashboard' => [
-    'route_prefix' => 'admin/analytics', // URL prefix (/admin/analytics)
-    'route_name'   => 'analytics',       // route('analytics.overview'), route('analytics.sessions')
-    'middleware'   => ['web', 'auth'],   // protect it; keep 'web' for the session stack
-    'layout'       => null,              // null = the package shell; or a host layout name
+    'route_prefix' => 'admin/analytics',
+    'route_name'   => 'analytics',
+    'middleware'   => ['web', 'auth'],   // e.g. ['web', 'auth:admin'] for a dedicated guard
+    'layout'       => null,              // null = package shell; or a host layout view name
+],
+
+'marketing' => [
+    'route_prefix' => 'admin/marketing',
+    'route_name'   => 'marketing',
+    'middleware'   => ['web', 'auth'],
+    'layout'       => null,
 ],
 ```
 
-Package routes are registered outside your route groups, so the middleware must
-include a session stack (`web`) alongside your auth guard, for example
-`['web', 'auth:admin']`.
+Package routes are registered outside your route groups, so the middleware
+must include a session stack (`web`) alongside your auth guard.
 
-**Dashboard pages.** Four full-page Livewire routes are registered under the
-prefix. The package does not touch your navigation; add the links yourself:
+**Analytics pages** (`{name}` = `dashboard.route_name`, default `analytics`):
 
 | Route name | Page |
-|------------|------|
-| `{name}.overview`  | Digest: KPIs, trend, sources, localities, engagement |
-| `{name}.visitors`  | Visitor list (sessions, first/last seen, locality, acquisition) |
-| `{name}.sessions`  | Session list + `{name}.sessions.show` detail (journey) |
-| `{name}.funnels`   | Funnels declared in `app/Analytics/funnels.php` |
+|---|---|
+| `{name}.overview` | Digest: KPIs, trend, acquisition, audience, localities, top events |
+| `{name}.realtime` | Realtime: online now, world map, live activity (see [Realtime](#realtime)) |
+| `{name}.visitors` | All-time visitor directory (+ `{name}.visitors.show` profile detail) |
+| `{name}.sessions` | Session list (+ `{name}.sessions.show` full journey detail) |
+| `{name}.events` | Named events: volumes, values, conversions |
+| `{name}.funnels` | Funnels declared in code |
 
-`{name}` is `dashboard.route_name` (default `analytics`). Link to them from your
-own navigation, e.g.:
+**Marketing pages** (`{name}` = `marketing.route_name`, default `marketing`):
+
+| Route name | Page |
+|---|---|
+| `{name}.dashboard` | Marketing digest: spend-free performance of campaigns and ads |
+| `{name}.campaigns` | Campaign list (+ `{name}.campaigns.show` detail) |
+| `{name}.ads` | Ad list (+ `{name}.ads.show` detail) |
+
+**Layout.** With `layout => null`, pages render into the package's standalone
+shell: its own sidebar (both modules' links, built from the configured route
+names), topbar, dark-mode toggle — a ready-made admin area. Set a host layout
+view name (e.g. `layouts.admin`) to nest the pages inside your own chrome
+instead; in that case add the links to your navigation yourself, e.g.:
 
 ```blade
 <a href="{{ route('analytics.overview') }}">Vue d'ensemble</a>
+<a href="{{ route('analytics.realtime') }}">Temps réel</a>
 <a href="{{ route('analytics.visitors') }}">Visiteurs</a>
 <a href="{{ route('analytics.sessions') }}">Sessions</a>
+<a href="{{ route('analytics.events') }}">Événements</a>
 <a href="{{ route('analytics.funnels') }}">Tunnels</a>
 ```
 
-**Tailwind sources.** So the kit classes used by the dashboard are not purged,
-add the package views to your Tailwind sources, next to the ui-kit `@source`
-line in your kit CSS entrypoint:
+A host layout must provide the ui-kit assets (`@uiKitHead` +
+`@vite(['resources/css/ui-kit.css', 'resources/js/ui-kit.js'])`) and render
+`{{ $slot }}`.
+
+### 4. Styling (Tailwind sources)
+
+The dashboard views use ui-kit components and Tailwind utilities; they are
+compiled by the **host's** Vite build. Keep this line next to the ui-kit
+`@source` in `resources/css/ui-kit.css` (see Installation):
 
 ```css
 @source '../../vendor/falcon/analytics/resources/views/**/*.blade.php';
 ```
 
-(During local development with a symlinked path repository, point `@source` at
-`../../packages/falcon/analytics/resources/views/**/*.blade.php` instead.)
+(During local development with a symlinked path repository, point it at the
+package directory instead, e.g.
+`../../packages/falcon/analytics/resources/views/**/*.blade.php`.)
 
-### 4. Funnels
-
-Declare funnels in code (in `app/Analytics/funnels.php`, path configurable via
-`analytics.funnels_path`). Each step matches a named event XOR a pageview route,
-and carries its own weight; the same event may belong to several funnels with a
-different value in each.
-
-```php
-use Falcon\Analytics\Funnels\Funnel;
-
-Funnel::define('acquisition_client', 'Acquisition client')
-    ->step('Page inscription', value: 1, route: 'client.register')
-    ->step('Soumission',       value: 5, event: 'auth.client.register.submit');
-```
-
-### 5. Server-sent events
-
-Beyond what the collector captures in the browser, application code can emit
-events directly: same visitor/session, same storage, same funnels. Useful for
-true conversions a click can't confirm (a registration was validated, a payment
-succeeded). The event joins a funnel by its name, like any other.
-
-```php
-use Falcon\Analytics\Facades\Analytics;
-
-Analytics::record('CompleteRegistration', value: 5.0, props: ['plan' => 'pro']);
-```
-
-The call is deferred (never blocks the response), a no-op when tracking is off or
-the context is excluded (e.g. an admin), and never throws to the caller.
+After every package update, rebuild (`npm run build`) so new utility classes
+used by new screens are compiled.
 
 ## Instrumentation (`data-track-*`)
 
@@ -177,47 +307,249 @@ Attributes enrich a captured click:
 
 | Attribute | Effect |
 |---|---|
-| `data-track-event="domain.action"` | names an action (funnel join key) |
+| `data-track-event="domain.action"` | names the action (declared event / funnel join key) |
 | `data-track-value="3"` | optional base value (overridden by the funnel step) |
-| `data-track-prop-*="..."` | arbitrary props (`data-track-prop-listing-id` -> `props.listing_id`) |
+| `data-track-prop-*="..."` | arbitrary props (`data-track-prop-listing-id` → `props.listing_id`) |
 | `data-track-section="hero"` | logical zone applied to the subtree |
 | `data-track-label="..."` | human label (otherwise the auto text) |
 | `data-track-ignore` | excludes the element/subtree |
 
-## Publishing / overriding
+## Named events & conversions
 
-```bash
-php artisan vendor:publish --tag=analytics-config
+Anonymous clicks are captured automatically; **named events** are the ones you
+declare, and they power the events screen, the funnels and the marketing
+objectives. Declare them in `app/Analytics/events.php` (path configurable via
+`analytics.events_path`) — the single source of truth:
+
+```php
+use Falcon\Analytics\Events\TrackedEvent;
+
+TrackedEvent::define('auth.client.register.submit', 'Inscription client (soumission)', value: 5.0);
+TrackedEvent::define('listing.publish.submit', 'Publication d\'une annonce', value: 15.0);
+TrackedEvent::define('review.submit', 'Avis déposé', conversion: true);
+TrackedEvent::define('nav.catalog.click', 'Accès au catalogue');
 ```
 
-Further publish groups (views, funnels, assets) are documented as they ship.
+- **`name`** — the technical key, as used by `data-track-event` or
+  `Analytics::record()`. Convention: `domain.action`.
+- **`label`** — what the dashboard displays.
+- **`value`** — optional default monetary/score value attached to each hit.
+- **`conversion`** — flags the event as a conversion (highlighted in the
+  dashboards, counted in the realtime and marketing KPIs). When omitted,
+  events carrying a value count as conversions.
 
-## Commands
+Two commands keep the declarations honest:
+
+- `php artisan analytics:events:scan` compares the file with the events
+  actually used in the code (`data-track-event` attributes and
+  `Analytics::record` calls, scanned under `analytics.events_scan_paths`);
+  `--fix` appends the missing declarations.
+- `php artisan analytics:events:check` verifies every funnel step references a
+  declared event.
+
+## Server-sent events
+
+Beyond what the collector captures in the browser, application code can emit
+events directly: same visitor/session, same storage, same funnels. Useful for
+true conversions a click can't confirm (a registration was validated, a
+payment succeeded):
+
+```php
+use Falcon\Analytics\Facades\Analytics;
+
+Analytics::record('CompleteRegistration', value: 5.0, props: ['plan' => 'pro']);
+```
+
+The call is deferred (never blocks the response), a no-op when tracking is off
+or the context is excluded (e.g. an admin), and never throws to the caller.
+
+## Funnels
+
+Declare funnels in `app/Analytics/funnels.php` (path configurable via
+`analytics.funnels_path`). Each step matches a named event **xor** a pageview
+route, and carries its own weight; the same event may belong to several
+funnels with a different value in each:
+
+```php
+use Falcon\Analytics\Funnels\Funnel;
+
+Funnel::define('acquisition_client', 'Acquisition client')
+    ->step('Page inscription', value: 1, route: 'client.register')
+    ->step('Soumission',       value: 5, event: 'auth.client.register.submit');
+```
+
+The funnels screen renders each funnel's per-step volumes, conversion rates
+between steps and total value over the selected period.
+
+## Marketing module
+
+A separate top-level module measuring ad performance **without any ad-platform
+API**: campaigns and ads are defined from the marketing screens (stored in
+your database), and matched to sessions by the URL parameters the ad's links
+carry.
+
+- **Campaigns and ads** are created in the UI. Each carries free
+  URL-parameter conditions (e.g. `utm_source=facebook` +
+  `utm_campaign=summer`); a session whose landing parameters satisfy them is
+  attributed to the ad, at report time.
+- **Objectives** are declared per ad by picking among the declared events
+  (see [Named events](#named-events--conversions)); the module reports
+  reach, conversions and value per ad and per campaign.
+- **Attribution is first-touch and retroactive**: the visitor's first
+  ad-attributed session marks the acquisition, and later conversions by the
+  same visitor credit that ad, even across visits.
+
+## Realtime
+
+`{name}.realtime` shows who is online now: KPIs of the recent window, a world
+map of connections (embedded SVG — no tile server, no mapping library, no
+external request), country/source/device breakdowns, pages being viewed, a
+per-minute pulse chart, recent visitors and a live activity feed.
+
+- **Refresh** is plain Livewire polling (`wire:poll.visible`, 10 s default),
+  suspended while the tab is hidden. No websocket, no worker, no external
+  service: it works on any host by construction. The page is admin-only, so
+  the polling load is marginal (every tick is a handful of bounded, indexed
+  queries).
+- **"Online now"** counts distinct visitors active within
+  `realtime.online_seconds` (default 60 s, i.e. three collector heartbeats).
+- The map needs [geolocation](#geolocation) to place points; without a
+  database, sessions count as "not located".
+
+```php
+'realtime' => [
+    'poll_seconds' => 10,     // page refresh interval
+    'online_seconds' => 60,   // "online now" activity window
+    'window_minutes' => 30,   // the "recent" window of every block
+    'feed_limit' => 25,       // hard bound of the activity feed
+],
+```
+
+## Commands & scheduling
 
 | Command | Role |
 |---|---|
-| `analytics:install` | publish config + run migrations |
+| `analytics:install` | publish config, scaffold env variables, run migrations |
 | `analytics:geoip:download` | download/refresh the local GeoLite2 City database |
 | `analytics:sweep` | stamp `ended_at` on sessions idle past the timeout |
 | `analytics:prune` | delete raw events older than `retention_days` |
+| `analytics:events:scan` | diff declared events vs events used in code (`--fix` appends) |
+| `analytics:events:check` | verify funnel steps reference declared events |
 
-`sweep` (every 5 min), `prune` (daily) and the monthly GeoLite2 refresh are
-**self-scheduled** by the package, so the host only needs Laravel's standard
-`schedule:run` cron; no dedicated analytics cron is required.
+`sweep` (every 5 min), `prune` (daily, 03:30) and the monthly GeoLite2 refresh
+(inert until a licence key is set) are **self-scheduled** by the package: the
+host only needs Laravel's standard scheduler cron
+(`* * * * * php artisan schedule:run`), no dedicated analytics cron.
 
 ## Geolocation
 
-Localities are resolved from the visitor IP against **MaxMind GeoLite2 City**, free,
-accurate and **fully local**, so an IP never leaves the server (no third-party call).
+Localities are resolved from the visitor IP against a **local MMDB database**,
+so an IP never leaves the server (no third-party call at request time).
 
-1. Create a free account and licence key: <https://www.maxmind.com/en/geolite2/signup>
+**MaxMind GeoLite2 City** (free, integrated download):
+
+1. Create a free account and licence key:
+   <https://www.maxmind.com/en/geolite2/signup>
 2. Add the key to `.env`: `ANALYTICS_GEOIP_LICENSE_KEY=xxxxxxxx`
 3. Download the database: `php artisan analytics:geoip:download`
 
-The `.mmdb` lands at `storage/app/analytics/GeoLite2-City.mmdb` (override with
-`ANALYTICS_GEOIP_DATABASE`). Re-run the command monthly (cron) to refresh it; geolocation
-degrades silently to "unknown" when the database is missing. IP geolocation is inherently
-city/region level; it will not pinpoint an exact street.
+The `.mmdb` lands at `storage/app/analytics/GeoLite2-City.mmdb` and is
+refreshed monthly by the self-scheduled command. Geolocation degrades silently
+to "unknown" while the database is missing.
+
+**Any other City-level MMDB works** (e.g. [DB-IP City
+Lite](https://db-ip.com/db/download/ip-to-city-lite), no account required):
+download the `.mmdb` yourself and point `ANALYTICS_GEOIP_DATABASE` at its
+absolute path.
+
+**Local development**: private/loopback IPs (`127.0.0.1`) can never be
+located. Set `ANALYTICS_GEOIP_DEV_IP` to any public IP to substitute it for
+private/reserved request IPs — inert in production by design, since real
+public IPs are never overridden.
+
+IP geolocation is inherently city/region level; it will not pinpoint an exact
+street.
+
+## Privacy & GDPR
+
+- **First-party only.** Everything (collection, storage, dashboards,
+  geolocation) happens on your own infrastructure; no data ever leaves it.
+- **Consent-aware.** With `identity.consent_cookie` set, the persistent
+  cross-visit id is only granted when the visitor consented; everything else
+  stays session-scoped.
+- **IP anonymisation** — set `privacy.anonymize_ip = true` to store a
+  truncated IP instead of the raw one (locality is resolved before
+  truncation).
+- **URL redaction** — query parameters in `privacy.redact_query_params`
+  (tokens, secrets, emails…) are stripped from stored URLs; tracking
+  parameters (`utm_*`, ad ids) are kept.
+- **Retention** — raw events are pruned past `retention_days` (default 90) by
+  the self-scheduled `analytics:prune`; sessions and visitor profiles are
+  kept.
+- **Right to erasure** — from the visitor detail page, an admin can erase a
+  visitor: profile, merged aliases, sessions and events are deleted in one
+  action.
+- **One person, one profile** — when an identified subject is recognised in a
+  second browser/device, the profiles merge (oldest survives, the other
+  becomes an alias routing to it); a login on a shared browser lands on the
+  logged-in person's own profile without stealing the browser's owner.
+- **Staff exclusion** — `exclude_guards` and `exclude_ips` keep internal
+  traffic out entirely; bots are filtered from every report.
+
+## Configuration reference
+
+All keys live in `config/analytics.php`; env-driven values in parentheses.
+
+| Key | Default | Role |
+|---|---|---|
+| `enabled` (`ANALYTICS_ENABLED`) | `true` | master switch: no ingestion, no collector when off |
+| `log_channel` | `null` | package log channel (`null` = app default) |
+| `funnels_path` | `null` → `app/Analytics/funnels.php` | code-declared funnels file |
+| `events_path` | `null` → `app/Analytics/events.php` | declared events file |
+| `events_scan_paths` | `['app', 'resources/views']` | paths scanned by `analytics:events:scan` |
+| `endpoint` | `__analytics` | ingestion path (`/__analytics`, script at `/__analytics.js`) |
+| `throttle` | `120,1` | ingestion rate limit (requests, minutes) |
+| `exclude_ips` | `[]` | IPs/CIDRs excluded from tracking |
+| `identity.subject_guards` | `['web']` | guards tracked as identified subjects |
+| `identity.exclude_guards` | `[]` | guards excluded entirely |
+| `identity.consent_cookie` | `null` | cookie gating the persistent visitor id |
+| `identity.subjects` | `[]` | display metadata per guard (label, name columns) |
+| `dashboard.route_prefix` | `admin/analytics` | dashboard URL prefix |
+| `dashboard.route_name` | `analytics` | dashboard route-name prefix |
+| `dashboard.middleware` | `['web', 'auth']` | dashboard protection |
+| `dashboard.layout` | `null` | `null` = package shell, or host layout view |
+| `marketing.*` | `admin/marketing` / `marketing` / … | same four keys for the marketing module |
+| `retention_days` | `90` | raw-event retention |
+| `session.timeout_minutes` | `5` | inactivity after which a session is ended |
+| `session.heartbeat_seconds` | `20` | collector heartbeat interval (tab visible) |
+| `session.flush_seconds` | `5` | collector batch flush interval |
+| `realtime.poll_seconds` | `10` | realtime page refresh |
+| `realtime.online_seconds` | `60` | "online now" window |
+| `realtime.window_minutes` | `30` | realtime recent window |
+| `realtime.feed_limit` | `25` | activity feed bound |
+| `privacy.anonymize_ip` | `false` | store truncated IPs |
+| `privacy.redact_query_params` | tokens/secrets/email | query params stripped from stored URLs |
+| `geoip.license_key` (`ANALYTICS_GEOIP_LICENSE_KEY`) | `''` | MaxMind licence key |
+| `geoip.edition` (`ANALYTICS_GEOIP_EDITION`) | `GeoLite2-City` | MaxMind edition |
+| `geoip.database_path` (`ANALYTICS_GEOIP_DATABASE`) | `storage/app/analytics/GeoLite2-City.mmdb` | MMDB location |
+| `geoip.dev_ip` (`ANALYTICS_GEOIP_DEV_IP`) | `null` | public IP substituted for private/reserved IPs (dev) |
+
+## Data model
+
+Six tables, all prefixed `falcon_analytics_`:
+
+| Table | Content |
+|---|---|
+| `falcon_analytics_visitors` | one row per browser/person (uuid, subject stitching, merge aliases) |
+| `falcon_analytics_sessions` | one row per visit (activity, device, acquisition, locality, marketing params) |
+| `falcon_analytics_events` | raw events (pageviews, clicks, named events), pruned past retention |
+| `falcon_analytics_campaigns` | marketing campaigns (UI-defined) |
+| `falcon_analytics_ads` | ads and their URL-parameter conditions |
+| `falcon_analytics_ad_objectives` | events picked as objectives per ad |
+
+Migrations load from the package (no publishing needed); every dashboard read
+goes through bounded, indexed queries so the screens stay fast on large
+datasets.
 
 ## License
 

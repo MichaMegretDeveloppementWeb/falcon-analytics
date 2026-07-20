@@ -3,6 +3,36 @@
 Notable milestones of `falcon/analytics`. Versions are git tags; earlier per-tier
 patch tags (v0.1.x) hold the individual steps.
 
+## [0.2.5] - Portability: exhaustive README & complete standalone shell (2026-07-20)
+
+The package is now installable on any Laravel project from its README alone,
+proven by a blank-project installation.
+
+### Added
+- **Exhaustive README**: installation (VCS repositories including the
+  transitive ui-kit one, install command, design-system assets, Tailwind
+  sources), identity & consent wiring, collector behaviour, full
+  instrumentation reference, named events & conversions, server-sent events,
+  funnels, marketing module, realtime, commands & self-scheduling,
+  geolocation (MaxMind + any City MMDB + dev IP), privacy & GDPR, a complete
+  configuration reference and the data model.
+
+### Fixed
+- **Standalone shell navigation**: the package layout's sidebar now lists
+  every screen — the six analytics pages (Vue d'ensemble, Temps réel,
+  Visiteurs, Sessions, Événements, Tunnels) and the marketing module (Vue
+  d'ensemble, Campagnes, Pubs) in two labelled groups; it previously stopped
+  at four links, hiding realtime, visitors and marketing from a host using
+  the default shell.
+
+### Validated
+- **Blank install** on a fresh Laravel 13 project (sqlite): composer require
+  from the VCS repositories, `analytics:install`, `ui-kit:install` + Tailwind
+  `@source` + build, collector (pageviews, named click ingested), all nine
+  dashboard/marketing screens rendering styled, declared events & funnel
+  loading, `analytics:events:scan` / `analytics:events:check`, and the
+  geolocation-less degradation ("not located" note on the realtime map).
+
 ## [0.2.4] - Realtime screen, phase B: world map & redesign (2026-07-20)
 
 The realtime screen gets its connections map and a layout modelled on the

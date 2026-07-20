@@ -1,5 +1,6 @@
 @php
     $routeName = config('analytics.dashboard.route_name', 'analytics');
+    $marketingRouteName = config('analytics.marketing.route_name', 'marketing');
 @endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full bg-page">
@@ -23,12 +24,33 @@
 <body class="min-h-full antialiased">
 
     <x-ui.sidebar :brand="__('Analytics')" brand-icon="chart-bar">
-        <x-ui.sidebar.group>
+        <x-ui.sidebar.group :label="__('Analytics')">
             <x-ui.sidebar.link
                 :href="route($routeName.'.overview')"
                 icon="chart-pie"
                 :active="request()->routeIs($routeName.'.overview')">
                 {{ __('Vue d\'ensemble') }}
+            </x-ui.sidebar.link>
+
+            <x-ui.sidebar.link
+                :href="route($routeName.'.realtime')"
+                icon="signal"
+                :active="request()->routeIs($routeName.'.realtime')">
+                {{ __('Temps réel') }}
+            </x-ui.sidebar.link>
+
+            <x-ui.sidebar.link
+                :href="route($routeName.'.visitors')"
+                icon="user-group"
+                :active="request()->routeIs($routeName.'.visitors*')">
+                {{ __('Visiteurs') }}
+            </x-ui.sidebar.link>
+
+            <x-ui.sidebar.link
+                :href="route($routeName.'.sessions')"
+                icon="users"
+                :active="request()->routeIs($routeName.'.sessions*')">
+                {{ __('Sessions') }}
             </x-ui.sidebar.link>
 
             <x-ui.sidebar.link
@@ -44,12 +66,28 @@
                 :active="request()->routeIs($routeName.'.funnels')">
                 {{ __('Tunnels') }}
             </x-ui.sidebar.link>
+        </x-ui.sidebar.group>
+
+        <x-ui.sidebar.group :label="__('Marketing')">
+            <x-ui.sidebar.link
+                :href="route($marketingRouteName.'.dashboard')"
+                icon="presentation-chart-line"
+                :active="request()->routeIs($marketingRouteName.'.dashboard')">
+                {{ __('Vue d\'ensemble') }}
+            </x-ui.sidebar.link>
 
             <x-ui.sidebar.link
-                :href="route($routeName.'.sessions')"
-                icon="users"
-                :active="request()->routeIs($routeName.'.sessions')">
-                {{ __('Sessions') }}
+                :href="route($marketingRouteName.'.campaigns')"
+                icon="megaphone"
+                :active="request()->routeIs($marketingRouteName.'.campaigns*')">
+                {{ __('Campagnes') }}
+            </x-ui.sidebar.link>
+
+            <x-ui.sidebar.link
+                :href="route($marketingRouteName.'.ads')"
+                icon="cursor-arrow-rays"
+                :active="request()->routeIs($marketingRouteName.'.ads*')">
+                {{ __('Pubs') }}
             </x-ui.sidebar.link>
         </x-ui.sidebar.group>
     </x-ui.sidebar>
