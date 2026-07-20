@@ -25,11 +25,12 @@ final class RealtimeReadRepository
     use ScopesSessionQueries;
 
     /**
-     * Sessions whose last activity is within the online window right now.
+     * Distinct visitors whose last activity is within the online window right
+     * now (visitors, not sessions: two devices of one person count once).
      */
     public function onlineCount(CarbonImmutable $onlineSince, ?string $subjectType): int
     {
-        return $this->activeSessions($onlineSince, $subjectType)->count();
+        return $this->activeSessions($onlineSince, $subjectType)->distinct()->count('visitor_id');
     }
 
     /**
@@ -94,9 +95,9 @@ final class RealtimeReadRepository
     }
 
     /**
-     * The latest stored events of the window, newest first, hard-bounded, with
-     * their session and visitor loaded so the caller can attribute and link
-     * each line without extra queries.
+     * The latest stored events since the given instant, newest first,
+     * hard-bounded, with their session and visitor loaded so the caller can
+     * attribute and link each line without extra queries.
      *
      * @return Collection<int, Event>
      */
@@ -106,6 +107,23 @@ final class RealtimeReadRepository
             ->with('session.visitor:id,uuid,subject_type,subject_id')
             ->orderByDesc('occurred_at')
             ->orderByDesc('id')
+            ->limit($limit)
+            ->get();
+    }
+
+    /**
+     * The sessions since the given instant, most recently active first,
+     * hard-bounded, with their visitor loaded so the caller can attribute and
+     * link each row without extra queries.
+     *
+     * @return Collection<int, Session>
+     */
+    public function recentSessions(CarbonImmutable $since, ?string $subjectType, int $limit): Collection
+    {
+        return $this->activeSessions($since, $subjectType)
+            ->select(['id', 'visitor_id', 'browser_key', 'subject_type', 'subject_id', 'started_at', 'last_activity_at', 'device_type', 'country', 'city', 'pageview_count'])
+            ->with('visitor:id,uuid,subject_type,subject_id')
+            ->orderByDesc('last_activity_at')
             ->limit($limit)
             ->get();
     }
@@ -148,6 +166,47 @@ final class RealtimeReadRepository
     public function topDevices(CarbonImmutable $since, ?string $subjectType, int $limit = 5): array
     {
         return $this->activeBreakdown($since, $subjectType, 'device_type', '', $limit);
+    }
+
+    /**
+     * Window sessions grouped by locality for the map, with how many of them
+     * are online right now. Bounded to the busiest locations so the payload
+     * never grows with traffic.
+     *
+     * @return list<array{city: string|null, country: string|null, latitude: float, longitude: float, total: int, online: int}>
+     */
+    public function mapPoints(CarbonImmutable $since, CarbonImmutable $onlineSince, int $limit = 200): array
+    {
+        return $this->activeSessions($since, null)
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->toBase()
+            ->selectRaw(
+                'city, country, latitude, longitude, COUNT(*) as total, SUM(CASE WHEN last_activity_at >= ? THEN 1 ELSE 0 END) as online',
+                [$onlineSince->toDateTimeString()],
+            )
+            ->groupBy('city', 'country', 'latitude', 'longitude')
+            ->orderByDesc('total')
+            ->limit($limit)
+            ->get()
+            ->map(fn (object $row): array => [
+                'city' => $row->city !== null ? (string) $row->city : null,
+                'country' => $row->country !== null ? (string) $row->country : null,
+                'latitude' => (float) $row->latitude,
+                'longitude' => (float) $row->longitude,
+                'total' => (int) $row->total,
+                'online' => (int) $row->online,
+            ])
+            ->all();
+    }
+
+    /**
+     * Window sessions the local GeoIP could not place (no coordinates), shown
+     * as a discreet note under the map.
+     */
+    public function unlocatedCount(CarbonImmutable $since): int
+    {
+        return $this->activeSessions($since, null)->whereNull('latitude')->count();
     }
 
     /**

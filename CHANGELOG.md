@@ -3,6 +3,41 @@
 Notable milestones of `falcon/analytics`. Versions are git tags; earlier per-tier
 patch tags (v0.1.x) hold the individual steps.
 
+## [0.2.4] - Realtime screen, phase B: world map & redesign (2026-07-20)
+
+The realtime screen gets its connections map and a layout modelled on the
+industry reference, still with zero external service.
+
+### Added
+- **World map**: SVG basemap embedded in the package, generated offline from
+  Natural Earth 110m (public domain), Miller projection, country borders drawn
+  at constant width (`vector-effect: non-scaling-stroke`). No tiles, no
+  mapping library, no external request: portable by construction. Fixed world
+  view. Markers aggregate sessions by city, are regenerated in place on each
+  tick (`wire:ignore` + `map` payload) and are sized in **screen pixels**, so
+  they stay readable on mobile; online locations pulse, tooltips ride the
+  dashboard's delegated system, unlocated sessions get a discreet note.
+- **Tab pair above the map** (recent window / online now, equal widths)
+  filtering the map markers and the country list through a window event.
+- **Countries list** next to the map, derived from the map points (no extra
+  query), with per-tab totals.
+- **Recent visitors list**: one row per visitor over the last 24 hours (most
+  recent session, device icon, online dot, link to the session detail).
+- **Live activity feed** reworked: the event type leads the line (conversions
+  highlighted), the visitor name and time follow.
+- **Dev geolocation**: `analytics.geoip.dev_ip` substitutes a public IP when
+  the request IP is private/reserved, so local development gets located
+  sessions; inert in production by design.
+
+### Changed
+- **Design aligned on the reference**: ink/secondary/muted text tones, blue
+  accent and online green, flat 8 px cards, doughnut centres showing the
+  **category count** ("3 sources", "2 types"), Sources and Devices side by
+  side, full-width "Pages vues" section with proportion bars (stacked under
+  the URL on small screens), per-minute chart kept as a bonus below the map.
+- **Online now counts distinct visitors** (not sessions), so it can never
+  exceed the window's visitor count.
+
 ## [0.2.3] - Realtime screen, phase A (2026-07-17)
 
 Who is online now and what happened in the recent window, on any host.

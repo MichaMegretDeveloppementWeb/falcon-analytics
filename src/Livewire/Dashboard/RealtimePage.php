@@ -9,7 +9,6 @@ use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\RecoversFromReadFailure;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\ResolvesDashboardLayout;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\ResolvesSubjectNames;
-use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Repositories\Dashboard\RealtimeReadRepository;
 use Falcon\Analytics\Services\Dashboard\SessionSubjectAttributor;
 use Falcon\Analytics\Services\SubjectResolver;
@@ -34,7 +33,7 @@ final class RealtimePage extends Component
     use ResolvesDashboardLayout;
     use ResolvesSubjectNames;
 
-    private const PALETTE = ['#1684ea', '#4b9bf0', '#7cb8f2', '#a5cdf7', '#bcdcfa', '#d1d5db'];
+    private const PALETTE = ['#116DFF', '#54CE91', '#8AB5FF', '#C9DBFF', '#DDE1E6', '#EFF1F5'];
 
     public function render(
         RealtimeReadRepository $repository,
@@ -49,6 +48,12 @@ final class RealtimePage extends Component
                 $since = $now->subMinutes($windowMinutes);
                 $onlineSince = $now->subSeconds(max(1, (int) config('analytics.realtime.online_seconds', 60)));
 
+                // Les visiteurs récents couvrent les dernières 24 h (comme la
+                // référence) ; l'activité en direct, les KPI et la carte
+                // restent sur la fenêtre temps réel.
+                $daySince = $now->subDay();
+                $listLimit = max(1, (int) config('analytics.realtime.feed_limit', 25));
+
                 $conversionNames = [];
                 $eventLabels = [];
                 foreach ($events->all() as $declared) {
@@ -58,22 +63,36 @@ final class RealtimePage extends Component
                     }
                 }
 
-                $feed = $repository->activityFeed($since, null, max(1, (int) config('analytics.realtime.feed_limit', 25)));
+                // One row per visitor (their most recent session), like the
+                // reference: the bounded list is deduplicated after fetch.
+                $recentSessions = $repository->recentSessions($daySince, null, $listLimit)
+                    ->unique('visitor_id')
+                    ->values();
+                $feed = $repository->activityFeed($since, null, $listLimit);
 
-                /** @var list<Session> $feedSessions */
-                $feedSessions = $feed->pluck('session')->filter()->unique('id')->values()->all();
-                $attributions = $attributor->attribute($feedSessions);
+                $attributedSessions = $recentSessions
+                    ->concat($feed->pluck('session')->filter())
+                    ->unique('id')
+                    ->values();
+                $attributions = $attributor->attribute($attributedSessions);
 
                 $minuteSeries = $this->zeroFilledMinutes($repository->pageviewsPerMinute($since, null), $since, $now);
                 $devices = $this->chartSeries($repository->topDevices($since, null), fn (string $label): string => DeviceLabel::for($label));
                 $sources = $this->chartSeries($repository->topSources($since, null), fn (string $label): string => SourceLabel::for($label));
+                $map = [
+                    'points' => $repository->mapPoints($since, $onlineSince),
+                    'unlocated' => $repository->unlocatedCount($since),
+                ];
 
-                // Fresh series for the live charts (wire:ignore + in-place update).
+                // Fresh series for the live charts (wire:ignore + in-place
+                // update). The doughnut centre shows the number of categories
+                // ("2 types", "3 sources"), not the session count.
                 $this->dispatch(
                     'analytics-realtime-tick',
                     pulse: ['labels' => array_keys($minuteSeries), 'values' => array_values($minuteSeries)],
-                    devices: $devices,
-                    sources: $sources,
+                    devices: [...$devices, 'total' => $devices['count']],
+                    sources: [...$sources, 'total' => $sources['count']],
+                    map: $map,
                 );
 
                 return [
@@ -83,6 +102,9 @@ final class RealtimePage extends Component
                     'minuteSeries' => $minuteSeries,
                     'devices' => $devices,
                     'sources' => $sources,
+                    'map' => $map,
+                    'countries' => $this->countriesFrom($map['points']),
+                    'recentSessions' => $recentSessions,
                     'feed' => $feed,
                     'attributions' => $attributions,
                     'subjectNames' => $this->resolveAttributedNames($attributions, $subjects),
@@ -122,12 +144,35 @@ final class RealtimePage extends Component
     }
 
     /**
+     * Country rows for the "Pays" list, derived from the map points (no extra
+     * query): totals and online counts per country, busiest first.
+     *
+     * @param  list<array{city: string|null, country: string|null, latitude: float, longitude: float, total: int, online: int}>  $points
+     * @return list<array{country: string|null, total: int, online: int}>
+     */
+    private function countriesFrom(array $points): array
+    {
+        $countries = [];
+
+        foreach ($points as $point) {
+            $key = $point['country'] ?? '??';
+            $countries[$key] ??= ['country' => $point['country'], 'total' => 0, 'online' => 0];
+            $countries[$key]['total'] += $point['total'];
+            $countries[$key]['online'] += $point['online'];
+        }
+
+        usort($countries, fn (array $a, array $b): int => $b['total'] <=> $a['total']);
+
+        return array_slice($countries, 0, 8);
+    }
+
+    /**
      * Doughnut-ready series from a breakdown: display labels, values, one
-     * palette colour per slice, and the total.
+     * palette colour per slice, the session sum and the category count.
      *
      * @param  list<array{label: string, total: int}>  $breakdown
      * @param  callable(string): string  $labelFor
-     * @return array{labels: list<string>, values: list<int>, colors: list<string>, total: int}
+     * @return array{labels: list<string>, values: list<int>, colors: list<string>, total: int, count: int}
      */
     private function chartSeries(array $breakdown, callable $labelFor): array
     {
@@ -146,6 +191,7 @@ final class RealtimePage extends Component
             'values' => $values,
             'colors' => $colors,
             'total' => array_sum($values),
+            'count' => count($labels),
         ];
     }
 }

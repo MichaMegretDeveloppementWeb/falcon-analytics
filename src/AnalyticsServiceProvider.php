@@ -41,6 +41,7 @@ final class AnalyticsServiceProvider extends ServiceProvider
 
         $this->app->singleton(GeoResolver::class, fn (): GeoResolver => new GeoResolver(
             config('analytics.geoip.database_path') ?: null,
+            config('analytics.geoip.dev_ip') ?: null,
         ));
 
         $this->app->singleton(FunnelRegistry::class, function (): FunnelRegistry {

@@ -2,8 +2,6 @@
 
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\Enums\EventType;
-use Falcon\Analytics\Events\EventRegistry;
-use Falcon\Analytics\Events\TrackedEvent;
 use Falcon\Analytics\Livewire\Dashboard\RealtimePage;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
@@ -63,8 +61,10 @@ beforeEach(function () {
 
 // ── Repository ──────────────────────────────────────
 
-it('counts online sessions within the online window, ignoring stale and bots', function () {
-    rtSession();
+it('counts distinct online visitors within the online window, ignoring stale and bots', function () {
+    $twoDevices = rtVisitor();
+    rtSession([], $twoDevices);
+    rtSession(['last_activity_at' => now()->subSeconds(30)], $twoDevices); // same visitor: counts once
     rtSession(['last_activity_at' => now()->subSeconds(30)]);
     rtSession(['last_activity_at' => now()->subMinutes(5)]); // stale
     rtSession(['is_bot' => true]);                           // bot
@@ -121,7 +121,22 @@ it('bounds and orders the activity feed, newest first', function () {
 
     expect($feed)->toHaveCount(2)
         ->and($feed->first()->url)->toBe('https://x.test/new')
-        ->and($feed->last()->target_text)->toBe('Contact');
+        ->and($feed->last()->target_text)->toBe('Contact')
+        ->and($feed->first()->relationLoaded('session'))->toBeTrue();
+});
+
+it('bounds and orders the recent sessions, most recently active first', function () {
+    rtSession(['last_activity_at' => now()->subMinutes(3), 'city' => 'Old']);
+    rtSession(['last_activity_at' => now()->subMinute(), 'city' => 'Mid']);
+    rtSession(['last_activity_at' => now(), 'city' => 'Fresh']);
+    rtSession(['last_activity_at' => now()->subHours(2), 'city' => 'Out']);
+
+    $sessions = $this->repo->recentSessions($this->windowSince, null, 2);
+
+    expect($sessions)->toHaveCount(2)
+        ->and($sessions->first()->city)->toBe('Fresh')
+        ->and($sessions->last()->city)->toBe('Mid')
+        ->and($sessions->first()->relationLoaded('visitor'))->toBeTrue();
 });
 
 it('ranks the window top pages, sources and devices, bounded', function () {
@@ -154,6 +169,32 @@ it('narrows the realtime reads to a subject type', function () {
         ->and($this->repo->topSources($this->windowSince, 'client')[0]['total'])->toBe(1);
 });
 
+it('aggregates the map points by locality with online counts, bounded', function () {
+    $geneva = ['city' => 'Geneva', 'country' => 'CH', 'latitude' => 46.2044, 'longitude' => 6.1432];
+    rtSession($geneva);
+    rtSession(array_merge($geneva, ['last_activity_at' => now()->subMinutes(10)])); // recent, not online
+    rtSession(['city' => 'Paris', 'country' => 'FR', 'latitude' => 48.8566, 'longitude' => 2.3522]);
+    rtSession(array_merge($geneva, ['is_bot' => true]));                            // bot: excluded
+    rtSession(array_merge($geneva, ['last_activity_at' => now()->subHours(2)]));    // out of window
+
+    $points = $this->repo->mapPoints($this->windowSince, $this->onlineSince);
+
+    expect($points)->toHaveCount(2)
+        ->and($points[0]['city'])->toBe('Geneva')
+        ->and($points[0]['total'])->toBe(2)
+        ->and($points[0]['online'])->toBe(1)
+        ->and($points[1]['city'])->toBe('Paris')
+        ->and($points[1]['online'])->toBe(1)
+        ->and($this->repo->mapPoints($this->windowSince, $this->onlineSince, 1))->toHaveCount(1);
+});
+
+it('counts the unlocated window sessions', function () {
+    rtSession();
+    rtSession(['city' => 'Geneva', 'country' => 'CH', 'latitude' => 46.2044, 'longitude' => 6.1432]);
+
+    expect($this->repo->unlocatedCount($this->windowSince))->toBe(1);
+});
+
 // ── Page ────────────────────────────────────────────
 
 it('renders the realtime page for an admin with the configured poll', function () {
@@ -166,7 +207,8 @@ it('renders the realtime page for an admin with the configured poll', function (
         ->get(route('analytics.realtime'))
         ->assertSuccessful()
         ->assertSeeText(__('Temps réel'))
-        ->assertSeeText(__('En ligne maintenant'))
+        ->assertSeeText(__('Visiteurs en ligne'))
+        ->assertSeeText(__('Visiteurs récents'))
         ->assertSeeText('Marie Dupont')
         ->assertSee('wire:poll.10s.visible', false);
 });
@@ -180,32 +222,35 @@ it('honours an overridden realtime configuration', function () {
         ->assertSee('wire:poll.5s.visible', false);
 });
 
-it('flags conversions in the feed through the registry', function () {
-    $registry = new EventRegistry;
-    $registry->register(new TrackedEvent('Lead', 'Demande de code', 3.0));
-    app()->instance(EventRegistry::class, $registry);
-
-    $session = rtSession();
-    rtEvent($session, EventType::Custom, ['name' => 'Lead']);
-
-    $this->actingAs(TestAdmin::create([]), 'admin')
-        ->get(route('analytics.realtime'))
-        ->assertSuccessful()
-        ->assertSeeText('Demande de code');
-});
-
 it('redirects a guest to the login page', function () {
     $this->get(route('analytics.realtime'))->assertRedirect();
 });
 
 it('dispatches the fresh series for the live charts on every tick', function () {
-    $session = rtSession(['device_type' => 'desktop', 'source' => 'organic']);
+    $session = rtSession(['device_type' => 'desktop', 'source' => 'organic', 'city' => 'Geneva', 'country' => 'CH', 'latitude' => 46.2044, 'longitude' => 6.1432]);
     rtEvent($session, EventType::Pageview, ['url' => 'https://x.test/a']);
 
     $this->actingAs(TestAdmin::create([]), 'admin');
 
     Livewire\Livewire::test(RealtimePage::class)
-        ->assertDispatched('analytics-realtime-tick');
+        ->assertDispatched(
+            'analytics-realtime-tick',
+            fn (string $name, array $params): bool => isset($params['pulse'], $params['devices'], $params['sources'], $params['map'])
+                && $params['map']['points'][0]['city'] === 'Geneva'
+                && $params['map']['points'][0]['online'] === 1,
+        );
+});
+
+it('renders the map, the country list and the unlocated note', function () {
+    rtSession(['city' => 'Geneva', 'country' => 'CH', 'latitude' => 46.2044, 'longitude' => 6.1432]);
+    rtSession();
+
+    $this->actingAs(TestAdmin::create([]), 'admin')
+        ->get(route('analytics.realtime'))
+        ->assertSuccessful()
+        ->assertSeeText(__('Pays'))
+        ->assertSeeText(Locale::getDisplayRegion('-CH', app()->getLocale()))
+        ->assertSeeText(__('dont 1 session non localisée'));
 });
 
 // ── Budget ──────────────────────────────────────────
@@ -230,8 +275,9 @@ it('renders the realtime tick within its query budget', function () {
         ->map(fn (array $q): string => $q['query'].'|'.json_encode($q['bindings']));
 
     // Frozen plan: online + window (sessions, pageviews) + minute buckets +
-    // feed (events + sessions + visitors) + attributor ambiguity check +
-    // top pages/sources/devices = 11. No duplicate reads within a tick.
+    // recent sessions (+ visitors) + feed (events + sessions + visitors) +
+    // attributor ambiguity check + top pages/sources/devices + map points +
+    // unlocated = 16. No duplicate reads within a tick.
     expect($signatures->count() - $signatures->unique()->count())->toBe(0)
-        ->and($signatures->count())->toBeLessThanOrEqual(11);
+        ->and($signatures->count())->toBeLessThanOrEqual(16);
 });

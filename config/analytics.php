@@ -220,6 +220,11 @@ return [
         // Where analytics:geoip:download writes the extracted .mmdb.
         'database_path' => env('ANALYTICS_GEOIP_DATABASE') ?: storage_path('app/analytics/GeoLite2-City.mmdb'),
 
+        // Local development: public IP substituted for private/reserved request
+        // IPs (127.0.0.1 can never be located). Inert in production by design,
+        // since real public IPs are never overridden.
+        'dev_ip' => env('ANALYTICS_GEOIP_DEV_IP'),
+
         // MaxMind permalink ({edition} and {license_key} are substituted).
         'download_url' => 'https://download.maxmind.com/app/geoip_download?edition_id={edition}&license_key={license_key}&suffix=tar.gz',
     ],

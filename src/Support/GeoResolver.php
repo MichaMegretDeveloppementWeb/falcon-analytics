@@ -14,10 +14,22 @@ final class GeoResolver
 
     private bool $opened = false;
 
-    public function __construct(private readonly ?string $databasePath = null) {}
+    /**
+     * @param  string|null  $devIp  Public IP substituted for private/reserved
+     *                              request IPs (local development, where every
+     *                              request comes from 127.0.0.1). Inert in
+     *                              production by design: real public IPs are
+     *                              never overridden.
+     */
+    public function __construct(
+        private readonly ?string $databasePath = null,
+        private readonly ?string $devIp = null,
+    ) {}
 
     public function locate(?string $ip): GeoLocation
     {
+        $ip = $this->effectiveIp($ip);
+
         if ($ip === null || $ip === '') {
             return new GeoLocation;
         }
@@ -42,6 +54,21 @@ final class GeoResolver
             // Private/unknown IP or corrupt record: degrade to no location.
             return new GeoLocation;
         }
+    }
+
+    /**
+     * The IP actually resolved: the request one, except that a private or
+     * reserved IP is replaced by the configured development IP when one is set.
+     */
+    public function effectiveIp(?string $ip): ?string
+    {
+        if ($this->devIp === null || $this->devIp === '' || $ip === null || $ip === '') {
+            return $ip;
+        }
+
+        $isPublic = filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false;
+
+        return $isPublic ? $ip : $this->devIp;
     }
 
     /**
