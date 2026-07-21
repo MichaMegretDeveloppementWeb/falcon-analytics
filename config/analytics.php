@@ -187,6 +187,29 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Google Search Console (organic search queries)
+    |--------------------------------------------------------------------------
+    |
+    | Google strips the search query from referrers, so organic keywords are
+    | only available through the Search Console API, authorised by the admin
+    | via OAuth (read-only). The host provides a Google Cloud OAuth 2.0 web
+    | client with the Search Console API enabled; while the credentials are
+    | empty the whole feature stays hidden. The redirect URI defaults to the
+    | package callback route and must be registered on the OAuth client.
+    |
+    */
+
+    'search_console' => [
+        'client_id' => env('ANALYTICS_GSC_CLIENT_ID', ''),
+        'client_secret' => env('ANALYTICS_GSC_CLIENT_SECRET', ''),
+
+        // Absolute redirect URI registered on the OAuth client. Null uses the
+        // package callback route ({dashboard.route_prefix}/integrations/search-console/callback).
+        'redirect' => env('ANALYTICS_GSC_REDIRECT'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Privacy
     |--------------------------------------------------------------------------
     */

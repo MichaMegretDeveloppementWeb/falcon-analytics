@@ -23,11 +23,12 @@ hosting included.
 7. [Funnels](#funnels)
 8. [Marketing module](#marketing-module)
 9. [Realtime](#realtime)
-10. [Commands & scheduling](#commands--scheduling)
-11. [Geolocation](#geolocation)
-12. [Privacy & GDPR](#privacy--gdpr)
-13. [Configuration reference](#configuration-reference)
-14. [Data model](#data-model)
+10. [Google Search Console](#google-search-console)
+11. [Commands & scheduling](#commands--scheduling)
+12. [Geolocation](#geolocation)
+13. [Privacy & GDPR](#privacy--gdpr)
+14. [Configuration reference](#configuration-reference)
+15. [Data model](#data-model)
 
 ## Requirements
 
@@ -243,6 +244,7 @@ must include a session stack (`web`) alongside your auth guard.
 | `{name}.sessions` | Session list (+ `{name}.sessions.show` full journey detail) |
 | `{name}.events` | Named events: volumes, values, conversions |
 | `{name}.funnels` | Funnels declared in code |
+| `{name}.integrations` | Integrations (Google Search Console connection); shown only when [configured](#google-search-console) |
 
 **Marketing pages** (`{name}` = `marketing.route_name`, default `marketing`):
 
@@ -425,6 +427,47 @@ per-minute pulse chart, recent visitors and a live activity feed.
 ],
 ```
 
+## Google Search Console
+
+Google strips the search query from referrers, so organic keywords never reach
+a first-party tracker. The optional Search Console integration displays them
+anyway — "Clics par recherches Google" on the overview — by letting the admin
+connect the site's own Search Console through OAuth (read-only).
+
+**Host setup** (the feature stays entirely hidden until this is done):
+
+1. Create a Google Cloud project, enable the **Google Search Console API**,
+   and create an **OAuth 2.0 client** of type *Web application*.
+2. Register the package callback as an authorised redirect URI:
+   `https://your-host/{dashboard.route_prefix}/integrations/search-console/callback`
+   (shown verbatim on the integrations screen).
+3. Provide the credentials in `.env`:
+
+```dotenv
+ANALYTICS_GSC_CLIENT_ID=xxx.apps.googleusercontent.com
+ANALYTICS_GSC_CLIENT_SECRET=xxx
+```
+
+**Admin flow**: on `{name}.integrations`, "Connecter Google Search Console"
+starts the OAuth consent (scope `webmasters.readonly`, offline access); back
+from Google, the admin picks the verified **property** to attach. The site
+must be verified in Search Console under the authorising account.
+Disconnecting (confirmed by modal) revokes the token and deletes the
+connection.
+
+**Sync**: `analytics:search-console:sync` runs daily (self-scheduled). GSC
+data trails reality by ~3 days and the API is quota-limited, so the dashboard
+only ever reads the local cache (`falcon_analytics_search_queries`): the
+first run backfills the API's ~16-month history in paginated calls, then each
+run re-reads the trailing days. The refresh token is stored **encrypted**; a
+revoked access flags the connection on the integrations screen and on the
+overview card.
+
+**Display**: the overview section lists the period's top queries by clicks,
+with impressions, CTR and impressions-weighted average position, plus a
+"Données Google jusqu'au …" freshness note. Not to be confused with the
+campaign term (`utm_term`): these are the words actually typed into Google.
+
 ## Commands & scheduling
 
 | Command | Role |
@@ -435,10 +478,12 @@ per-minute pulse chart, recent visitors and a live activity feed.
 | `analytics:prune` | delete raw events older than `retention_days` |
 | `analytics:events:scan` | diff declared events vs events used in code (`--fix` appends) |
 | `analytics:events:check` | verify funnel steps reference declared events |
+| `analytics:search-console:sync` | pull the organic queries into the local cache |
 
-`sweep` (every 5 min), `prune` (daily, 03:30) and the monthly GeoLite2 refresh
-(inert until a licence key is set) are **self-scheduled** by the package: the
-host only needs Laravel's standard scheduler cron
+`sweep` (every 5 min), `prune` (daily, 03:30), the Search Console sync
+(daily, 05:00, inert without an attached connection) and the monthly GeoLite2
+refresh (inert until a licence key is set) are **self-scheduled** by the
+package: the host only needs Laravel's standard scheduler cron
 (`* * * * * php artisan schedule:run`), no dedicated analytics cron.
 
 ## Geolocation
@@ -527,6 +572,9 @@ All keys live in `config/analytics.php`; env-driven values in parentheses.
 | `realtime.online_seconds` | `60` | "online now" window |
 | `realtime.window_minutes` | `30` | realtime recent window |
 | `realtime.feed_limit` | `25` | activity feed bound |
+| `search_console.client_id` (`ANALYTICS_GSC_CLIENT_ID`) | `''` | Google OAuth client id (empty = feature hidden) |
+| `search_console.client_secret` (`ANALYTICS_GSC_CLIENT_SECRET`) | `''` | Google OAuth client secret |
+| `search_console.redirect` (`ANALYTICS_GSC_REDIRECT`) | `null` | redirect URI override (`null` = package callback route) |
 | `privacy.anonymize_ip` | `false` | store truncated IPs |
 | `privacy.redact_query_params` | tokens/secrets/email | query params stripped from stored URLs |
 | `geoip.license_key` (`ANALYTICS_GEOIP_LICENSE_KEY`) | `''` | MaxMind licence key |
@@ -536,7 +584,7 @@ All keys live in `config/analytics.php`; env-driven values in parentheses.
 
 ## Data model
 
-Six tables, all prefixed `falcon_analytics_`:
+Eight tables, all prefixed `falcon_analytics_`:
 
 | Table | Content |
 |---|---|
@@ -546,6 +594,8 @@ Six tables, all prefixed `falcon_analytics_`:
 | `falcon_analytics_campaigns` | marketing campaigns (UI-defined) |
 | `falcon_analytics_ads` | ads and their URL-parameter conditions |
 | `falcon_analytics_ad_objectives` | events picked as objectives per ad |
+| `falcon_analytics_search_console` | the Search Console connection (encrypted OAuth tokens, property, status) |
+| `falcon_analytics_search_queries` | cached organic queries per day (clicks, impressions, position) |
 
 Migrations load from the package (no publishing needed); every dashboard read
 goes through bounded, indexed queries so the screens stay fast on large

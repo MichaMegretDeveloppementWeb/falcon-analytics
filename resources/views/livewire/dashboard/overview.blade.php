@@ -37,4 +37,10 @@
 
     <livewire:analytics-overview-events :period="$period" :subject="$subject" :key="'ov-events-'.$period.'-'.$subject" />
 
+    {{-- Organic Google queries via Search Console; the whole section stays
+         hidden while the host has not configured the OAuth credentials. --}}
+    @if (trim((string) config('analytics.search_console.client_id')) !== '')
+        <livewire:analytics-overview-search-queries :period="$period" :key="'ov-gsc-'.$period" />
+    @endif
+
 </div>

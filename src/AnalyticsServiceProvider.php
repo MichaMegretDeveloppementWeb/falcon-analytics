@@ -10,6 +10,7 @@ use Falcon\Analytics\Console\InstallCommand;
 use Falcon\Analytics\Console\PruneCommand;
 use Falcon\Analytics\Console\ScanEventsCommand;
 use Falcon\Analytics\Console\SweepCommand;
+use Falcon\Analytics\Console\SyncSearchConsoleCommand;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\AdDetailContent;
@@ -22,6 +23,7 @@ use Falcon\Analytics\Livewire\Dashboard\Widgets\OverviewAudience;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\OverviewContent;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\OverviewEvents;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\OverviewHeadline;
+use Falcon\Analytics\Livewire\Dashboard\Widgets\OverviewSearchQueries;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\SessionsHeadline;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\TrendChart;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\VisitorsHeadline;
@@ -87,6 +89,7 @@ final class AnalyticsServiceProvider extends ServiceProvider
         Livewire::component('analytics-overview-acquisition', OverviewAcquisition::class);
         Livewire::component('analytics-overview-content', OverviewContent::class);
         Livewire::component('analytics-overview-events', OverviewEvents::class);
+        Livewire::component('analytics-overview-search-queries', OverviewSearchQueries::class);
         Livewire::component('analytics-sessions-headline', SessionsHeadline::class);
         Livewire::component('analytics-visitors-headline', VisitorsHeadline::class);
 
@@ -102,6 +105,7 @@ final class AnalyticsServiceProvider extends ServiceProvider
                 SweepCommand::class,
                 ScanEventsCommand::class,
                 CheckEventsCommand::class,
+                SyncSearchConsoleCommand::class,
             ]);
 
             // Self-schedule maintenance so a host only needs the standard
@@ -118,6 +122,12 @@ final class AnalyticsServiceProvider extends ServiceProvider
                     ->monthlyOn(1, '04:00')
                     ->withoutOverlapping()
                     ->when(fn (): bool => (string) config('analytics.geoip.license_key') !== '');
+
+                // Pull the Search Console queries daily; the command is inert
+                // while no connection is attached.
+                $schedule->command('analytics:search-console:sync')
+                    ->dailyAt('05:00')
+                    ->withoutOverlapping();
             });
         }
     }

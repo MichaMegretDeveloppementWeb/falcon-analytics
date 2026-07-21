@@ -66,6 +66,15 @@
                 :active="request()->routeIs($routeName.'.funnels')">
                 {{ __('Tunnels') }}
             </x-ui.sidebar.link>
+
+            @if (trim((string) config('analytics.search_console.client_id')) !== '')
+                <x-ui.sidebar.link
+                    :href="route($routeName.'.integrations')"
+                    icon="puzzle-piece"
+                    :active="request()->routeIs($routeName.'.integrations*')">
+                    {{ __('Intégrations') }}
+                </x-ui.sidebar.link>
+            @endif
         </x-ui.sidebar.group>
 
         <x-ui.sidebar.group :label="__('Marketing')">

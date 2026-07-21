@@ -14,13 +14,48 @@ final class InstallCommand extends Command
     protected $description = 'Install Falcon Analytics: publish the config file, scaffold env variables and run the migrations.';
 
     /**
-     * Environment variables appended to the host .env files, with their defaults.
+     * Every env variable the package reads, grouped and commented, appended to
+     * the host .env files when missing (config/analytics.php stays the source
+     * of truth; this only makes the knobs discoverable in place).
      *
-     * @var array<string, string>
+     * @var list<array{comment: list<string>, entries: array<string, string>}>
      */
-    private const ENV_DEFAULTS = [
-        'ANALYTICS_ENABLED' => 'true',
-        'ANALYTICS_GEOIP_DATABASE' => '',
+    private const ENV_GROUPS = [
+        [
+            'comment' => ['Master switch of the tracking (collector + ingestion).'],
+            'entries' => ['ANALYTICS_ENABLED' => 'true'],
+        ],
+        [
+            'comment' => [
+                'Local geolocation (MaxMind GeoLite2 City). Free licence key:',
+                'https://www.maxmind.com/en/geolite2/signup then: php artisan analytics:geoip:download',
+                'Empty key = geolocation disabled (localities stay unknown).',
+            ],
+            'entries' => ['ANALYTICS_GEOIP_LICENSE_KEY' => ''],
+        ],
+        [
+            'comment' => ['Path of the .mmdb database (empty = storage/app/analytics/GeoLite2-City.mmdb).'],
+            'entries' => ['ANALYTICS_GEOIP_DATABASE' => ''],
+        ],
+        [
+            'comment' => ['Local dev only: public IP substituted for private/reserved request IPs (127.0.0.1). Inert in production.'],
+            'entries' => ['ANALYTICS_GEOIP_DEV_IP' => ''],
+        ],
+        [
+            'comment' => [
+                'Google Search Console (organic search queries): OAuth 2.0 web client',
+                'with the Search Console API enabled, created in Google Cloud.',
+                'Empty = the whole integration stays hidden.',
+            ],
+            'entries' => [
+                'ANALYTICS_GSC_CLIENT_ID' => '',
+                'ANALYTICS_GSC_CLIENT_SECRET' => '',
+            ],
+        ],
+        [
+            'comment' => ['Redirect URI override (empty = the package callback route, shown on the integrations screen).'],
+            'entries' => ['ANALYTICS_GSC_REDIRECT' => ''],
+        ],
     ];
 
     public function handle(): int
@@ -57,7 +92,7 @@ final class InstallCommand extends Command
         }
 
         $contents = (string) file_get_contents($path);
-        $block = EnvScaffolder::appendableBlock($contents, self::ENV_DEFAULTS);
+        $block = EnvScaffolder::appendableBlock($contents, self::ENV_GROUPS);
 
         if ($block === '') {
             return;

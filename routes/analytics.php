@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use Falcon\Analytics\Http\Controllers\CollectorScriptController;
 use Falcon\Analytics\Http\Controllers\IngestController;
+use Falcon\Analytics\Http\Controllers\SearchConsoleCallbackController;
+use Falcon\Analytics\Http\Controllers\SearchConsoleConnectController;
 use Falcon\Analytics\Http\Middleware\EnsureAnalyticsAccepts;
 use Falcon\Analytics\Livewire\Dashboard\AdDetailPage;
 use Falcon\Analytics\Livewire\Dashboard\AdsPage;
@@ -11,6 +13,7 @@ use Falcon\Analytics\Livewire\Dashboard\CampaignDetailPage;
 use Falcon\Analytics\Livewire\Dashboard\CampaignsPage;
 use Falcon\Analytics\Livewire\Dashboard\EventsPage;
 use Falcon\Analytics\Livewire\Dashboard\FunnelsPage;
+use Falcon\Analytics\Livewire\Dashboard\IntegrationsPage;
 use Falcon\Analytics\Livewire\Dashboard\MarketingDashboardPage;
 use Falcon\Analytics\Livewire\Dashboard\OverviewPage;
 use Falcon\Analytics\Livewire\Dashboard\RealtimePage;
@@ -58,6 +61,12 @@ Route::prefix((string) ($dashboard['route_prefix'] ?? 'admin/analytics'))
         Route::livewire('/funnels', FunnelsPage::class)->name('funnels');
         Route::livewire('/sessions', SessionsPage::class)->name('sessions');
         Route::livewire('/sessions/{session}', SessionDetailPage::class)->name('sessions.show');
+
+        // Integrations (Google Search Console): the page plus the two OAuth
+        // legs, all behind the same admin middleware as the dashboard.
+        Route::livewire('/integrations', IntegrationsPage::class)->name('integrations');
+        Route::get('/integrations/search-console/connect', SearchConsoleConnectController::class)->name('integrations.search-console.connect');
+        Route::get('/integrations/search-console/callback', SearchConsoleCallbackController::class)->name('integrations.search-console.callback');
     });
 
 // Marketing. A separate top-level module (its own prefix, route names and menu),

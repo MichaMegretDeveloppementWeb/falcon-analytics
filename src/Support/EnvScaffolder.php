@@ -4,33 +4,55 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Support;
 
+/**
+ * Builds the env block `analytics:install` appends to the host's .env files.
+ * The published config file stays the source of truth (every value has a safe
+ * default); the scaffold only exists so the supported variables are
+ * discoverable in place, commented, without hunting through vendor config.
+ * Append-only and idempotent: existing keys are never rewritten, present keys
+ * are never duplicated, and nothing runs outside the install command.
+ */
 final class EnvScaffolder
 {
     /**
-     * Build the text block to append to an env file for the entries that are
-     * missing from it. Returns an empty string when every key is already set,
-     * so the caller can skip the write and stay idempotent.
+     * The text block to append for the entries missing from the given env
+     * contents: a package header, then each group's comment lines and its
+     * missing keys. Groups whose keys are all present are skipped entirely;
+     * an empty string means the file is already complete and the caller can
+     * skip the write.
      *
-     * @param  array<string, string>  $entries
+     * @param  list<array{comment: list<string>, entries: array<string, string>}>  $groups
      */
-    public static function appendableBlock(string $contents, array $entries): string
+    public static function appendableBlock(string $contents, array $groups): string
     {
-        $missing = array_filter(
-            $entries,
-            fn (string $key): bool => ! preg_match('/^'.preg_quote($key, '/').'=/m', $contents),
-            ARRAY_FILTER_USE_KEY,
-        );
+        $sections = [];
 
-        if ($missing === []) {
+        foreach ($groups as $group) {
+            $missing = array_filter(
+                $group['entries'],
+                fn (string $key): bool => ! preg_match('/^'.preg_quote($key, '/').'=/m', $contents),
+                ARRAY_FILTER_USE_KEY,
+            );
+
+            if ($missing === []) {
+                continue;
+            }
+
+            $lines = array_map(fn (string $comment): string => '# '.$comment, $group['comment']);
+
+            foreach ($missing as $key => $value) {
+                $lines[] = $key.'='.$value;
+            }
+
+            $sections[] = implode("\n", $lines);
+        }
+
+        if ($sections === []) {
             return '';
         }
 
-        $lines = ['', '# Falcon Analytics'];
+        $header = '# --- Falcon Analytics '.str_repeat('-', 55);
 
-        foreach ($missing as $key => $value) {
-            $lines[] = $key.'='.$value;
-        }
-
-        return implode("\n", $lines)."\n";
+        return "\n".$header."\n\n".implode("\n\n", $sections)."\n";
     }
 }

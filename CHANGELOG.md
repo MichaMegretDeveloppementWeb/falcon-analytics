@@ -3,6 +3,33 @@
 Notable milestones of `falcon/analytics`. Versions are git tags; earlier per-tier
 patch tags (v0.1.x) hold the individual steps.
 
+## [0.3.0] - Google Search Console: real organic search queries (2026-07-20)
+
+The words visitors actually type into Google, which no first-party tracker
+can see, surfaced on the overview through the site's own Search Console.
+
+### Added
+- **Integrations screen** (`{name}.integrations`): the admin connects their
+  Search Console through Google OAuth (read-only scope, anti-CSRF state,
+  lightweight HTTP client — no google/apiclient), picks the verified
+  **property** to attach, and can disconnect (modal-confirmed, token revoked
+  best-effort). While the host provides no OAuth credentials
+  (`ANALYTICS_GSC_CLIENT_ID` / `ANALYTICS_GSC_CLIENT_SECRET`) the whole
+  feature stays hidden. Tokens are stored **encrypted**; a revoked access
+  flags the connection and offers a reconnect.
+- **Daily sync** (`analytics:search-console:sync`, self-scheduled 05:00,
+  inert without an attached connection): paginated Search Analytics reads
+  into the local `falcon_analytics_search_queries` cache — ~16-month backfill
+  on first run, 3-day trailing re-read afterwards (GSC data settles late),
+  upserted on date+query. The dashboard never calls the API at display time.
+- **Overview section "Clics par recherches Google"**: top queries of the
+  period by clicks with impressions, CTR and impressions-weighted average
+  position, a freshness note ("Données Google jusqu'au …"), and a
+  call-to-action card while no connection is attached. Distinct by nature
+  from the campaign term (utm_term).
+- Two migrations (`falcon_analytics_search_console`,
+  `falcon_analytics_search_queries`), README section, 36 tests (HTTP mocked).
+
 ## [0.2.5] - Portability: exhaustive README & complete standalone shell (2026-07-20)
 
 The package is now installable on any Laravel project from its README alone,
