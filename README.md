@@ -434,26 +434,64 @@ a first-party tracker. The optional Search Console integration displays them
 anyway — "Clics par recherches Google" on the overview — by letting the admin
 connect the site's own Search Console through OAuth (read-only).
 
-**Host setup** (the feature stays entirely hidden until this is done):
+**Host setup — Google Cloud, step by step** (the feature stays entirely
+hidden until this is done). All of this happens on
+<https://console.cloud.google.com>, and **the Google account you use
+matters**: the project belongs to that account, and only that account can
+manage it later. Use the account that administers the site.
 
-1. Create a Google Cloud project, enable the **Google Search Console API**,
-   and create an **OAuth 2.0 client** of type *Web application*.
-2. Register the package callback as an authorised redirect URI:
-   `https://your-host/{dashboard.route_prefix}/integrations/search-console/callback`
-   (shown verbatim on the integrations screen).
-3. Provide the credentials in `.env`:
+1. **Project** — pick (or create via *IAM & Admin → Create a project*) the
+   Google Cloud project that will own the OAuth client. If the site already
+   uses Google sign-in (Socialite), reuse that same project: one project can
+   hold several OAuth clients. Make sure the project shown in the console's
+   top bar is the right one before every step below.
+2. **Enable the API** — *APIs & Services → Library*, search "Google Search
+   Console API" (direct link:
+   <https://console.cloud.google.com/apis/library/searchconsole.googleapis.com>),
+   click **Enable** *on that project*. Do not skip this: the OAuth consent
+   works without it, but every data call is then rejected (the integrations
+   screen shows "the property list could not be loaded").
+3. **Consent screen** — *APIs & Services → OAuth consent screen*: user type
+   *External* is fine. While the app's publishing status is *Testing*, only
+   accounts listed under **Test users** can authorise: add the Google account
+   that will connect the Search Console. (Publishing the app is not required
+   for this single-admin integration.)
+4. **OAuth client** — *APIs & Services → Credentials → Create credentials →
+   OAuth client ID*, type **Web application**. Under *Authorized redirect
+   URIs*, add the package callback **exactly** as shown on the integrations
+   screen:
+   `https://your-host/{dashboard.route_prefix}/integrations/search-console/callback`.
+   Google only accepts public domains (plus `localhost`); a local `.test`
+   domain will be refused, so the OAuth round-trip is validated on a deployed
+   environment.
+5. **Credentials** — copy the client ID and secret into the host `.env`:
 
 ```dotenv
 ANALYTICS_GSC_CLIENT_ID=xxx.apps.googleusercontent.com
 ANALYTICS_GSC_CLIENT_SECRET=xxx
 ```
 
+   (then `php artisan config:cache` if the host caches its config).
+6. **Search Console side** — the Google account that will authorise must own
+   the site as a **verified property** in
+   <https://search.google.com/search-console> (any verification method).
+   Unverified properties are not offered by the package.
+
 **Admin flow**: on `{name}.integrations`, "Connecter Google Search Console"
 starts the OAuth consent (scope `webmasters.readonly`, offline access); back
-from Google, the admin picks the verified **property** to attach. The site
-must be verified in Search Console under the authorising account.
+from Google, the admin picks the verified **property** to attach.
 Disconnecting (confirmed by modal) revokes the token and deletes the
 connection.
+
+**Troubleshooting the connection**:
+
+| Symptom | Cause and fix |
+|---|---|
+| Google shows `redirect_uri_mismatch` | The URI registered on the OAuth client differs from the one the package sends. Copy it verbatim from the integrations screen. |
+| Google shows `access_denied` / "app not verified" | The consent screen is in *Testing* and the connecting account is not among the **Test users** (step 3). |
+| Connected, but "the property list could not be loaded" | The Search Console API is not enabled **on the project owning the client** (step 2). Enable it, then hit "Réessayer" — no reconnection needed. |
+| Property list is empty | The authorising account owns no verified Search Console property (step 6). |
+| Card shows "Erreur" later on | Google revoked or expired the grant (password change, permission removal). "Reconnecter" runs the consent again; cached data stays. |
 
 **Sync**: `analytics:search-console:sync` runs daily (self-scheduled). GSC
 data trails reality by ~3 days and the API is quota-limited, so the dashboard
