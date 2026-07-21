@@ -92,12 +92,16 @@
                         <x-ui.table.cell class="tabular-nums">{{ number_format((int) $visitor->session_count, 0, ',', ' ') }}</x-ui.table.cell>
                         <x-ui.table.cell class="whitespace-nowrap">{{ $visitor->first_seen_at->translatedFormat('d M Y') }}</x-ui.table.cell>
                         <x-ui.table.cell class="whitespace-nowrap text-secondary">{{ $visitor->last_seen_at->diffForHumans() }}</x-ui.table.cell>
-                        <x-ui.table.cell class="whitespace-nowrap">
-                            @if ($visitor->last_country || $visitor->last_city)
-                                <x-analytics::country :code="$visitor->last_country" :city="$visitor->last_city" />
-                            @else
-                                <span class="text-muted">{{ __('Inconnu') }}</span>
-                            @endif
+                        <x-ui.table.cell>
+                            {{-- Bounded: truncates with the full text on hover, so the
+                                 table never widens past its container. --}}
+                            <div class="max-w-44 truncate">
+                                @if ($visitor->last_country || $visitor->last_city)
+                                    <x-analytics::country :code="$visitor->last_country" :city="$visitor->last_city" />
+                                @else
+                                    <span class="text-muted">{{ __('Inconnu') }}</span>
+                                @endif
+                            </div>
                         </x-ui.table.cell>
                         <x-ui.table.cell :last="true" class="whitespace-nowrap">
                             @if ($visitor->acquisition_source)

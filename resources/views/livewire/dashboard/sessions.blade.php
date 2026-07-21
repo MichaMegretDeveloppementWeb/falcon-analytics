@@ -118,26 +118,33 @@
                                 <span class="text-muted">{{ __('Directe') }}</span>
                             @endif
                         </x-ui.table.cell>
-                        <x-ui.table.cell class="whitespace-nowrap">
-                            @if ($session->landing_route || $session->landing_url)
-                                <x-analytics::page-url :route="$session->landing_route" :url="$session->landing_url" />
-                            @else
-                                <span class="text-muted">·</span>
-                            @endif
+                        {{-- Bounded cells: long values truncate with the full text on
+                             hover, so the table never widens past its container. --}}
+                        <x-ui.table.cell>
+                            <div class="max-w-56 truncate">
+                                @if ($session->landing_route || $session->landing_url)
+                                    <x-analytics::page-url :route="$session->landing_route" :url="$session->landing_url" />
+                                @else
+                                    <span class="text-muted">·</span>
+                                @endif
+                            </div>
                         </x-ui.table.cell>
-                        <x-ui.table.cell class="whitespace-nowrap">
+                        <x-ui.table.cell>
                             @if ($session->device_type || $session->browser)
-                                {{ $session->device_type ? DeviceLabel::for($session->device_type) : __('Inconnu') }}@if ($session->browser) · {{ $session->browser }}@endif
+                                @php $deviceLine = ($session->device_type ? DeviceLabel::for($session->device_type) : __('Inconnu')).($session->browser ? ' · '.$session->browser : ''); @endphp
+                                <div class="max-w-40 truncate" data-tooltip="{{ $deviceLine }}">{{ $deviceLine }}</div>
                             @else
                                 <span class="text-muted">{{ __('Inconnu') }}</span>
                             @endif
                         </x-ui.table.cell>
-                        <x-ui.table.cell :last="true" class="whitespace-nowrap">
-                            @if ($session->country || $session->city)
-                                <x-analytics::country :code="$session->country" :city="$session->city" />
-                            @else
-                                <span class="text-muted">{{ __('Inconnu') }}</span>
-                            @endif
+                        <x-ui.table.cell :last="true">
+                            <div class="max-w-44 truncate">
+                                @if ($session->country || $session->city)
+                                    <x-analytics::country :code="$session->country" :city="$session->city" />
+                                @else
+                                    <span class="text-muted">{{ __('Inconnu') }}</span>
+                                @endif
+                            </div>
                         </x-ui.table.cell>
                     </x-ui.table.row>
                 @endforeach
