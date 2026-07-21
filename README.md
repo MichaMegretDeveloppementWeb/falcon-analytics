@@ -61,6 +61,29 @@ composer require falcon/analytics
 (For development inside a monorepo, a `path` repository with `"symlink": true`
 pointing at the package directory works the same way.)
 
+**Authenticating against the private repositories.** Both repositories are
+private, so Composer needs a GitHub credential with read access to them —
+otherwise `composer require` fails with "Could not find package". One token
+covers both repos. Three setups:
+
+- *Developer machine*: just run `composer require falcon/analytics` and follow
+  the interactive prompt — Composer points you to
+  `https://github.com/settings/tokens/new?scopes=repo`, you paste the token
+  once, and it is stored machine-wide in `~/.composer/auth.json` (never in the
+  project). Or set it up ahead of time:
+  `composer config --global github-oauth.github.com ghp_YOUR_TOKEN`.
+- *Server*: same global `composer config` command over SSH; a server whose
+  system git already authenticates to GitHub via an SSH key also works
+  (Composer falls back to a git clone).
+- *CI*: expose the token as an environment variable at install time:
+  `COMPOSER_AUTH='{"github-oauth":{"github.com":"<token>"}}'`.
+
+**If the host already uses Livewire.** Livewire is a shared dependency, not a
+bundled one: Composer resolves a single installation for the whole app and the
+package plugs into it (same update endpoint, same Alpine runtime). A host on
+Livewire 4 needs nothing; a host on Livewire 3 gets a hard Composer version
+conflict — upgrade the host to Livewire 4 first, nothing breaks silently.
+
 ### 2. Install command
 
 ```bash
