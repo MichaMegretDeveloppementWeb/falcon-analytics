@@ -17,10 +17,11 @@ use Falcon\Analytics\Models\SearchQuery;
 final class SearchQueryReadRepository
 {
     /**
-     * Top queries of the period by clicks. Positions are averaged weighted by
-     * impressions, so a day with real visibility outweighs a stray one.
+     * Top queries of the period by clicks, each with its previous-period
+     * clicks for the delta. Positions are averaged weighted by impressions,
+     * so a day with real visibility outweighs a stray one.
      *
-     * @return list<array{query: string, clicks: int, impressions: int, ctr: float|null, position: float|null}>
+     * @return list<array{query: string, clicks: int, impressions: int, ctr: float|null, position: float|null, previous: int}>
      */
     public function topQueries(Period $period, int $limit): array
     {
@@ -36,7 +37,16 @@ final class SearchQueryReadRepository
             ->limit($limit)
             ->get();
 
-        return $rows->map(function (SearchQuery $row): array {
+        $previousPeriod = $period->previous();
+        $previous = SearchQuery::query()
+            ->selectRaw('query')
+            ->selectRaw('SUM(clicks) as total_clicks')
+            ->whereBetween('date', [$previousPeriod->from->toDateString(), $previousPeriod->to->toDateString()])
+            ->whereIn('query', $rows->pluck('query'))
+            ->groupBy('query')
+            ->pluck('total_clicks', 'query');
+
+        return $rows->map(function (SearchQuery $row) use ($previous): array {
             $clicks = (int) $row->getAttribute('total_clicks');
             $impressions = (int) $row->getAttribute('total_impressions');
             $weighted = (float) $row->getAttribute('weighted_position');
@@ -47,8 +57,29 @@ final class SearchQueryReadRepository
                 'impressions' => $impressions,
                 'ctr' => $impressions > 0 ? round($clicks / $impressions * 100, 1) : null,
                 'position' => $impressions > 0 ? round($weighted / $impressions, 1) : null,
+                'previous' => (int) ($previous[$row->query] ?? 0),
             ];
         })->all();
+    }
+
+    /**
+     * Total organic clicks of the period and of the one before, for the
+     * headline number and its delta.
+     *
+     * @return array{current: int, previous: int}
+     */
+    public function clicksTotals(Period $period): array
+    {
+        $previousPeriod = $period->previous();
+
+        $sum = fn (CarbonImmutable $from, CarbonImmutable $to): int => (int) SearchQuery::query()
+            ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
+            ->sum('clicks');
+
+        return [
+            'current' => $sum($period->from, $period->to),
+            'previous' => $sum($previousPeriod->from, $previousPeriod->to),
+        ];
     }
 
     /**

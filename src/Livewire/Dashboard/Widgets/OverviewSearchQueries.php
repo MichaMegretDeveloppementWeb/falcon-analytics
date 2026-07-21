@@ -44,6 +44,7 @@ final class OverviewSearchQueries extends Component
                 'connected' => $connected,
                 'connectionStatus' => $connection?->status,
                 'queries' => $connected ? $repository->topQueries($range, self::TOP_LIMIT) : [],
+                'totals' => $connected ? $repository->clicksTotals($range) : ['current' => 0, 'previous' => 0],
                 'freshestDate' => $connected ? $repository->freshestDate($range) : null,
                 'range' => $range,
                 'integrationsRoute' => route(config('analytics.dashboard.route_name', 'analytics').'.integrations'),

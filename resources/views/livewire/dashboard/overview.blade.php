@@ -21,7 +21,7 @@
 
     {{-- Deferred heavy sections : each loads independently after paint --}}
     <div>
-        <x-ui.section-header :title="__('Vos visiteurs')" :description="__('Composition de l\'audience')" class="mb-4" />
+        <x-ui.section-header :title="__('Audience')" :description="__('Visiteurs et appareils')" class="mb-4" />
         <livewire:analytics-overview-audience :period="$period" :subject="$subject" :key="'ov-audience-'.$period.'-'.$subject" />
     </div>
 

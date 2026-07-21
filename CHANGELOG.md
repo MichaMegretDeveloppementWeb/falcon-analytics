@@ -3,6 +3,22 @@
 Notable milestones of `falcon/analytics`. Versions are git tags; earlier per-tier
 patch tags (v0.1.x) hold the individual steps.
 
+## [0.3.4] - Overview redesign: varied presentation per module (2026-07-21)
+
+### Changed
+- **Overview page redesigned** on the reference's principles: each section is
+  now a single card with vertically-divided columns, and every module gets a
+  presentation matching its data instead of the repeated icon-tile bar-list —
+  Sources become a doughnut with a delta legend, Localities a plain ranked
+  value list, Pages keep the only bars (thin, under the label), Conversions
+  show a green dot and their share of the total, Top events a numbered
+  ranking, and the Google queries module adopts the headline pattern (big
+  click total with delta, per-query "Position moy. · impressions" sub-line
+  and per-query deltas against the previous period — new repository read).
+- **Wording pass**: explanatory sentences replaced by factual product copy
+  ("Dernières données Google : 19 juil.", one-line Search Console CTA,
+  "Audience" section title).
+
 ## [0.3.3] - Manual Search Console sync from the dashboard (2026-07-21)
 
 ### Added

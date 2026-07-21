@@ -1,12 +1,8 @@
-@php
-    $maxClicks = max(array_column($queries, 'clicks') ?: [0]);
-@endphp
-
 <div>
     <div class="mb-4 flex items-end justify-between gap-4">
-        <x-ui.section-header :title="__('Clics par recherches Google')" :description="__('Les termes réellement tapés sur Google, via Search Console')" />
+        <x-ui.section-header :title="__('Clics par recherches Google')" />
         @if ($connected && $freshestDate !== null)
-            <span class="shrink-0 whitespace-nowrap text-[11px] text-muted">{{ __('Données Google jusqu\'au :date', ['date' => $freshestDate->isoFormat('D MMM')]) }}</span>
+            <span class="shrink-0 whitespace-nowrap text-[11px] text-muted">{{ __('Dernières données Google : :date', ['date' => $freshestDate->isoFormat('D MMM')]) }}</span>
         @endif
     </div>
 
@@ -16,36 +12,42 @@
                 <span class="flex h-10 w-10 items-center justify-center rounded-lg bg-elevated">
                     <x-ui.icon name="magnifying-glass" class="h-5 w-5 text-secondary" />
                 </span>
-                <div>
-                    <p class="text-[13px] font-medium text-primary">{{ __('Connectez Google Search Console') }}</p>
-                    <p class="mt-1 text-[12px] text-secondary">{{ __('Google masque les mots-clés organiques au traceur ; seule la Search Console les fournit, au propriétaire vérifié du site.') }}</p>
-                </div>
+                <p class="max-w-md text-[12px] text-secondary">
+                    {{ __('Connectez Google Search Console pour suivre les recherches qui mènent au site : clics, impressions et position.') }}
+                </p>
                 <x-ui.button variant="secondary" :href="$integrationsRoute">
                     {{ $connectionStatus === \Falcon\Analytics\Models\SearchConsoleConnection::STATUS_ERROR ? __('Reconnecter Search Console') : __('Connecter Search Console') }}
                 </x-ui.button>
             </div>
+        @elseif ($queries === [])
+            <x-ui.empty-state
+                icon="magnifying-glass"
+                :title="__('Aucune donnée sur la période')"
+                :description="__('Les données Google paraissent avec quelques jours de décalage.')" />
         @else
-            @forelse ($queries as $item)
-                @php $pct = $maxClicks > 0 ? round($item['clicks'] / $maxClicks * 100) : 0; @endphp
-                <div class="flex items-center gap-3 py-1.5">
-                    <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-elevated">
-                        <x-ui.icon name="magnifying-glass" class="h-3.5 w-3.5 text-secondary" />
-                    </span>
-                    <span class="w-40 shrink-0 truncate text-[13px] text-primary sm:w-56" data-tooltip="{{ $item['query'] }}">{{ $item['query'] }}</span>
-                    <div class="relative h-1.5 flex-1 overflow-hidden rounded-full bg-elevated">
-                        <div class="absolute inset-y-0 left-0 rounded-full bg-[#1684ea]/70" style="width: {{ $pct }}%"></div>
+            <div class="flex items-baseline gap-2 border-b border-subtle pb-4">
+                <span class="text-2xl font-semibold tracking-tight text-primary">{{ number_format($totals['current'], 0, ',', ' ') }}</span>
+                @include('analytics::livewire.dashboard.partials.delta', ['current' => $totals['current'], 'previous' => $totals['previous']])
+                <span class="text-[12px] text-muted">{{ __('clics sur la période') }}</span>
+            </div>
+
+            <div class="grid grid-cols-1 gap-x-10 pt-2 lg:grid-cols-2">
+                @foreach ($queries as $item)
+                    <div class="flex items-center justify-between gap-4 border-b border-subtle py-2.5 lg:[&:nth-last-child(-n+2)]:border-b-0 [&:last-child]:border-b-0">
+                        <div class="min-w-0">
+                            <p class="truncate text-[13px] font-medium text-primary" data-tooltip="{{ $item['query'] }}">{{ $item['query'] }}</p>
+                            <p class="text-[11px] text-muted">
+                                {{ __('Position moy. : :position', ['position' => $item['position'] !== null ? number_format($item['position'], 1, ',', ' ') : '–']) }}
+                                · {{ number_format($item['impressions'], 0, ',', ' ') }} {{ __('impressions') }}
+                            </p>
+                        </div>
+                        <div class="flex shrink-0 items-center gap-2">
+                            @include('analytics::livewire.dashboard.partials.delta', ['current' => $item['clicks'], 'previous' => $item['previous']])
+                            <span class="w-8 text-right text-[13px] font-semibold text-primary">{{ number_format($item['clicks'], 0, ',', ' ') }}</span>
+                        </div>
                     </div>
-                    <span class="w-10 shrink-0 text-right text-[12px] font-medium text-secondary" data-tooltip="{{ __('Clics') }}">{{ number_format($item['clicks'], 0, ',', ' ') }}</span>
-                    <span class="hidden w-24 shrink-0 text-right text-[11px] text-muted sm:block">
-                        {{ number_format($item['impressions'], 0, ',', ' ') }} {{ __('imp.') }}{{ $item['position'] !== null ? ' · '.__('pos.').' '.number_format($item['position'], 1, ',', ' ') : '' }}
-                    </span>
-                </div>
-            @empty
-                <x-ui.empty-state
-                    icon="magnifying-glass"
-                    :title="__('Aucune donnée sur la période')"
-                    :description="__('La synchronisation est quotidienne et les données Google paraissent avec ~3 jours de décalage.')" />
-            @endforelse
+                @endforeach
+            </div>
         @endif
     </x-ui.card>
 </div>

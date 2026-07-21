@@ -36,11 +36,12 @@ beforeEach(function () {
     Livewire::withoutLazyLoading();
 });
 
-it('aggregates the period queries by clicks with an impressions-weighted position', function () {
+it('aggregates the period queries by clicks with an impressions-weighted position and the previous-period clicks', function () {
     gscQueryRow('2026-07-10', 'louer une voiture', 10, 100, 3.0);
     gscQueryRow('2026-07-11', 'louer une voiture', 20, 300, 5.0);
     gscQueryRow('2026-07-12', 'suv geneve', 5, 50, 8.0);
-    gscQueryRow('2025-01-01', 'louer une voiture', 99, 999, 1.0); // outside the period
+    gscQueryRow('2026-06-01', 'louer une voiture', 12, 200, 6.0); // previous period
+    gscQueryRow('2025-01-01', 'louer une voiture', 99, 999, 1.0); // outside both periods
 
     $rows = app(SearchQueryReadRepository::class)->topQueries(Period::ofDays(30), 10);
 
@@ -50,7 +51,18 @@ it('aggregates the period queries by clicks with an impressions-weighted positio
         ->and($rows[0]['impressions'])->toBe(400)
         ->and($rows[0]['ctr'])->toBe(7.5)
         ->and($rows[0]['position'])->toBe(4.5)
-        ->and($rows[1]['query'])->toBe('suv geneve');
+        ->and($rows[0]['previous'])->toBe(12)
+        ->and($rows[1]['query'])->toBe('suv geneve')
+        ->and($rows[1]['previous'])->toBe(0);
+});
+
+it('totals the period clicks against the previous period', function () {
+    gscQueryRow('2026-07-10', 'louer une voiture', 10, 100, 3.0);
+    gscQueryRow('2026-07-12', 'suv geneve', 5, 50, 8.0);
+    gscQueryRow('2026-06-01', 'louer une voiture', 12, 200, 6.0); // previous period
+
+    expect(app(SearchQueryReadRepository::class)->clicksTotals(Period::ofDays(30)))
+        ->toBe(['current' => 15, 'previous' => 12]);
 });
 
 it('reports the freshest cached day of the period', function () {
@@ -84,7 +96,9 @@ it('renders the top queries with their freshness note when connected', function 
 
     Livewire::test(OverviewSearchQueries::class)
         ->assertSeeText('louer une voiture')
-        ->assertSeeText(__('Données Google jusqu\'au :date', ['date' => CarbonImmutable::parse('2026-07-17')->isoFormat('D MMM')]))
+        ->assertSeeText(__('Position moy.'))
+        ->assertSeeText(__('clics sur la période'))
+        ->assertSeeText(__('Dernières données Google : :date', ['date' => CarbonImmutable::parse('2026-07-17')->isoFormat('D MMM')]))
         ->assertDontSeeText(__('Connectez Google Search Console'));
 });
 
