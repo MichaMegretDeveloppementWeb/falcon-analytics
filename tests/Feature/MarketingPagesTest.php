@@ -92,6 +92,32 @@ it('creates a campaign from the campaigns table', function () {
     expect(Campaign::where('name', 'Hiver 2026')->first()?->match_conditions)->toBe([['param' => 'utm_campaign', 'value' => 'hiver']]);
 });
 
+it('edits the campaign in place from its detail page, through the shared form', function () {
+    $campaign = Campaign::create(['name' => 'Été', 'platform' => 'Meta', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
+    $this->actingAs($this->admin, 'admin');
+
+    Livewire::test(CampaignDetailPage::class, ['campaign' => $campaign])
+        ->call('editCampaign')
+        ->assertSet('modal', 'campaign')
+        ->assertSet('campaignName', 'Été')
+        ->assertSet('campaignConditions', [['param' => 'src', 'value' => 'meta_ete']])
+        ->set('campaignName', 'Été 2027')
+        ->call('addCampaignCondition')
+        ->set('campaignConditions.1.param', 'creative')
+        ->set('campaignConditions.1.value', 'cabrio')
+        ->call('saveCampaign')
+        ->assertHasNoErrors()
+        ->assertSet('modal', '');
+
+    $fresh = $campaign->fresh();
+
+    expect($fresh->name)->toBe('Été 2027')
+        ->and($fresh->match_conditions)->toBe([
+            ['param' => 'src', 'value' => 'meta_ete'],
+            ['param' => 'creative', 'value' => 'cabrio'],
+        ]);
+});
+
 it('manages ads and objectives from the campaign detail, in one save', function () {
     $campaign = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
     $this->actingAs($this->admin, 'admin');

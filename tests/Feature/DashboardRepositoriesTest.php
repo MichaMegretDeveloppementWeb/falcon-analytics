@@ -11,11 +11,11 @@ use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Repositories\Dashboard\EngagementReadRepository;
 use Falcon\Analytics\Repositories\Dashboard\EventReadRepository;
-use Falcon\Analytics\Repositories\Dashboard\MarketingReadRepository;
 use Falcon\Analytics\Repositories\Dashboard\OverviewReadRepository;
 use Falcon\Analytics\Repositories\Dashboard\SessionListReadRepository;
 use Falcon\Analytics\Repositories\Dashboard\VisitorListReadRepository;
 use Falcon\Analytics\Repositories\Dashboard\VisitorProfileReadRepository;
+use Falcon\Analytics\Services\Dashboard\MarketingReportBuilder;
 use Falcon\Analytics\Services\SubjectResolver;
 use Falcon\Analytics\Tests\Fixtures\Models\TestClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -60,7 +60,7 @@ function makeDashboardEvent(Session $session, EventType $type, array $attrs = []
 beforeEach(function () {
     $this->travelTo(CarbonImmutable::parse('2026-06-15 12:00:00'));
     $this->engagement = new EngagementReadRepository;
-    $this->overview = new OverviewReadRepository(new MarketingReadRepository);
+    $this->overview = new OverviewReadRepository(new MarketingReportBuilder);
     $this->sessions = new SessionListReadRepository;
     $this->visitors = new VisitorListReadRepository;
     $this->period = Period::ofDays(30);

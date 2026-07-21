@@ -10,8 +10,8 @@ use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\GuardsWidgetRead;
 use Falcon\Analytics\Models\Ad;
 use Falcon\Analytics\Models\Campaign;
-use Falcon\Analytics\Repositories\Dashboard\MarketingReadRepository;
 use Falcon\Analytics\Services\Dashboard\MarketingMetricsCalculator;
+use Falcon\Analytics\Services\Dashboard\MarketingReportBuilder;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Lazy;
 use Livewire\Component;
@@ -35,7 +35,7 @@ final class MarketingDashboardContent extends Component
         return view('analytics::livewire.dashboard.widgets.dashboard-content-skeleton');
     }
 
-    public function render(MarketingReadRepository $marketing, FunnelRegistry $funnels, MarketingMetricsCalculator $metrics): View
+    public function render(MarketingReportBuilder $marketing, FunnelRegistry $funnels, MarketingMetricsCalculator $metrics): View
     {
         return $this->guardedWidget(function () use ($marketing, $funnels, $metrics): array {
             $period = Period::ofDays($this->period);

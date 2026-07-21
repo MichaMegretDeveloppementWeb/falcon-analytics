@@ -10,8 +10,8 @@ use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\GuardsWidgetRead;
 use Falcon\Analytics\Models\Ad;
-use Falcon\Analytics\Repositories\Dashboard\MarketingReadRepository;
 use Falcon\Analytics\Services\Dashboard\MarketingMetricsCalculator;
+use Falcon\Analytics\Services\Dashboard\MarketingReportBuilder;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Lazy;
 use Livewire\Component;
@@ -37,7 +37,7 @@ final class AdDetailContent extends Component
         return view('analytics::livewire.dashboard.widgets.dashboard-content-skeleton');
     }
 
-    public function render(FunnelRegistry $funnels, EventRegistry $events, MarketingReadRepository $marketing, MarketingMetricsCalculator $metrics): View
+    public function render(FunnelRegistry $funnels, EventRegistry $events, MarketingReportBuilder $marketing, MarketingMetricsCalculator $metrics): View
     {
         return $this->guardedWidget(function () use ($funnels, $events, $marketing, $metrics): array {
             $ad = Ad::query()->findOrFail($this->refId);

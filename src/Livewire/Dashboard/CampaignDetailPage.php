@@ -6,10 +6,10 @@ namespace Falcon\Analytics\Livewire\Dashboard;
 
 use Falcon\Analytics\Actions\DeleteAdAction;
 use Falcon\Analytics\Actions\DeleteCampaignAction;
-use Falcon\Analytics\Actions\SaveCampaignAction;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\EditsAd;
+use Falcon\Analytics\Livewire\Dashboard\Concerns\EditsCampaign;
 use Falcon\Analytics\Models\Ad;
 use Falcon\Analytics\Models\Campaign;
 use Illuminate\Contracts\View\View;
@@ -26,18 +26,12 @@ use Throwable;
 final class CampaignDetailPage extends DashboardComponent
 {
     use EditsAd;
+    use EditsCampaign;
 
     public Campaign $campaign;
 
     /** '' | campaign | ad | delete-campaign | delete-ad */
     public string $modal = '';
-
-    public string $campaignName = '';
-
-    public string $campaignPlatform = '';
-
-    /** @var list<array{param: string, value: string}> */
-    public array $campaignConditions = [];
 
     public ?int $deleteAdId = null;
 
@@ -65,67 +59,20 @@ final class CampaignDetailPage extends DashboardComponent
         return $this->campaign->id;
     }
 
+    protected function campaignFormId(): int
+    {
+        return $this->campaign->id;
+    }
+
     public function editCampaign(): void
     {
-        $this->campaignName = $this->campaign->name;
-        $this->campaignPlatform = (string) $this->campaign->platform;
-        $this->campaignConditions = $this->campaign->match_conditions ?: [['param' => '', 'value' => '']];
+        $this->fillCampaignForm($this->campaign);
         $this->modal = 'campaign';
     }
 
-    public function addCampaignCondition(): void
+    protected function afterCampaignSaved(): void
     {
-        $this->campaignConditions[] = ['param' => '', 'value' => ''];
-    }
-
-    public function removeCampaignCondition(int $index): void
-    {
-        unset($this->campaignConditions[$index]);
-    }
-
-    public function saveCampaign(SaveCampaignAction $action): void
-    {
-        $this->validate([
-            'campaignName' => ['required', 'string', 'max:150'],
-            'campaignPlatform' => ['nullable', 'string', 'max:60'],
-            'campaignConditions' => ['required', 'array', 'min:1'],
-            'campaignConditions.*.param' => ['required', 'string', 'max:100'],
-            'campaignConditions.*.value' => ['required', 'string', 'max:150'],
-        ], messages: [
-            'campaignName.required' => __('Le nom est obligatoire.'),
-            'campaignName.max' => __('Le nom ne doit pas dépasser :max caractères.'),
-            'campaignPlatform.max' => __('La plateforme ne doit pas dépasser :max caractères.'),
-            'campaignConditions.required' => __('Ajoutez au moins une condition.'),
-            'campaignConditions.min' => __('Ajoutez au moins une condition.'),
-            'campaignConditions.*.param.required' => __('Le paramètre est obligatoire.'),
-            'campaignConditions.*.param.max' => __('Le paramètre ne doit pas dépasser :max caractères.'),
-            'campaignConditions.*.value.required' => __('La valeur est obligatoire.'),
-            'campaignConditions.*.value.max' => __('La valeur ne doit pas dépasser :max caractères.'),
-        ], attributes: [
-            'campaignName' => __('nom'),
-            'campaignConditions.*.param' => __('paramètre'),
-            'campaignConditions.*.value' => __('valeur'),
-        ]);
-
-        try {
-            $action->execute(
-                $this->campaign->id,
-                $this->campaignName,
-                $this->campaignPlatform !== '' ? $this->campaignPlatform : null,
-                $this->cleanConditions($this->campaignConditions),
-            );
-            $this->campaign->refresh();
-        } catch (Throwable $e) {
-            Log::channel(config('analytics.log_channel'))->error('Campaign.save_failed', [
-                'campaign_id' => $this->campaign->id,
-                'exception' => $e,
-            ]);
-            $this->dispatch('toast', type: 'danger', title: __('L\'enregistrement de la campagne a échoué. Réessayez.'));
-
-            return;
-        }
-
-        $this->modal = '';
+        $this->campaign->refresh();
     }
 
     public function confirmDeleteCampaign(): void
@@ -204,20 +151,6 @@ final class CampaignDetailPage extends DashboardComponent
     {
         $this->modal = '';
         $this->resetValidation();
-    }
-
-    /**
-     * @param  list<array{param: string, value: string}>  $conditions
-     * @return list<array{param: string, value: string}>
-     */
-    private function cleanConditions(array $conditions): array
-    {
-        $cleaned = array_map(
-            fn (array $condition): array => ['param' => trim($condition['param']), 'value' => trim($condition['value'])],
-            $conditions,
-        );
-
-        return array_values(array_filter($cleaned, fn (array $c): bool => $c['param'] !== '' && $c['value'] !== ''));
     }
 
     /**

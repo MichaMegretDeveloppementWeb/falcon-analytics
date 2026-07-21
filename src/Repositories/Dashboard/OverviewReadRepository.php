@@ -9,6 +9,7 @@ use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Models\Campaign;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Repositories\Concerns\ScopesSessionQueries;
+use Falcon\Analytics\Services\Dashboard\MarketingReportBuilder;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -22,7 +23,7 @@ final readonly class OverviewReadRepository
 {
     use ScopesSessionQueries;
 
-    public function __construct(private MarketingReadRepository $marketing) {}
+    public function __construct(private MarketingReportBuilder $marketing) {}
 
     /**
      * New (first ever seen within the period) vs returning visitor counts.

@@ -7,19 +7,21 @@ namespace Falcon\Analytics\Funnels;
 use Falcon\Analytics\DTOs\Dashboard\FunnelReport;
 use Falcon\Analytics\DTOs\Dashboard\FunnelStepResult;
 use Falcon\Analytics\DTOs\Dashboard\Period;
-use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Models\Event;
-use Illuminate\Database\Eloquent\Builder;
 
 /**
- * Evaluates code-declared funnels against the raw events. Progression is
- * sequential: a visitor reaches step i only by matching each earlier step in
- * chronological order first, so reach is monotonically decreasing and a step
- * can never out-count the one before it.
+ * Evaluates code-declared funnels against the raw events, streaming them
+ * through the shared FunnelEventWalker. Progression is sequential: a visitor
+ * reaches step i only by matching each earlier step in chronological order
+ * first, so reach is monotonically decreasing and a step can never out-count
+ * the one before it.
  */
 final readonly class FunnelEvaluator
 {
-    public function __construct(private FunnelRegistry $registry) {}
+    public function __construct(
+        private FunnelRegistry $registry,
+        private FunnelEventWalker $walker,
+    ) {}
 
     /**
      * @return list<FunnelReport>
@@ -38,23 +40,15 @@ final readonly class FunnelEvaluator
         $stepCount = count($steps);
         $reached = array_fill(0, max($stepCount, 1), 0);
 
-        foreach ($this->journeys($funnel, $period, $subjectType) as $events) {
-            $pointer = 0;
-
-            foreach ($events as $event) {
-                if ($pointer >= $stepCount) {
-                    break;
-                }
-
-                if ($steps[$pointer]->matches($event)) {
-                    $pointer++;
-                }
-            }
-
-            for ($i = 0; $i < $pointer; $i++) {
-                $reached[$i]++;
-            }
-        }
+        $this->walker->walk(
+            $funnel,
+            $period,
+            $subjectType,
+            null,
+            function (int $visitorId, int $stepIndex, Event $event) use (&$reached): void {
+                $reached[$stepIndex]++;
+            },
+        );
 
         $entrants = $stepCount > 0 ? $reached[0] : 0;
         $results = [];
@@ -76,66 +70,5 @@ final readonly class FunnelEvaluator
         }
 
         return new FunnelReport($funnel->key, $funnel->label, $entrants, $totalScore, $results);
-    }
-
-    /**
-     * Relevant events grouped by visitor, in chronological order. Only events
-     * that can match a step are loaded. The subject filter is applied on the
-     * visitor's identity, not the event, so an anonymous first step still counts
-     * for a visitor who later signed in.
-     *
-     * @return iterable<int, list<Event>>
-     */
-    private function journeys(Funnel $funnel, Period $period, ?string $subjectType): iterable
-    {
-        $names = [];
-        $routes = [];
-
-        foreach ($funnel->steps() as $step) {
-            if ($step->event !== null) {
-                $names[] = $step->event;
-            }
-
-            if ($step->route !== null) {
-                $routes[] = $step->route;
-            }
-        }
-
-        if ($names === [] && $routes === []) {
-            return [];
-        }
-
-        $query = Event::query()
-            ->select(['id', 'visitor_id', 'type', 'name', 'route', 'occurred_at'])
-            ->whereBetween('occurred_at', [$period->from, $period->to])
-            // Exclude bot traffic, consistently with every other dashboard read,
-            // so funnel conversions are not inflated.
-            ->whereHas('session', fn (Builder $session): Builder => $session->where('is_bot', false))
-            ->where(function (Builder $matcher) use ($names, $routes): void {
-                if ($names !== []) {
-                    $matcher->whereIn('name', $names);
-                }
-
-                if ($routes !== []) {
-                    $matcher->orWhere(function (Builder $inner) use ($routes): void {
-                        $inner->where('type', EventType::Pageview)->whereIn('route', $routes);
-                    });
-                }
-            })
-            ->when($subjectType !== null, fn (Builder $query): Builder => $query->whereHas(
-                'visitor',
-                fn (Builder $visitor): Builder => $visitor->where('subject_type', $subjectType),
-            ))
-            ->orderBy('visitor_id')
-            ->orderBy('occurred_at')
-            ->orderBy('id');
-
-        $grouped = [];
-
-        foreach ($query->cursor() as $event) {
-            $grouped[$event->visitor_id][] = $event;
-        }
-
-        return $grouped;
     }
 }
