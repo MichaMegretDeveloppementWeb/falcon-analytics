@@ -3,6 +3,35 @@
 Notable milestones of `falcon/analytics`. Versions are git tags; earlier per-tier
 patch tags (v0.1.x) hold the individual steps.
 
+## [1.0.0] - Stable release after the full pre-v1 audit (2026-07-21)
+
+Six-dimension audit (architecture, error handling, queries, security,
+documentation, code quality) with every finding fixed.
+
+### Security & robustness
+- Configured dashboard/marketing middleware now registered as **Livewire
+  persistent middleware** (actions can no longer replay past a revoked
+  session); warning logged when a host mounts a module with an empty
+  middleware list.
+- Ingested `props` capped (key 100, value 500 chars, 8 KB JSON); utm and
+  user-agent values truncated to their column lengths; integrations page now
+  degrades like every other screen; ad objectives validated against the enum.
+- Collector: unhandled fetch rejection silenced, dead branch removed.
+
+### Performance
+- New indexes: `sessions.country`, `events (route, occurred_at)` and
+  `events (visitor_id, occurred_at)`; country search bounded to the period;
+  funnel evaluation now **streams** (no more in-memory accumulation); tagged
+  marketing sessions capped (20 000, logged when truncated).
+
+### Architecture
+- Marketing report building extracted from the repository (766 → 150 lines)
+  into `MarketingReportBuilder`; the triplicated funnel machinery unified in
+  `FunnelEventWalker`; campaign form mutualised in `EditsCampaign`;
+  visitor-merge logic moved to `VisitorMerger` (service), typed
+  `SearchConsoleException`, `VisitorIdentityResolver` rename.
+- 331 tests (1053 assertions), Pint and Larastan clean.
+
 ## [0.3.5] - UI audit follow-up: last legacy modules aligned (2026-07-21)
 
 ### Changed
