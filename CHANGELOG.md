@@ -3,6 +3,18 @@
 Notable milestones of `falcon/analytics`. Versions are git tags; earlier per-tier
 patch tags (v0.1.x) hold the individual steps.
 
+## [0.3.5] - UI audit follow-up: last legacy modules aligned (2026-07-21)
+
+### Changed
+- **Marketing dashboard "Top pubs"** drops the icon-tile bar-list for the
+  ranked-list pattern: position, ad name with "n sessions · campaign"
+  sub-line, and the conversion count as the key figure (the cryptic
+  "conversions / sessions" caption is gone).
+- **Visitor detail** acquisition bars thinned to match the overview style.
+- Audit outcome recorded: every other screen (lists as tables, funnels as
+  loss bars, session journey, events, campaign/ad details) already follows
+  the design principles established with the overview redesign.
+
 ## [0.3.4] - Overview redesign: varied presentation per module (2026-07-21)
 
 ### Changed

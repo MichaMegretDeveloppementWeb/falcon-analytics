@@ -1,6 +1,5 @@
 @php
     $routeName = config('analytics.marketing.route_name', 'marketing');
-    $maxAd = collect($adRows)->max('sessions') ?: 1;
 @endphp
 
 <div class="space-y-8">
@@ -75,20 +74,20 @@
 
         <div class="lg:col-span-5">
             <div class="mb-4 flex items-center justify-between">
-                <x-ui.section-header :title="__('Top pubs')" :description="__('conversions / sessions')" />
+                <x-ui.section-header :title="__('Top pubs')" />
                 <a href="{{ route($routeName.'.ads') }}" class="inline-flex cursor-pointer items-center gap-x-1 text-[12px] font-medium text-secondary transition-colors hover:text-primary">{{ __('Toutes les pubs') }} <x-ui.icon name="arrow-right" class="h-3.5 w-3.5" /></a>
             </div>
             <x-ui.card>
                 @forelse ($adRows as $row)
-                    <a href="{{ $row['campaign_id'] ? route($routeName.'.campaigns.show', $row['campaign_id']) : '#' }}" class="flex items-center gap-3 py-1.5 {{ $row['campaign_id'] ? 'cursor-pointer' : '' }}" wire:key="topad-{{ $row['id'] }}">
-                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-elevated">
-                            <x-ui.icon name="rectangle-stack" class="h-3.5 w-3.5 text-secondary" />
+                    <a href="{{ $row['campaign_id'] ? route($routeName.'.campaigns.show', $row['campaign_id']) : '#' }}" class="flex items-center justify-between gap-4 py-2 {{ $row['campaign_id'] ? 'cursor-pointer' : '' }}" wire:key="topad-{{ $row['id'] }}">
+                        <span class="flex min-w-0 items-center gap-2.5">
+                            <span class="w-5 shrink-0 text-[11px] font-medium tabular-nums text-muted">{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
+                            <span class="min-w-0">
+                                <span class="block truncate text-[13px] font-medium text-primary">{{ $row['name'] }}</span>
+                                <span class="block truncate text-[11px] text-muted">{{ number_format($row['sessions'], 0, ',', ' ') }} {{ __('sessions') }} · {{ $row['campaign'] }}</span>
+                            </span>
                         </span>
-                        <span class="w-32 shrink-0 truncate text-[13px] text-primary">{{ $row['name'] }}</span>
-                        <div class="relative h-1.5 flex-1 overflow-hidden rounded-full bg-elevated">
-                            <div class="absolute inset-y-0 left-0 rounded-full bg-[#1684ea]/70" style="width: {{ max((int) round($row['sessions'] / $maxAd * 100), 3) }}%"></div>
-                        </div>
-                        <span class="shrink-0 text-right text-[12px] tabular-nums"><span class="font-medium text-primary">{{ number_format($row['conversions'], 0, ',', ' ') }}</span><span class="text-muted"> / {{ number_format($row['sessions'], 0, ',', ' ') }}</span></span>
+                        <span class="shrink-0 text-right text-[13px] tabular-nums"><span class="font-semibold text-primary">{{ number_format($row['conversions'], 0, ',', ' ') }}</span> <span class="text-[11px] text-muted">{{ __('conv.') }}</span></span>
                     </a>
                 @empty
                     <div class="px-2 py-6 text-center text-[12px] text-muted">{{ __('Aucune pub avec du trafic sur la période.') }}</div>

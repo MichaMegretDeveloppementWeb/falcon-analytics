@@ -92,8 +92,8 @@
                                 <span class="text-secondary">@if ($source === 'direct'){{ __('Directe') }}@else<x-analytics::source :value="$source" />@endif</span>
                                 <span><span class="font-semibold text-primary">{{ $pct."\u{00A0}%" }}</span> <span class="text-muted">{{ $c }}</span></span>
                             </div>
-                            <div class="h-1.5 w-full overflow-hidden rounded-full bg-elevated">
-                                <div class="h-full rounded-full bg-[#1684ea]" style="width: {{ $pct }}%"></div>
+                            <div class="h-1 w-full overflow-hidden rounded-full bg-elevated">
+                                <div class="h-full rounded-full bg-[#1684ea]/70" style="width: {{ $pct }}%"></div>
                             </div>
                         </div>
                     @endforeach
