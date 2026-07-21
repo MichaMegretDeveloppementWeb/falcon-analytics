@@ -483,8 +483,10 @@ campaign term (`utm_term`): these are the words actually typed into Google.
 `sweep` (every 5 min), `prune` (daily, 03:30), the Search Console sync
 (daily, 05:00, inert without an attached connection) and the monthly GeoLite2
 refresh (inert until a licence key is set) are **self-scheduled** by the
-package: the host only needs Laravel's standard scheduler cron
-(`* * * * * php artisan schedule:run`), no dedicated analytics cron.
+package: the host only needs to trigger Laravel's standard scheduler every
+minute, no dedicated analytics cron. Both trigger styles work: a real cron
+(`* * * * * php artisan schedule:run`) or, on shared hosting, an HTTP
+endpoint calling `Artisan::call('schedule:run')`.
 
 ## Geolocation
 

@@ -93,42 +93,48 @@ final class AnalyticsServiceProvider extends ServiceProvider
         Livewire::component('analytics-sessions-headline', SessionsHeadline::class);
         Livewire::component('analytics-visitors-headline', VisitorsHeadline::class);
 
+        // Registered OUTSIDE any runningInConsole() guard on purpose: shared
+        // hosts often trigger the scheduler through an HTTP endpoint calling
+        // Artisan::call('schedule:run'), where runningInConsole() is false. A
+        // console-only guard would silently unregister every command and every
+        // schedule below in that setup. commands() only queues an
+        // Artisan::starting callback, so ordinary HTTP requests pay nothing.
+        $this->commands([
+            InstallCommand::class,
+            GeoipDownloadCommand::class,
+            PruneCommand::class,
+            SweepCommand::class,
+            ScanEventsCommand::class,
+            CheckEventsCommand::class,
+            SyncSearchConsoleCommand::class,
+        ]);
+
+        // Self-schedule maintenance so a host only needs to trigger the
+        // standard scheduler (real cron or HTTP-called schedule:run), never a
+        // dedicated analytics cron. Lazily bound: the events register when the
+        // Schedule is actually resolved, i.e. only inside scheduler runs.
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+            // Close idle sessions and prune expired raw events on a fixed cadence.
+            $schedule->command('analytics:sweep')->everyFiveMinutes()->withoutOverlapping();
+            $schedule->command('analytics:prune')->dailyAt('03:30')->withoutOverlapping();
+
+            // Refresh the GeoLite2 database monthly; inert until a licence key is set.
+            $schedule->command('analytics:geoip:download')
+                ->monthlyOn(1, '04:00')
+                ->withoutOverlapping()
+                ->when(fn (): bool => (string) config('analytics.geoip.license_key') !== '');
+
+            // Pull the Search Console queries daily; the command is inert
+            // while no connection is attached.
+            $schedule->command('analytics:search-console:sync')
+                ->dailyAt('05:00')
+                ->withoutOverlapping();
+        });
+
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 __DIR__.'/../config/analytics.php' => config_path('analytics.php'),
             ], 'analytics-config');
-
-            $this->commands([
-                InstallCommand::class,
-                GeoipDownloadCommand::class,
-                PruneCommand::class,
-                SweepCommand::class,
-                ScanEventsCommand::class,
-                CheckEventsCommand::class,
-                SyncSearchConsoleCommand::class,
-            ]);
-
-            // Self-schedule maintenance so a host only needs the standard
-            // schedule:run cron, never a dedicated analytics cron.
-            $this->app->booted(function (): void {
-                $schedule = $this->app->make(Schedule::class);
-
-                // Close idle sessions and prune expired raw events on a fixed cadence.
-                $schedule->command('analytics:sweep')->everyFiveMinutes()->withoutOverlapping();
-                $schedule->command('analytics:prune')->dailyAt('03:30')->withoutOverlapping();
-
-                // Refresh the GeoLite2 database monthly; inert until a licence key is set.
-                $schedule->command('analytics:geoip:download')
-                    ->monthlyOn(1, '04:00')
-                    ->withoutOverlapping()
-                    ->when(fn (): bool => (string) config('analytics.geoip.license_key') !== '');
-
-                // Pull the Search Console queries daily; the command is inert
-                // while no connection is attached.
-                $schedule->command('analytics:search-console:sync')
-                    ->dailyAt('05:00')
-                    ->withoutOverlapping();
-            });
         }
     }
 }

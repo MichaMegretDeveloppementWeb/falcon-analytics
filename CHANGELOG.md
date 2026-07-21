@@ -3,6 +3,18 @@
 Notable milestones of `falcon/analytics`. Versions are git tags; earlier per-tier
 patch tags (v0.1.x) hold the individual steps.
 
+## [0.3.1] - Fix: self-scheduling on HTTP-triggered schedulers (2026-07-21)
+
+### Fixed
+- **Commands and schedules now register outside the console too.** Shared
+  hosts often trigger the scheduler through an HTTP endpoint calling
+  `Artisan::call('schedule:run')`; the previous `runningInConsole()` guard
+  silently unregistered every package command and scheduled task in that
+  setup, so `analytics:sweep`, `analytics:prune`, the monthly GeoIP refresh
+  and the Search Console sync never ran. Schedules are now bound lazily
+  (`callAfterResolving(Schedule::class)`), so ordinary HTTP requests still
+  pay nothing.
+
 ## [0.3.0] - Google Search Console: real organic search queries (2026-07-20)
 
 The words visitors actually type into Google, which no first-party tracker
