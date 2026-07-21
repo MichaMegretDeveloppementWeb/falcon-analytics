@@ -84,6 +84,9 @@
         body: payload,
         keepalive: true,
         credentials: 'same-origin',
+      }).catch(function () {
+        /* unreachable endpoint: swallow the rejection so the host console
+           never shows an uncaught promise from analytics */
       });
     } catch (e) {
       /* give up silently: analytics must never break the page */
@@ -241,13 +244,11 @@
       event.props = found.props;
     }
 
-    if (found.actionable) {
-      event.selector = selectorFor(found.actionable);
-      // An explicit data-track-label wins; otherwise the element's own text
-      // (textContent, not innerText, to avoid a synchronous layout reflow).
-      var text = found.label != null ? found.label : (found.actionable.textContent || '').trim();
-      event.text = text ? text.slice(0, MAX_TEXT) : null;
-    }
+    event.selector = selectorFor(found.actionable);
+    // An explicit data-track-label wins; otherwise the element's own text
+    // (textContent, not innerText, to avoid a synchronous layout reflow).
+    var text = found.label != null ? found.label : (found.actionable.textContent || '').trim();
+    event.text = text ? text.slice(0, MAX_TEXT) : null;
 
     queue(event);
   }

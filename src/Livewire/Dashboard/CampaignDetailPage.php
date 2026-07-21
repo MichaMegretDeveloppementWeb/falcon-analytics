@@ -43,6 +43,18 @@ final class CampaignDetailPage extends DashboardComponent
 
     public string $deleteAdLabel = '';
 
+    /**
+     * Per-ad traffic (sessions/visitors) keyed by ad id, filled from the deferred
+     * content widget so the inline ads table shows metrics without the page shell
+     * carrying the heavy campaignReport read.
+     *
+     * @var array<int, array{sessions: int, visitors: int}>
+     */
+    public array $adMetrics = [];
+
+    /** @var array<int, int> */
+    public array $adConversions = [];
+
     public function mount(Campaign $campaign): void
     {
         $this->campaign = $campaign;
@@ -82,10 +94,13 @@ final class CampaignDetailPage extends DashboardComponent
         ], messages: [
             'campaignName.required' => __('Le nom est obligatoire.'),
             'campaignName.max' => __('Le nom ne doit pas dépasser :max caractères.'),
+            'campaignPlatform.max' => __('La plateforme ne doit pas dépasser :max caractères.'),
             'campaignConditions.required' => __('Ajoutez au moins une condition.'),
             'campaignConditions.min' => __('Ajoutez au moins une condition.'),
             'campaignConditions.*.param.required' => __('Le paramètre est obligatoire.'),
+            'campaignConditions.*.param.max' => __('Le paramètre ne doit pas dépasser :max caractères.'),
             'campaignConditions.*.value.required' => __('La valeur est obligatoire.'),
+            'campaignConditions.*.value.max' => __('La valeur ne doit pas dépasser :max caractères.'),
         ], attributes: [
             'campaignName' => __('nom'),
             'campaignConditions.*.param' => __('paramètre'),
@@ -143,7 +158,18 @@ final class CampaignDetailPage extends DashboardComponent
 
     public function editAd(int $id, FunnelRegistry $funnels, EventRegistry $events): void
     {
-        $ad = Ad::with('objectives')->where('campaign_id', $this->campaign->id)->findOrFail($id);
+        try {
+            $ad = Ad::with('objectives')->where('campaign_id', $this->campaign->id)->findOrFail($id);
+        } catch (Throwable $e) {
+            Log::channel(config('analytics.log_channel'))->error('Ad.edit_load_failed', [
+                'ad_id' => $id,
+                'exception' => $e,
+            ]);
+            $this->dispatch('toast', type: 'danger', title: __('Cette pub est introuvable. Actualisez la page.'));
+
+            return;
+        }
+
         $this->fillAdForm($ad, $funnels, $events);
         $this->modal = 'ad';
     }
@@ -193,18 +219,6 @@ final class CampaignDetailPage extends DashboardComponent
 
         return array_values(array_filter($cleaned, fn (array $c): bool => $c['param'] !== '' && $c['value'] !== ''));
     }
-
-    /**
-     * Per-ad traffic (sessions/visitors) keyed by ad id, filled from the deferred
-     * content widget so the inline ads table shows metrics without the page shell
-     * carrying the heavy campaignReport read.
-     *
-     * @var array<int, array{sessions: int, visitors: int}>
-     */
-    public array $adMetrics = [];
-
-    /** @var array<int, int> */
-    public array $adConversions = [];
 
     /**
      * @param  array<int, array{sessions: int, visitors: int}>  $adMetrics

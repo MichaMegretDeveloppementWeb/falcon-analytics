@@ -13,7 +13,7 @@
                     <x-ui.input wire:model="adName" id="adName" placeholder="{{ __('Ex. Cabriolet') }}" :error="$errors->has('adName')" />
                 </x-ui.form-group>
 
-                <x-ui.form-group :label="__('Conditions d\'URL')" :hint="__('La pub correspond si TOUS ces paramètres sont présents dans l\'URL.')">
+                <x-ui.form-group :label="__('Conditions d\'URL')" :hint="__('La pub correspond si TOUS ces paramètres sont présents dans l\'URL.')" :error="$errors->first('adConditions.*') ?: $errors->first('adConditions')">
                     <div class="space-y-2">
                         @foreach ($adConditions as $index => $condition)
                             <div wire:key="ac-{{ $index }}" class="flex items-center gap-2">
@@ -30,6 +30,10 @@
                 <div class="border-t border-subtle pt-4">
                     <p class="text-[13px] font-medium text-primary">{{ __('Objectifs de conversion') }}</p>
                     <p class="mb-3 mt-0.5 text-[12px] text-secondary">{{ __('Cette pub n\'est créditée que des conversions ci-dessous.') }}</p>
+
+                    @if ($errors->first('objectives.*'))
+                        <p class="mb-2 text-[12px] text-red-500 dark:text-red-400">{{ $errors->first('objectives.*') }}</p>
+                    @endif
 
                     @if ($objectives !== [])
                         <div class="mb-3 space-y-1.5">

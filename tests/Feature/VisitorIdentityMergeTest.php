@@ -3,7 +3,6 @@
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\Actions\ForgetVisitorAction;
 use Falcon\Analytics\Actions\IngestEventsAction;
-use Falcon\Analytics\Actions\MergeVisitorsAction;
 use Falcon\Analytics\DTOs\IncomingBatch;
 use Falcon\Analytics\DTOs\IncomingEvent;
 use Falcon\Analytics\DTOs\RequestSnapshot;
@@ -11,6 +10,7 @@ use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
+use Falcon\Analytics\Services\VisitorMerger;
 use Falcon\Analytics\Tests\Fixtures\Models\TestAdmin;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -173,7 +173,7 @@ it('consolidates pre-existing duplicate profiles into the oldest one', function 
     $foreign = identityVisitor('uuid-c', ['type' => 'lessor', 'id' => 2], '2026-06-05 10:00:00');
     $strayOnForeign = identitySession($foreign, '2026-06-05 10:00:00', ['type' => 'client', 'id' => 7]);
 
-    app(MergeVisitorsAction::class)->consolidateExisting();
+    app(VisitorMerger::class)->consolidateExisting();
 
     $oldest->refresh();
 
@@ -191,7 +191,7 @@ it('widens the canonical seen window when merging', function () {
     $alias = identityVisitor('uuid-b', ['type' => 'client', 'id' => 7], '2026-06-01 08:00:00');
     $alias->update(['last_seen_at' => CarbonImmutable::parse('2026-07-09 22:00:00')]);
 
-    $merged = app(MergeVisitorsAction::class)->execute($alias, $canonical);
+    $merged = app(VisitorMerger::class)->execute($alias, $canonical);
 
     expect($merged->first_seen_at->toDateTimeString())->toBe('2026-06-01 08:00:00')
         ->and($merged->last_seen_at->toDateTimeString())->toBe('2026-07-09 22:00:00');

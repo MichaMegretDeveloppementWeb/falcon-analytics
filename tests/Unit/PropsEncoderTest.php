@@ -30,3 +30,33 @@ it('caps the number of stored keys', function () {
 
     expect(json_decode((new PropsEncoder)->encode($props), true))->toHaveCount(30);
 });
+
+it('truncates oversized keys and string values', function () {
+    $json = (new PropsEncoder)->encode([
+        str_repeat('k', 300) => 'v',
+        'text' => str_repeat('x', 2_000),
+        'number' => 12345,
+    ]);
+
+    $decoded = json_decode($json, true);
+
+    expect(array_key_first($decoded))->toBe(str_repeat('k', 100))
+        ->and($decoded['text'])->toBe(str_repeat('x', 500))
+        ->and($decoded['number'])->toBe(12345);
+});
+
+it('caps the encoded JSON size by dropping trailing entries', function () {
+    $props = [];
+    foreach (range(1, 30) as $i) {
+        $props[sprintf('key_%02d', $i)] = str_repeat('v', 500);
+    }
+
+    $json = (new PropsEncoder)->encode($props);
+    $decoded = json_decode($json, true);
+
+    expect(strlen($json))->toBeLessThanOrEqual(8192)
+        ->and($decoded)->not->toBeEmpty()
+        // The kept entries are the first ones, in order.
+        ->and(array_key_first($decoded))->toBe('key_01')
+        ->and(count($decoded))->toBeLessThan(30);
+});

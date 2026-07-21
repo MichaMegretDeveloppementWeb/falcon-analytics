@@ -48,3 +48,12 @@ it('flags a bot and leaves device fields null', function () {
         ->and($info->browser)->toBeNull()
         ->and($info->deviceType)->toBeNull();
 });
+
+it('truncates oversized parsed fields to the column lengths', function () {
+    $info = $this->parser->parse(
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Gecko/20100101 Firefox/'.str_repeat('1', 40).'.0'
+    );
+
+    expect($info->browser)->toBe('Firefox')
+        ->and($info->browserVersion)->toBe(str_repeat('1', 30));
+});

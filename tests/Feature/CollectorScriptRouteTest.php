@@ -10,5 +10,8 @@ it('serves the collector script with a js content type and long cache', function
         ->toContain('immutable');
 
     expect($response->getContent())->toContain('sendBeacon')
-        ->toContain('__falconAnalytics');
+        ->toContain('__falconAnalytics')
+        // The fetch fallback must swallow its rejection: an unreachable endpoint
+        // may never surface an uncaught promise in the host console.
+        ->toContain('.catch(');
 });

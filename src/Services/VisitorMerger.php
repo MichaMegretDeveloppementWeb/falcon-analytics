@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Falcon\Analytics\Actions;
+namespace Falcon\Analytics\Services;
 
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\DB;
  * to the canonical profile. Sessions keep their `browser_key`, so the physical
  * device separation survives the merge.
  */
-final readonly class MergeVisitorsAction
+final readonly class VisitorMerger
 {
     /**
      * Fold the alias visitor into the canonical one: move its sessions and

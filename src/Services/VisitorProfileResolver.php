@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Services;
 
 use Carbon\CarbonImmutable;
-use Falcon\Analytics\Actions\MergeVisitorsAction;
 use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Repositories\VisitorWriteRepository;
 
@@ -25,7 +24,7 @@ final readonly class VisitorProfileResolver
 {
     public function __construct(
         private VisitorWriteRepository $visitors,
-        private MergeVisitorsAction $merges,
+        private VisitorMerger $merges,
     ) {}
 
     /**

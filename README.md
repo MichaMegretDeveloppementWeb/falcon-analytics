@@ -71,6 +71,11 @@ This publishes `config/analytics.php`, appends the `ANALYTICS_*` variables to
 `.env` / `.env.example`, and runs the migrations (tables are prefixed
 `falcon_analytics_*`). Re-run with `--force` to overwrite the published config.
 
+The env scaffold is append-only and idempotent: only the variables missing from
+each file are appended (grouped and commented), existing values are never
+rewritten, and a file that does not exist is left untouched. The published
+config stays the source of truth — every variable has a safe default.
+
 ### 3. Design system assets
 
 The dashboard is built on `falcon/ui-kit` (Tailwind 4, DM Sans, dark mode,
@@ -210,6 +215,13 @@ origin-checked. No cookie banner dependency: the collector always works, and
 the consent setting only decides whether the visitor id persists across
 visits.
 
+> **Known limit of the origin check.** Beacons cannot carry a CSRF token, so
+> the endpoint verifies the request origin instead: that stops forged
+> cross-site requests from browsers, but a server-to-server client can spoof
+> the header and inject events. The blast radius is bounded by the rate limit
+> (`throttle`), the strict payload validation and the size caps — the standard
+> trade-off of every first-party beacon endpoint.
+
 ### 3. Dashboard mounting & navigation
 
 Two independent admin modules are registered, each mounted entirely from
@@ -233,6 +245,12 @@ config — URL prefix, route-name prefix, middleware and layout:
 
 Package routes are registered outside your route groups, so the middleware
 must include a session stack (`web`) alongside your auth guard.
+
+The configured middleware (minus `web`, which Livewire always runs) is also
+registered as **Livewire persistent middleware**: it is re-applied on every
+component update (`/livewire/update`), so dashboard actions (GDPR erasure,
+campaign/ad CRUD, Search Console disconnect) keep replaying your auth guard
+after the page has loaded.
 
 **Analytics pages** (`{name}` = `dashboard.route_name`, default `analytics`):
 
@@ -298,7 +316,8 @@ and is never recorded. An element counts as interactive when it is:
 
 - a native control: `<a>`, `<button>`, `<summary>`, or an actionable `<input>`
   (`submit` / `button` / `reset` / `image` / `checkbox` / `radio`);
-- an ARIA widget: `role="button" | link | menuitem | tab | option | switch`;
+- an ARIA widget: `role="button" | link | menuitem | menuitemcheckbox |
+  menuitemradio | tab | option | switch`;
 - made interactive by a handler: `wire:click`, `@click`, `x-on:click`, `onclick`.
 
 If an element is interactive only through custom code and carries none of the
@@ -623,6 +642,7 @@ All keys live in `config/analytics.php`; env-driven values in parentheses.
 | `geoip.edition` (`ANALYTICS_GEOIP_EDITION`) | `GeoLite2-City` | MaxMind edition |
 | `geoip.database_path` (`ANALYTICS_GEOIP_DATABASE`) | `storage/app/analytics/GeoLite2-City.mmdb` | MMDB location |
 | `geoip.dev_ip` (`ANALYTICS_GEOIP_DEV_IP`) | `null` | public IP substituted for private/reserved IPs (dev) |
+| `geoip.download_url` | MaxMind permalink | download URL template (`{edition}` and `{license_key}` substituted) |
 
 ## Data model
 

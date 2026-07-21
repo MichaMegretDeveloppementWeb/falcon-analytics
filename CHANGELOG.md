@@ -40,6 +40,16 @@ patch tags (v0.1.x) hold the individual steps.
   logic moves into a shared `SearchConsoleSynchronizer` service used by both
   the command and the page.
 
+## [0.3.2] - Google Cloud setup documentation (2026-07-21)
+
+### Documentation
+- **README**: full step-by-step Google Cloud setup for the Search Console
+  integration (project choice, enabling the Search Console API, consent
+  screen and test users, OAuth web client and redirect URI, credentials,
+  verified property) plus a troubleshooting table for the connection
+  (redirect_uri_mismatch, access_denied, empty property list, revoked
+  grant). Documentation-only release.
+
 ## [0.3.1] - Fix: self-scheduling on HTTP-triggered schedulers (2026-07-21)
 
 ### Fixed

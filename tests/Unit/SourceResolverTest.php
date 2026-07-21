@@ -61,3 +61,11 @@ it('returns null utm when absent', function () {
     expect($acquisition->utmSource)->toBeNull()
         ->and($acquisition->utmCampaign)->toBeNull();
 });
+
+it('truncates oversized utm values to the column length', function () {
+    $long = str_repeat('a', 400);
+    $acquisition = $this->resolver->resolve('https://vantadrive.ch/?utm_source='.$long.'&utm_campaign='.$long, null, 'vantadrive.ch');
+
+    expect($acquisition->utmSource)->toBe(str_repeat('a', 150))
+        ->and($acquisition->utmCampaign)->toBe(str_repeat('a', 150));
+});

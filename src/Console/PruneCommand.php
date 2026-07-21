@@ -7,6 +7,8 @@ namespace Falcon\Analytics\Console;
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\Repositories\EventWriteRepository;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 final class PruneCommand extends Command
 {
@@ -24,7 +26,14 @@ final class PruneCommand extends Command
             return self::SUCCESS;
         }
 
-        $deleted = $events->pruneOlderThan(CarbonImmutable::now()->subDays($days));
+        try {
+            $deleted = $events->pruneOlderThan(CarbonImmutable::now()->subDays($days));
+        } catch (Throwable $e) {
+            Log::channel(config('analytics.log_channel'))->error('Analytics prune failed.', ['exception' => $e]);
+            $this->components->error('The prune failed; see the analytics log channel.');
+
+            return self::FAILURE;
+        }
 
         $this->components->info("Pruned {$deleted} event(s) older than {$days} days.");
 

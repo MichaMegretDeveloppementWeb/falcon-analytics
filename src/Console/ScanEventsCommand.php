@@ -107,7 +107,11 @@ final class ScanEventsCommand extends Command
             $lines .= sprintf('TrackedEvent::define(%s, %s);'.PHP_EOL, var_export($name, true), var_export($name, true));
         }
 
-        file_put_contents($path, $lines, FILE_APPEND);
+        if (file_put_contents($path, $lines, FILE_APPEND) === false) {
+            $this->components->error('Could not write the events file; check its permissions.');
+
+            return self::FAILURE;
+        }
 
         $this->components->info(sprintf('Appended %d event(s) to the events file. Review their labels.', count($names)));
 

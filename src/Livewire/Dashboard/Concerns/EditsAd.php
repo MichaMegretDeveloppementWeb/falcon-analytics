@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Livewire\Dashboard\Concerns;
 
 use Falcon\Analytics\Actions\SaveAdAction;
+use Falcon\Analytics\Enums\ObjectiveType;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Models\Ad;
 use Falcon\Analytics\Models\AdObjective;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 use Throwable;
 
 /**
@@ -102,17 +104,34 @@ trait EditsAd
             'adConditions' => ['required', 'array', 'min:1'],
             'adConditions.*.param' => ['required', 'string', 'max:100'],
             'adConditions.*.value' => ['required', 'string', 'max:150'],
+            // Objectives are added through wire:click, whose payload is forgeable:
+            // an arbitrary type would later crash every read on the enum cast.
+            'objectives' => ['array'],
+            'objectives.*.type' => ['required', Rule::enum(ObjectiveType::class)],
+            'objectives.*.reference' => ['required', 'string', 'max:191'],
+            'objectives.*.label' => ['required', 'string', 'max:191'],
         ], messages: [
             'adName.required' => __('Le nom est obligatoire.'),
             'adName.max' => __('Le nom ne doit pas dépasser :max caractères.'),
             'adConditions.required' => __('Ajoutez au moins une condition.'),
             'adConditions.min' => __('Ajoutez au moins une condition.'),
             'adConditions.*.param.required' => __('Le paramètre est obligatoire.'),
+            'adConditions.*.param.max' => __('Le paramètre ne doit pas dépasser :max caractères.'),
             'adConditions.*.value.required' => __('La valeur est obligatoire.'),
+            'adConditions.*.value.max' => __('La valeur ne doit pas dépasser :max caractères.'),
+            'objectives.*.type.required' => __('Cet objectif est invalide. Retirez-le puis choisissez-le depuis les listes.'),
+            'objectives.*.type.enum' => __('Cet objectif est invalide. Retirez-le puis choisissez-le depuis les listes.'),
+            'objectives.*.reference.required' => __('Cet objectif est invalide. Retirez-le puis choisissez-le depuis les listes.'),
+            'objectives.*.reference.max' => __('Cet objectif est invalide. Retirez-le puis choisissez-le depuis les listes.'),
+            'objectives.*.label.required' => __('Cet objectif est invalide. Retirez-le puis choisissez-le depuis les listes.'),
+            'objectives.*.label.max' => __('Cet objectif est invalide. Retirez-le puis choisissez-le depuis les listes.'),
         ], attributes: [
             'adName' => __('nom'),
             'adConditions.*.param' => __('paramètre'),
             'adConditions.*.value' => __('valeur'),
+            'objectives.*.type' => __('objectif'),
+            'objectives.*.reference' => __('objectif'),
+            'objectives.*.label' => __('objectif'),
         ]);
 
         try {

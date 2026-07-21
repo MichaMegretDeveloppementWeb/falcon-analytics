@@ -8,7 +8,7 @@ use Falcon\Analytics\Actions\IngestEventsAction;
 use Falcon\Analytics\Analytics;
 use Falcon\Analytics\DTOs\RequestSnapshot;
 use Falcon\Analytics\Http\Requests\IngestBatchRequest;
-use Falcon\Analytics\Services\VisitorIdentity;
+use Falcon\Analytics\Services\VisitorIdentityResolver;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -25,7 +25,7 @@ final class IngestController
      */
     public function __invoke(
         IngestBatchRequest $request,
-        VisitorIdentity $identity,
+        VisitorIdentityResolver $identity,
         Analytics $analytics,
         IngestEventsAction $action,
     ): Response {

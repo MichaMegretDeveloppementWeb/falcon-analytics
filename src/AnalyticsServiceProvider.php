@@ -75,6 +75,8 @@ final class AnalyticsServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'analytics');
         $this->loadRoutesFrom(__DIR__.'/../routes/analytics.php');
 
+        $this->registerPersistentMiddleware();
+
         Blade::anonymousComponentNamespace('analytics::components', 'analytics');
         Blade::directive('analyticsScripts', fn (): string => '<?php echo \Falcon\Analytics\View\Collector::render(); ?>');
 
@@ -135,6 +137,29 @@ final class AnalyticsServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__.'/../config/analytics.php' => config_path('analytics.php'),
             ], 'analytics-config');
+        }
+    }
+
+    /**
+     * Replay the host's dashboard and marketing middleware on every Livewire
+     * component update (/livewire/update). Livewire only re-runs middleware
+     * registered as persistent, so without this a signed component snapshot
+     * from a formerly authorized session could keep triggering actions (GDPR
+     * erasure, campaign CRUD) after the host middleware would deny the page.
+     * The 'web' stack is excluded: Livewire already runs it on updates.
+     */
+    private function registerPersistentMiddleware(): void
+    {
+        $middleware = array_values(array_unique(array_filter(
+            [
+                ...(array) config('analytics.dashboard.middleware', []),
+                ...(array) config('analytics.marketing.middleware', []),
+            ],
+            fn (mixed $entry): bool => is_string($entry) && $entry !== '' && $entry !== 'web',
+        )));
+
+        if ($middleware !== []) {
+            Livewire::addPersistentMiddleware($middleware);
         }
     }
 }

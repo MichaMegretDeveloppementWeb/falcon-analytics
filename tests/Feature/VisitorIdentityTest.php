@@ -1,12 +1,12 @@
 <?php
 
-use Falcon\Analytics\Services\VisitorIdentity;
+use Falcon\Analytics\Services\VisitorIdentityResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Str;
 
 beforeEach(function () {
-    $this->identity = new VisitorIdentity;
+    $this->identity = new VisitorIdentityResolver;
 });
 
 it('issues a persistent cookie uuid when consent is granted', function () {

@@ -24,6 +24,7 @@ use Falcon\Analytics\Livewire\Dashboard\VisitorsPage;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 
 // Ingestion endpoint. A minimal stack (cookies + session) without CSRF: the
@@ -49,6 +50,13 @@ Route::get('/'.ltrim((string) config('analytics.endpoint'), '/').'.js', Collecto
 // registered outside the host's route groups.
 $dashboard = config('analytics.dashboard');
 
+// An explicitly empty middleware list mounts the module without any protection
+// (no session, no auth): almost certainly a host misconfiguration, so say it.
+if (($dashboard['middleware'] ?? null) === []) {
+    Log::channel(config('analytics.log_channel'))
+        ->warning('Analytics dashboard mounted with an empty middleware list: the screens are publicly reachable.');
+}
+
 Route::prefix((string) ($dashboard['route_prefix'] ?? 'admin/analytics'))
     ->middleware($dashboard['middleware'] ?? ['web', 'auth'])
     ->name(($dashboard['route_name'] ?? 'analytics').'.')
@@ -72,6 +80,11 @@ Route::prefix((string) ($dashboard['route_prefix'] ?? 'admin/analytics'))
 // Marketing. A separate top-level module (its own prefix, route names and menu),
 // mounted like the dashboard from its own config block.
 $marketing = config('analytics.marketing');
+
+if (($marketing['middleware'] ?? null) === []) {
+    Log::channel(config('analytics.log_channel'))
+        ->warning('Analytics marketing module mounted with an empty middleware list: the screens are publicly reachable.');
+}
 
 Route::prefix((string) ($marketing['route_prefix'] ?? 'admin/marketing'))
     ->middleware($marketing['middleware'] ?? ['web', 'auth'])

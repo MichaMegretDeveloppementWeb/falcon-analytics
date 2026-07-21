@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use Falcon\Analytics\Actions\MergeVisitorsAction;
+use Falcon\Analytics\Services\VisitorMerger;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -38,7 +38,7 @@ return new class extends Migration
         ]);
 
         // Fold the duplicate profiles accumulated before identity merging.
-        app(MergeVisitorsAction::class)->consolidateExisting();
+        app(VisitorMerger::class)->consolidateExisting();
     }
 
     public function down(): void

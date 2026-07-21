@@ -26,7 +26,7 @@ final readonly class ServerEventRecorder
 {
     public function __construct(
         private Analytics $analytics,
-        private VisitorIdentity $identity,
+        private VisitorIdentityResolver $identity,
         private IngestEventsAction $action,
         private UrlRedactor $redactor,
     ) {}

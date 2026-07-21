@@ -7,6 +7,8 @@ namespace Falcon\Analytics\Console;
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\Repositories\SessionWriteRepository;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 final class SweepCommand extends Command
 {
@@ -18,7 +20,14 @@ final class SweepCommand extends Command
     {
         $timeout = (int) config('analytics.session.timeout_minutes');
 
-        $closed = $sessions->closeIdleSessions(CarbonImmutable::now()->subMinutes($timeout), $timeout);
+        try {
+            $closed = $sessions->closeIdleSessions(CarbonImmutable::now()->subMinutes($timeout), $timeout);
+        } catch (Throwable $e) {
+            Log::channel(config('analytics.log_channel'))->error('Analytics sweep failed.', ['exception' => $e]);
+            $this->components->error('The sweep failed; see the analytics log channel.');
+
+            return self::FAILURE;
+        }
 
         $this->components->info("Closed {$closed} idle session(s).");
 

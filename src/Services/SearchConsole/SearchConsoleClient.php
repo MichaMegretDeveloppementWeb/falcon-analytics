@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Services\SearchConsole;
 
 use Carbon\CarbonImmutable;
+use Falcon\Analytics\Exceptions\SearchConsoleException;
 use Falcon\Analytics\Models\SearchConsoleConnection;
 use Illuminate\Support\Facades\Http;
-use RuntimeException;
 
 /**
  * Read-only client for the Search Console API, working on the stored
@@ -20,6 +20,9 @@ final class SearchConsoleClient
 
     /** The API's own per-request maximum. */
     public const ROW_LIMIT = 25000;
+
+    /** The `query` column is varchar(255); truncate rather than fail the upsert. */
+    private const QUERY_COLUMN_LIMIT = 255;
 
     /**
      * The page size only deviates from the API maximum in tests, where paging
@@ -55,7 +58,7 @@ final class SearchConsoleClient
 
                 $rows[] = [
                     'date' => (string) $keys[0],
-                    'query' => mb_substr((string) $keys[1], 0, 255),
+                    'query' => mb_substr((string) $keys[1], 0, self::QUERY_COLUMN_LIMIT),
                     'clicks' => (int) ($row['clicks'] ?? 0),
                     'impressions' => (int) ($row['impressions'] ?? 0),
                     'position' => round((float) ($row['position'] ?? 0), 2),
@@ -85,7 +88,7 @@ final class SearchConsoleClient
             ]);
 
         if ($response->failed()) {
-            throw new RuntimeException("Search Analytics query failed: HTTP {$response->status()}");
+            throw new SearchConsoleException("Search Analytics query failed: HTTP {$response->status()}");
         }
 
         /** @var list<array<string, mixed>> */
@@ -106,7 +109,7 @@ final class SearchConsoleClient
             ->get(self::API_BASE.'/sites');
 
         if ($response->failed()) {
-            throw new RuntimeException("Search Console sites list failed: HTTP {$response->status()}");
+            throw new SearchConsoleException("Search Console sites list failed: HTTP {$response->status()}");
         }
 
         /** @var list<array{siteUrl?: string, permissionLevel?: string}> $entries */

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Falcon\Analytics\Exceptions\SearchConsoleException;
 use Falcon\Analytics\Livewire\Dashboard\IntegrationsPage;
 use Falcon\Analytics\Models\SearchConsoleConnection;
 use Falcon\Analytics\Models\SearchQuery;
@@ -10,6 +11,7 @@ use Falcon\Analytics\Tests\Fixtures\Models\TestAdmin;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
@@ -169,7 +171,7 @@ it('flags the connection when the refresh is rejected', function () {
     ]);
     $connection = gscConnection(['token_expires_at' => now()->subMinute()]);
 
-    expect(fn () => app(SearchConsoleAuth::class)->accessTokenFor($connection))->toThrow(RuntimeException::class);
+    expect(fn () => app(SearchConsoleAuth::class)->accessTokenFor($connection))->toThrow(SearchConsoleException::class);
 
     expect($connection->refresh()->status)->toBe(SearchConsoleConnection::STATUS_ERROR)
         ->and($connection->last_error)->toContain('invalid_grant');
@@ -313,6 +315,17 @@ it('disconnects through the confirmation modal, revoking the token and deleting 
 
     expect(SearchConsoleConnection::query()->count())->toBe(0);
     Http::assertSent(fn ($request): bool => str_starts_with($request->url(), 'https://oauth2.googleapis.com/revoke'));
+});
+
+it('renders a graceful error state instead of a 500 when the integrations read fails', function () {
+    gscConfigure();
+    $this->actingAs($this->admin, 'admin');
+
+    // Force a real read failure: the connection lookup hits a missing table,
+    // in mount (property preload) and in the guarded render alike.
+    Schema::drop('falcon_analytics_search_console');
+
+    Livewire::test(IntegrationsPage::class)->assertSee(__('Données indisponibles'));
 });
 
 it('redirects a guest away from the integrations page and oauth routes', function () {

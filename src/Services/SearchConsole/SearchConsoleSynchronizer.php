@@ -28,6 +28,9 @@ final class SearchConsoleSynchronizer
 
     private const UPSERT_CHUNK = 500;
 
+    /** The `last_error` column is varchar(255). */
+    private const ERROR_COLUMN_LIMIT = 255;
+
     public function __construct(private readonly SearchConsoleClient $client) {}
 
     /**
@@ -56,7 +59,7 @@ final class SearchConsoleSynchronizer
         } catch (Throwable $e) {
             $connection->update([
                 'status' => SearchConsoleConnection::STATUS_ERROR,
-                'last_error' => mb_substr('sync: '.$e->getMessage(), 0, 255),
+                'last_error' => mb_substr('sync: '.$e->getMessage(), 0, self::ERROR_COLUMN_LIMIT),
             ]);
             Log::channel(config('analytics.log_channel'))->error('SearchConsole.sync_failed', ['exception' => $e]);
 

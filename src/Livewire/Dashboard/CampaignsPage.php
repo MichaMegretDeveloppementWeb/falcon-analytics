@@ -60,7 +60,17 @@ final class CampaignsPage extends Component
 
     public function editCampaign(int $id): void
     {
-        $campaign = Campaign::findOrFail($id);
+        try {
+            $campaign = Campaign::query()->findOrFail($id);
+        } catch (Throwable $e) {
+            Log::channel(config('analytics.log_channel'))->error('Campaign.edit_load_failed', [
+                'campaign_id' => $id,
+                'exception' => $e,
+            ]);
+            $this->dispatch('toast', type: 'danger', title: __('Cette campagne est introuvable. Actualisez la page.'));
+
+            return;
+        }
 
         $this->campaignId = $campaign->id;
         $this->campaignName = $campaign->name;
@@ -90,10 +100,13 @@ final class CampaignsPage extends Component
         ], messages: [
             'campaignName.required' => __('Le nom est obligatoire.'),
             'campaignName.max' => __('Le nom ne doit pas dépasser :max caractères.'),
+            'campaignPlatform.max' => __('La plateforme ne doit pas dépasser :max caractères.'),
             'campaignConditions.required' => __('Ajoutez au moins une condition.'),
             'campaignConditions.min' => __('Ajoutez au moins une condition.'),
             'campaignConditions.*.param.required' => __('Le paramètre est obligatoire.'),
+            'campaignConditions.*.param.max' => __('Le paramètre ne doit pas dépasser :max caractères.'),
             'campaignConditions.*.value.required' => __('La valeur est obligatoire.'),
+            'campaignConditions.*.value.max' => __('La valeur ne doit pas dépasser :max caractères.'),
         ], attributes: [
             'campaignName' => __('nom'),
             'campaignConditions.*.param' => __('paramètre'),

@@ -35,6 +35,9 @@ final class RealtimePage extends Component
 
     private const PALETTE = ['#116DFF', '#54CE91', '#8AB5FF', '#C9DBFF', '#DDE1E6', '#EFF1F5'];
 
+    /** Bound of the "Pays" list next to the map. */
+    private const MAX_COUNTRY_ROWS = 8;
+
     public function render(
         RealtimeReadRepository $repository,
         SessionSubjectAttributor $attributor,
@@ -48,9 +51,8 @@ final class RealtimePage extends Component
                 $since = $now->subMinutes($windowMinutes);
                 $onlineSince = $now->subSeconds(max(1, (int) config('analytics.realtime.online_seconds', 60)));
 
-                // Les visiteurs récents couvrent les dernières 24 h (comme la
-                // référence) ; l'activité en direct, les KPI et la carte
-                // restent sur la fenêtre temps réel.
+                // Recent visitors span the last 24 hours (as in the reference);
+                // the live feed, the KPIs and the map stay on the realtime window.
                 $daySince = $now->subDay();
                 $listLimit = max(1, (int) config('analytics.realtime.feed_limit', 25));
 
@@ -163,7 +165,7 @@ final class RealtimePage extends Component
 
         usort($countries, fn (array $a, array $b): int => $b['total'] <=> $a['total']);
 
-        return array_slice($countries, 0, 8);
+        return array_slice($countries, 0, self::MAX_COUNTRY_ROWS);
     }
 
     /**

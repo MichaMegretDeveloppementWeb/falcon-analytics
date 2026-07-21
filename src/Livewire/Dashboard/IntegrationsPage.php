@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Livewire\Dashboard;
 
+use Falcon\Analytics\Livewire\Dashboard\Concerns\RecoversFromReadFailure;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\ResolvesDashboardLayout;
 use Falcon\Analytics\Models\SearchConsoleConnection;
 use Falcon\Analytics\Services\SearchConsole\SearchConsoleAuth;
@@ -24,7 +25,11 @@ use Throwable;
  */
 final class IntegrationsPage extends Component
 {
+    use RecoversFromReadFailure;
     use ResolvesDashboardLayout;
+
+    /** Widened execution window for the inline on-demand sync, when allowed. */
+    private const SYNC_TIME_LIMIT_SECONDS = 300;
 
     /** @var list<array{site_url: string, permission: string}> */
     public array $properties = [];
@@ -93,7 +98,7 @@ final class IntegrationsPage extends Component
             return;
         }
 
-        @set_time_limit(300);
+        @set_time_limit(self::SYNC_TIME_LIMIT_SECONDS);
 
         try {
             $count = $synchronizer->sync($connection);
@@ -140,10 +145,14 @@ final class IntegrationsPage extends Component
 
     public function render(SearchConsoleAuth $auth): View
     {
-        return view('analytics::livewire.dashboard.integrations', [
-            'configured' => $auth->configured(),
-            'connection' => SearchConsoleConnection::current(),
-        ])->layout($this->layoutName(), ['title' => __('Intégrations').' · '.__('Analytics')]);
+        return $this->guardedRender(
+            fn (): array => [
+                'configured' => $auth->configured(),
+                'connection' => SearchConsoleConnection::current(),
+            ],
+            fn (array $data): View => view('analytics::livewire.dashboard.integrations', $data)
+                ->layout($this->layoutName(), ['title' => __('Intégrations').' · '.__('Analytics')]),
+        );
     }
 
     /**
@@ -153,7 +162,15 @@ final class IntegrationsPage extends Component
      */
     private function loadPropertiesIfPending(): void
     {
-        $connection = SearchConsoleConnection::current();
+        try {
+            $connection = SearchConsoleConnection::current();
+        } catch (Throwable $e) {
+            Log::channel(config('analytics.log_channel'))->error('SearchConsole.list_properties_failed', ['exception' => $e]);
+            $this->properties = [];
+            $this->propertiesFailed = true;
+
+            return;
+        }
 
         if ($connection === null || $connection->status !== SearchConsoleConnection::STATUS_PENDING_PROPERTY) {
             $this->properties = [];

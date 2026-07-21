@@ -162,3 +162,58 @@ it('deletes a campaign and cascades to its ads and objectives', function () {
         ->and(AdObjective::count())->toBe(0)
         ->and(Campaign::whereKey($other->id)->exists())->toBeTrue();
 });
+
+it('rejects forged objective types before they reach the database', function () {
+    $campaign = Campaign::create(['name' => 'Ete', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
+    $this->actingAs($this->admin, 'admin');
+
+    Livewire::test(CampaignDetailPage::class, ['campaign' => $campaign])
+        ->call('newAd')
+        ->set('adName', 'Cabriolet')
+        ->set('adConditions.0.param', 'creative')
+        ->set('adConditions.0.value', 'cabrio')
+        ->call('addObjective', 'forged-type', 'whatever', 'Whatever')
+        ->call('saveAd')
+        ->assertHasErrors(['objectives.0.type']);
+
+    expect(Ad::query()->count())->toBe(0)
+        ->and(AdObjective::query()->count())->toBe(0);
+});
+
+it('displays the condition validation messages as text, not only a red border', function () {
+    $campaign = Campaign::create(['name' => 'Ete', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
+    $this->actingAs($this->admin, 'admin');
+
+    Livewire::test(CampaignDetailPage::class, ['campaign' => $campaign])
+        ->call('newAd')
+        ->set('adName', 'Cabriolet')
+        ->set('adConditions.0.param', '')
+        ->set('adConditions.0.value', '')
+        ->call('saveAd')
+        ->assertHasErrors(['adConditions.0.param', 'adConditions.0.value'])
+        ->assertSeeText(__('Le paramètre est obligatoire.'));
+
+    Livewire::test(CampaignsPage::class)
+        ->call('newCampaign')
+        ->set('campaignName', 'Hiver')
+        ->set('campaignConditions.0.param', '')
+        ->set('campaignConditions.0.value', 'x')
+        ->call('saveCampaign')
+        ->assertHasErrors(['campaignConditions.0.param'])
+        ->assertSeeText(__('Le paramètre est obligatoire.'));
+});
+
+it('toasts instead of crashing when editing a campaign or ad that no longer exists', function () {
+    $campaign = Campaign::create(['name' => 'Ete', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
+    $this->actingAs($this->admin, 'admin');
+
+    Livewire::test(CampaignsPage::class)
+        ->call('editCampaign', 999_999)
+        ->assertDispatched('toast', type: 'danger')
+        ->assertSet('modal', '');
+
+    Livewire::test(CampaignDetailPage::class, ['campaign' => $campaign])
+        ->call('editAd', 999_999)
+        ->assertDispatched('toast', type: 'danger')
+        ->assertSet('modal', '');
+});

@@ -51,9 +51,9 @@ final readonly class SessionListReadRepository
             ])
             ->when($device !== null && $device !== '', fn (Builder $q): Builder => $q->where('device_type', $device))
             ->when($source !== null && $source !== '', fn (Builder $q): Builder => $q->where('source', $source))
-            ->when($search !== null && $search !== '', function (Builder $query) use ($search, $subjects): void {
+            ->when($search !== null && $search !== '', function (Builder $query) use ($period, $subjectType, $search, $subjects): void {
                 $term = '%'.$search.'%';
-                $countryCodes = $this->matchingCountryCodes($search);
+                $countryCodes = $this->matchingCountryCodes($period, $subjectType, $search);
 
                 $query->where(function (Builder $inner) use ($term, $search, $subjects, $countryCodes): void {
                     $inner->where('city', 'like', $term)
@@ -123,17 +123,19 @@ final readonly class SessionListReadRepository
     /**
      * ISO country codes stored in sessions whose localised name (or the code
      * itself) matches the term, so the list can be searched by country name.
+     * Bounded to the displayed period (the outer query is period-scoped anyway),
+     * so a keystroke never scans the whole table.
      *
      * @return list<string>
      */
-    private function matchingCountryCodes(string $search): array
+    private function matchingCountryCodes(Period $period, ?string $subjectType, string $search): array
     {
         if (! class_exists(\Locale::class)) {
             return [];
         }
 
         try {
-            $codes = Session::query()->whereNotNull('country')->distinct()->pluck('country');
+            $codes = $this->sessionScope($period, $subjectType)->whereNotNull('country')->distinct()->pluck('country');
         } catch (\Throwable $e) {
             Log::channel(config('analytics.log_channel'))->warning('Analytics country-code lookup failed.', ['exception' => $e]);
 

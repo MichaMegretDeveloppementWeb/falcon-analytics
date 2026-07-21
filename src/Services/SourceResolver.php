@@ -26,6 +26,9 @@ final readonly class SourceResolver
     /** @var list<string> */
     private const PAID_MEDIUMS = ['cpc', 'ppc', 'paid', 'paidsearch', 'paid-search', 'paid_social', 'paidsocial', 'social-paid', 'display', 'banner', 'cpm', 'cpv', 'retargeting'];
 
+    /** The utm_* session columns are varchar(150); truncate rather than fail the insert. */
+    private const MAX_UTM_LENGTH = 150;
+
     public function resolve(?string $landingUrl, ?string $referrer, ?string $appHost): Acquisition
     {
         $params = $this->queryParams($landingUrl);
@@ -147,7 +150,7 @@ final readonly class SourceResolver
             return null;
         }
 
-        $value = trim($value);
+        $value = mb_substr(trim($value), 0, self::MAX_UTM_LENGTH);
 
         return $value === '' ? null : $value;
     }

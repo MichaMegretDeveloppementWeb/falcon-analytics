@@ -7,6 +7,7 @@ use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 
 uses(RefreshDatabase::class);
 
@@ -91,4 +92,21 @@ it('schedules the sweep every five minutes and the prune daily', function () {
         ->and($sweep->expression)->toBe('*/5 * * * *')
         ->and($prune)->not->toBeNull()
         ->and($prune->expression)->toBe('30 3 * * *');
+});
+
+it('fails cleanly when the sweep write blows up', function () {
+    // Force a real write failure: the sessions table is gone.
+    Schema::drop('falcon_analytics_events');
+    Schema::drop('falcon_analytics_sessions');
+
+    $this->artisan('analytics:sweep')->assertFailed();
+});
+
+it('fails cleanly when the prune delete blows up', function () {
+    config(['analytics.retention_days' => 90]);
+
+    // Force a real delete failure: the events table is gone.
+    Schema::drop('falcon_analytics_events');
+
+    $this->artisan('analytics:prune')->assertFailed();
 });

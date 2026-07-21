@@ -71,7 +71,11 @@ final class InstallCommand extends Command
         $this->scaffoldEnvFile(base_path('.env'));
         $this->scaffoldEnvFile(base_path('.env.example'));
 
-        $this->call('migrate');
+        if ($this->call('migrate') !== self::SUCCESS) {
+            $this->components->error('The migrations failed; fix the database and re-run analytics:install.');
+
+            return self::FAILURE;
+        }
 
         $this->newLine();
         $this->components->info('Next steps');
@@ -98,7 +102,12 @@ final class InstallCommand extends Command
             return;
         }
 
-        file_put_contents($path, rtrim($contents, "\n")."\n".$block);
+        if (file_put_contents($path, rtrim($contents, "\n")."\n".$block) === false) {
+            $this->components->warn('Could not write '.basename($path).'; append the analytics variables manually.');
+
+            return;
+        }
+
         $this->components->task('Added analytics variables to '.basename($path));
     }
 }

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Services\SearchConsole;
 
+use Falcon\Analytics\Exceptions\SearchConsoleException;
 use Falcon\Analytics\Models\SearchConsoleConnection;
 use Illuminate\Support\Facades\Http;
-use RuntimeException;
 use Throwable;
 
 /**
@@ -28,6 +28,9 @@ final class SearchConsoleAuth
 
     /** Refresh ahead of expiry so an in-flight request never hits a dead token. */
     private const EXPIRY_MARGIN_SECONDS = 60;
+
+    /** Fallback lifetime when Google omits expires_in (its standard value). */
+    private const DEFAULT_TOKEN_TTL_SECONDS = 3600;
 
     /**
      * The whole feature is gated on the host providing OAuth credentials.
@@ -66,13 +69,13 @@ final class SearchConsoleAuth
         ]);
 
         if ($response->failed()) {
-            throw new RuntimeException('Google token exchange failed: '.((string) $response->json('error') ?: "HTTP {$response->status()}"));
+            throw new SearchConsoleException('Google token exchange failed: '.((string) $response->json('error') ?: "HTTP {$response->status()}"));
         }
 
         $refreshToken = (string) $response->json('refresh_token');
 
         if ($refreshToken === '') {
-            throw new RuntimeException('Google returned no refresh token.');
+            throw new SearchConsoleException('Google returned no refresh token.');
         }
 
         SearchConsoleConnection::query()->delete();
@@ -80,7 +83,7 @@ final class SearchConsoleAuth
         return SearchConsoleConnection::query()->create([
             'refresh_token' => $refreshToken,
             'access_token' => (string) $response->json('access_token'),
-            'token_expires_at' => now()->addSeconds((int) $response->json('expires_in', 3600)),
+            'token_expires_at' => now()->addSeconds((int) $response->json('expires_in', self::DEFAULT_TOKEN_TTL_SECONDS)),
             'status' => SearchConsoleConnection::STATUS_PENDING_PROPERTY,
         ]);
     }
@@ -109,13 +112,13 @@ final class SearchConsoleAuth
             $error = (string) $response->json('error') ?: "HTTP {$response->status()}";
             $connection->update(['status' => SearchConsoleConnection::STATUS_ERROR, 'last_error' => 'token_refresh: '.$error]);
 
-            throw new RuntimeException('Google token refresh failed: '.$error);
+            throw new SearchConsoleException('Google token refresh failed: '.$error);
         }
 
         $token = (string) $response->json('access_token');
         $connection->update([
             'access_token' => $token,
-            'token_expires_at' => now()->addSeconds((int) $response->json('expires_in', 3600)),
+            'token_expires_at' => now()->addSeconds((int) $response->json('expires_in', self::DEFAULT_TOKEN_TTL_SECONDS)),
         ]);
 
         return $token;
