@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Falcon\Analytics\Livewire\Dashboard\IntegrationsPage;
 use Falcon\Analytics\Models\SearchConsoleConnection;
+use Falcon\Analytics\Models\SearchQuery;
 use Falcon\Analytics\Services\SearchConsole\SearchConsoleAuth;
 use Falcon\Analytics\Tests\Fixtures\Models\TestAdmin;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -241,7 +242,7 @@ it('refuses to attach a property google did not list', function () {
     expect(SearchConsoleConnection::current()->status)->toBe(SearchConsoleConnection::STATUS_PENDING_PROPERTY);
 });
 
-it('shows the connected state with the attached property', function () {
+it('shows the connected state with the attached property and the manual sync button', function () {
     gscConfigure();
     gscConnection();
     $this->actingAs($this->admin, 'admin');
@@ -250,7 +251,51 @@ it('shows the connected state with the attached property', function () {
         ->assertSuccessful()
         ->assertSeeText('sc-domain:example.com')
         ->assertSeeText(__('Connectée'))
-        ->assertSeeText(__('Jamais'));
+        ->assertSeeText(__('Jamais'))
+        ->assertSeeText(__('Synchroniser maintenant'));
+});
+
+it('syncs on demand from the integrations page, same path as the command', function () {
+    gscConfigure();
+    Http::fake([
+        'www.googleapis.com/webmasters/v3/sites/*/searchAnalytics/query' => Http::response(['rows' => [
+            ['keys' => ['2026-07-18', 'location voiture'], 'clicks' => 7, 'impressions' => 210, 'position' => 4.2],
+        ]]),
+    ]);
+    $connection = gscConnection(['last_synced_at' => null]);
+    $this->actingAs($this->admin, 'admin');
+
+    Livewire::test(IntegrationsPage::class)
+        ->call('syncNow')
+        ->assertDispatched('toast');
+
+    expect(SearchQuery::query()->count())->toBe(1)
+        ->and($connection->refresh()->last_synced_at)->not->toBeNull();
+});
+
+it('surfaces a manual sync failure and flags the connection', function () {
+    gscConfigure();
+    Http::fake([
+        'www.googleapis.com/webmasters/v3/sites/*/searchAnalytics/query' => Http::response(['error' => 'quota'], 429),
+    ]);
+    $connection = gscConnection();
+    $this->actingAs($this->admin, 'admin');
+
+    Livewire::test(IntegrationsPage::class)
+        ->call('syncNow')
+        ->assertDispatched('toast');
+
+    expect($connection->refresh()->status)->toBe(SearchConsoleConnection::STATUS_ERROR);
+});
+
+it('ignores a manual sync without an attached connection', function () {
+    gscConfigure();
+    Http::fake();
+    $this->actingAs($this->admin, 'admin');
+
+    Livewire::test(IntegrationsPage::class)->call('syncNow');
+
+    Http::assertNothingSent();
 });
 
 it('disconnects through the confirmation modal, revoking the token and deleting the row', function () {

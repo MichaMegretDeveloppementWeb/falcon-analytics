@@ -8,6 +8,7 @@ use Falcon\Analytics\Livewire\Dashboard\Concerns\ResolvesDashboardLayout;
 use Falcon\Analytics\Models\SearchConsoleConnection;
 use Falcon\Analytics\Services\SearchConsole\SearchConsoleAuth;
 use Falcon\Analytics\Services\SearchConsole\SearchConsoleClient;
+use Falcon\Analytics\Services\SearchConsole\SearchConsoleSynchronizer;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Log;
 use Livewire\Component;
@@ -76,6 +77,34 @@ final class IntegrationsPage extends Component
 
         $this->properties = [];
         $this->dispatch('toast', type: 'success', title: __('Search Console connectée.'));
+    }
+
+    /**
+     * On-demand sync, same code path as the daily command. Runs inline (no
+     * worker required anywhere, by design): the first backfill can take a
+     * while on busy sites, so the button carries a loading state and the
+     * execution window is widened when the host allows it.
+     */
+    public function syncNow(SearchConsoleSynchronizer $synchronizer): void
+    {
+        $connection = SearchConsoleConnection::current();
+
+        if ($connection === null || ! $connection->isConnected()) {
+            return;
+        }
+
+        @set_time_limit(300);
+
+        try {
+            $count = $synchronizer->sync($connection);
+        } catch (Throwable) {
+            // Already flagged and logged by the synchronizer.
+            $this->dispatch('toast', type: 'danger', title: __('La synchronisation a échoué. Consultez l\'état de la connexion.'));
+
+            return;
+        }
+
+        $this->dispatch('toast', type: 'success', title: __(':count lignes synchronisées depuis Search Console.', ['count' => number_format($count, 0, ',', ' ')]));
     }
 
     public function confirmDisconnect(): void

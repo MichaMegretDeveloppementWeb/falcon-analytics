@@ -493,13 +493,15 @@ connection.
 | Property list is empty | The authorising account owns no verified Search Console property (step 6). |
 | Card shows "Erreur" later on | Google revoked or expired the grant (password change, permission removal). "Reconnecter" runs the consent again; cached data stays. |
 
-**Sync**: `analytics:search-console:sync` runs daily (self-scheduled). GSC
-data trails reality by ~3 days and the API is quota-limited, so the dashboard
-only ever reads the local cache (`falcon_analytics_search_queries`): the
-first run backfills the API's ~16-month history in paginated calls, then each
-run re-reads the trailing days. The refresh token is stored **encrypted**; a
-revoked access flags the connection on the integrations screen and on the
-overview card.
+**Sync**: `analytics:search-console:sync` runs daily (self-scheduled), and
+the integrations screen offers the same sync on demand ("Synchroniser
+maintenant" — inline, no worker required; the initial backfill may take a
+moment). GSC data trails reality by ~3 days and the API is quota-limited, so
+the dashboard only ever reads the local cache
+(`falcon_analytics_search_queries`): the first run backfills the API's
+~16-month history in paginated calls, then each run re-reads the trailing
+days. The refresh token is stored **encrypted**; a revoked access flags the
+connection on the integrations screen and on the overview card.
 
 **Display**: the overview section lists the period's top queries by clicks,
 with impressions, CTR and impressions-weighted average position, plus a

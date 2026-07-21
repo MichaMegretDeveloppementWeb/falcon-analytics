@@ -3,6 +3,15 @@
 Notable milestones of `falcon/analytics`. Versions are git tags; earlier per-tier
 patch tags (v0.1.x) hold the individual steps.
 
+## [0.3.3] - Manual Search Console sync from the dashboard (2026-07-21)
+
+### Added
+- **"Synchroniser maintenant"** on the integrations screen: runs the exact
+  same sync as the nightly command, inline with a loading state (no worker
+  anywhere, by design), and reports the number of rows written. The sync
+  logic moves into a shared `SearchConsoleSynchronizer` service used by both
+  the command and the page.
+
 ## [0.3.1] - Fix: self-scheduling on HTTP-triggered schedulers (2026-07-21)
 
 ### Fixed

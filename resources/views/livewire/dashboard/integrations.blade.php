@@ -121,10 +121,16 @@
                         </p>
                     @endif
 
-                    <div class="flex justify-end gap-2 border-t border-subtle pt-4">
+                    <div class="flex flex-wrap items-center justify-end gap-2 border-t border-subtle pt-4">
                         @if ($connection->status === SearchConsoleConnection::STATUS_ERROR)
                             <x-ui.button variant="secondary" class="whitespace-nowrap" :href="$connectUrl">
                                 {{ __('Reconnecter') }}
+                            </x-ui.button>
+                        @else
+                            {{-- Same code path as the nightly command; the initial
+                                 backfill (~16 months) can take a little while. --}}
+                            <x-ui.button variant="secondary" class="whitespace-nowrap" :loading="true" target="syncNow" wire:click="syncNow">
+                                {{ __('Synchroniser maintenant') }}
                             </x-ui.button>
                         @endif
                         <x-ui.button variant="danger" class="whitespace-nowrap" wire:click="confirmDisconnect">{{ __('Déconnecter') }}</x-ui.button>
