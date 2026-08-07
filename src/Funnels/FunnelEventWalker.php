@@ -45,12 +45,8 @@ final readonly class FunnelEventWalker
         $names = [];
         $routes = [];
         foreach ($steps as $step) {
-            if ($step->event !== null) {
-                $names[] = $step->event;
-            }
-            if ($step->route !== null) {
-                $routes[] = $step->route;
-            }
+            $names = [...$names, ...$step->eventNames()];
+            $routes = [...$routes, ...$step->routeNames()];
         }
 
         if ($names === [] && $routes === []) {

@@ -33,15 +33,29 @@ final class Funnel
     }
 
     /**
-     * Add a weighted step matched by a named event XOR a pageview route.
+     * Add a weighted step, matched by exactly one of: a named event, a pageview
+     * route, or a set of parallel branches.
+     *
+     * Branches describe alternative ways of reaching the same milestone -- a
+     * form opened from either of two pages, a signup completed through either
+     * of two flows. They sit at the same depth, so a visitor advances once
+     * whichever one they take, and the report tells which.
+     *
+     * @param  list<FunnelBranch>|null  $anyOf
      */
-    public function step(string $label, float $value, ?string $event = null, ?string $route = null): self
+    public function step(string $label, float $value, ?string $event = null, ?string $route = null, ?array $anyOf = null): self
     {
-        if (($event === null) === ($route === null)) {
-            throw new InvalidArgumentException("Funnel step [{$label}] must match exactly one of event or route.");
+        $declared = count(array_filter([$event, $route, $anyOf], static fn (mixed $value): bool => $value !== null));
+
+        if ($declared !== 1) {
+            throw new InvalidArgumentException("Funnel step [{$label}] must match exactly one of event, route or anyOf.");
         }
 
-        $this->steps[] = new FunnelStep($label, $value, $event, $route);
+        if ($anyOf !== null && count($anyOf) < 2) {
+            throw new InvalidArgumentException("Funnel step [{$label}] declares anyOf with fewer than two branches.");
+        }
+
+        $this->steps[] = new FunnelStep($label, $value, $event, $route, $anyOf ?? []);
 
         return $this;
     }

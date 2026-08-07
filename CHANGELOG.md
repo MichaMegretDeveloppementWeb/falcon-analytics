@@ -3,6 +3,20 @@
 Notable milestones of `falcon/analytics`. Versions are git tags; earlier per-tier
 patch tags (v0.1.x) hold the individual steps.
 
+## [Unreleased]
+
+### Funnels
+- **Parallel branches.** A step can now be declared with `anyOf: [...]`, listing
+  labelled alternative ways of reaching the same milestone -- a form opened from
+  either of two pages, a signup completed through either of two flows. Laid out
+  as consecutive steps these read "went through one, THEN the other" and reported
+  zeros; branches sit at the same depth instead, so a visitor advances once
+  whichever one they take. The report carries the per-branch reach, rendered
+  under the step, so the screen answers which way in visitors actually take.
+- `analytics:events:check` now validates branch events too.
+- Fully backward compatible: `event:` and `route:` steps are untouched, and a
+  step without branches reports an empty `branches` array.
+
 ## [1.0.0] - Stable release after the full pre-v1 audit (2026-07-21)
 
 Six-dimension audit (architecture, error handling, queries, security,

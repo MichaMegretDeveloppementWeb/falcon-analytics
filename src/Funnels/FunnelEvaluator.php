@@ -40,13 +40,23 @@ final readonly class FunnelEvaluator
         $stepCount = count($steps);
         $reached = array_fill(0, max($stepCount, 1), 0);
 
+        /** @var array<int, array<string, int>> $branchReach step index => branch label => visitors */
+        $branchReach = [];
+
         $this->walker->walk(
             $funnel,
             $period,
             $subjectType,
             null,
-            function (int $visitorId, int $stepIndex, Event $event) use (&$reached): void {
+            function (int $visitorId, int $stepIndex, Event $event) use (&$reached, &$branchReach, $steps): void {
                 $reached[$stepIndex]++;
+
+                // A branched step also records the way in, so the report can compare them.
+                $branch = $steps[$stepIndex]->branchFor($event);
+
+                if ($branch !== null) {
+                    $branchReach[$stepIndex][$branch->label] = ($branchReach[$stepIndex][$branch->label] ?? 0) + 1;
+                }
             },
         );
 
@@ -59,6 +69,14 @@ final readonly class FunnelEvaluator
             $score = $visitors * $step->value;
             $totalScore += $score;
 
+            // Every declared branch appears, including those nobody took: a zero is
+            // itself a reading, and a disappearing row would look like a bug.
+            $branches = [];
+
+            foreach ($step->branches as $branch) {
+                $branches[$branch->label] = $branchReach[$i][$branch->label] ?? 0;
+            }
+
             $results[] = new FunnelStepResult(
                 label: $step->label,
                 value: $step->value,
@@ -66,6 +84,7 @@ final readonly class FunnelEvaluator
                 conversionFromStart: $entrants > 0 ? $visitors / $entrants : 0.0,
                 conversionFromPrevious: $i === 0 ? 1.0 : ($reached[$i - 1] > 0 ? $visitors / $reached[$i - 1] : 0.0),
                 score: $score,
+                branches: $branches,
             );
         }
 

@@ -63,6 +63,24 @@
                             <div class="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-elevated">
                                 <div class="h-full rounded-full bg-[#1684ea]" style="width: {{ max($pct, 2) }}%"></div>
                             </div>
+                            {{-- Parallel branches: which way in visitors actually took. --}}
+                            @if ($step->branches !== [])
+                                <div class="mt-2 space-y-1 border-l border-base pl-3">
+                                    @foreach ($step->branches as $branchLabel => $branchVisitors)
+                                        @php
+                                            $branchPct = $step->visitors > 0 ? (int) round($branchVisitors / $step->visitors * 100) : 0;
+                                        @endphp
+                                        <div class="flex items-baseline justify-between gap-3 text-[11px]">
+                                            <span class="truncate text-muted">{{ $branchLabel }}</span>
+                                            <span class="shrink-0 tabular-nums text-secondary">
+                                                {{ number_format($branchVisitors, 0, ',', ' ') }}
+                                                <span class="text-muted">{{ '('.$branchPct."\u{00A0}%)" }}</span>
+                                            </span>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+
                             <p class="mt-1 text-[11px] text-muted">{{ __('Valeur :v · score :s', [
                                 'v' => number_format($step->value, 0, ',', ' '),
                                 's' => number_format($step->score, 0, ',', ' '),

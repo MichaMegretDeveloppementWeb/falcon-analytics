@@ -425,6 +425,29 @@ Funnel::define('acquisition_client', 'Acquisition client')
 The funnels screen renders each funnel's per-step volumes, conversion rates
 between steps and total value over the selected period.
 
+**Parallel branches.** A milestone is often reachable more than one way. Since
+progression is sequential, laying the alternatives out as consecutive steps
+would read "went through one, *then* the other" and report zeros. Declare them
+at the same depth instead:
+
+```php
+use Falcon\Analytics\Funnels\Funnel;
+use Falcon\Analytics\Funnels\FunnelBranch;
+
+Funnel::define('acquisition', 'Acquisition')
+    ->step('Offre consultee', value: 2, event: 'offer.viewed')
+    ->step('Formulaire ouvert', value: 8, anyOf: [
+        FunnelBranch::event('Questionnaire', 'quiz.opened'),
+        FunnelBranch::route('Contact', 'contact'),
+    ])
+    ->step('Demande envoyee', value: 100, event: 'lead.created');
+```
+
+A visitor advances once, whichever branch they take, and the step reports how
+many came through each -- including the branches nobody took, since a zero is
+itself a reading. A step accepts exactly one of `event`, `route` or `anyOf`, and
+`anyOf` needs at least two branches.
+
 ## Marketing module
 
 A separate top-level module measuring ad performance **without any ad-platform
