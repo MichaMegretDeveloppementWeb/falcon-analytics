@@ -4,6 +4,7 @@ use Carbon\CarbonImmutable;
 use Falcon\Analytics\DTOs\Dashboard\Period;
 use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Funnels\Funnel;
+use Falcon\Analytics\Funnels\FunnelBranch;
 use Falcon\Analytics\Funnels\FunnelEvaluator;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
@@ -132,4 +133,110 @@ it('ignores events outside the period', function () {
 
     expect($report->steps[0]->visitors)->toBe(1)
         ->and($reportLater->steps[0]->visitors)->toBe(0);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Parallel branches
+|--------------------------------------------------------------------------
+|
+| A milestone is often reachable by more than one route: a form opened from
+| either of two pages, a signup completed through either of two flows. Laid out
+| as consecutive steps these would read "went through one, THEN the other" and
+| report zeros. Branches sit at the same depth instead, and the report tells
+| which way in visitors took.
+|
+*/
+
+it('advances a branched step whichever branch the visitor takes', function () {
+    $funnel = (new Funnel('branched', 'Branched'))
+        ->step('Vue', 1.0, event: 'ViewContent')
+        ->step('Formulaire', 8.0, anyOf: [
+            FunnelBranch::event('Questionnaire', 'form.quiz'),
+            FunnelBranch::route('Contact', 'contact'),
+        ])
+        ->step('Envoi', 100.0, event: 'Lead');
+
+    funnelJourney(['ViewContent', 'form.quiz', 'Lead']);              // through the quiz
+    funnelJourney(['ViewContent', ['route' => 'contact'], 'Lead']);   // through the contact page
+    funnelJourney(['ViewContent', 'form.quiz']);                      // stops at the form
+    funnelJourney(['ViewContent', 'Lead']);                           // skips the step entirely
+
+    $report = $this->evaluator->evaluate($funnel, $this->period, null);
+
+    expect($report->entrants)->toBe(4)
+        ->and($report->steps[1]->visitors)->toBe(3)
+        ->and($report->steps[2]->visitors)->toBe(2);
+});
+
+it('reports how many visitors came through each branch', function () {
+    $funnel = (new Funnel('branched', 'Branched'))
+        ->step('Formulaire', 8.0, anyOf: [
+            FunnelBranch::event('Questionnaire', 'form.quiz'),
+            FunnelBranch::route('Contact', 'contact'),
+        ]);
+
+    funnelJourney(['form.quiz']);
+    funnelJourney(['form.quiz']);
+    funnelJourney([['route' => 'contact']]);
+
+    $report = $this->evaluator->evaluate($funnel, $this->period, null);
+
+    expect($report->steps[0]->branches)->toBe(['Questionnaire' => 2, 'Contact' => 1]);
+});
+
+/*
+| A branch nobody took must still appear: a zero is a reading, and a row that
+| vanishes looks like a bug rather than an absence.
+*/
+it('keeps an untaken branch in the report, at zero', function () {
+    $funnel = (new Funnel('branched', 'Branched'))
+        ->step('Formulaire', 8.0, anyOf: [
+            FunnelBranch::event('Questionnaire', 'form.quiz'),
+            FunnelBranch::route('Contact', 'contact'),
+        ]);
+
+    funnelJourney(['form.quiz']);
+
+    $report = $this->evaluator->evaluate($funnel, $this->period, null);
+
+    expect($report->steps[0]->branches)->toBe(['Questionnaire' => 1, 'Contact' => 0]);
+});
+
+it('counts a visitor once even when several branches match', function () {
+    $funnel = (new Funnel('branched', 'Branched'))
+        ->step('Formulaire', 8.0, anyOf: [
+            FunnelBranch::event('Questionnaire', 'form.quiz'),
+            FunnelBranch::route('Contact', 'contact'),
+        ])
+        ->step('Envoi', 100.0, event: 'Lead');
+
+    funnelJourney(['form.quiz', ['route' => 'contact'], 'Lead']);
+
+    $report = $this->evaluator->evaluate($funnel, $this->period, null);
+
+    expect($report->steps[0]->visitors)->toBe(1)
+        ->and($report->steps[0]->branches)->toBe(['Questionnaire' => 1, 'Contact' => 0])
+        ->and($report->steps[1]->visitors)->toBe(1);
+});
+
+it('leaves the branches empty on a step declared without them', function () {
+    funnelJourney(['ViewContent']);
+
+    $report = $this->evaluator->evaluate($this->funnel, $this->period, null);
+
+    expect($report->steps[0]->branches)->toBe([]);
+});
+
+it('refuses a step that mixes branches with a single matcher', function () {
+    expect(fn () => (new Funnel('bad', 'Bad'))->step('Mixte', 1.0, event: 'a', anyOf: [
+        FunnelBranch::event('Un', 'b'),
+        FunnelBranch::event('Deux', 'c'),
+    ]))->toThrow(InvalidArgumentException::class);
+});
+
+it('refuses a branched step with a single branch', function () {
+    expect(fn () => (new Funnel('bad', 'Bad'))->step('Seule', 1.0, anyOf: [
+        FunnelBranch::event('Un', 'b'),
+    ]))->toThrow(InvalidArgumentException::class);
 });
