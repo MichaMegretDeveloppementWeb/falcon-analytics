@@ -3,7 +3,7 @@
 Notable milestones of `falcon/analytics`. Versions are git tags; earlier per-tier
 patch tags (v0.1.x) hold the individual steps.
 
-## [Unreleased]
+## [1.1.0] - Parallel funnel branches (2026-08-07)
 
 ### Funnels
 - **Parallel branches.** A step can now be declared with `anyOf: [...]`, listing
