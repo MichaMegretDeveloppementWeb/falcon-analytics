@@ -3,6 +3,25 @@
 Notable milestones of `falcon/analytics`. Versions are git tags; earlier per-tier
 patch tags (v0.1.x) hold the individual steps.
 
+## [1.3.0] - The overview reads (2026-08-10)
+
+### Overview
+- **The value rejoins its label.** Nineteen rows across six sections laid the label hard
+  left and the figure hard right, with nothing crossing the gap between them: the two things
+  a reader has to pair were the two furthest apart on the line. Rows are now bounded lists
+  whose number column starts after the longest label, aligned from row to row so they stay
+  comparable, and the leftover space falls to the right where it costs nothing. Measured on
+  Audience: the label-to-value gap goes from roughly four hundred pixels to twenty-four.
+- **One number per row.** Each row carried a share and a count, side by side, same size, no
+  separator -- so the eye had to decide which one it was reading. The count stays, the share
+  moves to the title attribute, and the donut next to it shows the proportion anyway.
+- **A way into every card.** Localities and Conversions opened straight onto a list with no
+  point of entry; both now lead with their total in 24px. Contrast of size is what creates
+  hierarchy -- without it no zone announces itself.
+- **Room between sections, less inside them.** Sections sat 32px apart while rows inside a
+  card sat 28px apart: a group whose outer separation barely exceeds its inner spacing does
+  not read as a group. Now 48px and a rule.
+
 ## [1.2.0] - Geolocation that says what is wrong (2026-08-10)
 
 ### GeoIP
