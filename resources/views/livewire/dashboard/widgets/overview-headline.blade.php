@@ -53,14 +53,16 @@
     {{-- Engagement stats (same headline read as the KPIs) --}}
     <x-ui.card>
         <x-ui.section-header :title="__('Statistiques')" :description="__('Sur la période')" class="mb-4" />
+        {{-- La valeur suit son libelle au lieu de filer au bord de la carte : flex-1 sur le
+             libelle rejetait le nombre a l'autre bout d'un vide que rien ne traversait. --}}
         <div class="grid grid-cols-1 gap-x-8 gap-y-2 sm:grid-cols-2">
             <div class="flex items-center gap-3 py-1">
                 <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-elevated">
                     <x-ui.icon name="document-text" class="h-3.5 w-3.5 text-secondary" />
                 </span>
-                <span class="flex-1 text-[13px] text-secondary">{{ __('Pages vues') }}</span>
+                <span class="text-[13px] text-secondary">{{ __('Pages vues') }}</span>
                 <span class="flex items-center gap-2">
-                    <span class="text-[13px] font-semibold text-primary">{{ number_format($headline['pageviews']->current, 0, ',', ' ') }}</span>
+                    <span class="text-[13px] font-semibold tabular-nums text-primary">{{ number_format($headline['pageviews']->current, 0, ',', ' ') }}</span>
                     @include('analytics::livewire.dashboard.partials.delta', ['current' => $headline['pageviews']->current, 'previous' => $headline['pageviews']->previous])
                 </span>
             </div>
@@ -68,9 +70,9 @@
                 <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-elevated">
                     <x-ui.icon name="document-duplicate" class="h-3.5 w-3.5 text-secondary" />
                 </span>
-                <span class="flex-1 text-[13px] text-secondary">{{ __('Pages par session') }}</span>
+                <span class="text-[13px] text-secondary">{{ __('Pages par session') }}</span>
                 <span class="flex items-center gap-2">
-                    <span class="text-[13px] font-semibold text-primary">{{ number_format($headline['pagesPerSession']->current, 1, ',', ' ') }}</span>
+                    <span class="text-[13px] font-semibold tabular-nums text-primary">{{ number_format($headline['pagesPerSession']->current, 1, ',', ' ') }}</span>
                     @include('analytics::livewire.dashboard.partials.delta', ['current' => $headline['pagesPerSession']->current, 'previous' => $headline['pagesPerSession']->previous])
                 </span>
             </div>

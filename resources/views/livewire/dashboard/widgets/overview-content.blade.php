@@ -30,19 +30,23 @@
 
         <div class="pt-5 lg:pl-8 lg:pt-0">
             <x-ui.section-header :title="__('Clics principaux')" class="mb-4" />
-            @forelse ($topClicks as $click)
-                <div class="flex items-center justify-between gap-4 py-[7px]">
-                    <div class="min-w-0">
-                        <p class="truncate text-[13px] text-primary" data-tooltip="{{ $click['label'] }}">{{ $click['label'] }}</p>
-                        @if ($click['route'])
-                            <p class="truncate text-[11px] text-muted"><x-analytics::page-url :route="$click['route']" /></p>
-                        @endif
-                    </div>
-                    <span class="shrink-0 text-[13px] font-semibold text-primary">{{ number_format($click['total'], 0, ',', ' ') }}</span>
-                </div>
-            @empty
+            @if ($topClicks !== [])
+                {{-- Le libelle porte deja deux lignes : la colonne du nombre le suit d'assez
+                     pres, sans le tronquer davantage. --}}
+                <dl class="grid max-w-[26rem] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-5 gap-y-3">
+                    @foreach ($topClicks as $click)
+                        <dt class="min-w-0">
+                            <span class="block truncate text-[13px] text-secondary" data-tooltip="{{ $click['label'] }}">{{ $click['label'] }}</span>
+                            @if ($click['route'])
+                                <span class="block truncate text-[11px] text-muted"><x-analytics::page-url :route="$click['route']" /></span>
+                            @endif
+                        </dt>
+                        <dd class="w-8 text-right text-[13px] font-semibold tabular-nums text-primary">{{ number_format($click['total'], 0, ',', ' ') }}</dd>
+                    @endforeach
+                </dl>
+            @else
                 <x-ui.empty-state icon="cursor-arrow-rays" :title="__('Aucun clic')" :description="__('Aucun clic capté sur la période.')" />
-            @endforelse
+            @endif
         </div>
 
     </div>

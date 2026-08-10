@@ -2,7 +2,12 @@
     $previous = $range->previous();
 @endphp
 
-<div class="space-y-8">
+{{--
+    Les sections etaient separees de 32 px alors que les lignes d'une carte tiennent dans 28 :
+    l'ecart exterieur d'un groupe n'excedait pas ses ecarts interieurs, et la page se lisait
+    comme une seule longue liste. A 48 px, avec un filet, chaque bloc redevient un bloc.
+--}}
+<div class="space-y-12">
 
     @include('analytics::livewire.dashboard.partials.tooltip-host')
 
@@ -20,17 +25,17 @@
     <livewire:analytics-trend-chart :period="$period" :subject="$subject" :key="'ov-trend-'.$period.'-'.$subject" />
 
     {{-- Deferred heavy sections : each loads independently after paint --}}
-    <div>
+    <div class="border-t border-base pt-8">
         <x-ui.section-header :title="__('Audience')" :description="__('Visiteurs et appareils')" class="mb-4" />
         <livewire:analytics-overview-audience :period="$period" :subject="$subject" :key="'ov-audience-'.$period.'-'.$subject" />
     </div>
 
-    <div>
+    <div class="border-t border-base pt-8">
         <x-ui.section-header :title="__('Acquisition')" :description="__('D\'où viennent les sessions')" class="mb-4" />
         <livewire:analytics-overview-acquisition :period="$period" :subject="$subject" :key="'ov-acq-'.$period.'-'.$subject" />
     </div>
 
-    <div>
+    <div class="border-t border-base pt-8">
         <x-ui.section-header :title="__('Contenu')" :description="__('Pages et clics')" class="mb-4" />
         <livewire:analytics-overview-content :period="$period" :subject="$subject" :key="'ov-content-'.$period.'-'.$subject" />
     </div>

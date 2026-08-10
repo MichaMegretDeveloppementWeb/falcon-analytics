@@ -25,16 +25,25 @@
                             :total="number_format($newTotal, 0, ',', ' ')"
                             :caption="__('visiteurs')" />
                     </div>
-                    <div class="min-w-0 flex-1 space-y-2.5">
-                        <div class="flex items-center justify-between gap-2">
-                            <span class="flex items-center gap-2 text-[13px] text-secondary"><span class="h-2 w-2 rounded-full" style="background:#1684ea"></span>{{ __('Nouveaux') }}</span>
-                            <span class="text-[13px]"><span class="font-semibold text-primary">{{ $newPct."\u{00A0}%" }}</span> <span class="text-muted">{{ number_format($newVsReturning['new'], 0, ',', ' ') }}</span></span>
-                        </div>
-                        <div class="flex items-center justify-between gap-2">
-                            <span class="flex items-center gap-2 text-[13px] text-secondary"><span class="h-2 w-2 rounded-full" style="background:#bcdcfa"></span>{{ __('Récurrents') }}</span>
-                            <span class="text-[13px]"><span class="font-semibold text-primary">{{ (100 - $newPct)."\u{00A0}%" }}</span> <span class="text-muted">{{ number_format($newVsReturning['returning'], 0, ',', ' ') }}</span></span>
-                        </div>
-                    </div>
+                    {{--
+                        Une grille, pas un etirement. La valeur se posait au bord de la carte,
+                        a l'autre bout d'un vide que rien ne traversait : le libelle et son
+                        nombre etaient les deux choses les plus eloignees de la ligne. La
+                        colonne des nombres commence maintenant apres le plus long libelle,
+                        assez pres pour qu'on lise la paire d'un coup, et alignee d'une ligne
+                        a l'autre pour qu'on puisse encore comparer.
+
+                        Un seul nombre aussi : la part se lit sur le beignet, qui est la pour
+                        cela, et deux nombres de taille voisine cote a cote obligeaient a
+                        decider lequel on lit.
+                    --}}
+                    <dl class="grid min-w-0 max-w-[15rem] flex-1 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-6 gap-y-2.5">
+                        <dt class="flex items-center gap-2 text-[13px] text-secondary"><span class="h-2 w-2 shrink-0 rounded-full" style="background:#1684ea"></span>{{ __('Nouveaux') }}</dt>
+                        <dd class="text-right text-[13px] font-semibold tabular-nums text-primary" title="{{ $newPct."\u{00A0}%" }}">{{ number_format($newVsReturning['new'], 0, ',', ' ') }}</dd>
+
+                        <dt class="flex items-center gap-2 text-[13px] text-secondary"><span class="h-2 w-2 shrink-0 rounded-full" style="background:#bcdcfa"></span>{{ __('Récurrents') }}</dt>
+                        <dd class="text-right text-[13px] font-semibold tabular-nums text-primary" title="{{ (100 - $newPct)."\u{00A0}%" }}">{{ number_format($newVsReturning['returning'], 0, ',', ' ') }}</dd>
+                    </dl>
                 </div>
             @else
                 <x-ui.empty-state icon="users" :title="__('Aucun visiteur')" :description="__('Aucune session sur la période.')" />
@@ -53,14 +62,15 @@
                             :total="number_format($deviceTotal, 0, ',', ' ')"
                             :caption="__('sessions')" />
                     </div>
-                    <div class="min-w-0 flex-1 space-y-2.5">
+                    <dl class="grid min-w-0 max-w-[15rem] flex-1 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-6 gap-y-2.5">
                         @foreach ($devices as $device => $count)
-                            <div class="flex items-center justify-between gap-2">
-                                <span class="flex items-center gap-2 text-[13px] text-secondary"><span class="h-2 w-2 rounded-full" style="background:{{ $devicePalette[$loop->index] ?? '#d1d5db' }}"></span>{{ DeviceLabel::for($device) }}</span>
-                                <span class="text-[13px]"><span class="font-semibold text-primary">{{ ((int) round($count / $deviceTotal * 100))."\u{00A0}%" }}</span> <span class="text-muted">{{ number_format($count, 0, ',', ' ') }}</span></span>
-                            </div>
+                            <dt class="flex min-w-0 items-center gap-2 text-[13px] text-secondary">
+                                <span class="h-2 w-2 shrink-0 rounded-full" style="background:{{ $devicePalette[$loop->index] ?? '#d1d5db' }}"></span>
+                                <span class="truncate">{{ DeviceLabel::for($device) }}</span>
+                            </dt>
+                            <dd class="text-right text-[13px] font-semibold tabular-nums text-primary" title="{{ ((int) round($count / $deviceTotal * 100))."\u{00A0}%" }}">{{ number_format($count, 0, ',', ' ') }}</dd>
                         @endforeach
-                    </div>
+                    </dl>
                 </div>
             @else
                 <x-ui.empty-state icon="device-phone-mobile" :title="__('Aucun appareil')" :description="__('Aucune session sur la période.')" />
