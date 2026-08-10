@@ -24,6 +24,9 @@
         @endif
     </x-ui.page-header>
 
+    {{-- La localité manquait sans qu'on sache pourquoi : base absente, tronquée, ou adresse privée. --}}
+    <x-analytics::geo-notice />
+
     {{-- Activité de la période (KPI seulement : la liste ci-dessous est tous temps) --}}
     <div>
         <div class="mb-4 flex flex-wrap items-end justify-between gap-3">

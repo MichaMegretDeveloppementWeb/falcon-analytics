@@ -8,8 +8,6 @@ use FilesystemIterator;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Phar;
-use PharData;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;
@@ -70,28 +68,128 @@ final class GeoipDownloadCommand extends Command
         return self::SUCCESS;
     }
 
+    /**
+     * Unpack the one file we need, streaming.
+     *
+     * PharData was the obvious tool and it reads the whole archive into memory: a 32 MB download
+     * blew past PHP's 128 MB default and the command died mid-extract, having already spent the
+     * download. Ungzipping to a temp file then walking the tar keeps memory flat whatever the
+     * archive weighs.
+     */
     private function extractDatabase(string $archive, string $extractDir, string $edition): string
     {
-        (new PharData($archive))->extractTo($extractDir, null, true);
+        $this->ensureDirectory($extractDir);
 
-        $found = glob($extractDir.'/*/'.$edition.'.mmdb') ?: glob($extractDir.'/'.$edition.'.mmdb');
+        $tar = $extractDir.'/'.$edition.'.tar';
+        $mmdb = $extractDir.'/'.$edition.'.mmdb';
 
-        if ($found === false || $found === []) {
-            throw new RuntimeException("the archive did not contain {$edition}.mmdb");
+        $this->gunzip($archive, $tar);
+        $this->extractFromTar($tar, $edition.'.mmdb', $mmdb);
+
+        @unlink($tar);
+
+        return $mmdb;
+    }
+
+    private function gunzip(string $source, string $target): void
+    {
+        $in = @gzopen($source, 'rb');
+        $out = @fopen($target, 'wb');
+
+        if ($in === false || $out === false) {
+            throw new RuntimeException('the downloaded archive could not be opened');
         }
 
-        return $found[0];
+        try {
+            while (! gzeof($in)) {
+                $chunk = gzread($in, 1 << 20);
+
+                if ($chunk === false) {
+                    throw new RuntimeException('the downloaded archive is not readable gzip');
+                }
+
+                fwrite($out, $chunk);
+            }
+        } finally {
+            gzclose($in);
+            fclose($out);
+        }
+    }
+
+    /**
+     * Copy out the first entry whose name ends with $needle.
+     *
+     * A tar is a flat sequence of 512-byte headers followed by their payload, padded to the next
+     * 512 boundary. MaxMind nests the database under a dated folder, hence the suffix match
+     * rather than an exact one.
+     */
+    private function extractFromTar(string $tar, string $needle, string $target): void
+    {
+        $in = @fopen($tar, 'rb');
+
+        if ($in === false) {
+            throw new RuntimeException('the archive could not be read');
+        }
+
+        try {
+            while (($header = fread($in, 512)) !== false && strlen($header) === 512) {
+                $name = rtrim(substr($header, 0, 100), "\0");
+
+                // Two zeroed blocks close a tar; the first empty name is enough to stop.
+                if ($name === '') {
+                    break;
+                }
+
+                $size = (int) octdec(trim(substr($header, 124, 12), " \0"));
+                $padded = (int) (ceil($size / 512) * 512);
+
+                if (! str_ends_with($name, $needle)) {
+                    fseek($in, $padded, SEEK_CUR);
+
+                    continue;
+                }
+
+                $this->copyBytes($in, $target, $size);
+
+                return;
+            }
+        } finally {
+            fclose($in);
+        }
+
+        throw new RuntimeException("the archive did not contain {$needle}");
+    }
+
+    /** @param  resource  $in */
+    private function copyBytes($in, string $target, int $size): void
+    {
+        $out = @fopen($target, 'wb');
+
+        if ($out === false) {
+            throw new RuntimeException("{$target} could not be written");
+        }
+
+        try {
+            $remaining = $size;
+
+            while ($remaining > 0) {
+                $chunk = fread($in, (int) min(1 << 20, $remaining));
+
+                if ($chunk === false || $chunk === '') {
+                    throw new RuntimeException('the archive ended before the database did');
+                }
+
+                fwrite($out, $chunk);
+                $remaining -= strlen($chunk);
+            }
+        } finally {
+            fclose($out);
+        }
     }
 
     private function cleanup(string $archive, string $extractDir): void
     {
-        if (is_file($archive)) {
-            try {
-                Phar::unlinkArchive($archive);
-            } catch (Throwable) {
-                @unlink($archive);
-            }
-        }
+        @unlink($archive);
 
         if (! is_dir($extractDir)) {
             return;

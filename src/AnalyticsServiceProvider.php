@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Falcon\Analytics;
 
 use Falcon\Analytics\Console\CheckEventsCommand;
+use Falcon\Analytics\Console\GeoipCheckCommand;
 use Falcon\Analytics\Console\GeoipDownloadCommand;
 use Falcon\Analytics\Console\InstallCommand;
 use Falcon\Analytics\Console\PruneCommand;
@@ -104,6 +105,7 @@ final class AnalyticsServiceProvider extends ServiceProvider
         $this->commands([
             InstallCommand::class,
             GeoipDownloadCommand::class,
+            GeoipCheckCommand::class,
             PruneCommand::class,
             SweepCommand::class,
             ScanEventsCommand::class,
