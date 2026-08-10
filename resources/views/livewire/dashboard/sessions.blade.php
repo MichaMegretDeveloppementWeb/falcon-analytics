@@ -43,6 +43,9 @@
         @include('analytics::livewire.dashboard.partials.filters')
     </x-ui.page-header>
 
+    {{-- La localite manquait sans qu'on sache pourquoi : base absente, tronquee, ou adresse privee. --}}
+    <x-analytics::geo-notice />
+
     {{-- Engagement stats (deferred) --}}
     <livewire:analytics-sessions-headline :period="$period" :subject="$subject" :key="'sessions-headline-'.$period.'-'.$subject" />
 

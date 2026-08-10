@@ -3,6 +3,23 @@
 Notable milestones of `falcon/analytics`. Versions are git tags; earlier per-tier
 patch tags (v0.1.x) hold the individual steps.
 
+## [1.2.0] - Geolocation that says what is wrong (2026-08-10)
+
+### GeoIP
+- **The download no longer dies on its own archive.** `analytics:geoip:download` unpacked
+  through `PharData`, which reads the whole file into memory: a 32 MB GeoLite2-City archive
+  blew past PHP's 128 MB default and the command failed mid-extract, having already spent
+  the download. It now ungzips to a temp file and walks the tar, so memory stays flat
+  whatever the archive weighs.
+- **`analytics:geoip:check`**, a new command. Geolocation degrades to an empty location
+  whatever goes wrong -- no database, a truncated one, a private address -- and all three
+  showed the same blank column. The command reports the database path, size and date, the
+  configured development address, and resolves a probe address, naming the state.
+- **`GeoResolver::status()`** and the `GeoStatus` enum behind it. `locate()` still degrades
+  silently, which is right for a request; `status()` is for whoever has to fix it.
+- **The dashboard says it too.** Sessions and Visitors carry a notice when the database is
+  missing or unreadable, with what to run. Silent when there is nothing to report.
+
 ## [1.1.0] - Parallel funnel branches (2026-08-07)
 
 ### Funnels

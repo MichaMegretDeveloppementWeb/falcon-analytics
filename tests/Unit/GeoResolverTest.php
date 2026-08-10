@@ -1,5 +1,6 @@
 <?php
 
+use Falcon\Analytics\Enums\GeoStatus;
 use Falcon\Analytics\Support\GeoResolver;
 
 it('returns an empty location when no database is configured', function () {
@@ -39,4 +40,31 @@ it('leaves every ip untouched without a development ip', function () {
 
     expect($resolver->effectiveIp('127.0.0.1'))->toBe('127.0.0.1')
         ->and($resolver->effectiveIp(null))->toBeNull();
+});
+
+/*
+| locate() degrades to an empty location whatever the cause, which is right for a request and
+| useless for whoever reads the screen: a missing database and a 127.0.0.1 both showed a blank
+| column, and nothing said which one to fix.
+*/
+it('names the reason an address does not resolve', function () {
+    expect((new GeoResolver(null))->status('85.4.12.66'))->toBe(GeoStatus::NoDatabase)
+        ->and((new GeoResolver('/does/not/exist.mmdb'))->status('85.4.12.66'))->toBe(GeoStatus::NoDatabase);
+});
+
+it('reports an unreadable database apart from a missing one', function () {
+    $path = sys_get_temp_dir().'/not-a-database-'.uniqid().'.mmdb';
+    file_put_contents($path, 'NOT AN MMDB');
+
+    expect((new GeoResolver($path))->status('85.4.12.66'))->toBe(GeoStatus::UnreadableDatabase);
+
+    @unlink($path);
+});
+
+/* A development address only stands in for private ones, so it cannot mask a real failure. */
+it('keeps a public address out of the development substitution when checking', function () {
+    $resolver = new GeoResolver(null, '85.4.12.66');
+
+    expect($resolver->effectiveIp('9.9.9.9'))->toBe('9.9.9.9')
+        ->and($resolver->status('9.9.9.9'))->toBe(GeoStatus::NoDatabase);
 });
