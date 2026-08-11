@@ -5,8 +5,13 @@ patch tags (v0.1.x) hold the individual steps.
 
 While the package is under development the newest entry stays open: improvements land on the
 current version and its tag is moved forward, so consumers keep their constraint and still get
-them. Pulling those improvements needs `composer clearcache` first, since Composer caches an
-archive per version number.
+them.
+
+Pulling them takes `composer update falcon/analytics` and nothing else -- no constraint to
+bump, no cache to clear. Composer installs this package from source over its VCS repository,
+so it reads the tag afresh and follows it to the new commit; verified on a project pinned to
+the older reference, which moved on a bare update. Note that `composer install` will not do
+it: that replays the lock as it stands.
 
 ## [1.1.0] - Parallel funnel branches, then everything since (2026-08-07, still open)
 
