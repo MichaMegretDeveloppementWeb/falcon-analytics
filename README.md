@@ -579,6 +579,7 @@ campaign term (`utm_term`): these are the words actually typed into Google.
 |---|---|
 | `analytics:install` | publish config, scaffold env variables, run migrations |
 | `analytics:geoip:download` | download/refresh the local GeoLite2 City database |
+| `analytics:geoip:check` | say whether the database is usable, and why an address does or does not resolve |
 | `analytics:sweep` | stamp `ended_at` on sessions idle past the timeout |
 | `analytics:prune` | delete raw events older than `retention_days` |
 | `analytics:events:scan` | diff declared events vs events used in code (`--fix` appends) |
@@ -606,8 +607,16 @@ so an IP never leaves the server (no third-party call at request time).
 3. Download the database: `php artisan analytics:geoip:download`
 
 The `.mmdb` lands at `storage/app/analytics/GeoLite2-City.mmdb` and is
-refreshed monthly by the self-scheduled command. Geolocation degrades silently
-to "unknown" while the database is missing.
+refreshed monthly by the self-scheduled command.
+
+**When localities stay empty, ask why.** Geolocation degrades to "unknown" whatever
+the cause -- no database, a truncated one, or a private address -- so the screen
+alone cannot tell you which to fix. `php artisan analytics:geoip:check` reports the
+database path, size and date, the configured development address, and resolves a
+probe address, naming the state. Pass an address to test that one:
+`php artisan analytics:geoip:check 92.222.0.1`. The Sessions and Visitors screens
+carry the same notice when there is something to do about it.
+
 
 **Any other City-level MMDB works** (e.g. [DB-IP City
 Lite](https://db-ip.com/db/download/ip-to-city-lite), no account required):
@@ -617,7 +626,9 @@ absolute path.
 **Local development**: private/loopback IPs (`127.0.0.1`) can never be
 located. Set `ANALYTICS_GEOIP_DEV_IP` to any public IP to substitute it for
 private/reserved request IPs — inert in production by design, since real
-public IPs are never overridden.
+public IPs are never overridden. Pick one that resolves to a city rather than
+just a country, or the column will only ever show a flag; `analytics:geoip:check
+<ip>` tells you what a candidate resolves to before you commit to it.
 
 IP geolocation is inherently city/region level; it will not pinpoint an exact
 street.
