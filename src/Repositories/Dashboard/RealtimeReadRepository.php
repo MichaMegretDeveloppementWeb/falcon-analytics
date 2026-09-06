@@ -135,7 +135,10 @@ final class RealtimeReadRepository
      */
     public function topPages(CarbonImmutable $since, ?string $subjectType, int $limit = 5): array
     {
-        return $this->windowEvents($since, $subjectType)
+        // `array_values` · le resultat est deja indexe depuis zero, mais son
+        // type ne le dit pas et ce fichier declare des listes. Meme raison
+        // partout ici.
+        return array_values($this->windowEvents($since, $subjectType)
             ->where('type', EventType::Pageview)
             ->whereNotNull('url')
             ->toBase()
@@ -145,7 +148,7 @@ final class RealtimeReadRepository
             ->limit($limit)
             ->get()
             ->map(fn (object $row): array => ['url' => (string) $row->url, 'total' => (int) $row->total])
-            ->all();
+            ->all());
     }
 
     /**
@@ -177,7 +180,7 @@ final class RealtimeReadRepository
      */
     public function mapPoints(CarbonImmutable $since, CarbonImmutable $onlineSince, int $limit = 200): array
     {
-        return $this->activeSessions($since, null)
+        return array_values($this->activeSessions($since, null)
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
             ->toBase()
@@ -197,7 +200,7 @@ final class RealtimeReadRepository
                 'total' => (int) $row->total,
                 'online' => (int) $row->online,
             ])
-            ->all();
+            ->all());
     }
 
     /**
@@ -244,11 +247,16 @@ final class RealtimeReadRepository
     /**
      * Window sessions counted by a column, empties folded into a default label.
      *
+     * `literal-string` sur la colonne · elle entre dans du SQL brut, et
+     * `selectRaw()` n'accepte que des litteraux pour barrer l'injection. Les
+     * deux appelants passent une constante.
+     *
+     * @param  literal-string  $column
      * @return list<array{label: string, total: int}>
      */
     private function activeBreakdown(CarbonImmutable $since, ?string $subjectType, string $column, string $default, int $limit): array
     {
-        return $this->activeSessions($since, $subjectType)
+        return array_values($this->activeSessions($since, $subjectType)
             ->toBase()
             ->selectRaw("{$column} as label, COUNT(*) as total")
             ->groupBy($column)
@@ -259,6 +267,6 @@ final class RealtimeReadRepository
                 'label' => trim((string) ($row->label ?? '')) !== '' ? (string) $row->label : $default,
                 'total' => (int) $row->total,
             ])
-            ->all();
+            ->all());
     }
 }

@@ -107,12 +107,16 @@ final readonly class SessionListReadRepository
      */
     public function sessionFilterOptions(Period $period, ?string $subjectType): array
     {
-        $base = fn (string $column): array => $this->sessionScope($period, $subjectType)
+        // Les valeurs sont transtypees et reindexees ici · `pluck()` rend des
+        // valeurs de colonne, que rien ne garantit etre des chaines, et les
+        // deux listes annoncees le promettent.
+        $base = fn (string $column): array => array_values($this->sessionScope($period, $subjectType)
             ->whereNotNull($column)
             ->distinct()
             ->orderBy($column)
             ->pluck($column)
-            ->all();
+            ->map(fn (mixed $value): string => (string) $value)
+            ->all());
 
         return [
             'devices' => $base('device_type'),

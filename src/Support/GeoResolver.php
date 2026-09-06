@@ -98,7 +98,10 @@ final class GeoResolver
         }
 
         try {
-            $this->reader()?->city($effective);
+            // `->` et non `?->` · l'absence de lecteur a deja fait sortir plus
+            // haut, en UnreadableDatabase, donc l'operateur nul ne pouvait rien
+            // attraper.
+            $this->reader()->city($effective);
         } catch (Throwable) {
             return GeoStatus::NotInDatabase;
         }

@@ -43,15 +43,24 @@ enum GeoStatus: string
         };
     }
 
-    /** What to do about it, when there is something to do. */
+    /**
+     * What to do about it, when there is something to do.
+     *
+     * `__()` rend `array|string|null` · le traducteur rend un tableau quand une
+     * cle en designe un. Ce n'est pas le cas ici, mais plutot que de l'affirmer
+     * par un transtypage, qui donnerait « Array » a lire, un tableau vaut
+     * absence de conseil.
+     */
     public function hint(): ?string
     {
-        return match ($this) {
+        $hint = match ($this) {
             self::NoDatabase => __('Lancez analytics:geoip:download.'),
             self::UnreadableDatabase => __('Relancez analytics:geoip:download pour remplacer le fichier.'),
             self::PrivateAddress => __('Renseignez ANALYTICS_GEOIP_DEV_IP avec une adresse publique pour voir les localités en développement local.'),
             self::Ready, self::NotInDatabase => null,
         };
+
+        return is_string($hint) ? $hint : null;
     }
 
     /** The same states, for the console. */

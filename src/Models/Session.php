@@ -51,7 +51,17 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 final class Session extends Model
 {
-    protected $table = 'falcon_analytics_sessions';
+    /**
+     * Le nom de la table, en constante.
+     *
+     * `SessionWriteRepository::recordActivity()` ecrit un UPDATE litteral pour
+     * lier ses valeurs plutot que les interpoler, et il lui faut ce nom sous une
+     * forme que l'analyse reconnait comme litterale. La propriete ci-dessous la
+     * relit : le nom n'est ecrit qu'a un seul endroit.
+     */
+    public const TABLE = 'falcon_analytics_sessions';
+
+    protected $table = self::TABLE;
 
     public $timestamps = false;
 

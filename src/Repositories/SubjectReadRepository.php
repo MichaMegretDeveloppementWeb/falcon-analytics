@@ -39,7 +39,9 @@ final class SubjectReadRepository
         }
 
         try {
-            return DB::table($table)
+            // `array_values` · le resultat est deja indexe depuis zero, mais son
+            // type ne le dit pas et cette methode declare une liste.
+            return array_values(DB::table($table)
                 ->where(function ($query) use ($columns, $words): void {
                     foreach ($words as $word) {
                         $query->where(function ($inner) use ($columns, $word): void {
@@ -52,7 +54,7 @@ final class SubjectReadRepository
                 ->limit(self::MATCH_LIMIT)
                 ->pluck($key)
                 ->map(fn ($value): int => (int) $value)
-                ->all();
+                ->all());
         } catch (Throwable $e) {
             Log::channel(config('analytics.log_channel'))->warning('Subject.id_search_failed', ['exception' => $e]);
 
@@ -70,7 +72,7 @@ final class SubjectReadRepository
     public function rows(string $table, string $key, array $ids, array $select): array
     {
         try {
-            return DB::table($table)->whereIn($key, $ids)->get($select)->all();
+            return array_values(DB::table($table)->whereIn($key, $ids)->get($select)->all());
         } catch (Throwable $e) {
             Log::channel(config('analytics.log_channel'))->warning('Subject.name_lookup_failed', ['exception' => $e]);
 

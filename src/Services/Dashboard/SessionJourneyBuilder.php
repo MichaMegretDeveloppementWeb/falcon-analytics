@@ -31,26 +31,44 @@ final class SessionJourneyBuilder
      */
     public function build(Collection $events, CarbonInterface $windowStart, CarbonInterface $windowEnd): array
     {
-        $journey = [];
+        /*
+         * Deux accumulateurs paralleles plutot qu'un seul tableau de formes.
+         *
+         * L'ancienne version montait `['event' => …, 'children' => …]` puis
+         * ecrivait dedans par cle variable, ce qui rendait sa forme illisible :
+         * chaque case valait « un evenement, ou un entier, ou une liste ». Les
+         * deux listes ci-dessous gardent chacune un type net, et la forme
+         * finale se compose en une passe.
+         */
+        $steps = [];
+        $children = [];
 
         foreach ($events as $event) {
-            if ($event->type === EventType::Pageview || $journey === []) {
-                $journey[] = ['event' => $event, 'children' => [], 'seconds' => 0];
+            if ($event->type === EventType::Pageview || $steps === []) {
+                $steps[] = $event;
+                $children[] = [];
 
                 continue;
             }
 
-            $journey[array_key_last($journey)]['children'][] = $event;
+            $children[array_key_last($children)][] = $event;
         }
 
         $clamp = fn (CarbonInterface $moment): CarbonInterface => $moment->lessThan($windowStart)
             ? $windowStart
             : ($moment->greaterThan($windowEnd) ? $windowEnd : $moment);
 
-        foreach ($journey as $index => $step) {
-            $from = $index === 0 ? $windowStart : $clamp($step['event']->occurred_at);
-            $to = isset($journey[$index + 1]) ? $clamp($journey[$index + 1]['event']->occurred_at) : $windowEnd;
-            $journey[$index]['seconds'] = max(0, (int) $from->diffInSeconds($to));
+        $journey = [];
+
+        foreach ($steps as $index => $event) {
+            $from = $index === 0 ? $windowStart : $clamp($event->occurred_at);
+            $to = isset($steps[$index + 1]) ? $clamp($steps[$index + 1]->occurred_at) : $windowEnd;
+
+            $journey[] = [
+                'event' => $event,
+                'children' => $children[$index],
+                'seconds' => max(0, (int) $from->diffInSeconds($to)),
+            ];
         }
 
         return $journey;

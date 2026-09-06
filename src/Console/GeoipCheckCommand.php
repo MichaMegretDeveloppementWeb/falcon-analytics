@@ -28,7 +28,10 @@ final class GeoipCheckCommand extends Command
     {
         $path = (string) config('analytics.geoip.database_path');
         $devIp = trim((string) config('analytics.geoip.dev_ip'));
-        $ip = (string) ($this->argument('ip') ?? self::PROBE);
+        // `argument()` peut rendre un tableau, pour un argument variadique ·
+        // celui-ci ne l'est pas, mais la signature ne le sait pas.
+        $given = $this->argument('ip');
+        $ip = is_string($given) && $given !== '' ? $given : self::PROBE;
 
         $this->components->twoColumnDetail('Database', is_file($path)
             ? $path.' ('.$this->humanSize((int) filesize($path)).', '.date('Y-m-d', (int) filemtime($path)).')'

@@ -92,7 +92,7 @@ final readonly class OverviewReadRepository
      */
     public function topSources(Period $period, ?string $subjectType, int $limit = 6): array
     {
-        $campaigns = Campaign::query()->where('is_active', true)->get()->all();
+        $campaigns = array_values(Campaign::query()->where('is_active', true)->get()->all());
 
         return $this->mergeRanked(
             $this->channelCounts($period, $subjectType, $campaigns),
@@ -162,7 +162,10 @@ final readonly class OverviewReadRepository
 
         $previous = $counts($period->previous());
 
-        return $counts($period)
+        // `array_values` plutot que `->values()` · le resultat est le meme, mais
+        // il porte le type `list` que ce fichier declare. Meme raison partout
+        // dans ce fichier.
+        return array_values($counts($period)
             ->sortByDesc(fn (object $row): int => (int) $row->total)
             ->take($limit)
             ->map(fn (object $row): array => [
@@ -171,8 +174,7 @@ final readonly class OverviewReadRepository
                 'total' => (int) $row->total,
                 'previous' => (int) ($previous[$row->country.'|'.($row->city ?? '')]->total ?? 0),
             ])
-            ->values()
-            ->all();
+            ->all());
     }
 
     /**
@@ -206,7 +208,7 @@ final readonly class OverviewReadRepository
         $clicks = $this->eventScope(EventType::Click, $period, $subjectType)
             ->selectRaw("{$label} as label, route");
 
-        return DB::query()
+        return array_values(DB::query()
             ->fromSub($clicks, 'clicks')
             ->whereNotNull('label')
             ->selectRaw('label, route, COUNT(*) as total')
@@ -219,10 +221,15 @@ final readonly class OverviewReadRepository
                 'route' => $row->route !== null ? (string) $row->route : null,
                 'total' => (int) $row->total,
             ])
-            ->all();
+            ->all());
     }
 
     /**
+     * `literal-string` sur la colonne · elle entre dans du SQL brut, et
+     * `selectRaw()` n'accepte que des litteraux pour barrer l'injection. Les
+     * deux appelants passent une constante.
+     *
+     * @param  literal-string  $column
      * @return Collection<string, int>
      */
     private function rankedEventCounts(EventType $type, string $column, Period $period, ?string $subjectType): Collection
@@ -244,7 +251,7 @@ final readonly class OverviewReadRepository
      */
     private function mergeRanked(Collection $current, Collection $previous, int $limit): array
     {
-        return $current->map(fn ($total): int => (int) $total)
+        return array_values($current->map(fn ($total): int => (int) $total)
             ->sortDesc()
             ->take($limit)
             ->map(fn (int $total, string $label): array => [
@@ -252,8 +259,7 @@ final readonly class OverviewReadRepository
                 'total' => (int) $total,
                 'previous' => (int) ($previous[$label] ?? 0),
             ])
-            ->values()
-            ->all();
+            ->all());
     }
 
     /**

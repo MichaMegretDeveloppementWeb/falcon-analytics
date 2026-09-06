@@ -86,7 +86,9 @@ final class MarketingReportBuilder
      */
     private function activeAds(): array
     {
-        return $this->activeAds ??= $this->activeAdsWithObjectives()->all();
+        // `array_values` · une collection Eloquent est deja indexee depuis zero,
+        // mais son type ne le dit pas et les appelants attendent une liste.
+        return $this->activeAds ??= array_values($this->activeAdsWithObjectives()->all());
     }
 
     /**
@@ -330,7 +332,7 @@ final class MarketingReportBuilder
     public function conversions(Period $period, ?string $subjectType, FunnelRegistry $funnels): array
     {
         $ads = $this->activeAdsWithObjectives();
-        $visitorAds = $this->visitorAdMap($period, $subjectType, $ads->all());
+        $visitorAds = $this->visitorAdMap($period, $subjectType, array_values($ads->all()));
 
         if ($visitorAds === []) {
             return ['total' => 0, 'campaigns' => [], 'ads' => [], 'objectives' => [], 'daily' => [], 'campaignDaily' => [], 'adDaily' => []];
@@ -728,7 +730,9 @@ final class MarketingReportBuilder
             },
         );
 
-        return $reached;
+        // `array_values` · `array_fill` depuis zero donne bien une liste, mais
+        // le compteur incremente par reference en fait perdre la trace.
+        return array_values($reached);
     }
 
     /**

@@ -44,6 +44,14 @@ trait ScopesSessionQueries
      * Driver-aware SQL truncating a timestamp to a 'YYYY-MM-DD' string so daily
      * buckets group identically on every database. The column is a trusted
      * internal constant, never user input.
+     *
+     * **`literal-string` tient cette derniere phrase.** `selectRaw()` n'accepte
+     * que des chaines litterales, precisement pour barrer l'injection ; en le
+     * declarant ici, une colonne qui viendrait d'une requete cesse de compiler.
+     * La promesse du commentaire devient une contrainte verifiee.
+     *
+     * @param  literal-string  $column
+     * @return literal-string
      */
     private function dayExpression(string $column): string
     {
@@ -57,7 +65,10 @@ trait ScopesSessionQueries
     /**
      * Driver-aware SQL truncating a timestamp to a 'YYYY-MM-DD HH:MM' string so
      * per-minute buckets group identically on every database. The column is a
-     * trusted internal constant, never user input.
+     * trusted internal constant, never user input — voir {@see dayExpression()}.
+     *
+     * @param  literal-string  $column
+     * @return literal-string
      */
     private function minuteExpression(string $column): string
     {
@@ -71,7 +82,11 @@ trait ScopesSessionQueries
 
     /**
      * Driver-aware SQL for the difference in seconds between two timestamp
-     * columns (both trusted internal constants).
+     * columns (both trusted internal constants) — voir {@see dayExpression()}.
+     *
+     * @param  literal-string  $start
+     * @param  literal-string  $end
+     * @return literal-string
      */
     private function durationSecondsExpression(string $start, string $end): string
     {

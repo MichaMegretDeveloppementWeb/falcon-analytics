@@ -26,10 +26,20 @@ trait EditsAd
 
     public string $adName = '';
 
-    /** @var list<array{param: string, value: string}> */
+    /*
+     * `array<int, …>` et non `list<…>`, et c'est voulu.
+     *
+     * `removeAdCondition()` et `removeObjective()` font un `unset` sans
+     * reindexer, expres : reindexer deplacerait le `wire:key` d'un champ sur
+     * une autre ligne, et Livewire casserait le nettoyage d'Alpine au morph.
+     * Ces tableaux ont donc des trous apres une suppression, et `list`
+     * promettait l'inverse de ce que le code fait exprès.
+     */
+
+    /** @var array<int, array{param: string, value: string}> */
     public array $adConditions = [];
 
-    /** @var list<array{type: string, reference: string, label: string}> */
+    /** @var array<int, array{type: string, reference: string, label: string}> */
     public array $objectives = [];
 
     abstract protected function adFormCampaignId(): int;
@@ -135,12 +145,15 @@ trait EditsAd
         ]);
 
         try {
+            // `array_values` a l'enregistrement, et seulement la · les trous
+            // laisses par `unset` servent au formulaire vivant, pas a ce qui
+            // part en base.
             $action->execute(
                 $this->adId,
                 $this->adFormCampaignId(),
                 $this->adName,
-                $this->cleanAdConditions($this->adConditions),
-                $this->objectives,
+                $this->cleanAdConditions(array_values($this->adConditions)),
+                array_values($this->objectives),
             );
         } catch (Throwable $e) {
             Log::channel(config('analytics.log_channel'))->error('Ad.save_failed', [

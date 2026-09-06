@@ -45,7 +45,13 @@ final readonly class SourceResolver
     }
 
     /**
-     * @return array<string, mixed>
+     * Les parametres de la chaine de requete.
+     *
+     * `array-key` et non `string` · `parse_str('0=a')` rend une cle entiere,
+     * donc l'ancienne annotation promettait quelque chose que la fonction ne
+     * garantit pas. Les appelants n'indexent que par des noms d'utm.
+     *
+     * @return array<array-key, mixed>
      */
     private function queryParams(?string $url): array
     {
@@ -98,7 +104,10 @@ final readonly class SourceResolver
 
         $host = $referrer !== null ? parse_url($referrer, PHP_URL_HOST) : null;
 
-        if ($host === null || $host === '') {
+        // `false` compte comme absent · `parse_url` le rend sur une adresse
+        // malformee, et il passait le garde d'avant pour finir dans
+        // `strtolower()`. Un referrer casse donne desormais « direct ».
+        if (! is_string($host) || $host === '') {
             return 'direct';
         }
 

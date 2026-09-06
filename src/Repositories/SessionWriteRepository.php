@@ -58,19 +58,26 @@ final readonly class SessionWriteRepository
      * committing last) must never regress last_activity_at, which the session
      * closure relies on. The CASE keeps last_activity_at when the incoming stamp
      * is older, so the whole write stays on the ingestion hot path as one query.
+     *
+     * **Les valeurs sont liees, elles ne sont plus interpolees.** Les deux
+     * deltas et l'horodatage entraient dans le SQL par concatenation ; ils
+     * passent desormais en parametres, et la requete est litterale de bout en
+     * bout. Le nom de la table vient de `Session::TABLE`, donc il n'est toujours
+     * ecrit qu'a un seul endroit. Une seule requete, comme avant.
      */
     public function recordActivity(Session $session, CarbonImmutable $lastActivityAt, int $pageviewDelta, int $eventDelta, ?string $lastPageviewUrl): void
     {
         $stamp = $lastActivityAt->toDateTimeString();
 
-        $session->newQuery()
-            ->whereKey($session->getKey())
-            ->update([
-                'pageview_count' => DB::raw('pageview_count + '.$pageviewDelta),
-                'event_count' => DB::raw('event_count + '.$eventDelta),
-                'last_pageview_url' => $lastPageviewUrl,
-                'last_activity_at' => DB::raw("CASE WHEN last_activity_at < '{$stamp}' THEN '{$stamp}' ELSE last_activity_at END"),
-            ]);
+        DB::update(
+            'UPDATE '.Session::TABLE.' SET '
+            .'pageview_count = pageview_count + ?, '
+            .'event_count = event_count + ?, '
+            .'last_pageview_url = ?, '
+            .'last_activity_at = CASE WHEN last_activity_at < ? THEN ? ELSE last_activity_at END '
+            .'WHERE id = ?',
+            [$pageviewDelta, $eventDelta, $lastPageviewUrl, $stamp, $stamp, $session->getKey()],
+        );
     }
 
     /**

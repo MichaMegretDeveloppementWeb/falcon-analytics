@@ -58,7 +58,7 @@ final class CampaignDetailContent extends Component
 
             $trend = $metrics->trend($period, $report['daily'], $conversions['campaignDaily'][$campaign->id] ?? []);
 
-            $activeAds = $campaign->ads()->where('is_active', true)->get()->all();
+            $activeAds = array_values($campaign->ads()->where('is_active', true)->get()->all());
 
             // Hand the per-ad traffic and conversions to the parent's inline ads table,
             // so those reads happen once here rather than blocking the page shell.

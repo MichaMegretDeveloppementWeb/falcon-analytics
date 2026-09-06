@@ -41,8 +41,17 @@ final readonly class UserAgentParser
         );
     }
 
-    private function clean(?string $value, int $limit): ?string
+    /**
+     * Garde une valeur de device-detector, tronquee, ou rien.
+     *
+     * **Le parametre est `mixed`, et ce n'est pas un relachement.**
+     * `getClient()` et `getOs()` rendent `array|string|null` : la bibliotheque
+     * rend un tableau quand on ne lui demande pas une cle precise. Le `?string`
+     * d'avant promettait donc quelque chose de faux, et un tableau serait
+     * arrive jusqu'a `mb_substr` en erreur fatale. Il est rejete ici.
+     */
+    private function clean(mixed $value, int $limit): ?string
     {
-        return ($value === null || $value === '') ? null : mb_substr($value, 0, $limit);
+        return (is_string($value) && $value !== '') ? mb_substr($value, 0, $limit) : null;
     }
 }

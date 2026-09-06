@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Services;
 
 use Falcon\Analytics\Repositories\SubjectReadRepository;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Throwable;
@@ -159,6 +160,15 @@ final class SubjectResolver
 
         try {
             $instance = new $model;
+
+            // Le garde manquait · `auth.providers.*.model` peut nommer
+            // n'importe quelle classe, et une qui n'est pas un modele Eloquent
+            // levait une erreur fatale sur `getTable()`. Elle etait rattrapee
+            // par le `catch` en dessous, mais en la journalisant comme un echec
+            // de resolution plutot que comme une configuration invalide.
+            if (! $instance instanceof Model) {
+                return null;
+            }
 
             return [$instance->getTable(), $instance->getKeyName()];
         } catch (Throwable $e) {

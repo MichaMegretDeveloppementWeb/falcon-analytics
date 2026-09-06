@@ -24,7 +24,13 @@ trait EditsCampaign
 
     public string $campaignPlatform = '';
 
-    /** @var list<array{param: string, value: string}> */
+    /*
+     * `array<int, …>` et non `list<…>` · la suppression d'une ligne fait un
+     * `unset` sans reindexer, expres, pour ne pas deplacer le `wire:key` d'un
+     * champ sur une autre ligne. Voir {@see EditsAd} pour le detail.
+     */
+
+    /** @var array<int, array{param: string, value: string}> */
     public array $campaignConditions = [];
 
     /**
@@ -86,11 +92,14 @@ trait EditsCampaign
         ]);
 
         try {
+            // `array_values` a l'enregistrement, et seulement la · les trous
+            // laisses par `unset` servent au formulaire vivant, pas a ce qui
+            // part en base.
             $action->execute(
                 $this->campaignFormId(),
                 $this->campaignName,
                 $this->campaignPlatform !== '' ? $this->campaignPlatform : null,
-                $this->cleanCampaignConditions($this->campaignConditions),
+                $this->cleanCampaignConditions(array_values($this->campaignConditions)),
             );
         } catch (Throwable $e) {
             Log::channel(config('analytics.log_channel'))->error('Campaign.save_failed', [

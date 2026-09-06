@@ -46,7 +46,9 @@ final class SearchQueryReadRepository
             ->groupBy('query')
             ->pluck('total_clicks', 'query');
 
-        return $rows->map(function (SearchQuery $row) use ($previous): array {
+        // `array_values` · le resultat est deja indexe depuis zero, mais son
+        // type ne le dit pas et cette methode declare une liste.
+        return array_values($rows->map(function (SearchQuery $row) use ($previous): array {
             $clicks = (int) $row->getAttribute('total_clicks');
             $impressions = (int) $row->getAttribute('total_impressions');
             $weighted = (float) $row->getAttribute('weighted_position');
@@ -59,7 +61,7 @@ final class SearchQueryReadRepository
                 'position' => $impressions > 0 ? round($weighted / $impressions, 1) : null,
                 'previous' => (int) ($previous[$row->query] ?? 0),
             ];
-        })->all();
+        })->all());
     }
 
     /**

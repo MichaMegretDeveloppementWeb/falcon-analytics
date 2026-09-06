@@ -66,7 +66,10 @@ final class MarketingReadRepository
      */
     public function activeCampaigns(): array
     {
-        return Campaign::query()->where('is_active', true)->get()->all();
+        // `array_values` plutot que `->all()` seul · une collection Eloquent est
+        // deja indexee depuis zero, mais son type ne le dit pas, et les
+        // appelants attendent une liste. Meme raison partout dans ce fichier.
+        return array_values(Campaign::query()->where('is_active', true)->get()->all());
     }
 
     /**
@@ -82,7 +85,7 @@ final class MarketingReadRepository
      */
     public function activeAdsWithCampaign(): array
     {
-        return Ad::query()->where('is_active', true)->with('campaign')->get()->all();
+        return array_values(Ad::query()->where('is_active', true)->with('campaign')->get()->all());
     }
 
     /**
@@ -90,7 +93,7 @@ final class MarketingReadRepository
      */
     public function activeCampaignAds(Campaign $campaign): array
     {
-        return $campaign->ads()->where('is_active', true)->get()->all();
+        return array_values($campaign->ads()->where('is_active', true)->get()->all());
     }
 
     /**

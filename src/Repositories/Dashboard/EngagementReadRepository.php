@@ -26,15 +26,7 @@ final readonly class EngagementReadRepository
      */
     public function headlineCounts(Period $period, ?string $subjectType): array
     {
-        $row = $this->aggregates($period, $subjectType);
-
-        return [
-            'visitors' => (int) $row->visitors,
-            'sessions' => (int) $row->sessions,
-            'pageviews' => (int) $row->pageviews,
-            'avgSeconds' => (float) $row->avg_seconds,
-            'bounces' => (int) $row->bounces,
-        ];
+        return $this->aggregates($period, $subjectType);
     }
 
     /**
@@ -82,8 +74,16 @@ final readonly class EngagementReadRepository
 
     /**
      * Scalar aggregates for a period in a single query.
+     *
+     * **Rend un tableau, plus un objet.** `first()` donne un `stdClass` dont
+     * les proprietes viennent des alias du SELECT, et rien ne les fait
+     * connaitre a l'analyse : chaque lecture y passait pour un acces a une
+     * propriete inexistante. Un tableau porte sa forme, et l'appelant transtype
+     * comme avant.
+     *
+     * @return array{sessions: int, visitors: int, pageviews: int, avgSeconds: float, bounces: int}
      */
-    private function aggregates(Period $period, ?string $subjectType): object
+    private function aggregates(Period $period, ?string $subjectType): array
     {
         $duration = $this->durationSecondsExpression('started_at', 'last_activity_at');
 
@@ -98,6 +98,16 @@ final readonly class EngagementReadRepository
             )
             ->first();
 
-        return $row ?? (object) ['sessions' => 0, 'visitors' => 0, 'pageviews' => 0, 'avg_seconds' => 0, 'bounces' => 0];
+        if ($row === null) {
+            return ['sessions' => 0, 'visitors' => 0, 'pageviews' => 0, 'avgSeconds' => 0.0, 'bounces' => 0];
+        }
+
+        return [
+            'sessions' => (int) $row->sessions,
+            'visitors' => (int) $row->visitors,
+            'pageviews' => (int) $row->pageviews,
+            'avgSeconds' => (float) $row->avg_seconds,
+            'bounces' => (int) $row->bounces,
+        ];
     }
 }

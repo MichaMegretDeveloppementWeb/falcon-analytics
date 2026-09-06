@@ -53,6 +53,11 @@ final readonly class VisitorProfileReadRepository
     /**
      * Session count grouped by a column, empties/nulls folded to a default bucket.
      *
+     * `literal-string` sur la colonne · elle entre dans du SQL brut, et
+     * `selectRaw()` n'accepte que des litteraux pour barrer l'injection. Les
+     * appelants passent des constantes.
+     *
+     * @param  literal-string  $column
      * @return array<string, int>
      */
     private function breakdown(int $visitorId, string $column, string $default): array
