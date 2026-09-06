@@ -1,0 +1,27 @@
+/*
+ * Le point d'entree CSS du paquet · une ligne pour l'hote.
+ *
+ * **Le paquet ne compile rien.** Il declare ici ce que Tailwind doit lire, et
+ * c'est le build de l'hote qui produit la feuille — la meme que celle du kit et
+ * de ses ecrans a lui. Une page ne porte qu'une feuille Tailwind : deux
+ * ecriraient les memes noms de classes, et la derniere chargee gagnerait par sa
+ * seule position, sans la moindre erreur.
+ *
+ * L'hote ecrit une ligne, et une seule ·
+ *
+ *     @import '../../vendor/falcon/analytics/resources/css/analytics-admin.css';
+ *
+ * `analytics:install` l'ecrit pour lui.
+ *
+ * **Le chemin ci-dessous est resolu depuis ce fichier**, pas depuis l'hote ·
+ * il lit nos vues sans les nommer, et sans savoir ou elles vivent. Nous
+ * pourrions en avoir cinquante de plus, sa ligne resterait la meme.
+ */
+@source '../views/**/*.blade.php';
+
+/*
+ * Ce fichier ne porte aucune regle, et c'est normal · les tableaux de bord sont
+ * dessines avec les composants du kit et des utilitaires Tailwind. Il existe
+ * pour la declaration ci-dessus, et pour que le jour ou une regle ecrite a la
+ * main devienne necessaire, elle ait sa place sans rien changer chez l'hote.
+ */

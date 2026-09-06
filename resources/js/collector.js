@@ -1,7 +1,7 @@
 /**
  * Falcon Analytics collector. Framework-agnostic, no dependencies.
  * Reads its configuration from window.__falconAnalytics (injected by the
- * @analyticsScripts Blade directive), auto-captures page views and clicks,
+ * @analyticsConfig Blade directive), auto-captures page views and clicks,
  * keeps the session alive with a visibility-gated heartbeat, and flushes
  * batches with navigator.sendBeacon.
  */

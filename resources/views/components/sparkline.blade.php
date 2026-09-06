@@ -7,7 +7,12 @@
 <div
     class="{{ $height }} w-full"
     x-data="{
-        init() {
+        async init() {
+            {{-- Chart.js arrive a la demande · le kit en fait un fichier a part,
+                 que les pages sans graphique ne telechargent jamais. Chaque
+                 lecteur de `_chart` plus bas garde deja son absence. --}}
+            await window.falconCharts();
+
             const color = @js($color);
             {{-- Chart kept on the DOM node, not in Alpine's reactive state (see area-chart). --}}
             this.$el._chart = new window.Chart(this.$refs.canvas, {

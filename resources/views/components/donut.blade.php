@@ -19,7 +19,12 @@
         observer: null,
         isDark: document.documentElement.classList.contains('dark'),
         surface() { return this.isDark ? '#111827' : '#ffffff'; },
-        init() {
+        async init() {
+            {{-- Chart.js arrive a la demande · le kit en fait un fichier a part,
+                 que les pages sans graphique ne telechargent jamais. Chaque
+                 lecteur de `chart` plus bas garde deja son absence. --}}
+            await window.falconCharts();
+
             this.chart = new window.Chart(this.$refs.canvas, {
                 type: 'doughnut',
                 data: {

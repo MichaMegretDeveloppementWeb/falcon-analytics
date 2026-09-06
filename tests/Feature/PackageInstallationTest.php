@@ -1,6 +1,7 @@
 <?php
 
 use Falcon\Analytics\AnalyticsServiceProvider;
+use Falcon\UiKit\Installer\AssetEntry;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
@@ -90,12 +91,34 @@ it('runs analytics:install for real against a temporary base path', function () 
     $this->app->register(AnalyticsServiceProvider::class, force: true);
 
     try {
-        $this->artisan('analytics:install')->assertSuccessful();
+        // Les quatre chemins en options · sans eux la commande demande, et un
+        // essai sans entree interactive n'a personne pour repondre.
+        $this->artisan('analytics:install', [
+            '--admin-css' => 'resources/css/admin.css',
+            '--admin-js' => 'resources/js/admin.js',
+            '--web-css' => 'resources/css/web.css',
+            '--web-js' => 'resources/js/web.js',
+        ])->assertSuccessful();
 
         expect(File::exists($base.DIRECTORY_SEPARATOR.'config'.DIRECTORY_SEPARATOR.'analytics.php'))->toBeTrue()
             ->and(File::get($base.DIRECTORY_SEPARATOR.'.env'))->toContain('# --- Falcon Analytics')
             ->and(File::get($base.DIRECTORY_SEPARATOR.'.env'))->toContain('ANALYTICS_ENABLED=true')
             ->and(File::get($base.DIRECTORY_SEPARATOR.'.env.example'))->toContain('ANALYTICS_GSC_CLIENT_ID=');
+
+        // Les deux imports, ecrits la ou on les a demandes · la feuille des
+        // tableaux de bord, et le collecteur dans le script du site public. Le
+        // collecteur ne va jamais dans celui du back-office : on ne mesure pas
+        // les visites de la personne qui administre.
+        expect(AssetEntry::css('resources/css/admin.css')
+            ->alreadyImports('vendor/falcon/analytics/resources/css/analytics-admin.css'))->toBeTrue()
+            ->and(AssetEntry::js('resources/js/web.js')
+                ->alreadyImports('vendor/falcon/analytics/resources/js/collector.js'))->toBeTrue()
+            ->and(AssetEntry::js('resources/js/admin.js')
+                ->alreadyImports('vendor/falcon/analytics/resources/js/collector.js'))->toBeFalse();
+
+        // Et retenus, pour que rien ne soit a redemander.
+        expect(config('analytics.assets.admin_css'))->toBe('resources/css/admin.css')
+            ->and(config('analytics.assets.web_js'))->toBe('resources/js/web.js');
     } finally {
         File::deleteDirectory($base);
     }

@@ -79,7 +79,14 @@ final class AnalyticsServiceProvider extends ServiceProvider
         $this->registerPersistentMiddleware();
 
         Blade::anonymousComponentNamespace('analytics::components', 'analytics');
-        Blade::directive('analyticsScripts', fn (): string => '<?php echo \Falcon\Analytics\View\Collector::render(); ?>');
+
+        // La seule directive du paquet, et elle ne porte que des donnees du
+        // serveur · le nom de la route courante, et le suivi coupe quand
+        // l'administratrice est connectee. Le code du collecteur, lui, est
+        // importe par l'hote dans son entree publique et compile par son build.
+        // Elle s'appelait `analyticsScripts` jusqu'au 2026-09-06, quand elle
+        // portait encore la balise du script.
+        Blade::directive('analyticsConfig', fn (): string => '<?php echo \Falcon\Analytics\View\Collector::render(); ?>');
 
         Livewire::component('analytics-trend-chart', TrendChart::class);
         Livewire::component('analytics-events-content', EventsContent::class);

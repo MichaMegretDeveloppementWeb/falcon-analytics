@@ -21,7 +21,12 @@
         isDark: document.documentElement.classList.contains('dark'),
         muted() { return this.isDark ? '#6b7280' : '#9ca3af'; },
         grid() { return this.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(17,24,39,0.06)'; },
-        init() {
+        async init() {
+            {{-- Chart.js arrive a la demande · le kit en fait un fichier a part,
+                 que les pages sans graphique ne telechargent jamais. Chaque
+                 lecteur de `_chart` plus bas garde deja son absence. --}}
+            await window.falconCharts();
+
             const color = @js($color);
             const color2 = @js($color2);
             const data2 = @js(array_values($data2));

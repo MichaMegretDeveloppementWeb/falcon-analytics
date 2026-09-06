@@ -17,6 +17,34 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Assets
+    |--------------------------------------------------------------------------
+    |
+    | Vos entrées, où `analytics:install` a écrit ses imports.
+    |
+    | Le paquet ne compile rien : ces fichiers sont les vôtres, et c'est votre
+    | `npm run build` qui les lit. Deux lignes seulement — la feuille des
+    | tableaux de bord dans `admin_css`, le collecteur dans `web_js`.
+    |
+    | À modifier quand vous déplacez ou renommez un de ces fichiers :
+    |
+    |     'admin_css' => 'resources/css/back-office/index.css',
+    |
+    | Chemins relatifs à la racine du projet. `admin_js` et `web_css` sont
+    | retenus sans être encore utilisés : le paquet n'a pas de script de
+    | back-office, et son collecteur n'a pas de feuille.
+    |
+    */
+
+    'assets' => [
+        'admin_css' => 'resources/css/app.css',
+        'admin_js' => 'resources/js/app.js',
+        'web_css' => 'resources/css/app.css',
+        'web_js' => 'resources/js/app.js',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Log channel
     |--------------------------------------------------------------------------
     |
@@ -89,7 +117,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | The package resolves the subject, exclusions and consent from these
-    | declarative values, so a host only needs @analyticsScripts and these
+    | declarative values, so a host only needs @analyticsConfig and these
     | settings. For advanced logic, register closures on the Analytics manager
     | from a service provider (they take precedence):
     |

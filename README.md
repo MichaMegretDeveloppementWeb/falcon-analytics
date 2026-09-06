@@ -90,38 +90,67 @@ conflict — upgrade the host to Livewire 4 first, nothing breaks silently.
 php artisan analytics:install
 ```
 
-This publishes `config/analytics.php`, appends the `ANALYTICS_*` variables to
-`.env` / `.env.example`, and runs the migrations (tables are prefixed
-`falcon_analytics_*`). Re-run with `--force` to overwrite the published config.
+Composer already brought `falcon/ui-kit` (the dashboards are built on it), and
+this command installs it too. **One command, not two.**
+
+It asks four questions:
+
+```
+  Feuille de styles du back-office ?  [resources/css/app.css]
+  Script du back-office ?             [resources/js/app.js]
+  Feuille de styles du site public ?  [resources/css/app.css]
+  Script du site public ?             [resources/js/app.js]
+```
+
+Accept the defaults on a fresh project. Two answers are not used yet — the
+package has no back-office script and its collector has no stylesheet — but they
+are remembered in `config/analytics.php`, so a later version asks nothing again.
+
+It then installs the kit, publishes `config/analytics.php`, appends the
+`ANALYTICS_*` variables to `.env` / `.env.example`, **writes its two imports**,
+and runs the migrations (tables are prefixed `falcon_analytics_*`). Re-run with
+`--force` to overwrite the published config.
+
+Non-interactive:
+
+```bash
+php artisan analytics:install --admin-css=resources/css/admin.css \
+                              --admin-js=resources/js/admin.js \
+                              --web-css=resources/css/web.css \
+                              --web-js=resources/js/web.js \
+                              --no-interaction
+```
 
 The env scaffold is append-only and idempotent: only the variables missing from
 each file are appended (grouped and commented), existing values are never
 rewritten, and a file that does not exist is left untouched. The published
 config stays the source of truth — every variable has a safe default.
 
-### 3. Design system assets
-
-The dashboard is built on `falcon/ui-kit` (Tailwind 4, DM Sans, dark mode,
-Chart.js). If the host does not already use the kit:
-
-```bash
-php artisan ui-kit:install
-```
-
-which creates the `resources/css/ui-kit.css` and `resources/js/ui-kit.js` Vite
-entrypoints, patches `vite.config.js`, installs the npm dependencies and caches
-the icons. The package's standalone dashboard shell loads exactly those two
-entrypoints.
-
-Then declare the package views as a Tailwind source so the classes used by the
-dashboard are compiled, next to the existing ui-kit `@source` line in
-`resources/css/ui-kit.css`:
+### 3. What the command wrote
 
 ```css
-@source '../../vendor/falcon/analytics/resources/views/**/*.blade.php';
+/* resources/css/admin.css */
+@import '../../vendor/falcon/analytics/resources/css/analytics-admin.css';
 ```
 
-and rebuild the assets:
+```js
+/* resources/js/web.js */
+import '../../vendor/falcon/analytics/resources/js/collector.js';
+```
+
+**The package compiles nothing.** `analytics-admin.css` declares its views as a
+Tailwind source, and **your** build compiles them into the one stylesheet of
+that space. Two Tailwind stylesheets on a page write the same class names, and
+the last one loaded wins by position alone — which is why there is only ever
+one.
+
+**The collector goes into the public script, never the back-office one**: you do
+not measure the visits of the person running the dashboard. It is
+self-contained — no `import`, no npm dependency — and it exits on its own when
+`window.__falconAnalytics` is missing, so you write no condition of your own.
+
+Then declare your entries in `vite.config.js`, load them with `@vite`, and
+build:
 
 ```bash
 npm run build
@@ -138,7 +167,7 @@ version:
    (`bootstrap/app.php` → `encryptCookies(except: [...])`).
 3. Behind a proxy or load balancer, configure `trustProxies` so the real
    client IP reaches the package (geolocation and exclusions depend on it).
-4. Add `@analyticsScripts` to the layouts you want to track.
+4. Add `@analyticsConfig` to the public layouts you want to track.
 5. Protect the dashboard with your admin middleware and link to it from your
    navigation (or rely on the package's standalone shell).
 6. Ensure the standard scheduler cron (`php artisan schedule:run` every
@@ -208,19 +237,36 @@ Additional exclusions: `exclude_ips` accepts IPs and CIDR ranges (office
 network, uptime monitors). Bot traffic is detected server-side
 (device-detector) and excluded from every dashboard read.
 
-### 2. Collector script
+### 2. Collector configuration
 
-Add the directive to the layouts you want to track (typically the public
-layout, before `</body>` or in `<head>`):
+The collector's **code** lives in your public bundle, imported by
+`analytics:install`. What still comes from the server is its **configuration**,
+and that is what the directive carries. Add it to the layouts you want to track
+(typically the public layout, before `</body>`):
 
 ```blade
-@analyticsScripts
+@analyticsConfig
 ```
 
-It renders an inline config object plus one cached, content-hashed script tag.
+It renders one inline config object and nothing else:
+
+```html
+<script>window.__falconAnalytics={"endpoint":"/fa","route":"prestations",…};</script>
+```
+
+**This cannot be bundled**, which is why the directive still exists: the route
+name changes on every page, and tracking is cut when an authenticated admin is
+browsing. It is the same split Livewire makes between `@livewireScripts`, which
+is code, and `@livewireScriptConfig`, which is data.
+
 It renders **nothing at all** when tracking is disabled or the current context
-is excluded (e.g. an authenticated admin), and degrades to an empty string on
-any internal failure — it can never break a host page.
+is excluded, and degrades to an empty string on any internal failure — it can
+never break a host page. **Rendering nothing means tracking off**: the collector
+reads `window.__falconAnalytics` and exits on its own when it is missing, so you
+write no condition of your own.
+
+> Named `@analyticsScripts` until 2026-09-06, when it still carried the script
+> tag. The script route was removed with it.
 
 The collector then captures automatically, no code required:
 
@@ -310,23 +356,27 @@ instead; in that case add the links to your navigation yourself, e.g.:
 <a href="{{ route('analytics.funnels') }}">Tunnels</a>
 ```
 
-A host layout must provide the ui-kit assets (`@uiKitHead` +
-`@vite(['resources/css/ui-kit.css', 'resources/js/ui-kit.js'])`) and render
+A host layout must load its own Vite entries (the ones `analytics:install` wrote
+into), carry `{{ falcon_theme_class() }}` on `<html>` for dark mode, and render
 `{{ $slot }}`.
 
 ### 4. Styling (Tailwind sources)
 
 The dashboard views use ui-kit components and Tailwind utilities; they are
-compiled by the **host's** Vite build. Keep this line next to the ui-kit
-`@source` in `resources/css/ui-kit.css` (see Installation):
+compiled by the **host's** Vite build. One line, written by `analytics:install`
+into the stylesheet you named:
 
 ```css
-@source '../../vendor/falcon/analytics/resources/views/**/*.blade.php';
+@import '../../vendor/falcon/analytics/resources/css/analytics-admin.css';
 ```
 
-(During local development with a symlinked path repository, point it at the
-package directory instead, e.g.
-`../../packages/falcon/analytics/resources/views/**/*.blade.php`.)
+That file declares our views, with a path resolved **from it** — you read them
+without naming them, and without knowing where they live. We could add fifty
+screens and your line would not change.
+
+> It used to be a `@source` pointing straight into `vendor/`, which meant your
+> stylesheet had to know our directory layout. Replaced by the entry point above
+> on 2026-09-06.
 
 After every package update, rebuild (`npm run build`) so new utility classes
 used by new screens are compiled.

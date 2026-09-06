@@ -3,7 +3,7 @@
     $marketingRouteName = config('analytics.marketing.route_name', 'marketing');
 @endphp
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full bg-page">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full bg-page {{ falcon_theme_class() }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -13,11 +13,25 @@
 
     <title>{{ $title ?? __('Analytics') }}</title>
 
-    {{-- Theme anti-flash (must run before the stylesheets) --}}
-    @uiKitHead
+    {{-- **Ce gabarit ne porte ni feuille ni script, et il ne peut pas.**
 
-    {{-- Shared design system: Tailwind + DM Sans + dark mode + Chart.js --}}
-    @vite(['resources/css/ui-kit.css', 'resources/js/ui-kit.js'])
+         Le CSS et le JavaScript du back-office sont importes dans les entrees
+         de l'hote par `analytics:install`, et c'est son build qui les produit ·
+         une page ne porte qu'une feuille Tailwind. Le paquet ne connait pas le
+         nom de ces entrees, donc il ne peut pas les charger.
+
+         Ce gabarit est un point de depart, pas une coquille finie. Deux facons
+         de s'en servir ·
+
+           - **la bonne** · nommez votre propre gabarit dans
+             `analytics.dashboard.layout`, et mettez-y le `@vite` de vos entrees ;
+           - publiez celui-ci (`--tag=analytics-views`) et ajoutez votre `@vite`
+             dans votre copie, qui est la votre.
+
+         Il portait `@uiKitHead` et
+         `@vite(['resources/css/ui-kit.css', 'resources/js/ui-kit.js'])`
+         jusqu'au 2026-09-06 · deux noms de fichiers devines chez l'hote, qui
+         n'avaient aucune raison d'exister chez lui. --}}
 
     @livewireStyles
 </head>

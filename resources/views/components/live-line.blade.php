@@ -20,7 +20,12 @@
         isDark: document.documentElement.classList.contains('dark'),
         muted() { return this.isDark ? '#6b7280' : '#9ca3af'; },
         grid() { return this.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(17,24,39,0.06)'; },
-        init() {
+        async init() {
+            {{-- Chart.js arrive a la demande · le kit en fait un fichier a part,
+                 que les pages sans graphique ne telechargent jamais. Chaque
+                 lecteur de `_chart` plus bas garde deja son absence. --}}
+            await window.falconCharts();
+
             const color = @js($color);
             {{-- Chart kept on the DOM node, not in Alpine's reactive state (see area-chart). --}}
             this.$el._chart = new window.Chart(this.$refs.canvas, {
