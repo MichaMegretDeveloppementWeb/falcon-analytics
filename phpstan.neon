@@ -1,0 +1,36 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    # Le meme palier que falcon/booking et falcon/ui-kit · c'est celui qui
+    # verifie les types passes aux fonctions.
+    level: 7
+
+    paths:
+        - src
+        - database
+        - config
+        - routes
+
+    # Un paquet a son propre dossier de config, que larastan ne devine pas :
+    # sans ca, chaque `env()` de config/analytics.php passe pour un appel fait
+    # hors config, qui rendrait null une fois la config mise en cache.
+    configDirectories:
+        - config
+
+    databaseMigrationsPath:
+        - database/migrations
+
+    viewDirectories:
+        - resources/views
+
+    bootstrapFiles:
+        - phpstan-bootstrap.php
+
+    parseModelCastsMethod: true
+
+    # Un seul processus : larastan tente de resoudre le conteneur d'une
+    # application Laravel, qu'un paquet n'a pas, et le travailleur parallele
+    # meurt en emportant le decompte avec lui.
+    parallel:
+        maximumNumberOfProcesses: 1
