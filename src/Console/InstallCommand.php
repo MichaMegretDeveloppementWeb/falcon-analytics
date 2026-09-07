@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Console;
 
+use Falcon\Analytics\Support\AnalyticsAssets;
 use Falcon\Analytics\Support\EnvScaffolder;
 use Falcon\UiKit\Installer\AssetEntry;
 use Illuminate\Console\Command;
@@ -28,14 +29,9 @@ final class InstallCommand extends Command
                             {--force : Overwrite existing published files}
                             {--admin-css= : Feuille de styles du back-office}
                             {--admin-js= : Script du back-office}
-                            {--web-css= : Feuille de styles du site public}
                             {--web-js= : Script du site public}';
 
     protected $description = 'Install Falcon Analytics: publish the config file, scaffold env variables and run the migrations.';
-
-    private const ADMIN_STYLESHEET = 'vendor/falcon/analytics/resources/css/analytics-admin.css';
-
-    private const COLLECTOR = 'vendor/falcon/analytics/resources/js/collector.js';
 
     /** @var array<string, AssetEntry> */
     private array $entries = [];
@@ -125,10 +121,18 @@ final class InstallCommand extends Command
      */
     private function collectEntries(): void
     {
+        /*
+         * Trois questions, et trois réponses qui servent · deux portent un
+         * import, la troisième est passée à `ui-kit:install`.
+         *
+         * Un `web_css` a existé ici et a été retiré le 2026-09-07 · le paquet
+         * n'a aucun CSS public, donc la question n'avait rien à écrire. Poser
+         * une question dont la réponse ne sert à rien est ce qu'on cherche à
+         * retirer de ces installateurs.
+         */
         $this->entries = [
             'admin_css' => AssetEntry::css($this->pathFor('admin-css', 'Feuille de styles du back-office', 'resources/css/app.css')),
             'admin_js' => AssetEntry::js($this->pathFor('admin-js', 'Script du back-office', 'resources/js/app.js')),
-            'web_css' => AssetEntry::css($this->pathFor('web-css', 'Feuille de styles du site public', 'resources/css/app.css')),
             'web_js' => AssetEntry::js($this->pathFor('web-js', 'Script du site public', 'resources/js/app.js')),
         ];
     }
@@ -197,8 +201,9 @@ final class InstallCommand extends Command
      */
     private function writeImports(): void
     {
-        $this->report($this->entries['admin_css'], $this->entries['admin_css']->import(self::ADMIN_STYLESHEET));
-        $this->report($this->entries['web_js'], $this->entries['web_js']->import(self::COLLECTOR));
+        foreach (AnalyticsAssets::hostImports() as $key => [, $vendorPath]) {
+            $this->report($this->entries[$key], $this->entries[$key]->import($vendorPath));
+        }
     }
 
     private function report(AssetEntry $entry, string $status): void

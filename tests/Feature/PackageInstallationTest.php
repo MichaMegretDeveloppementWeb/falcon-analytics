@@ -1,6 +1,7 @@
 <?php
 
 use Falcon\Analytics\AnalyticsServiceProvider;
+use Falcon\Analytics\Support\AnalyticsAssets;
 use Falcon\UiKit\Installer\AssetEntry;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
@@ -91,12 +92,11 @@ it('runs analytics:install for real against a temporary base path', function () 
     $this->app->register(AnalyticsServiceProvider::class, force: true);
 
     try {
-        // Les quatre chemins en options · sans eux la commande demande, et un
+        // Les trois chemins en options · sans eux la commande demande, et un
         // essai sans entree interactive n'a personne pour repondre.
         $this->artisan('analytics:install', [
             '--admin-css' => 'resources/css/admin.css',
             '--admin-js' => 'resources/js/admin.js',
-            '--web-css' => 'resources/css/web.css',
             '--web-js' => 'resources/js/web.js',
         ])->assertSuccessful();
 
@@ -105,21 +105,48 @@ it('runs analytics:install for real against a temporary base path', function () 
             ->and(File::get($base.DIRECTORY_SEPARATOR.'.env'))->toContain('ANALYTICS_ENABLED=true')
             ->and(File::get($base.DIRECTORY_SEPARATOR.'.env.example'))->toContain('ANALYTICS_GSC_CLIENT_ID=');
 
-        // Les deux imports, ecrits la ou on les a demandes · la feuille des
-        // tableaux de bord, et le collecteur dans le script du site public. Le
-        // collecteur ne va jamais dans celui du back-office : on ne mesure pas
-        // les visites de la personne qui administre.
-        expect(AssetEntry::css('resources/css/admin.css')
-            ->alreadyImports('vendor/falcon/analytics/resources/css/analytics-admin.css'))->toBeTrue()
-            ->and(AssetEntry::js('resources/js/web.js')
-                ->alreadyImports('vendor/falcon/analytics/resources/js/collector.js'))->toBeTrue()
-            ->and(AssetEntry::js('resources/js/admin.js')
-                ->alreadyImports('vendor/falcon/analytics/resources/js/collector.js'))->toBeFalse();
+        // Chaque import de la liste est ecrit dans l entree qui porte sa cle.
+        // La liste plutot que des chemins recopies · un import ajoute a
+        // AnalyticsAssets est verifie ici sans qu on touche a cet essai, et un
+        // chemin qui y changerait ne pourrait pas diverger de ce qu on assere.
+        foreach (AnalyticsAssets::hostImports() as $key => [$kind, $vendorPath]) {
+            $chemin = (string) config('analytics.assets.'.$key);
+            $entry = $kind === 'css' ? AssetEntry::css($chemin) : AssetEntry::js($chemin);
 
-        // Et retenus, pour que rien ne soit a redemander.
+            expect($entry->alreadyImports($vendorPath))->toBeTrue();
+        }
+
+        // Le collecteur ne va jamais dans le script du back-office · on ne
+        // mesure pas les visites de la personne qui administre.
+        expect(AssetEntry::js('resources/js/admin.js')
+            ->alreadyImports('vendor/falcon/analytics/resources/js/collector.js'))->toBeFalse();
+
+        // Et les reponses sont retenues, pour que rien ne soit a redemander.
         expect(config('analytics.assets.admin_css'))->toBe('resources/css/admin.css')
+            ->and(config('analytics.assets.admin_js'))->toBe('resources/js/admin.js')
             ->and(config('analytics.assets.web_js'))->toBe('resources/js/web.js');
     } finally {
         File::deleteDirectory($base);
     }
+});
+
+/**
+ * L installateur ne demande que ce dont il se sert.
+ *
+ * Un `--web-css` a existe jusqu au 2026-09-07 · demande, range en
+ * configuration, et lu par personne. Le paquet n a aucun CSS public a importer,
+ * donc la question n avait rien a ecrire.
+ *
+ * L essai porte sur la definition de la commande plutot que sur un appel · une
+ * option retiree fait echouer un appel qui la passe, ce qui dit « cet essai est
+ * perime » et non « cette option a bien disparu ».
+ */
+it('asks only for the entries it writes into', function () {
+    $options = Artisan::all()['analytics:install']->getDefinition()->getOptions();
+
+    expect(array_keys($options))->toContain('admin-css', 'admin-js', 'web-js')
+        ->and(array_keys($options))->not->toContain('web-css');
+
+    // Et la configuration publiee ne porte plus la cle.
+    expect(config('analytics.assets'))->not->toHaveKey('web_css');
 });

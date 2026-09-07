@@ -30,16 +30,20 @@ return [
     |
     |     'admin_css' => 'resources/css/back-office/index.css',
     |
-    | Chemins relatifs à la racine du projet. `admin_js` et `web_css` sont
-    | retenus sans être encore utilisés : le paquet n'a pas de script de
-    | back-office, et son collecteur n'a pas de feuille.
+    | Chemins relatifs à la racine du projet.
+    |
+    | `admin_css` reçoit la feuille des tableaux de bord, `web_js` le collecteur.
+    | `admin_js` ne porte aucun import du paquet : c'est ce qu'il passe à
+    | `ui-kit:install`, le kit dessinant ses écrans.
+    |
+    | Un `web_css` a été retenu ici jusqu'au 2026-09-07, sans être lu par
+    | personne : le paquet n'a aucun CSS public à importer.
     |
     */
 
     'assets' => [
         'admin_css' => 'resources/css/app.css',
         'admin_js' => 'resources/js/app.js',
-        'web_css' => 'resources/css/app.css',
         'web_js' => 'resources/js/app.js',
     ],
 
