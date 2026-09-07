@@ -1,22 +1,31 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Falcon\Analytics\Tests\Unit\Dashboard;
+
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\DTOs\Dashboard\Period;
 use Falcon\Analytics\Services\Dashboard\TrendSeriesCalculator;
+use PHPUnit\Framework\TestCase;
 
-it('builds a continuous zero-filled list of trend points', function () {
-    $period = new Period(CarbonImmutable::parse('2026-06-01'), CarbonImmutable::parse('2026-06-03'), 90);
-    $rows = [
-        '2026-06-01' => ['sessions' => 5, 'pageviews' => 12],
-        '2026-06-03' => ['sessions' => 2, 'pageviews' => 3],
-    ];
+final class TrendSeriesCalculatorTest extends TestCase
+{
+    public function test_it_builds_a_continuous_zero_filled_list_of_trend_points(): void
+    {
+        $period = new Period(CarbonImmutable::parse('2026-06-01'), CarbonImmutable::parse('2026-06-03'), 90);
+        $rows = [
+            '2026-06-01' => ['sessions' => 5, 'pageviews' => 12],
+            '2026-06-03' => ['sessions' => 2, 'pageviews' => 3],
+        ];
 
-    $points = (new TrendSeriesCalculator)->points($rows, $period);
+        $points = (new TrendSeriesCalculator)->points($rows, $period);
 
-    expect($points)->toHaveCount(3)
-        ->and($points[0]->sessions)->toBe(5)
-        ->and($points[0]->pageviews)->toBe(12)
-        ->and($points[1]->sessions)->toBe(0)          // 06-02 zero-filled
-        ->and($points[2]->pageviews)->toBe(3)
-        ->and($points[0]->date->format('Y-m-d'))->toBe('2026-06-01');
-});
+        $this->assertCount(3, $points);
+        $this->assertSame(5, $points[0]->sessions);
+        $this->assertSame(12, $points[0]->pageviews);
+        $this->assertSame(0, $points[1]->sessions, '06-02 est comblé à zéro.');
+        $this->assertSame(3, $points[2]->pageviews);
+        $this->assertSame('2026-06-01', $points[0]->date->format('Y-m-d'));
+    }
+}
