@@ -34,9 +34,9 @@ hosting included.
 
 - PHP >= 8.4
 - Laravel 13
-- Livewire 4 and `falcon/ui-kit` 2 are composer dependencies of the package and
-  install automatically; the dashboard is styled by the ui-kit design system
-  (see [Styling](#4-styling-tailwind-sources)).
+- Livewire 4 and `falcon/ui-kit` 3 are composer dependencies of the package and
+  install automatically; `analytics:install` runs the kit's installer too, so
+  one command covers both (see [Styling](#4-styling-tailwind-sources)).
 
 ## Installation
 
