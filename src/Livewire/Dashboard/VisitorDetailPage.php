@@ -6,7 +6,6 @@ namespace Falcon\Analytics\Livewire\Dashboard;
 
 use Falcon\Analytics\Actions\ForgetVisitorAction;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\RecoversFromReadFailure;
-use Falcon\Analytics\Livewire\Dashboard\Concerns\ResolvesDashboardLayout;
 use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Repositories\Dashboard\VisitorProfileReadRepository;
 use Falcon\Analytics\Services\Dashboard\VisitorEngagementCalculator;
@@ -24,7 +23,6 @@ use Livewire\WithPagination;
 final class VisitorDetailPage extends Component
 {
     use RecoversFromReadFailure;
-    use ResolvesDashboardLayout;
     use WithPagination;
 
     private const PER_PAGE = 20;
@@ -87,8 +85,7 @@ final class VisitorDetailPage extends Component
                     'subjectName' => $subjectType !== null ? $subjects->name($subjectType, (int) $this->visitor->subject_id) : null,
                 ];
             },
-            fn (array $data): View => view('analytics::livewire.dashboard.visitor-detail', $data)
-                ->layout($this->layoutName(), ['title' => __('Visiteur').' · '.__('Analytics')]),
+            fn (array $data): View => view('analytics::livewire.dashboard.visitor-detail', $data),
         );
     }
 }

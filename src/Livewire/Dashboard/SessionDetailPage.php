@@ -7,7 +7,6 @@ namespace Falcon\Analytics\Livewire\Dashboard;
 use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\RecoversFromReadFailure;
-use Falcon\Analytics\Livewire\Dashboard\Concerns\ResolvesDashboardLayout;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Services\Dashboard\SessionJourneyBuilder;
 use Falcon\Analytics\Services\Dashboard\SessionSubjectAttributor;
@@ -22,7 +21,6 @@ use Livewire\Component;
 final class SessionDetailPage extends Component
 {
     use RecoversFromReadFailure;
-    use ResolvesDashboardLayout;
 
     public Session $session;
 
@@ -63,8 +61,7 @@ final class SessionDetailPage extends Component
                     'subjectViaVisitor' => $attribution !== null && $attribution->viaVisitor,
                 ];
             },
-            fn (array $data): View => view('analytics::livewire.dashboard.session-detail', $data)
-                ->layout($this->layoutName(), ['title' => __('Session').' · '.__('Analytics')]),
+            fn (array $data): View => view('analytics::livewire.dashboard.session-detail', $data),
         );
     }
 }

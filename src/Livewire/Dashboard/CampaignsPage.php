@@ -7,7 +7,6 @@ namespace Falcon\Analytics\Livewire\Dashboard;
 use Falcon\Analytics\Actions\DeleteCampaignAction;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\EditsCampaign;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\RecoversFromReadFailure;
-use Falcon\Analytics\Livewire\Dashboard\Concerns\ResolvesDashboardLayout;
 use Falcon\Analytics\Models\Campaign;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Log;
@@ -24,7 +23,6 @@ final class CampaignsPage extends Component
 {
     use EditsCampaign;
     use RecoversFromReadFailure;
-    use ResolvesDashboardLayout;
     use WithPagination;
 
     private const PER_PAGE = 20;
@@ -119,8 +117,7 @@ final class CampaignsPage extends Component
                     'total' => Campaign::query()->count(),
                 ];
             },
-            fn (array $data): View => view('analytics::livewire.dashboard.marketing-campaigns', $data)
-                ->layout($this->layoutName('marketing'), ['title' => __('Campagnes').' · '.__('Marketing')]),
+            fn (array $data): View => view('analytics::livewire.dashboard.marketing-campaigns', $data),
         );
     }
 }

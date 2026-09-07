@@ -21,8 +21,7 @@ final class OverviewPage extends DashboardComponent
                 'range' => $this->currentPeriod(),
                 ...$this->filterData(),
             ],
-            fn (array $data): View => view('analytics::livewire.dashboard.overview', $data)
-                ->layout($this->layoutName(), ['title' => __('Vue d\'ensemble').' · '.__('Analytics')]),
+            fn (array $data): View => view('analytics::livewire.dashboard.overview', $data),
         );
     }
 }

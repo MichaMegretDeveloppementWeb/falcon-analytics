@@ -50,8 +50,7 @@ final class VisitorsPage extends DashboardComponent
                     ...$this->filterData(),
                 ];
             },
-            fn (array $data): View => view('analytics::livewire.dashboard.visitors', $data)
-                ->layout($this->layoutName(), ['title' => __('Visiteurs').' · '.__('Analytics')]),
+            fn (array $data): View => view('analytics::livewire.dashboard.visitors', $data),
         );
     }
 }

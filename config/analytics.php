@@ -93,6 +93,7 @@ return [
         'route_name' => 'marketing',
         'middleware' => ['web', 'auth'],
         'layout' => null,
+        'layout_section' => 'content',
     ],
 
     /*
@@ -162,9 +163,13 @@ return [
         // app; override to match the project (e.g. ['web', 'auth:admin']).
         'middleware' => ['web', 'auth'],
 
-        // Blade layout the pages extend. null uses the package's own shell; set a
-        // host layout name (e.g. 'layouts.admin') to nest it in the host chrome.
+        // Blade layout the screens extend. null uses the package's own shell; set
+        // a host layout name (e.g. 'layouts.admin') to nest it in the host chrome.
         'layout' => null,
+
+        // The section that layout yields the screen into. Only matters when the
+        // host layout names it something other than 'content'.
+        'layout_section' => 'content',
     ],
 
     /*

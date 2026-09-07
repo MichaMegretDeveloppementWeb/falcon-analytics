@@ -178,8 +178,7 @@ final class CampaignDetailPage extends DashboardComponent
                     ...$this->filterData(),
                 ];
             },
-            fn (array $data): View => view('analytics::livewire.dashboard.marketing-campaign-detail', $data)
-                ->layout($this->layoutName('marketing'), ['title' => $this->campaign->name.' · '.__('Marketing')]),
+            fn (array $data): View => view('analytics::livewire.dashboard.marketing-campaign-detail', $data),
         );
     }
 

@@ -20,8 +20,7 @@ final class MarketingDashboardPage extends DashboardComponent
                 'range' => $this->currentPeriod(),
                 ...$this->filterData(),
             ],
-            fn (array $data): View => view('analytics::livewire.dashboard.marketing-dashboard', $data)
-                ->layout($this->layoutName('marketing'), ['title' => __('Vue d\'ensemble').' · '.__('Marketing')]),
+            fn (array $data): View => view('analytics::livewire.dashboard.marketing-dashboard', $data),
         );
     }
 }

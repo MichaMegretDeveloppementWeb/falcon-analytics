@@ -21,8 +21,7 @@ final class EventsPage extends DashboardComponent
                 'range' => $this->currentPeriod(),
                 ...$this->filterData(),
             ],
-            fn (array $data): View => view('analytics::livewire.dashboard.events', $data)
-                ->layout($this->layoutName(), ['title' => __('Événements').' · '.__('Analytics')]),
+            fn (array $data): View => view('analytics::livewire.dashboard.events', $data),
         );
     }
 }

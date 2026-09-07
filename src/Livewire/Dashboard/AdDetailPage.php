@@ -59,8 +59,7 @@ final class AdDetailPage extends DashboardComponent
                 ...$this->adFormOptions($funnels, $events),
                 ...$this->filterData(),
             ],
-            fn (array $data): View => view('analytics::livewire.dashboard.marketing-ad-detail', $data)
-                ->layout($this->layoutName('marketing'), ['title' => $this->ad->name.' · '.__('Marketing')]),
+            fn (array $data): View => view('analytics::livewire.dashboard.marketing-ad-detail', $data),
         );
     }
 }

@@ -14,6 +14,20 @@ use Falcon\Analytics\Console\SweepCommand;
 use Falcon\Analytics\Console\SyncSearchConsoleCommand;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
+use Falcon\Analytics\Livewire\Dashboard\AdDetailPage;
+use Falcon\Analytics\Livewire\Dashboard\AdsPage;
+use Falcon\Analytics\Livewire\Dashboard\CampaignDetailPage;
+use Falcon\Analytics\Livewire\Dashboard\CampaignsPage;
+use Falcon\Analytics\Livewire\Dashboard\EventsPage;
+use Falcon\Analytics\Livewire\Dashboard\FunnelsPage;
+use Falcon\Analytics\Livewire\Dashboard\IntegrationsPage;
+use Falcon\Analytics\Livewire\Dashboard\MarketingDashboardPage;
+use Falcon\Analytics\Livewire\Dashboard\OverviewPage;
+use Falcon\Analytics\Livewire\Dashboard\RealtimePage;
+use Falcon\Analytics\Livewire\Dashboard\SessionDetailPage;
+use Falcon\Analytics\Livewire\Dashboard\SessionsPage;
+use Falcon\Analytics\Livewire\Dashboard\VisitorDetailPage;
+use Falcon\Analytics\Livewire\Dashboard\VisitorsPage;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\AdDetailContent;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\CampaignDetailContent;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\EventsContent;
@@ -31,6 +45,7 @@ use Falcon\Analytics\Livewire\Dashboard\Widgets\VisitorsHeadline;
 use Falcon\Analytics\Support\GeoResolver;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
 
@@ -77,6 +92,7 @@ final class AnalyticsServiceProvider extends ServiceProvider
         $this->loadRoutesFrom(__DIR__.'/../routes/analytics.php');
 
         $this->registerPersistentMiddleware();
+        $this->shareLayoutWithScreens();
 
         Blade::anonymousComponentNamespace('analytics::components', 'analytics');
 
@@ -88,6 +104,27 @@ final class AnalyticsServiceProvider extends ServiceProvider
         // portait encore la balise du script.
         Blade::directive('analyticsConfig', fn (): string => '<?php echo \Falcon\Analytics\View\Collector::render(); ?>');
 
+        /*
+         * Les quatorze ecrans. Ils etaient montes par `Route::livewire`, donc
+         * nommes par leur classe et jamais enregistres ; ils sont desormais
+         * embarques par une vue mince, qui les appelle par leur alias.
+         */
+        Livewire::component('analytics-overview', OverviewPage::class);
+        Livewire::component('analytics-realtime', RealtimePage::class);
+        Livewire::component('analytics-visitors', VisitorsPage::class);
+        Livewire::component('analytics-visitor-detail', VisitorDetailPage::class);
+        Livewire::component('analytics-events', EventsPage::class);
+        Livewire::component('analytics-funnels', FunnelsPage::class);
+        Livewire::component('analytics-sessions', SessionsPage::class);
+        Livewire::component('analytics-session-detail', SessionDetailPage::class);
+        Livewire::component('analytics-integrations', IntegrationsPage::class);
+        Livewire::component('analytics-marketing-dashboard', MarketingDashboardPage::class);
+        Livewire::component('analytics-campaigns', CampaignsPage::class);
+        Livewire::component('analytics-campaign-detail', CampaignDetailPage::class);
+        Livewire::component('analytics-ads', AdsPage::class);
+        Livewire::component('analytics-ad-detail', AdDetailPage::class);
+
+        // Les blocs differes, qui vivent a l'interieur d'un ecran.
         Livewire::component('analytics-trend-chart', TrendChart::class);
         Livewire::component('analytics-events-content', EventsContent::class);
         Livewire::component('analytics-marketing-dashboard-content', MarketingDashboardContent::class);
@@ -146,6 +183,43 @@ final class AnalyticsServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__.'/../config/analytics.php' => config_path('analytics.php'),
             ], 'analytics-config');
+
+            /*
+             * Les vues, pour l'hote qui veut envelopper un ecran · y poser un
+             * bandeau, un fil d'Ariane, un conteneur a lui. Ce sont les vues
+             * minces qui l'interessent · trois lignes chacune, et le corps de
+             * l'ecran reste au paquet, donc il continue d'etre mis a jour.
+             *
+             * Rien n'oblige a publier · une vue posee dans
+             * `resources/views/vendor/analytics/` est prise en compte de toute
+             * facon. La commande evite seulement de recopier a la main.
+             */
+            $this->publishes([
+                __DIR__.'/../resources/views' => resource_path('views/vendor/analytics'),
+            ], 'analytics-views');
+        }
+    }
+
+    /**
+     * Tell the thin screen views which layout to extend, and in which section.
+     *
+     * A screen names neither: it says what it shows, and stays unaware of how it
+     * is being mounted. The host decides, from its config, and gets the package
+     * standalone shell while it decides nothing.
+     *
+     * Two composers rather than one because the two modules are configured
+     * separately — a host can hang marketing off another shell than analytics,
+     * or not mount it at all.
+     */
+    private function shareLayoutWithScreens(): void
+    {
+        foreach (['dashboard', 'marketing'] as $module) {
+            View::composer("analytics::{$module}.*", static function ($view) use ($module): void {
+                $view->with([
+                    'analyticsLayout' => config("analytics.{$module}.layout") ?: 'analytics::layouts.dashboard',
+                    'analyticsSection' => config("analytics.{$module}.layout_section", 'content'),
+                ]);
+            });
         }
     }
 

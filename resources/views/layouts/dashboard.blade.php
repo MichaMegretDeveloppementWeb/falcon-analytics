@@ -11,7 +11,10 @@
     {{-- Private admin surface: keep it out of search engines --}}
     <meta name="robots" content="noindex, nofollow">
 
-    <title>{{ $title ?? __('Analytics') }}</title>
+    {{-- Le titre vient du controleur de l'ecran, qui le connait avant que le
+         composant ne se rende. Le repli couvre un hote qui monterait cette vue
+         lui-meme. --}}
+    <title>{{ $analyticsTitle ?? __('Analytics') }}</title>
 
     {{-- **Ce gabarit ne porte ni feuille ni script, et il ne peut pas.**
 
@@ -129,7 +132,7 @@
 
         <main class="flex-1">
             <div class="mx-auto max-w-[90em] px-4 py-6 sm:px-6 sm:py-8">
-                {{ $slot }}
+                @yield('content')
             </div>
         </main>
     </div>

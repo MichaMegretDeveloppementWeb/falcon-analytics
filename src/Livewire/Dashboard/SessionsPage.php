@@ -81,8 +81,7 @@ final class SessionsPage extends DashboardComponent
                     ...$this->filterData(),
                 ];
             },
-            fn (array $data): View => view('analytics::livewire.dashboard.sessions', $data)
-                ->layout($this->layoutName(), ['title' => __('Sessions').' · '.__('Analytics')]),
+            fn (array $data): View => view('analytics::livewire.dashboard.sessions', $data),
         );
     }
 }

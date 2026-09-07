@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Livewire\Dashboard;
 
 use Falcon\Analytics\Livewire\Dashboard\Concerns\RecoversFromReadFailure;
-use Falcon\Analytics\Livewire\Dashboard\Concerns\ResolvesDashboardLayout;
 use Falcon\Analytics\Models\SearchConsoleConnection;
 use Falcon\Analytics\Services\SearchConsole\SearchConsoleAuth;
 use Falcon\Analytics\Services\SearchConsole\SearchConsoleClient;
@@ -26,7 +25,6 @@ use Throwable;
 final class IntegrationsPage extends Component
 {
     use RecoversFromReadFailure;
-    use ResolvesDashboardLayout;
 
     /** Widened execution window for the inline on-demand sync, when allowed. */
     private const SYNC_TIME_LIMIT_SECONDS = 300;
@@ -150,8 +148,7 @@ final class IntegrationsPage extends Component
                 'configured' => $auth->configured(),
                 'connection' => SearchConsoleConnection::current(),
             ],
-            fn (array $data): View => view('analytics::livewire.dashboard.integrations', $data)
-                ->layout($this->layoutName(), ['title' => __('Intégrations').' · '.__('Analytics')]),
+            fn (array $data): View => view('analytics::livewire.dashboard.integrations', $data),
         );
     }
 

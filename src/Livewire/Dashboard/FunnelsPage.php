@@ -20,8 +20,7 @@ final class FunnelsPage extends DashboardComponent
                 'range' => $this->currentPeriod(),
                 ...$this->filterData(),
             ],
-            fn (array $data): View => view('analytics::livewire.dashboard.funnels', $data)
-                ->layout($this->layoutName(), ['title' => __('Tunnels').' · '.__('Analytics')]),
+            fn (array $data): View => view('analytics::livewire.dashboard.funnels', $data),
         );
     }
 }

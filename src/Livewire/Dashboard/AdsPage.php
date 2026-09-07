@@ -7,7 +7,6 @@ namespace Falcon\Analytics\Livewire\Dashboard;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\RecoversFromReadFailure;
-use Falcon\Analytics\Livewire\Dashboard\Concerns\ResolvesDashboardLayout;
 use Falcon\Analytics\Models\Ad;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
@@ -21,7 +20,6 @@ use Livewire\WithPagination;
 final class AdsPage extends Component
 {
     use RecoversFromReadFailure;
-    use ResolvesDashboardLayout;
     use WithPagination;
 
     private const PER_PAGE = 20;
@@ -61,8 +59,7 @@ final class AdsPage extends Component
                     'total' => Ad::query()->count(),
                 ];
             },
-            fn (array $data): View => view('analytics::livewire.dashboard.marketing-ads', $data)
-                ->layout($this->layoutName('marketing'), ['title' => __('Pubs').' · '.__('Marketing')]),
+            fn (array $data): View => view('analytics::livewire.dashboard.marketing-ads', $data),
         );
     }
 }

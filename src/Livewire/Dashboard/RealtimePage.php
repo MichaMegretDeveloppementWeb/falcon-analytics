@@ -7,7 +7,6 @@ namespace Falcon\Analytics\Livewire\Dashboard;
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\RecoversFromReadFailure;
-use Falcon\Analytics\Livewire\Dashboard\Concerns\ResolvesDashboardLayout;
 use Falcon\Analytics\Livewire\Dashboard\Concerns\ResolvesSubjectNames;
 use Falcon\Analytics\Repositories\Dashboard\RealtimeReadRepository;
 use Falcon\Analytics\Services\Dashboard\SessionSubjectAttributor;
@@ -30,7 +29,6 @@ use Livewire\Component;
 final class RealtimePage extends Component
 {
     use RecoversFromReadFailure;
-    use ResolvesDashboardLayout;
     use ResolvesSubjectNames;
 
     private const PALETTE = ['#116DFF', '#54CE91', '#8AB5FF', '#C9DBFF', '#DDE1E6', '#EFF1F5'];
@@ -117,8 +115,7 @@ final class RealtimePage extends Component
                     'pollSeconds' => max(1, (int) config('analytics.realtime.poll_seconds', 10)),
                 ];
             },
-            fn (array $data): View => view('analytics::livewire.dashboard.realtime', $data)
-                ->layout($this->layoutName(), ['title' => __('Temps réel').' · '.__('Analytics')]),
+            fn (array $data): View => view('analytics::livewire.dashboard.realtime', $data),
         );
     }
 

@@ -2,24 +2,24 @@
 
 declare(strict_types=1);
 
+use Falcon\Analytics\Http\Controllers\Dashboard\EventsController;
+use Falcon\Analytics\Http\Controllers\Dashboard\FunnelsController;
+use Falcon\Analytics\Http\Controllers\Dashboard\IntegrationsController;
+use Falcon\Analytics\Http\Controllers\Dashboard\OverviewController;
+use Falcon\Analytics\Http\Controllers\Dashboard\RealtimeController;
+use Falcon\Analytics\Http\Controllers\Dashboard\SessionDetailController;
+use Falcon\Analytics\Http\Controllers\Dashboard\SessionsController;
+use Falcon\Analytics\Http\Controllers\Dashboard\VisitorDetailController;
+use Falcon\Analytics\Http\Controllers\Dashboard\VisitorsController;
 use Falcon\Analytics\Http\Controllers\IngestController;
+use Falcon\Analytics\Http\Controllers\Marketing\AdDetailController;
+use Falcon\Analytics\Http\Controllers\Marketing\AdsController;
+use Falcon\Analytics\Http\Controllers\Marketing\CampaignDetailController;
+use Falcon\Analytics\Http\Controllers\Marketing\CampaignsController;
+use Falcon\Analytics\Http\Controllers\Marketing\MarketingDashboardController;
 use Falcon\Analytics\Http\Controllers\SearchConsoleCallbackController;
 use Falcon\Analytics\Http\Controllers\SearchConsoleConnectController;
 use Falcon\Analytics\Http\Middleware\EnsureAnalyticsAccepts;
-use Falcon\Analytics\Livewire\Dashboard\AdDetailPage;
-use Falcon\Analytics\Livewire\Dashboard\AdsPage;
-use Falcon\Analytics\Livewire\Dashboard\CampaignDetailPage;
-use Falcon\Analytics\Livewire\Dashboard\CampaignsPage;
-use Falcon\Analytics\Livewire\Dashboard\EventsPage;
-use Falcon\Analytics\Livewire\Dashboard\FunnelsPage;
-use Falcon\Analytics\Livewire\Dashboard\IntegrationsPage;
-use Falcon\Analytics\Livewire\Dashboard\MarketingDashboardPage;
-use Falcon\Analytics\Livewire\Dashboard\OverviewPage;
-use Falcon\Analytics\Livewire\Dashboard\RealtimePage;
-use Falcon\Analytics\Livewire\Dashboard\SessionDetailPage;
-use Falcon\Analytics\Livewire\Dashboard\SessionsPage;
-use Falcon\Analytics\Livewire\Dashboard\VisitorDetailPage;
-use Falcon\Analytics\Livewire\Dashboard\VisitorsPage;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Session\Middleware\StartSession;
@@ -61,18 +61,18 @@ Route::prefix((string) ($dashboard['route_prefix'] ?? 'admin/analytics'))
     ->middleware($dashboard['middleware'] ?? ['web', 'auth'])
     ->name(($dashboard['route_name'] ?? 'analytics').'.')
     ->group(function (): void {
-        Route::livewire('/', OverviewPage::class)->name('overview');
-        Route::livewire('/realtime', RealtimePage::class)->name('realtime');
-        Route::livewire('/visitors', VisitorsPage::class)->name('visitors');
-        Route::livewire('/visitors/{visitor}', VisitorDetailPage::class)->name('visitors.show');
-        Route::livewire('/events', EventsPage::class)->name('events');
-        Route::livewire('/funnels', FunnelsPage::class)->name('funnels');
-        Route::livewire('/sessions', SessionsPage::class)->name('sessions');
-        Route::livewire('/sessions/{session}', SessionDetailPage::class)->name('sessions.show');
+        Route::get('/', OverviewController::class)->name('overview');
+        Route::get('/realtime', RealtimeController::class)->name('realtime');
+        Route::get('/visitors', VisitorsController::class)->name('visitors');
+        Route::get('/visitors/{visitor}', VisitorDetailController::class)->name('visitors.show');
+        Route::get('/events', EventsController::class)->name('events');
+        Route::get('/funnels', FunnelsController::class)->name('funnels');
+        Route::get('/sessions', SessionsController::class)->name('sessions');
+        Route::get('/sessions/{session}', SessionDetailController::class)->name('sessions.show');
 
         // Integrations (Google Search Console): the page plus the two OAuth
         // legs, all behind the same admin middleware as the dashboard.
-        Route::livewire('/integrations', IntegrationsPage::class)->name('integrations');
+        Route::get('/integrations', IntegrationsController::class)->name('integrations');
         Route::get('/integrations/search-console/connect', SearchConsoleConnectController::class)->name('integrations.search-console.connect');
         Route::get('/integrations/search-console/callback', SearchConsoleCallbackController::class)->name('integrations.search-console.callback');
     });
@@ -90,9 +90,9 @@ Route::prefix((string) ($marketing['route_prefix'] ?? 'admin/marketing'))
     ->middleware($marketing['middleware'] ?? ['web', 'auth'])
     ->name(($marketing['route_name'] ?? 'marketing').'.')
     ->group(function (): void {
-        Route::livewire('/', MarketingDashboardPage::class)->name('dashboard');
-        Route::livewire('/campaigns', CampaignsPage::class)->name('campaigns');
-        Route::livewire('/campaigns/{campaign}', CampaignDetailPage::class)->name('campaigns.show');
-        Route::livewire('/ads', AdsPage::class)->name('ads');
-        Route::livewire('/ads/{ad}', AdDetailPage::class)->name('ads.show');
+        Route::get('/', MarketingDashboardController::class)->name('dashboard');
+        Route::get('/campaigns', CampaignsController::class)->name('campaigns');
+        Route::get('/campaigns/{campaign}', CampaignDetailController::class)->name('campaigns.show');
+        Route::get('/ads', AdsController::class)->name('ads');
+        Route::get('/ads/{ad}', AdDetailController::class)->name('ads.show');
     });
