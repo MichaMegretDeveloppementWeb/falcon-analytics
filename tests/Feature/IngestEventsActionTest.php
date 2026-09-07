@@ -1,5 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Falcon\Analytics\Tests\Feature;
+
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\Actions\IngestEventsAction;
 use Falcon\Analytics\DTOs\IncomingBatch;
@@ -9,134 +13,164 @@ use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
+use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(RefreshDatabase::class);
-
-afterEach(function () {
-    CarbonImmutable::setTestNow();
-});
-
-function actionSnapshot(): RequestSnapshot
+final class IngestEventsActionTest extends TestCase
 {
-    return new RequestSnapshot(
-        ip: '85.4.12.66',
-        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0',
-        host: 'vantadrive.ch',
-    );
+    use RefreshDatabase;
+
+    protected function tearDown(): void
+    {
+        CarbonImmutable::setTestNow();
+
+        parent::tearDown();
+    }
+
+    private function snapshot(): RequestSnapshot
+    {
+        return new RequestSnapshot(
+            ip: '85.4.12.66',
+            userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0',
+            host: 'vantadrive.ch',
+        );
+    }
+
+    private function incoming(
+        EventType $type,
+        CarbonImmutable $at,
+        ?string $name = null,
+        string $url = 'https://vantadrive.ch/',
+    ): IncomingEvent {
+        return new IncomingEvent(type: $type, occurredAt: $at, name: $name, url: $url);
+    }
+
+    public function test_it_persists_a_visitor_session_and_events_from_a_batch(): void
+    {
+        $now = CarbonImmutable::parse('2026-07-01 10:00:00');
+        CarbonImmutable::setTestNow($now);
+
+        app(IngestEventsAction::class)->execute('u-1', ['type' => 'client', 'id' => 7], $this->snapshot(), new IncomingBatch(events: [
+            $this->incoming(EventType::Pageview, $now->subSeconds(3)),
+            $this->incoming(EventType::Click, $now->subSecond(), 'listing.contact_click'),
+        ]));
+
+        $visitor = Visitor::firstOrFail();
+
+        $this->assertSame('u-1', $visitor->uuid);
+        $this->assertSame(1, $visitor->session_count);
+        $this->assertSame(7, $visitor->subject_id);
+
+        $session = Session::firstOrFail();
+
+        $this->assertSame($visitor->id, $session->visitor_id);
+        $this->assertSame(1, $session->pageview_count);
+        $this->assertSame(2, $session->event_count);
+        $this->assertSame('Firefox', $session->browser, 'device-detector tourne au démarrage de session');
+
+        $this->assertSame(7, $session->subject_id);
+
+        // Les instants reconstruits tombent une seconde environ avant le
+        // `started_at` posé par le serveur ; `last_activity_at` est ramené en
+        // avant pour ne jamais précéder le début.
+        $this->assertSame('2026-07-01 10:00:00', $session->last_activity_at->toDateTimeString());
+
+        $this->assertSame(2, Event::count());
+    }
+
+    public function test_it_reuses_the_open_session_within_the_timeout_and_accumulates_counters(): void
+    {
+        $now = CarbonImmutable::parse('2026-07-01 10:00:00');
+        CarbonImmutable::setTestNow($now);
+        $action = app(IngestEventsAction::class);
+
+        $action->execute('u-1', null, $this->snapshot(), new IncomingBatch(events: [$this->incoming(EventType::Pageview, $now)]));
+
+        CarbonImmutable::setTestNow($now->addMinutes(2));
+        $action->execute('u-1', null, $this->snapshot(), new IncomingBatch(events: [$this->incoming(EventType::Click, CarbonImmutable::now(), 'x')]));
+
+        $this->assertSame(1, Session::count());
+        $this->assertSame(1, Visitor::firstOrFail()->session_count);
+
+        $session = Session::firstOrFail();
+
+        $this->assertSame(1, $session->pageview_count);
+        $this->assertSame(2, $session->event_count);
+    }
+
+    public function test_it_starts_a_new_session_after_the_timeout(): void
+    {
+        $now = CarbonImmutable::parse('2026-07-01 10:00:00');
+        CarbonImmutable::setTestNow($now);
+        $action = app(IngestEventsAction::class);
+
+        $action->execute('u-1', null, $this->snapshot(), new IncomingBatch(events: [$this->incoming(EventType::Pageview, $now)]));
+
+        CarbonImmutable::setTestNow($now->addMinutes(10));
+        $action->execute('u-1', null, $this->snapshot(), new IncomingBatch(events: [$this->incoming(EventType::Pageview, CarbonImmutable::now())]));
+
+        $this->assertSame(2, Session::count());
+        $this->assertSame(2, Visitor::firstOrFail()->session_count);
+
+        // La même adresse compte quand même dans la session neuve · le garde
+        // anti-rechargement repart d'une dernière adresse nulle après un délai.
+        $this->assertSame(1, Session::orderByDesc('id')->first()->pageview_count);
+    }
+
+    public function test_it_collapses_a_reload_of_the_same_page_within_a_session(): void
+    {
+        $now = CarbonImmutable::parse('2026-07-01 10:00:00');
+        CarbonImmutable::setTestNow($now);
+        $action = app(IngestEventsAction::class);
+
+        $action->execute('u-1', null, $this->snapshot(), new IncomingBatch(events: [
+            $this->incoming(EventType::Pageview, $now, url: 'https://vantadrive.ch/a'),
+        ]));
+
+        CarbonImmutable::setTestNow($now->addMinute());
+        $action->execute('u-1', null, $this->snapshot(), new IncomingBatch(events: [
+            $this->incoming(EventType::Pageview, CarbonImmutable::now(), url: 'https://vantadrive.ch/a'),
+        ]));
+
+        $session = Session::firstOrFail();
+
+        $this->assertSame(1, Session::count());
+        $this->assertSame(1, $session->pageview_count, 'un rechargement n’est pas une nouvelle vue');
+        $this->assertSame('https://vantadrive.ch/a', $session->last_pageview_url);
+    }
+
+    public function test_it_counts_real_navigations_including_returning_to_a_page(): void
+    {
+        $now = CarbonImmutable::parse('2026-07-01 10:00:00');
+        CarbonImmutable::setTestNow($now);
+
+        // A vers B puis retour a A fait trois.
+        app(IngestEventsAction::class)->execute('u-1', null, $this->snapshot(), new IncomingBatch(events: [
+            $this->incoming(EventType::Pageview, $now->subSeconds(3), url: 'https://vantadrive.ch/a'),
+            $this->incoming(EventType::Pageview, $now->subSeconds(2), url: 'https://vantadrive.ch/b'),
+            $this->incoming(EventType::Pageview, $now->subSecond(), url: 'https://vantadrive.ch/a'),
+        ]));
+
+        $this->assertSame(3, Session::firstOrFail()->pageview_count);
+        $this->assertSame(3, Event::count());
+    }
+
+    public function test_it_bumps_activity_for_a_heartbeat_without_storing_or_counting_it(): void
+    {
+        $now = CarbonImmutable::parse('2026-07-01 10:00:00');
+        CarbonImmutable::setTestNow($now);
+        $action = app(IngestEventsAction::class);
+
+        $action->execute('u-1', null, $this->snapshot(), new IncomingBatch(events: [$this->incoming(EventType::Pageview, $now)]));
+
+        CarbonImmutable::setTestNow($now->addMinutes(1));
+        $action->execute('u-1', null, $this->snapshot(), new IncomingBatch(events: [$this->incoming(EventType::Heartbeat, CarbonImmutable::now())]));
+
+        $this->assertSame(1, Event::count());
+
+        $session = Session::firstOrFail();
+
+        $this->assertSame(1, $session->event_count);
+        $this->assertSame('2026-07-01 10:01:00', $session->last_activity_at->toDateTimeString());
+    }
 }
-
-function incomingEvent(EventType $type, CarbonImmutable $at, ?string $name = null, string $url = 'https://vantadrive.ch/'): IncomingEvent
-{
-    return new IncomingEvent(type: $type, occurredAt: $at, name: $name, url: $url);
-}
-
-it('persists a visitor, session and events from a batch', function () {
-    $now = CarbonImmutable::parse('2026-07-01 10:00:00');
-    CarbonImmutable::setTestNow($now);
-
-    app(IngestEventsAction::class)->execute('u-1', ['type' => 'client', 'id' => 7], actionSnapshot(), new IncomingBatch(events: [
-        incomingEvent(EventType::Pageview, $now->subSeconds(3)),
-        incomingEvent(EventType::Click, $now->subSecond(), 'listing.contact_click'),
-    ]));
-
-    $visitor = Visitor::firstOrFail();
-    expect($visitor->uuid)->toBe('u-1')
-        ->and($visitor->session_count)->toBe(1)
-        ->and($visitor->subject_id)->toBe(7);
-
-    $session = Session::firstOrFail();
-    expect($session->visitor_id)->toBe($visitor->id)
-        ->and($session->pageview_count)->toBe(1)
-        ->and($session->event_count)->toBe(2)
-        // Enrichment (device-detector) runs on session start.
-        ->and($session->browser)->toBe('Firefox')
-        ->and($session->subject_id)->toBe(7)
-        // Reconstructed event times sit ~1s before the server-set started_at;
-        // last_activity_at is clamped forward so it never precedes the start.
-        ->and($session->last_activity_at->toDateTimeString())->toBe('2026-07-01 10:00:00');
-
-    expect(Event::count())->toBe(2);
-});
-
-it('reuses the open session within the timeout and accumulates counters', function () {
-    $now = CarbonImmutable::parse('2026-07-01 10:00:00');
-    CarbonImmutable::setTestNow($now);
-    $action = app(IngestEventsAction::class);
-
-    $action->execute('u-1', null, actionSnapshot(), new IncomingBatch(events: [incomingEvent(EventType::Pageview, $now)]));
-
-    CarbonImmutable::setTestNow($now->addMinutes(2));
-    $action->execute('u-1', null, actionSnapshot(), new IncomingBatch(events: [incomingEvent(EventType::Click, CarbonImmutable::now(), 'x')]));
-
-    expect(Session::count())->toBe(1)
-        ->and(Visitor::firstOrFail()->session_count)->toBe(1);
-
-    $session = Session::firstOrFail();
-    expect($session->pageview_count)->toBe(1)
-        ->and($session->event_count)->toBe(2);
-});
-
-it('starts a new session after the timeout', function () {
-    $now = CarbonImmutable::parse('2026-07-01 10:00:00');
-    CarbonImmutable::setTestNow($now);
-    $action = app(IngestEventsAction::class);
-
-    $action->execute('u-1', null, actionSnapshot(), new IncomingBatch(events: [incomingEvent(EventType::Pageview, $now)]));
-
-    CarbonImmutable::setTestNow($now->addMinutes(10));
-    $action->execute('u-1', null, actionSnapshot(), new IncomingBatch(events: [incomingEvent(EventType::Pageview, CarbonImmutable::now())]));
-
-    expect(Session::count())->toBe(2)
-        ->and(Visitor::firstOrFail()->session_count)->toBe(2)
-        // The identical URL still counts in the fresh session: the reload guard
-        // starts from a null last URL after a timeout.
-        ->and(Session::orderByDesc('id')->first()->pageview_count)->toBe(1);
-});
-
-it('collapses a reload of the same page within a session', function () {
-    $now = CarbonImmutable::parse('2026-07-01 10:00:00');
-    CarbonImmutable::setTestNow($now);
-    $action = app(IngestEventsAction::class);
-
-    $action->execute('u-1', null, actionSnapshot(), new IncomingBatch(events: [incomingEvent(EventType::Pageview, $now, url: 'https://vantadrive.ch/a')]));
-
-    CarbonImmutable::setTestNow($now->addMinute());
-    $action->execute('u-1', null, actionSnapshot(), new IncomingBatch(events: [incomingEvent(EventType::Pageview, CarbonImmutable::now(), url: 'https://vantadrive.ch/a')]));
-
-    $session = Session::firstOrFail();
-    expect(Session::count())->toBe(1)
-        ->and($session->pageview_count)->toBe(1) // the reload is not a new view
-        ->and($session->last_pageview_url)->toBe('https://vantadrive.ch/a');
-});
-
-it('counts real navigations including returning to a page (A to B back to A is 3)', function () {
-    $now = CarbonImmutable::parse('2026-07-01 10:00:00');
-    CarbonImmutable::setTestNow($now);
-
-    app(IngestEventsAction::class)->execute('u-1', null, actionSnapshot(), new IncomingBatch(events: [
-        incomingEvent(EventType::Pageview, $now->subSeconds(3), url: 'https://vantadrive.ch/a'),
-        incomingEvent(EventType::Pageview, $now->subSeconds(2), url: 'https://vantadrive.ch/b'),
-        incomingEvent(EventType::Pageview, $now->subSecond(), url: 'https://vantadrive.ch/a'),
-    ]));
-
-    expect(Session::firstOrFail()->pageview_count)->toBe(3)
-        ->and(Event::count())->toBe(3);
-});
-
-it('bumps activity for a heartbeat without storing or counting it', function () {
-    $now = CarbonImmutable::parse('2026-07-01 10:00:00');
-    CarbonImmutable::setTestNow($now);
-    $action = app(IngestEventsAction::class);
-
-    $action->execute('u-1', null, actionSnapshot(), new IncomingBatch(events: [incomingEvent(EventType::Pageview, $now)]));
-
-    CarbonImmutable::setTestNow($now->addMinutes(1));
-    $action->execute('u-1', null, actionSnapshot(), new IncomingBatch(events: [incomingEvent(EventType::Heartbeat, CarbonImmutable::now())]));
-
-    expect(Event::count())->toBe(1);
-
-    $session = Session::firstOrFail();
-    expect($session->event_count)->toBe(1)
-        ->and($session->last_activity_at->toDateTimeString())->toBe('2026-07-01 10:01:00');
-});
