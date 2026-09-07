@@ -204,7 +204,8 @@ entirely:
   profile**: when a browser gets identified and the subject already owns a
   profile, the profiles merge automatically (see [Privacy](#privacy--gdpr)).
 - **`exclude_guards`** — nothing is collected while such a user is
-  authenticated, and the collector script is not even rendered on their pages.
+  authenticated: `@analyticsConfig` renders nothing on their pages, and the
+  collector exits on its own for want of a configuration.
 - **`consent_cookie`** — when set, a visitor only receives the *persistent*
   cross-visit id if the cookie holds `"1"`; otherwise tracking is
   session-scoped. `null` means the persistent id is always granted (use this
@@ -627,7 +628,7 @@ campaign term (`utm_term`): these are the words actually typed into Google.
 
 | Command | Role |
 |---|---|
-| `analytics:install` | publish config, scaffold env variables, run migrations |
+| `analytics:install` | install the kit, publish config, write the two imports, scaffold env variables, run migrations |
 | `analytics:geoip:download` | download/refresh the local GeoLite2 City database |
 | `analytics:geoip:check` | say whether the database is usable, and why an address does or does not resolve |
 | `analytics:sweep` | stamp `ended_at` on sessions idle past the timeout |
@@ -720,7 +721,8 @@ All keys live in `config/analytics.php`; env-driven values in parentheses.
 | `funnels_path` | `null` → `app/Analytics/funnels.php` | code-declared funnels file |
 | `events_path` | `null` → `app/Analytics/events.php` | declared events file |
 | `events_scan_paths` | `['app', 'resources/views']` | paths scanned by `analytics:events:scan` |
-| `endpoint` | `__analytics` | ingestion path (`/__analytics`, script at `/__analytics.js`) |
+| `endpoint` | `__analytics` | ingestion path (`/__analytics`) |
+| `assets.admin_css` · `assets.web_js` | `resources/css/app.css` · `resources/js/app.js` | your entries, where `analytics:install` wrote its two imports |
 | `throttle` | `120,1` | ingestion rate limit (requests, minutes) |
 | `exclude_ips` | `[]` | IPs/CIDRs excluded from tracking |
 | `identity.subject_guards` | `['web']` | guards tracked as identified subjects |
