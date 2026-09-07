@@ -69,20 +69,20 @@
                             padding: 8,
                             cornerRadius: 6,
                             displayColors: false,
-                            bodyFont: { family: 'DM Sans', size: 12 },
+                            bodyFont: { size: 12 },
                         },
                     },
                     scales: {
                         x: {
                             grid: { display: false },
                             border: { display: false },
-                            ticks: { color: this.muted(), maxTicksLimit: 6, maxRotation: 0, font: { family: 'DM Sans', size: 11 } },
+                            ticks: { color: this.muted(), maxTicksLimit: 6, maxRotation: 0, font: { size: 11 } },
                         },
                         y: {
                             beginAtZero: true,
                             grid: { color: this.grid() },
                             border: { display: false },
-                            ticks: { color: this.muted(), precision: 0, maxTicksLimit: 4, font: { family: 'DM Sans', size: 11 } },
+                            ticks: { color: this.muted(), precision: 0, maxTicksLimit: 4, font: { size: 11 } },
                         },
                     },
                 },

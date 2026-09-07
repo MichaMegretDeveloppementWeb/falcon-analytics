@@ -51,7 +51,7 @@
                             borderWidth: 1,
                             padding: 8,
                             cornerRadius: 6,
-                            bodyFont: { family: 'DM Sans', size: 12 },
+                            bodyFont: { size: 12 },
                         },
                     },
                 },

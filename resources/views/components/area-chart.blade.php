@@ -74,12 +74,18 @@
                     yAxisID: 'y2',
                 });
             }
+            /*
+             * Aucune famille de police n'est nommee ici, ni plus bas · le kit
+             * pose celle de la page en defaut quand il livre Chart.js, et tout
+             * ce qui se dessine en herite. La nommer serait la figer, et un
+             * hote qui en choisit une autre ne pourrait plus rien y faire.
+             */
             const scales = {
-                x: { border: { display: false }, grid: { display: false }, ticks: { maxTicksLimit: 8, maxRotation: 0, autoSkip: true, font: { size: 11, family: 'DM Sans' }, color: this.muted() } },
-                y: { beginAtZero: true, border: { display: false }, grid: { color: this.grid(), drawTicks: false }, ticks: { maxTicksLimit: 5, padding: 8, precision: 0, font: { size: 11, family: 'DM Sans' }, color: this.muted() } },
+                x: { border: { display: false }, grid: { display: false }, ticks: { maxTicksLimit: 8, maxRotation: 0, autoSkip: true, font: { size: 11 }, color: this.muted() } },
+                y: { beginAtZero: true, border: { display: false }, grid: { color: this.grid(), drawTicks: false }, ticks: { maxTicksLimit: 5, padding: 8, precision: 0, font: { size: 11 }, color: this.muted() } },
             };
             if (hasSecond) {
-                scales.y2 = { position: 'right', beginAtZero: true, border: { display: false }, grid: { display: false }, ticks: { maxTicksLimit: 5, padding: 8, precision: 0, font: { size: 11, family: 'DM Sans' }, color: this.muted() } };
+                scales.y2 = { position: 'right', beginAtZero: true, border: { display: false }, grid: { display: false }, ticks: { maxTicksLimit: 5, padding: 8, precision: 0, font: { size: 11 }, color: this.muted() } };
             }
             this.$el._chart = new window.Chart(this.$refs.canvas, {
                 type: 'line',
@@ -91,7 +97,7 @@
                     interaction: { mode: 'index', intersect: false },
                     plugins: {
                         legend: hasSecond
-                            ? { display: true, position: 'top', align: 'end', labels: { boxWidth: 8, boxHeight: 8, usePointStyle: true, pointStyle: 'circle', font: { size: 11, family: 'DM Sans' }, color: this.muted() } }
+                            ? { display: true, position: 'top', align: 'end', labels: { boxWidth: 8, boxHeight: 8, usePointStyle: true, pointStyle: 'circle', font: { size: 11 }, color: this.muted() } }
                             : { display: false },
                         tooltip: {
                             backgroundColor: this.isDark ? '#1f2937' : '#ffffff',
@@ -102,8 +108,8 @@
                             padding: 10,
                             cornerRadius: 8,
                             displayColors: hasSecond,
-                            titleFont: { family: 'DM Sans', size: 12, weight: '600' },
-                            bodyFont: { family: 'DM Sans', size: 12 },
+                            titleFont: { size: 12, weight: '600' },
+                            bodyFont: { size: 12 },
                         },
                     },
                     scales,
