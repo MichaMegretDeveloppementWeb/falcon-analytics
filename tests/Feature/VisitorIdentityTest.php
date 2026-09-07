@@ -1,57 +1,75 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Falcon\Analytics\Tests\Feature;
+
 use Falcon\Analytics\Services\VisitorIdentityResolver;
+use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Str;
 
-beforeEach(function () {
-    $this->identity = new VisitorIdentityResolver;
-});
+final class VisitorIdentityTest extends TestCase
+{
+    private VisitorIdentityResolver $identity;
 
-it('issues a persistent cookie uuid when consent is granted', function () {
-    $uuid = $this->identity->resolve(Request::create('/', 'POST'), true);
+    protected function setUp(): void
+    {
+        parent::setUp();
 
-    expect(Str::isUuid($uuid))->toBeTrue()
-        ->and(Cookie::queued('fa_vid')?->getValue())->toBe($uuid);
-});
+        $this->identity = new VisitorIdentityResolver;
+    }
 
-it('reuses an existing valid cookie without re-queuing', function () {
-    $existing = (string) Str::uuid();
-    $request = Request::create('/', 'POST', cookies: ['fa_vid' => $existing]);
+    public function test_it_issues_a_persistent_cookie_uuid_when_consent_is_granted(): void
+    {
+        $uuid = $this->identity->resolve(Request::create('/', 'POST'), true);
 
-    $uuid = $this->identity->resolve($request, true);
+        $this->assertTrue(Str::isUuid($uuid));
+        $this->assertSame($uuid, Cookie::queued('fa_vid')?->getValue());
+    }
 
-    expect($uuid)->toBe($existing)
-        ->and(Cookie::hasQueued('fa_vid'))->toBeFalse();
-});
+    public function test_it_reuses_an_existing_valid_cookie_without_re_queuing(): void
+    {
+        $existing = (string) Str::uuid();
+        $request = Request::create('/', 'POST', cookies: ['fa_vid' => $existing]);
 
-it('regenerates when the cookie is not a valid uuid', function () {
-    $request = Request::create('/', 'POST', cookies: ['fa_vid' => 'tampered']);
+        $this->assertSame($existing, $this->identity->resolve($request, true));
+        $this->assertFalse(Cookie::hasQueued('fa_vid'));
+    }
 
-    $uuid = $this->identity->resolve($request, true);
+    public function test_it_regenerates_when_the_cookie_is_not_a_valid_uuid(): void
+    {
+        $request = Request::create('/', 'POST', cookies: ['fa_vid' => 'tampered']);
 
-    expect($uuid)->not->toBe('tampered')
-        ->and(Str::isUuid($uuid))->toBeTrue();
-});
+        $uuid = $this->identity->resolve($request, true);
 
-it('stores a session-scoped uuid when consent is absent', function () {
-    $session = app('session')->driver();
-    $request = Request::create('/', 'POST');
-    $request->setLaravelSession($session);
+        $this->assertNotSame('tampered', $uuid);
+        $this->assertTrue(Str::isUuid($uuid));
+    }
 
-    $uuid = $this->identity->resolve($request, false);
+    public function test_it_stores_a_session_scoped_uuid_when_consent_is_absent(): void
+    {
+        $session = app('session')->driver();
+        $request = Request::create('/', 'POST');
+        $request->setLaravelSession($session);
 
-    expect($uuid)->toBe($session->get('fa_vid'))
-        ->and(Str::isUuid($uuid))->toBeTrue()
-        ->and(Cookie::hasQueued('fa_vid'))->toBeFalse();
-});
+        $uuid = $this->identity->resolve($request, false);
 
-it('reuses the session uuid on subsequent calls', function () {
-    $session = app('session')->driver();
-    $request = Request::create('/', 'POST');
-    $request->setLaravelSession($session);
+        $this->assertSame($session->get('fa_vid'), $uuid);
+        $this->assertTrue(Str::isUuid($uuid));
+        $this->assertFalse(Cookie::hasQueued('fa_vid'));
+    }
 
-    expect($this->identity->resolve($request, false))
-        ->toBe($this->identity->resolve($request, false));
-});
+    public function test_it_reuses_the_session_uuid_on_subsequent_calls(): void
+    {
+        $session = app('session')->driver();
+        $request = Request::create('/', 'POST');
+        $request->setLaravelSession($session);
+
+        $this->assertSame(
+            $this->identity->resolve($request, false),
+            $this->identity->resolve($request, false),
+        );
+    }
+}

@@ -1,67 +1,83 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Falcon\Analytics\Tests\Feature;
+
 use Falcon\Analytics\Analytics;
 use Falcon\Analytics\Tests\Fixtures\Models\TestAdmin;
 use Falcon\Analytics\Tests\Fixtures\Models\TestClient;
+use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(RefreshDatabase::class);
+final class AnalyticsManagerTest extends TestCase
+{
+    use RefreshDatabase;
 
-it('returns safe defaults with no resolver and empty identity config', function () {
-    $analytics = new Analytics;
+    public function test_it_returns_safe_defaults_with_no_resolver_and_empty_identity_config(): void
+    {
+        $analytics = new Analytics;
 
-    expect($analytics->subject())->toBeNull()
-        ->and($analytics->hasConsent())->toBeFalse()
-        ->and($analytics->isExcluded())->toBeFalse();
-});
+        $this->assertNull($analytics->subject());
+        $this->assertFalse($analytics->hasConsent());
+        $this->assertFalse($analytics->isExcluded());
+    }
 
-it('resolves and coerces the registered subject closure', function () {
-    $analytics = new Analytics;
-    $analytics->resolveSubjectUsing(fn () => ['type' => 'lessor', 'id' => '7']);
+    public function test_it_resolves_and_coerces_the_registered_subject_closure(): void
+    {
+        $analytics = new Analytics;
+        $analytics->resolveSubjectUsing(fn () => ['type' => 'lessor', 'id' => '7']);
 
-    expect($analytics->subject())->toBe(['type' => 'lessor', 'id' => 7]);
-});
+        $this->assertSame(['type' => 'lessor', 'id' => 7], $analytics->subject());
+    }
 
-it('normalises a malformed subject to null', function () {
-    $analytics = new Analytics;
-    $analytics->resolveSubjectUsing(fn () => ['wrong' => 'shape']);
+    public function test_it_normalises_a_malformed_subject_to_null(): void
+    {
+        $analytics = new Analytics;
+        $analytics->resolveSubjectUsing(fn () => ['wrong' => 'shape']);
 
-    expect($analytics->subject())->toBeNull();
-});
+        $this->assertNull($analytics->subject());
+    }
 
-it('resolves the subject from the configured guards', function () {
-    config(['analytics.identity.subject_guards' => ['client', 'lessor']]);
-    $client = TestClient::create([]);
-    $this->actingAs($client, 'client');
+    public function test_it_resolves_the_subject_from_the_configured_guards(): void
+    {
+        config(['analytics.identity.subject_guards' => ['client', 'lessor']]);
+        $client = TestClient::create([]);
+        $this->actingAs($client, 'client');
 
-    expect((new Analytics)->subject())->toBe(['type' => 'client', 'id' => $client->id]);
-});
+        $this->assertSame(['type' => 'client', 'id' => $client->id], (new Analytics)->subject());
+    }
 
-it('ignores guards that do not exist', function () {
-    config(['analytics.identity.subject_guards' => ['ghost']]);
+    public function test_it_ignores_guards_that_do_not_exist(): void
+    {
+        config(['analytics.identity.subject_guards' => ['ghost']]);
 
-    expect((new Analytics)->subject())->toBeNull();
-});
+        $this->assertNull((new Analytics)->subject());
+    }
 
-it('excludes traffic from the configured guards', function () {
-    config(['analytics.identity.exclude_guards' => ['admin']]);
-    $admin = TestAdmin::create([]);
-    $this->actingAs($admin, 'admin');
+    public function test_it_excludes_traffic_from_the_configured_guards(): void
+    {
+        config(['analytics.identity.exclude_guards' => ['admin']]);
+        $admin = TestAdmin::create([]);
+        $this->actingAs($admin, 'admin');
 
-    expect((new Analytics)->isExcluded())->toBeTrue();
-});
+        $this->assertTrue((new Analytics)->isExcluded());
+    }
 
-it('reads consent from the configured cookie', function () {
-    config(['analytics.identity.consent_cookie' => 'vd_consent_marketing']);
-    request()->cookies->set('vd_consent_marketing', '1');
+    public function test_it_reads_consent_from_the_configured_cookie(): void
+    {
+        config(['analytics.identity.consent_cookie' => 'vd_consent_marketing']);
+        request()->cookies->set('vd_consent_marketing', '1');
 
-    expect((new Analytics)->hasConsent())->toBeTrue();
-});
+        $this->assertTrue((new Analytics)->hasConsent());
+    }
 
-it('lets a consent closure take precedence over config', function () {
-    config(['analytics.identity.consent_cookie' => 'vd_consent_marketing']);
-    $analytics = new Analytics;
-    $analytics->consentUsing(fn () => true);
+    public function test_it_lets_a_consent_closure_take_precedence_over_config(): void
+    {
+        config(['analytics.identity.consent_cookie' => 'vd_consent_marketing']);
+        $analytics = new Analytics;
+        $analytics->consentUsing(fn () => true);
 
-    expect($analytics->hasConsent())->toBeTrue();
-});
+        $this->assertTrue($analytics->hasConsent());
+    }
+}

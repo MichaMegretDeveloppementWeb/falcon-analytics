@@ -1,34 +1,57 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Falcon\Analytics\Tests\Feature;
+
 use Falcon\Analytics\Services\LandingParamsResolver;
+use Falcon\Analytics\Tests\TestCase;
+use Illuminate\Support\Collection;
 
-beforeEach(function () {
-    $this->resolver = new LandingParamsResolver;
-});
+final class LandingParamsResolverTest extends TestCase
+{
+    private LandingParamsResolver $resolver;
 
-it('extracts the landing url query parameters', function () {
-    expect($this->resolver->resolve('https://vantadrive.ch/voitures?src=meta_ete&creative=cabrio'))
-        ->toBe(['src' => 'meta_ete', 'creative' => 'cabrio']);
-});
+    protected function setUp(): void
+    {
+        parent::setUp();
 
-it('returns an empty array without a query string or url', function () {
-    expect($this->resolver->resolve('https://vantadrive.ch/voitures'))->toBe([])
-        ->and($this->resolver->resolve(null))->toBe([]);
-});
+        $this->resolver = new LandingParamsResolver;
+    }
 
-it('drops empty values and array-style params', function () {
-    expect($this->resolver->resolve('https://vantadrive.ch/?a=1&b=&c[]=x&d=2'))
-        ->toBe(['a' => '1', 'd' => '2']);
-});
+    public function test_it_extracts_the_landing_url_query_parameters(): void
+    {
+        $this->assertSame(
+            ['src' => 'meta_ete', 'creative' => 'cabrio'],
+            $this->resolver->resolve('https://vantadrive.ch/voitures?src=meta_ete&creative=cabrio'),
+        );
+    }
 
-it('caps overly long values', function () {
-    $params = $this->resolver->resolve('https://vantadrive.ch/?campaign='.str_repeat('x', 200));
+    public function test_it_returns_an_empty_array_without_a_query_string_or_url(): void
+    {
+        $this->assertSame([], $this->resolver->resolve('https://vantadrive.ch/voitures'));
+        $this->assertSame([], $this->resolver->resolve(null));
+    }
 
-    expect(mb_strlen($params['campaign']))->toBe(150);
-});
+    public function test_it_drops_empty_values_and_array_style_params(): void
+    {
+        $this->assertSame(
+            ['a' => '1', 'd' => '2'],
+            $this->resolver->resolve('https://vantadrive.ch/?a=1&b=&c[]=x&d=2'),
+        );
+    }
 
-it('caps the number of parameters', function () {
-    $query = collect(range(1, 40))->map(fn (int $i): string => "p{$i}=v{$i}")->implode('&');
+    public function test_it_caps_overly_long_values(): void
+    {
+        $params = $this->resolver->resolve('https://vantadrive.ch/?campaign='.str_repeat('x', 200));
 
-    expect($this->resolver->resolve("https://vantadrive.ch/?{$query}"))->toHaveCount(30);
-});
+        $this->assertSame(150, mb_strlen($params['campaign']));
+    }
+
+    public function test_it_caps_the_number_of_parameters(): void
+    {
+        $query = Collection::make(range(1, 40))->map(fn (int $i): string => "p{$i}=v{$i}")->implode('&');
+
+        $this->assertCount(30, $this->resolver->resolve("https://vantadrive.ch/?{$query}"));
+    }
+}

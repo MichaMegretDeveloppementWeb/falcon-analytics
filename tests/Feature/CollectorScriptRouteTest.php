@@ -1,6 +1,12 @@
 <?php
 
-/*
+declare(strict_types=1);
+
+namespace Falcon\Analytics\Tests\Feature;
+
+use Falcon\Analytics\Tests\TestCase;
+
+/**
  * Le collecteur n'est plus servi par le paquet.
  *
  * Il l'etait par une route, avec un an de cache et une empreinte dans
@@ -16,29 +22,34 @@
  * collecteur pourraient se retrouver sur une page et compter chaque visite deux
  * fois.
  */
+final class CollectorScriptRouteTest extends TestCase
+{
+    public function test_it_no_longer_serves_the_collector_script_itself(): void
+    {
+        $this->get('/__analytics.js')->assertNotFound();
+    }
 
-it('no longer serves the collector script itself', function () {
-    $this->get('/__analytics.js')->assertNotFound();
-});
+    /**
+     * Le fichier reste livre, et il reste autonome · aucun `import`, aucune
+     * dependance npm. C'est ce qui permet a l'hote de l'importer tel quel, sans
+     * rien installer.
+     */
+    public function test_it_ships_a_self_contained_collector_for_the_host_to_import(): void
+    {
+        $path = dirname(__DIR__, 2).'/resources/js/collector.js';
 
-/*
- * Le fichier reste livre, et il reste autonome · aucun `import`, aucune
- * dependance npm. C'est ce qui permet a l'hote de l'importer tel quel, sans
- * rien installer.
- */
-it('ships a self-contained collector for the host to import', function () {
-    $path = dirname(__DIR__, 2).'/resources/js/collector.js';
+        $this->assertFileExists($path);
 
-    expect($path)->toBeFile();
+        $source = (string) file_get_contents($path);
 
-    $source = (string) file_get_contents($path);
+        $this->assertStringContainsString('sendBeacon', $source);
+        $this->assertStringContainsString('__falconAnalytics', $source);
 
-    expect($source)->toContain('sendBeacon')
-        ->toContain('__falconAnalytics')
         // Le repli sur `fetch` avale son rejet · un endpoint injoignable ne
         // doit jamais faire remonter une promesse non geree dans la console de
         // l'hote.
-        ->toContain('.catch(');
+        $this->assertStringContainsString('.catch(', $source);
 
-    expect(preg_match('/^\s*(import|export)\s/m', $source))->toBe(0);
-});
+        $this->assertSame(0, preg_match('/^\s*(import|export)\s/m', $source));
+    }
+}

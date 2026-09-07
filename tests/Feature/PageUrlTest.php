@@ -1,29 +1,49 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Falcon\Analytics\Tests\Feature;
+
 use Falcon\Analytics\Support\PageUrl;
+use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Support\Facades\Route;
 
-it('uses the real url path, dropping the domain and query', function () {
-    expect(PageUrl::resolve('listing.detail', 'https://vantadrive.test/listings/23?utm_source=x'))->toBe('/listings/23')
-        ->and(PageUrl::resolve('listing.detail', 'https://vantadrive.test/listings/ma-super-annonce'))->toBe('/listings/ma-super-annonce');
-});
+final class PageUrlTest extends TestCase
+{
+    public function test_it_uses_the_real_url_path_dropping_the_domain_and_query(): void
+    {
+        $this->assertSame(
+            '/listings/23',
+            PageUrl::resolve('listing.detail', 'https://vantadrive.test/listings/23?utm_source=x'),
+        );
 
-it('falls back to the route uri pattern when no url is stored', function () {
-    // The 'catalog' route is registered by the package test case.
-    expect(PageUrl::resolve('catalog', null))->toBe('/catalog');
-});
+        $this->assertSame(
+            '/listings/ma-super-annonce',
+            PageUrl::resolve('listing.detail', 'https://vantadrive.test/listings/ma-super-annonce'),
+        );
+    }
 
-it('cleans {param} placeholders in the route pattern with an ellipsis', function () {
-    Route::get('/listings/{listing}', fn () => '')->name('page-url.listing.test');
-    Route::getRoutes()->refreshNameLookups();
+    public function test_it_falls_back_to_the_route_uri_pattern_when_no_url_is_stored(): void
+    {
+        // La route « catalog » est enregistrée par le banc du paquet.
+        $this->assertSame('/catalog', PageUrl::resolve('catalog', null));
+    }
 
-    expect(PageUrl::resolve('page-url.listing.test', null))->toBe('/listings/…');
-});
+    public function test_it_cleans_param_placeholders_in_the_route_pattern_with_an_ellipsis(): void
+    {
+        Route::get('/listings/{listing}', fn () => '')->name('page-url.listing.test');
+        Route::getRoutes()->refreshNameLookups();
 
-it('falls back to the raw route name for an unknown route', function () {
-    expect(PageUrl::resolve('ghost', null))->toBe('ghost');
-});
+        $this->assertSame('/listings/…', PageUrl::resolve('page-url.listing.test', null));
+    }
 
-it('returns an empty string when nothing is provided', function () {
-    expect(PageUrl::resolve(null, null))->toBe('');
-});
+    public function test_it_falls_back_to_the_raw_route_name_for_an_unknown_route(): void
+    {
+        $this->assertSame('ghost', PageUrl::resolve('ghost', null));
+    }
+
+    public function test_it_returns_an_empty_string_when_nothing_is_provided(): void
+    {
+        $this->assertSame('', PageUrl::resolve(null, null));
+    }
+}
