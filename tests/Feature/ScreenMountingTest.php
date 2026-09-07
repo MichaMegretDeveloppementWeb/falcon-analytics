@@ -3,7 +3,6 @@
 use Falcon\Analytics\Models\Campaign;
 use Falcon\Analytics\Tests\Fixtures\Models\TestAdmin;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
 
 /*
@@ -53,14 +52,15 @@ it('renders the screen inside the section of the host layout', function () {
  * only fills the section: what is lost is the panel, not the way out of it.
  */
 it('keeps the host chrome when the screen fails to read its data', function () {
-    Schema::drop('falcon_analytics_sessions');
+    $admin = TestAdmin::create(['email' => 'admin@example.test']);
 
-    $response = $this->actingAs(TestAdmin::create(['email' => 'admin@example.test']), 'admin')
-        ->get(route('analytics.sessions'));
-
-    $response->assertOk()
-        ->assertSee(__('Données indisponibles'))
-        ->assertSee('chrome fourni par le gabarit');
+    $this->withoutTable('falcon_analytics_sessions', function () use ($admin) {
+        $this->actingAs($admin, 'admin')
+            ->get(route('analytics.sessions'))
+            ->assertOk()
+            ->assertSee(__('Données indisponibles'))
+            ->assertSee('chrome fourni par le gabarit');
+    });
 });
 
 /** The title is composed by the controller, before the screen renders. */

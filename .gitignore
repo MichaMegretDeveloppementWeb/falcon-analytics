@@ -1,5 +1,6 @@
 /vendor
 composer.lock
+.env.test
 .phpunit.result.cache
 /.phpunit.cache
 .DS_Store

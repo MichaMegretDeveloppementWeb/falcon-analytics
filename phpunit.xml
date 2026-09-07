@@ -20,7 +20,7 @@
     <php>
         <env name="APP_ENV" value="testing"/>
         <env name="APP_KEY" value="base64:AckfSECXIvnK5r28GVIWUAxmbBSjTsmF/0rzS7pXd2Y="/>
-        <env name="DB_CONNECTION" value="testing"/>
+        <env name="DB_CONNECTION" value="mysql_testing"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="CACHE_STORE" value="array"/>

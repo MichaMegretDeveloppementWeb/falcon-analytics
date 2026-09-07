@@ -5,7 +5,6 @@ use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Schema;
 
 uses(RefreshDatabase::class);
 
@@ -105,10 +104,10 @@ it('drops a request from an excluded ip', function () {
 
 it('swallows a persistence failure and still returns no content', function () {
     // Break the write target so the deferred ingestion throws a real query error.
-    Schema::drop('falcon_analytics_events');
-
-    $this->withoutDefer()
-        ->withHeader('Origin', config('app.url'))
-        ->postJson('/__analytics', analyticsPayload())
-        ->assertNoContent();
+    $this->withoutDatabase(function () {
+        $this->withoutDefer()
+            ->withHeader('Origin', config('app.url'))
+            ->postJson('/__analytics', analyticsPayload())
+            ->assertNoContent();
+    });
 });

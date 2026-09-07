@@ -16,12 +16,29 @@ function ingestLanding(string $url): void
         ->assertNoContent();
 }
 
+/**
+ * L'ordre des cles d'un objet JSON ne porte aucun sens, et MySQL le change.
+ *
+ * Il normalise a l'ecriture, triant par longueur de cle puis alphabetiquement ·
+ * `?utm_source=meta&src=meta_ete` ressort `src` avant `utm_source`. SQLite
+ * gardait le texte tel quel, et l'assertion s'appuyait sans le savoir sur cette
+ * particularite d'un moteur qui n'est pas celui de production.
+ *
+ * On trie les deux cotes plutot que de canonicaliser · `assertEqualsCanonicalizing`
+ * passe par `sort()`, qui jette les cles, et un essai qui ne compare plus que
+ * les valeurs accepterait `src` a la place de `creative`.
+ */
 it('captures the landing url parameters through the full pipeline', function (string $url, array $expected) {
     ingestLanding($url);
 
     $session = Session::query()->latest('id')->firstOrFail();
 
-    expect($session->mkt_params ?? [])->toBe($expected);
+    $captured = $session->mkt_params ?? [];
+
+    ksort($captured);
+    ksort($expected);
+
+    expect($captured)->toBe($expected);
 })->with([
     'marketing params' => ['https://vantadrive.ch/?src=meta_ete&creative=cabrio', ['src' => 'meta_ete', 'creative' => 'cabrio']],
     'no params' => ['https://vantadrive.ch/voitures', []],

@@ -21,7 +21,6 @@ use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Tests\Fixtures\Models\TestAdmin;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
 
@@ -174,18 +173,18 @@ it('renders a graceful error state instead of a 500 when a dashboard read fails'
 
     // Force a real read failure: the session list query hits a missing table. The
     // sessions page shell still reads (the list), so its guardedRender degrades.
-    Schema::drop('falcon_analytics_sessions');
-
-    Livewire::test(SessionsPage::class)->assertSee(__('Données indisponibles'));
+    $this->withoutTable('falcon_analytics_sessions', function () {
+        Livewire::test(SessionsPage::class)->assertSee(__('Données indisponibles'));
+    });
 });
 
 it('degrades a deferred widget to an inline error when its read fails', function () {
     $this->actingAs($this->admin, 'admin');
 
     // The heavy reads live in the lazy widgets now, so they carry their own guard.
-    Schema::drop('falcon_analytics_sessions');
-
-    Livewire::test(OverviewHeadline::class, ['period' => 30])->call('$refresh')->assertSee(__('Données indisponibles'));
+    $this->withoutTable('falcon_analytics_sessions', function () {
+        Livewire::test(OverviewHeadline::class, ['period' => 30])->call('$refresh')->assertSee(__('Données indisponibles'));
+    });
 });
 
 it('renders the sessions list for an authenticated admin', function () {
@@ -302,20 +301,9 @@ it('erases only the target visitor, leaving other visitors untouched', function 
         ->and(Event::where('visitor_id', $other->id)->count())->toBe(1);
 });
 
-it('shows an inline error and keeps the visitor when the erasure fails', function () {
-    $visitor = Visitor::create(['uuid' => (string) Str::uuid(), 'first_seen_at' => now(), 'last_seen_at' => now(), 'session_count' => 0]);
-
-    Schema::drop('falcon_analytics_events'); // force the erasure query to fail
-
-    $this->actingAs($this->admin, 'admin');
-
-    Livewire::test(VisitorDetailPage::class, ['visitor' => $visitor])
-        ->call('forget')
-        ->assertHasErrors('visitor-erasure-failed')
-        ->assertNoRedirect();
-
-    expect(Visitor::whereKey($visitor->id)->exists())->toBeTrue();
-});
+// L'effacement qui échoue vit dans `TheErasureKeepsWhatItCannotDeleteTest` ·
+// il lui faut un banc sans transaction enveloppante, ce que ce fichier ne peut
+// pas offrir sans changer la façon dont tournent ses cinquante autres essais.
 
 it('renders the declared funnels for an authenticated admin', function () {
     config(['analytics.funnels_path' => __DIR__.'/../Fixtures/analytics-funnels.php']);
