@@ -1,94 +1,123 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Falcon\Analytics\Tests\Feature;
+
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Http\Requests\IngestBatchRequest;
+use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Support\Facades\Validator;
 
-function ingestRequest(array $data): IngestBatchRequest
+final class IngestBatchRequestTest extends TestCase
 {
-    $request = IngestBatchRequest::create('/__analytics', 'POST', $data);
-    $request->headers->set('Accept', 'application/json');
-    $request->setContainer(app());
-    $request->validateResolved();
+    protected function tearDown(): void
+    {
+        CarbonImmutable::setTestNow();
 
-    return $request;
+        parent::tearDown();
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function ingestRequest(array $data): IngestBatchRequest
+    {
+        $request = IngestBatchRequest::create('/__analytics', 'POST', $data);
+        $request->headers->set('Accept', 'application/json');
+        $request->setContainer(app());
+        $request->validateResolved();
+
+        return $request;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function ingestFails(array $data): bool
+    {
+        return Validator::make($data, (new IngestBatchRequest)->rules())->fails();
+    }
+
+    public function test_it_validates_and_maps_a_batch_rebuilding_timestamps_from_client_deltas(): void
+    {
+        CarbonImmutable::setTestNow('2026-07-01 12:00:00');
+
+        $batch = $this->ingestRequest([
+            'sent_at' => 10_000,
+            'referrer' => 'https://google.com',
+            'events' => [
+                ['type' => 'pageview', 'ts' => 10_000, 'route' => 'home', 'url' => 'https://vantadrive.ch/'],
+                ['type' => 'click', 'ts' => 7_000, 'name' => 'listing.contact_click', 'props' => ['listing_id' => 42], 'value' => 3],
+            ],
+        ])->toBatch();
+
+        $this->assertCount(2, $batch->events);
+        $this->assertSame('https://google.com', $batch->referrer);
+        $this->assertSame(EventType::Pageview, $batch->events[0]->type);
+        $this->assertSame('2026-07-01 12:00:00', $batch->events[0]->occurredAt->toDateTimeString());
+        $this->assertSame(EventType::Click, $batch->events[1]->type);
+        $this->assertSame('2026-07-01 11:59:57', $batch->events[1]->occurredAt->toDateTimeString());
+        $this->assertSame(3.0, $batch->events[1]->value);
+        $this->assertSame(['listing_id' => 42], $batch->events[1]->props);
+    }
+
+    public function test_it_caps_the_reconstructed_age_of_very_old_events(): void
+    {
+        CarbonImmutable::setTestNow('2026-07-01 12:00:00');
+
+        $batch = $this->ingestRequest([
+            'sent_at' => 10_000_000,
+            // Un écart de 10 000 000 ms, borné à 3 600 000 ms, soit une heure.
+            'events' => [['type' => 'pageview', 'ts' => 0]],
+        ])->toBatch();
+
+        $this->assertSame('2026-07-01 11:00:00', $batch->events[0]->occurredAt->toDateTimeString());
+    }
+
+    public function test_it_rejects_an_invalid_event_type(): void
+    {
+        $this->assertTrue($this->ingestFails(['sent_at' => 1, 'events' => [['type' => 'bogus', 'ts' => 1]]]));
+    }
+
+    public function test_it_rejects_an_empty_batch(): void
+    {
+        $this->assertTrue($this->ingestFails(['sent_at' => 1, 'events' => []]));
+    }
+
+    public function test_it_rejects_a_missing_sent_at(): void
+    {
+        $this->assertTrue($this->ingestFails(['events' => [['type' => 'pageview', 'ts' => 1]]]));
+    }
+
+    public function test_it_rejects_a_batch_larger_than_the_cap(): void
+    {
+        $this->assertTrue($this->ingestFails([
+            'sent_at' => 1,
+            'events' => array_fill(0, 101, ['type' => 'pageview', 'ts' => 1]),
+        ]));
+    }
+
+    public function test_it_accepts_a_well_formed_batch(): void
+    {
+        $this->assertFalse($this->ingestFails(['sent_at' => 1, 'events' => [['type' => 'pageview', 'ts' => 1]]]));
+    }
+
+    public function test_it_redacts_sensitive_query_parameters_while_keeping_tracking_params(): void
+    {
+        config(['analytics.privacy.redact_query_params' => ['token']]);
+
+        $batch = $this->ingestRequest([
+            'sent_at' => 1,
+            'referrer' => 'https://ref.example/?token=zzz&utm_source=meta',
+            'events' => [['type' => 'pageview', 'ts' => 1, 'url' => 'https://vantadrive.ch/?token=secret&gclid=abc']],
+        ])->toBatch();
+
+        $this->assertStringContainsString('token=redacted', $batch->events[0]->url);
+        $this->assertStringContainsString('gclid=abc', $batch->events[0]->url);
+        $this->assertStringNotContainsString('secret', $batch->events[0]->url);
+        $this->assertStringContainsString('token=redacted', $batch->referrer);
+        $this->assertStringContainsString('utm_source=meta', $batch->referrer);
+    }
 }
-
-afterEach(function () {
-    CarbonImmutable::setTestNow();
-});
-
-it('validates and maps a batch, rebuilding timestamps from client deltas', function () {
-    CarbonImmutable::setTestNow('2026-07-01 12:00:00');
-
-    $batch = ingestRequest([
-        'sent_at' => 10_000,
-        'referrer' => 'https://google.com',
-        'events' => [
-            ['type' => 'pageview', 'ts' => 10_000, 'route' => 'home', 'url' => 'https://vantadrive.ch/'],
-            ['type' => 'click', 'ts' => 7_000, 'name' => 'listing.contact_click', 'props' => ['listing_id' => 42], 'value' => 3],
-        ],
-    ])->toBatch();
-
-    expect($batch->events)->toHaveCount(2)
-        ->and($batch->referrer)->toBe('https://google.com')
-        ->and($batch->events[0]->type)->toBe(EventType::Pageview)
-        ->and($batch->events[0]->occurredAt->toDateTimeString())->toBe('2026-07-01 12:00:00')
-        ->and($batch->events[1]->type)->toBe(EventType::Click)
-        ->and($batch->events[1]->occurredAt->toDateTimeString())->toBe('2026-07-01 11:59:57')
-        ->and($batch->events[1]->value)->toBe(3.0)
-        ->and($batch->events[1]->props)->toBe(['listing_id' => 42]);
-});
-
-it('caps the reconstructed age of very old events', function () {
-    CarbonImmutable::setTestNow('2026-07-01 12:00:00');
-
-    $batch = ingestRequest([
-        'sent_at' => 10_000_000,
-        'events' => [['type' => 'pageview', 'ts' => 0]], // delta 10_000_000ms, capped at 3_600_000ms (1h)
-    ])->toBatch();
-
-    expect($batch->events[0]->occurredAt->toDateTimeString())->toBe('2026-07-01 11:00:00');
-});
-
-function ingestFails(array $data): bool
-{
-    return Validator::make($data, (new IngestBatchRequest)->rules())->fails();
-}
-
-it('rejects an invalid event type', function () {
-    expect(ingestFails(['sent_at' => 1, 'events' => [['type' => 'bogus', 'ts' => 1]]]))->toBeTrue();
-});
-
-it('rejects an empty batch', function () {
-    expect(ingestFails(['sent_at' => 1, 'events' => []]))->toBeTrue();
-});
-
-it('rejects a missing sent_at', function () {
-    expect(ingestFails(['events' => [['type' => 'pageview', 'ts' => 1]]]))->toBeTrue();
-});
-
-it('rejects a batch larger than the cap', function () {
-    expect(ingestFails(['sent_at' => 1, 'events' => array_fill(0, 101, ['type' => 'pageview', 'ts' => 1])]))->toBeTrue();
-});
-
-it('accepts a well-formed batch', function () {
-    expect(ingestFails(['sent_at' => 1, 'events' => [['type' => 'pageview', 'ts' => 1]]]))->toBeFalse();
-});
-
-it('redacts sensitive query parameters while keeping tracking params', function () {
-    config(['analytics.privacy.redact_query_params' => ['token']]);
-
-    $batch = ingestRequest([
-        'sent_at' => 1,
-        'referrer' => 'https://ref.example/?token=zzz&utm_source=meta',
-        'events' => [['type' => 'pageview', 'ts' => 1, 'url' => 'https://vantadrive.ch/?token=secret&gclid=abc']],
-    ])->toBatch();
-
-    expect($batch->events[0]->url)->toContain('token=redacted')
-        ->and($batch->events[0]->url)->toContain('gclid=abc')
-        ->and($batch->events[0]->url)->not->toContain('secret')
-        ->and($batch->referrer)->toContain('token=redacted')
-        ->and($batch->referrer)->toContain('utm_source=meta');
-});

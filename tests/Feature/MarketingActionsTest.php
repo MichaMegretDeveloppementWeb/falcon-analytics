@@ -1,5 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Falcon\Analytics\Tests\Feature;
+
 use Falcon\Analytics\Actions\DeleteAdAction;
 use Falcon\Analytics\Actions\DeleteCampaignAction;
 use Falcon\Analytics\Actions\SaveAdAction;
@@ -7,70 +11,78 @@ use Falcon\Analytics\Actions\SaveCampaignAction;
 use Falcon\Analytics\Models\Ad;
 use Falcon\Analytics\Models\AdObjective;
 use Falcon\Analytics\Models\Campaign;
+use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(RefreshDatabase::class);
+final class MarketingActionsTest extends TestCase
+{
+    use RefreshDatabase;
 
-it('creates then updates a campaign', function () {
-    $campaign = (new SaveCampaignAction)->execute(null, 'Été', 'Meta', [['param' => 'src', 'value' => 'meta']]);
+    public function test_it_creates_then_updates_a_campaign(): void
+    {
+        $campaign = (new SaveCampaignAction)->execute(null, 'Été', 'Meta', [['param' => 'src', 'value' => 'meta']]);
 
-    expect($campaign->name)->toBe('Été')
-        ->and($campaign->platform)->toBe('Meta')
-        ->and(Campaign::query()->count())->toBe(1);
+        $this->assertSame('Été', $campaign->name);
+        $this->assertSame('Meta', $campaign->platform);
+        $this->assertSame(1, Campaign::query()->count());
 
-    $updated = (new SaveCampaignAction)->execute($campaign->id, 'Été 2026', null, [['param' => 'src', 'value' => 'x']]);
+        $updated = (new SaveCampaignAction)->execute($campaign->id, 'Été 2026', null, [['param' => 'src', 'value' => 'x']]);
 
-    expect($updated->id)->toBe($campaign->id)
-        ->and($updated->name)->toBe('Été 2026')
-        ->and($updated->platform)->toBeNull()
-        ->and(Campaign::query()->count())->toBe(1);
-});
+        $this->assertSame($campaign->id, $updated->id);
+        $this->assertSame('Été 2026', $updated->name);
+        $this->assertNull($updated->platform);
+        $this->assertSame(1, Campaign::query()->count());
+    }
 
-it('saves an ad and rebuilds its objectives in one transaction', function () {
-    $campaign = Campaign::create(['name' => 'C', 'match_conditions' => [['param' => 'src', 'value' => 'meta']]]);
+    public function test_it_saves_an_ad_and_rebuilds_its_objectives_in_one_transaction(): void
+    {
+        $campaign = Campaign::create(['name' => 'C', 'match_conditions' => [['param' => 'src', 'value' => 'meta']]]);
 
-    $ad = (new SaveAdAction)->execute(null, $campaign->id, 'Cabrio', [['param' => 'creative', 'value' => 'cabrio']], [
-        ['type' => 'event', 'reference' => 'Lead', 'label' => 'Lead'],
-        ['type' => 'funnel', 'reference' => 'concours', 'label' => 'Concours'],
-    ]);
+        $ad = (new SaveAdAction)->execute(null, $campaign->id, 'Cabrio', [['param' => 'creative', 'value' => 'cabrio']], [
+            ['type' => 'event', 'reference' => 'Lead', 'label' => 'Lead'],
+            ['type' => 'funnel', 'reference' => 'concours', 'label' => 'Concours'],
+        ]);
 
-    expect($ad->name)->toBe('Cabrio')
-        ->and($ad->campaign_id)->toBe($campaign->id)
-        ->and(AdObjective::query()->where('ad_id', $ad->id)->count())->toBe(2);
+        $this->assertSame('Cabrio', $ad->name);
+        $this->assertSame($campaign->id, $ad->campaign_id);
+        $this->assertSame(2, AdObjective::query()->where('ad_id', $ad->id)->count());
 
-    // Re-saving replaces the objective set rather than appending to it.
-    (new SaveAdAction)->execute($ad->id, $campaign->id, 'Cabrio', [['param' => 'creative', 'value' => 'cabrio']], [
-        ['type' => 'event', 'reference' => 'Lead', 'label' => 'Lead'],
-    ]);
+        // Réenregistrer remplace le jeu d'objectifs plutôt que de s'y ajouter.
+        (new SaveAdAction)->execute($ad->id, $campaign->id, 'Cabrio', [['param' => 'creative', 'value' => 'cabrio']], [
+            ['type' => 'event', 'reference' => 'Lead', 'label' => 'Lead'],
+        ]);
 
-    expect(AdObjective::query()->where('ad_id', $ad->id)->count())->toBe(1);
-});
+        $this->assertSame(1, AdObjective::query()->where('ad_id', $ad->id)->count());
+    }
 
-it('deletes a campaign with its ads and objectives', function () {
-    $campaign = Campaign::create(['name' => 'C', 'match_conditions' => [['param' => 'src', 'value' => 'meta']]]);
-    $ad = Ad::create(['campaign_id' => $campaign->id, 'name' => 'A', 'match_conditions' => [['param' => 'x', 'value' => 'y']]]);
-    AdObjective::create(['ad_id' => $ad->id, 'type' => 'event', 'reference' => 'Lead']);
+    public function test_it_deletes_a_campaign_with_its_ads_and_objectives(): void
+    {
+        $campaign = Campaign::create(['name' => 'C', 'match_conditions' => [['param' => 'src', 'value' => 'meta']]]);
+        $ad = Ad::create(['campaign_id' => $campaign->id, 'name' => 'A', 'match_conditions' => [['param' => 'x', 'value' => 'y']]]);
+        AdObjective::create(['ad_id' => $ad->id, 'type' => 'event', 'reference' => 'Lead']);
 
-    (new DeleteCampaignAction)->execute($campaign->id);
+        (new DeleteCampaignAction)->execute($campaign->id);
 
-    expect(Campaign::query()->count())->toBe(0)
-        ->and(Ad::query()->count())->toBe(0)
-        ->and(AdObjective::query()->count())->toBe(0);
-});
+        $this->assertSame(0, Campaign::query()->count());
+        $this->assertSame(0, Ad::query()->count());
+        $this->assertSame(0, AdObjective::query()->count());
+    }
 
-it('deletes an ad only when it belongs to the given campaign', function () {
-    $campaign = Campaign::create(['name' => 'C', 'match_conditions' => [['param' => 'src', 'value' => 'meta']]]);
-    $ad = Ad::create(['campaign_id' => $campaign->id, 'name' => 'A', 'match_conditions' => [['param' => 'x', 'value' => 'y']]]);
-    AdObjective::create(['ad_id' => $ad->id, 'type' => 'event', 'reference' => 'Lead']);
+    public function test_it_deletes_an_ad_only_when_it_belongs_to_the_given_campaign(): void
+    {
+        $campaign = Campaign::create(['name' => 'C', 'match_conditions' => [['param' => 'src', 'value' => 'meta']]]);
+        $ad = Ad::create(['campaign_id' => $campaign->id, 'name' => 'A', 'match_conditions' => [['param' => 'x', 'value' => 'y']]]);
+        AdObjective::create(['ad_id' => $ad->id, 'type' => 'event', 'reference' => 'Lead']);
 
-    // Wrong campaign id: the ad and its objectives stay intact.
-    (new DeleteAdAction)->execute($ad->id, $campaign->id + 999);
+        // Mauvais identifiant de campagne : la publicité et ses objectifs restent intacts.
+        (new DeleteAdAction)->execute($ad->id, $campaign->id + 999);
 
-    expect(Ad::query()->count())->toBe(1)
-        ->and(AdObjective::query()->count())->toBe(1);
+        $this->assertSame(1, Ad::query()->count());
+        $this->assertSame(1, AdObjective::query()->count());
 
-    (new DeleteAdAction)->execute($ad->id, $campaign->id);
+        (new DeleteAdAction)->execute($ad->id, $campaign->id);
 
-    expect(Ad::query()->count())->toBe(0)
-        ->and(AdObjective::query()->count())->toBe(0);
-});
+        $this->assertSame(0, Ad::query()->count());
+        $this->assertSame(0, AdObjective::query()->count());
+    }
+}

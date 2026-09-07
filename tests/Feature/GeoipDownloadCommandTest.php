@@ -1,78 +1,99 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Falcon\Analytics\Tests\Feature;
+
+use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
 
-beforeEach(function () {
-    $this->dir = storage_path('app/analytics');
-    $this->target = $this->dir.'/test-'.uniqid().'.mmdb';
+final class GeoipDownloadCommandTest extends TestCase
+{
+    private string $directory;
 
-    if (! is_dir($this->dir)) {
-        mkdir($this->dir, 0o755, true);
-    }
+    private string $target;
 
-    config([
-        'analytics.geoip.license_key' => 'test-key',
-        'analytics.geoip.edition' => 'GeoLite2-City',
-        'analytics.geoip.database_path' => $this->target,
-        'analytics.geoip.download_url' => 'https://download.maxmind.example/geoip_download?edition_id={edition}&license_key={license_key}&suffix=tar.gz',
-    ]);
-});
+    protected function setUp(): void
+    {
+        parent::setUp();
 
-afterEach(function () {
-    $leftovers = [$this->target, $this->dir.'/GeoLite2-City-download.tar.gz'];
+        $this->directory = storage_path('app/analytics');
+        $this->target = $this->directory.'/test-'.uniqid().'.mmdb';
 
-    foreach ($leftovers as $path) {
-        if (is_file($path)) {
-            @unlink($path);
+        if (! is_dir($this->directory)) {
+            mkdir($this->directory, 0o755, true);
         }
+
+        config([
+            'analytics.geoip.license_key' => 'test-key',
+            'analytics.geoip.edition' => 'GeoLite2-City',
+            'analytics.geoip.database_path' => $this->target,
+            'analytics.geoip.download_url' => 'https://download.maxmind.example/geoip_download?edition_id={edition}&license_key={license_key}&suffix=tar.gz',
+        ]);
     }
-});
 
-it('downloads, extracts and installs the GeoLite2 City database', function () {
-    Http::fake([
-        'download.maxmind.example/*' => Http::response(file_get_contents(__DIR__.'/../Fixtures/geolite2-city.tar.gz'), 200),
-    ]);
+    protected function tearDown(): void
+    {
+        foreach ([$this->target, $this->directory.'/GeoLite2-City-download.tar.gz'] as $path) {
+            if (is_file($path)) {
+                @unlink($path);
+            }
+        }
 
-    $this->artisan('analytics:geoip:download')->assertSuccessful();
+        parent::tearDown();
+    }
 
-    Http::assertSent(fn ($request) => str_contains($request->url(), 'edition_id=GeoLite2-City')
-        && str_contains($request->url(), 'license_key=test-key'));
+    public function test_it_downloads_extracts_and_installs_the_geolite2_city_database(): void
+    {
+        Http::fake([
+            'download.maxmind.example/*' => Http::response(file_get_contents(__DIR__.'/../Fixtures/geolite2-city.tar.gz'), 200),
+        ]);
 
-    expect(is_file($this->target))->toBeTrue()
-        ->and(file_get_contents($this->target))->toBe('CITY-DATABASE-BYTES');
-});
+        $this->artisan('analytics:geoip:download')->assertSuccessful();
 
-it('fails when no licence key is configured', function () {
-    config(['analytics.geoip.license_key' => '']);
+        Http::assertSent(fn ($request) => str_contains($request->url(), 'edition_id=GeoLite2-City')
+            && str_contains($request->url(), 'license_key=test-key'));
 
-    $this->artisan('analytics:geoip:download')->assertFailed();
+        $this->assertFileExists($this->target);
+        $this->assertSame('CITY-DATABASE-BYTES', file_get_contents($this->target));
+    }
 
-    Http::assertNothingSent();
-});
+    public function test_it_fails_when_no_licence_key_is_configured(): void
+    {
+        config(['analytics.geoip.license_key' => '']);
 
-it('fails cleanly and preserves an existing database when the source errors', function () {
-    file_put_contents($this->target, 'PREVIOUS-WORKING-DB');
+        $this->artisan('analytics:geoip:download')->assertFailed();
 
-    Http::fake([
-        'download.maxmind.example/*' => Http::response('unauthorised', 401),
-    ]);
+        Http::assertNothingSent();
+    }
 
-    $this->artisan('analytics:geoip:download')->assertFailed();
+    public function test_it_fails_cleanly_and_preserves_an_existing_database_when_the_source_errors(): void
+    {
+        file_put_contents($this->target, 'PREVIOUS-WORKING-DB');
 
-    expect(file_get_contents($this->target))->toBe('PREVIOUS-WORKING-DB');
-});
+        Http::fake([
+            'download.maxmind.example/*' => Http::response('unauthorised', 401),
+        ]);
 
-it('schedules a monthly refresh that only runs when a licence key is set', function () {
-    $event = collect(app(Schedule::class)->events())
-        ->first(fn ($e) => str_contains($e->command ?? '', 'analytics:geoip:download'));
+        $this->artisan('analytics:geoip:download')->assertFailed();
 
-    expect($event)->not->toBeNull()
-        ->and($event->expression)->toBe('0 4 1 * *');
+        $this->assertSame('PREVIOUS-WORKING-DB', file_get_contents($this->target));
+    }
 
-    config(['analytics.geoip.license_key' => 'a-key']);
-    expect($event->filtersPass(app()))->toBeTrue();
+    public function test_it_schedules_a_monthly_refresh_that_only_runs_when_a_licence_key_is_set(): void
+    {
+        $event = Collection::make(app(Schedule::class)->events())
+            ->first(fn ($e) => str_contains($e->command ?? '', 'analytics:geoip:download'));
 
-    config(['analytics.geoip.license_key' => '']);
-    expect($event->filtersPass(app()))->toBeFalse();
-});
+        $this->assertNotNull($event);
+        $this->assertSame('0 4 1 * *', $event->expression);
+
+        config(['analytics.geoip.license_key' => 'a-key']);
+        $this->assertTrue($event->filtersPass(app()));
+
+        config(['analytics.geoip.license_key' => '']);
+        $this->assertFalse($event->filtersPass(app()));
+    }
+}
