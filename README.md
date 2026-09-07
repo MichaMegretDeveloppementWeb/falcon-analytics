@@ -629,6 +629,7 @@ campaign term (`utm_term`): these are the words actually typed into Google.
 | Command | Role |
 |---|---|
 | `analytics:install` | install the kit, publish config, write the two imports, scaffold env variables, run migrations |
+| `analytics:check` | diagnose an installation: migrations, imports, collector, endpoint, module protection |
 | `analytics:geoip:download` | download/refresh the local GeoLite2 City database |
 | `analytics:geoip:check` | say whether the database is usable, and why an address does or does not resolve |
 | `analytics:sweep` | stamp `ended_at` on sessions idle past the timeout |

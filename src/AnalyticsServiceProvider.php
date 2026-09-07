@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics;
 
+use Falcon\Analytics\Console\CheckCommand;
 use Falcon\Analytics\Console\CheckEventsCommand;
 use Falcon\Analytics\Console\GeoipCheckCommand;
 use Falcon\Analytics\Console\GeoipDownloadCommand;
@@ -148,6 +149,7 @@ final class AnalyticsServiceProvider extends ServiceProvider
         // Artisan::starting callback, so ordinary HTTP requests pay nothing.
         $this->commands([
             InstallCommand::class,
+            CheckCommand::class,
             GeoipDownloadCommand::class,
             GeoipCheckCommand::class,
             PruneCommand::class,
