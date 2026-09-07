@@ -36,9 +36,6 @@ use Livewire\Livewire;
  * l'essai passerait pour la mauvaise raison. Et `DatabaseMigrations` ne monte
  * pas les migrations de fixtures sous Testbench, si bien que la table des
  * administrateurs manque avant meme le premier appel.
- *
- * **Une classe PHPUnit dans une suite Pest**, enfin · Pest les execute, et
- * neutraliser une methode du banc demande une classe.
  */
 final class TheErasureKeepsWhatItCannotDeleteTest extends TestCase
 {
