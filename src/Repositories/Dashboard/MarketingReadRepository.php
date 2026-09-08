@@ -66,9 +66,9 @@ final class MarketingReadRepository
      */
     public function activeCampaigns(): array
     {
-        // `array_values` plutot que `->all()` seul · une collection Eloquent est
-        // deja indexee depuis zero, mais son type ne le dit pas, et les
-        // appelants attendent une liste. Meme raison partout dans ce fichier.
+        // `array_values` because callers want a list: an Eloquent collection is
+        // already keyed from zero, but its type does not say so. Same reason
+        // everywhere in this file.
         return array_values(Campaign::query()->where('is_active', true)->get()->all());
     }
 

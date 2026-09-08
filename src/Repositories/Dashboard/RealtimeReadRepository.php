@@ -135,9 +135,9 @@ final class RealtimeReadRepository
      */
     public function topPages(CarbonImmutable $since, ?string $subjectType, int $limit = 5): array
     {
-        // `array_values` · le resultat est deja indexe depuis zero, mais son
-        // type ne le dit pas et ce fichier declare des listes. Meme raison
-        // partout ici.
+        // `array_values` because this file declares lists: the result is
+        // already keyed from zero, but its type does not say so. Same reason
+        // everywhere here.
         return array_values($this->windowEvents($since, $subjectType)
             ->where('type', EventType::Pageview)
             ->whereNotNull('url')
@@ -247,9 +247,8 @@ final class RealtimeReadRepository
     /**
      * Window sessions counted by a column, empties folded into a default label.
      *
-     * `literal-string` sur la colonne · elle entre dans du SQL brut, et
-     * `selectRaw()` n'accepte que des litteraux pour barrer l'injection. Les
-     * deux appelants passent une constante.
+     * The column enters raw SQL, so `literal-string` bars anything that is not
+     * a constant from reaching `selectRaw()`.
      *
      * @param  literal-string  $column
      * @return list<array{label: string, total: int}>

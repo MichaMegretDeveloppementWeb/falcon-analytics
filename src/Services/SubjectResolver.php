@@ -161,11 +161,8 @@ final class SubjectResolver
         try {
             $instance = new $model;
 
-            // Le garde manquait · `auth.providers.*.model` peut nommer
-            // n'importe quelle classe, et une qui n'est pas un modele Eloquent
-            // levait une erreur fatale sur `getTable()`. Elle etait rattrapee
-            // par le `catch` en dessous, mais en la journalisant comme un echec
-            // de resolution plutot que comme une configuration invalide.
+            // `auth.providers.*.model` may name any class, and one that is not
+            // an Eloquent model would die on `getTable()` below.
             if (! $instance instanceof Model) {
                 return null;
             }

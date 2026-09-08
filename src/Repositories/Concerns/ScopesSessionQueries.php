@@ -45,10 +45,8 @@ trait ScopesSessionQueries
      * buckets group identically on every database. The column is a trusted
      * internal constant, never user input.
      *
-     * **`literal-string` tient cette derniere phrase.** `selectRaw()` n'accepte
-     * que des chaines litterales, precisement pour barrer l'injection ; en le
-     * declarant ici, une colonne qui viendrait d'une requete cesse de compiler.
-     * La promesse du commentaire devient une contrainte verifiee.
+     * `literal-string` holds that last sentence: a column coming from a request
+     * stops compiling rather than reaching `selectRaw()`.
      *
      * @param  literal-string  $column
      * @return literal-string

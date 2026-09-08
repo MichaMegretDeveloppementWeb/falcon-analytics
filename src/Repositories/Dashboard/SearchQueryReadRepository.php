@@ -46,8 +46,8 @@ final class SearchQueryReadRepository
             ->groupBy('query')
             ->pluck('total_clicks', 'query');
 
-        // `array_values` · le resultat est deja indexe depuis zero, mais son
-        // type ne le dit pas et cette methode declare une liste.
+        // `array_values` because this method declares a list: the result is
+        // already keyed from zero, but its type does not say so.
         return array_values($rows->map(function (SearchQuery $row) use ($previous): array {
             $clicks = (int) $row->getAttribute('total_clicks');
             $impressions = (int) $row->getAttribute('total_impressions');

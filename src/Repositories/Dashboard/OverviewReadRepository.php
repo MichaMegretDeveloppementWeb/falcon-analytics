@@ -162,9 +162,8 @@ final readonly class OverviewReadRepository
 
         $previous = $counts($period->previous());
 
-        // `array_values` plutot que `->values()` · le resultat est le meme, mais
-        // il porte le type `list` que ce fichier declare. Meme raison partout
-        // dans ce fichier.
+        // `array_values` rather than `->values()`: same result, but it carries
+        // the `list` type this file declares. Same reason everywhere here.
         return array_values($counts($period)
             ->sortByDesc(fn (object $row): int => (int) $row->total)
             ->take($limit)
@@ -225,9 +224,8 @@ final readonly class OverviewReadRepository
     }
 
     /**
-     * `literal-string` sur la colonne · elle entre dans du SQL brut, et
-     * `selectRaw()` n'accepte que des litteraux pour barrer l'injection. Les
-     * deux appelants passent une constante.
+     * The column enters raw SQL, so `literal-string` bars anything that is not
+     * a constant from reaching `selectRaw()`.
      *
      * @param  literal-string  $column
      * @return Collection<string, int>

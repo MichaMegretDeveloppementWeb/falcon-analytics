@@ -39,8 +39,8 @@ final class SubjectReadRepository
         }
 
         try {
-            // `array_values` · le resultat est deja indexe depuis zero, mais son
-            // type ne le dit pas et cette methode declare une liste.
+            // `array_values` because this method declares a list: the result is
+            // already keyed from zero, but its type does not say so.
             return array_values(DB::table($table)
                 ->where(function ($query) use ($columns, $words): void {
                     foreach ($words as $word) {

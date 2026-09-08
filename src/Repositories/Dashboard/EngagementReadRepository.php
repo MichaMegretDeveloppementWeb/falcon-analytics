@@ -75,11 +75,9 @@ final readonly class EngagementReadRepository
     /**
      * Scalar aggregates for a period in a single query.
      *
-     * **Rend un tableau, plus un objet.** `first()` donne un `stdClass` dont
-     * les proprietes viennent des alias du SELECT, et rien ne les fait
-     * connaitre a l'analyse : chaque lecture y passait pour un acces a une
-     * propriete inexistante. Un tableau porte sa forme, et l'appelant transtype
-     * comme avant.
+     * An array and not the `stdClass` `first()` returns: its properties come
+     * from the SELECT aliases, which static analysis cannot know. An array
+     * carries its shape.
      *
      * @return array{sessions: int, visitors: int, pageviews: int, avgSeconds: float, bounces: int}
      */

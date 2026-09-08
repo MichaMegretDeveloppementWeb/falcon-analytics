@@ -107,9 +107,8 @@ final readonly class SessionListReadRepository
      */
     public function sessionFilterOptions(Period $period, ?string $subjectType): array
     {
-        // Les valeurs sont transtypees et reindexees ici · `pluck()` rend des
-        // valeurs de colonne, que rien ne garantit etre des chaines, et les
-        // deux listes annoncees le promettent.
+        // Cast and reindexed here: `pluck()` returns column values that nothing
+        // guarantees to be strings, and the two declared lists promise it.
         $base = fn (string $column): array => array_values($this->sessionScope($period, $subjectType)
             ->whereNotNull($column)
             ->distinct()

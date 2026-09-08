@@ -59,11 +59,8 @@ final readonly class SessionWriteRepository
      * closure relies on. The CASE keeps last_activity_at when the incoming stamp
      * is older, so the whole write stays on the ingestion hot path as one query.
      *
-     * **Les valeurs sont liees, elles ne sont plus interpolees.** Les deux
-     * deltas et l'horodatage entraient dans le SQL par concatenation ; ils
-     * passent desormais en parametres, et la requete est litterale de bout en
-     * bout. Le nom de la table vient de `Session::TABLE`, donc il n'est toujours
-     * ecrit qu'a un seul endroit. Une seule requete, comme avant.
+     * Every value is bound and never interpolated, so the statement stays
+     * literal end to end; the table name comes from `Session::TABLE`.
      */
     public function recordActivity(Session $session, CarbonImmutable $lastActivityAt, int $pageviewDelta, int $eventDelta, ?string $lastPageviewUrl): void
     {

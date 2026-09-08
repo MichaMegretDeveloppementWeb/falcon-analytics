@@ -31,15 +31,8 @@ final class SessionJourneyBuilder
      */
     public function build(Collection $events, CarbonInterface $windowStart, CarbonInterface $windowEnd): array
     {
-        /*
-         * Deux accumulateurs paralleles plutot qu'un seul tableau de formes.
-         *
-         * L'ancienne version montait `['event' => …, 'children' => …]` puis
-         * ecrivait dedans par cle variable, ce qui rendait sa forme illisible :
-         * chaque case valait « un evenement, ou un entier, ou une liste ». Les
-         * deux listes ci-dessous gardent chacune un type net, et la forme
-         * finale se compose en une passe.
-         */
+        // Two parallel accumulators rather than one array of shapes: each list
+        // keeps a clean type, and the final shape composes in one pass.
         $steps = [];
         $children = [];
 

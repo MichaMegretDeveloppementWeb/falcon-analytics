@@ -86,8 +86,8 @@ final class MarketingReportBuilder
      */
     private function activeAds(): array
     {
-        // `array_values` · une collection Eloquent est deja indexee depuis zero,
-        // mais son type ne le dit pas et les appelants attendent une liste.
+        // `array_values` because callers want a list: an Eloquent collection is
+        // already keyed from zero, but its type does not say so.
         return $this->activeAds ??= array_values($this->activeAdsWithObjectives()->all());
     }
 
@@ -730,8 +730,8 @@ final class MarketingReportBuilder
             },
         );
 
-        // `array_values` · `array_fill` depuis zero donne bien une liste, mais
-        // le compteur incremente par reference en fait perdre la trace.
+        // `array_values` because incrementing the counter by reference loses
+        // the list type `array_fill` gave it.
         return array_values($reached);
     }
 
