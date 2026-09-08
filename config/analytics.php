@@ -36,8 +36,7 @@ return [
     | `admin_js` ne porte aucun import du paquet : c'est ce qu'il passe à
     | `ui-kit:install`, le kit dessinant ses écrans.
     |
-    | Un `web_css` a été retenu ici jusqu'au 2026-09-07, sans être lu par
-    | personne : le paquet n'a aucun CSS public à importer.
+    | Il n'y a pas de `web_css` : le paquet n'a aucun CSS public à importer.
     |
     */
 
