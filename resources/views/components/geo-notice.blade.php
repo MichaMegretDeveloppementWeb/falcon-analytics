@@ -5,11 +5,11 @@
      * private address all read as « Inconnu ». Silent when there is nothing to
      * report.
      */
-    $statut = app(\Falcon\Analytics\Support\GeoResolver::class)->status(request()->ip());
+    $status = app(\Falcon\Analytics\Support\GeoResolver::class)->status(request()->ip());
 @endphp
 
-@if ($statut !== \Falcon\Analytics\Enums\GeoStatus::Ready && $statut !== \Falcon\Analytics\Enums\GeoStatus::NotInDatabase)
-    <x-ui.alert type="warning" :title="$statut->label()" class="mb-6">
-        {{ $statut->hint() }}
+@if ($status !== \Falcon\Analytics\Enums\GeoStatus::Ready && $status !== \Falcon\Analytics\Enums\GeoStatus::NotInDatabase)
+    <x-ui.alert type="warning" :title="$status->label()" class="mb-6">
+        {{ $status->hint() }}
     </x-ui.alert>
 @endif
