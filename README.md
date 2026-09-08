@@ -1,53 +1,55 @@
 # Falcon Analytics
 
-First-party, privacy-aware web analytics for Laravel admin spaces. Self-contained,
-non-intrusive, and portable: install it, drop a script tag, set a few config
-values, and you get deep behavioural analytics — page views, clicks, sessions,
-visitor profiles, realtime, funnels, conversions and ad attribution — rendered in
-an admin dashboard. All data stays in your own database. No third party, no
-external service, no worker: everything runs wherever Laravel runs, shared
-hosting included.
+Une mesure d'audience propriétaire et respectueuse de la vie privée, pour les
+espaces d'administration Laravel. Autonome, discrète et portable : on
+l'installe, on pose une directive, on règle quelques valeurs de configuration,
+et on obtient une analyse comportementale complète — pages vues, clics,
+sessions, profils de visiteur, temps réel, tunnels, conversions et attribution
+publicitaire — rendue dans un tableau de bord d'administration. Toutes les
+données restent dans votre propre base. Aucun tiers, aucun service externe,
+aucun worker : tout tourne là où Laravel tourne, hébergement mutualisé compris.
 
-## Contents
+## Sommaire
 
-1. [Requirements](#requirements)
+1. [Prérequis](#prérequis)
 2. [Installation](#installation)
-3. [Host integration](#host-integration)
-   - [Identity](#1-identity)
-   - [Collector script](#2-collector-script)
-   - [Dashboard mounting & navigation](#3-dashboard-mounting--navigation)
-   - [Styling (Tailwind sources)](#4-styling-tailwind-sources)
+3. [Intégration dans l'hôte](#intégration-dans-lhôte)
+   - [Identité](#1-identité)
+   - [Configuration du collecteur](#2-configuration-du-collecteur)
+   - [Montage des écrans et navigation](#3-montage-des-écrans-et-navigation)
+   - [Styles (sources Tailwind)](#4-styles-sources-tailwind)
 4. [Instrumentation (`data-track-*`)](#instrumentation-data-track-)
-5. [Named events & conversions](#named-events--conversions)
-6. [Server-sent events](#server-sent-events)
-7. [Funnels](#funnels)
-8. [Marketing module](#marketing-module)
-9. [Realtime](#realtime)
+5. [Événements nommés et conversions](#événements-nommés-et-conversions)
+6. [Événements émis par le serveur](#événements-émis-par-le-serveur)
+7. [Tunnels](#tunnels)
+8. [Module marketing](#module-marketing)
+9. [Temps réel](#temps-réel)
 10. [Google Search Console](#google-search-console)
-11. [Commands & scheduling](#commands--scheduling)
-12. [Geolocation](#geolocation)
-13. [Privacy & GDPR](#privacy--gdpr)
-14. [Configuration reference](#configuration-reference)
-15. [Data model](#data-model)
+11. [Commandes et planification](#commandes-et-planification)
+12. [Géolocalisation](#géolocalisation)
+13. [Vie privée et RGPD](#vie-privée-et-rgpd)
+14. [Référence de configuration](#référence-de-configuration)
+15. [Modèle de données](#modèle-de-données)
 
-## Requirements
+## Prérequis
 
 - PHP >= 8.4
 - Laravel 13
-- Livewire 4 and `falcon/ui-kit` 3 are composer dependencies of the package and
-  install automatically; `analytics:install` runs the kit's installer too, so
-  one command covers both (see [Styling](#4-styling-tailwind-sources)).
+- Livewire 4 et `falcon/ui-kit` 3 sont des dépendances Composer du paquet et
+  s'installent d'eux-mêmes ; `analytics:install` lance aussi l'installateur du
+  kit, donc une seule commande couvre les deux (voir
+  [Styles](#4-styles-sources-tailwind)).
 
 ## Installation
 
 ### 1. Composer
 
-The package is distributed from a private git repository. Composer only reads
-`repositories` from the **root** `composer.json`, so the host must declare the
-package repository **and** the repository of its `falcon/ui-kit` dependency:
+Le paquet est distribué depuis un dépôt git privé. Composer ne lit les
+`repositories` que dans le `composer.json` **racine**, donc l'hôte doit déclarer
+le dépôt du paquet **et** celui de sa dépendance `falcon/ui-kit` :
 
 ```jsonc
-// composer.json of the host application
+// composer.json de l'application hôte
 "repositories": [
     { "type": "vcs", "url": "https://github.com/MichaMegretDeveloppementWeb/falcon-analytics.git" },
     { "type": "vcs", "url": "https://github.com/MichaMegretDeveloppementWeb/falcon-ui-kit.git" }
@@ -58,75 +60,76 @@ package repository **and** the repository of its `falcon/ui-kit` dependency:
 composer require falcon/analytics
 ```
 
-(For development inside a monorepo, a `path` repository with `"symlink": true`
-pointing at the package directory works the same way.)
+(Pour un développement en monodépôt, un dépôt `path` avec `"symlink": true`
+pointant sur le dossier du paquet fonctionne de la même manière.)
 
-**Authenticating against the private repositories.** Both repositories are
-private, so Composer needs a GitHub credential with read access to them —
-otherwise `composer require` fails with "Could not find package". One token
-covers both repos. Three setups:
+**S'authentifier auprès des dépôts privés.** Les deux dépôts sont privés, donc
+Composer a besoin d'un identifiant GitHub en lecture — sans quoi
+`composer require` échoue sur « Could not find package ». Un seul jeton couvre
+les deux dépôts. Trois cas :
 
-- *Developer machine*: just run `composer require falcon/analytics` and follow
-  the interactive prompt — Composer points you to
-  `https://github.com/settings/tokens/new?scopes=repo`, you paste the token
-  once, and it is stored machine-wide in `~/.composer/auth.json` (never in the
-  project). Or set it up ahead of time:
-  `composer config --global github-oauth.github.com ghp_YOUR_TOKEN`.
-- *Server*: same global `composer config` command over SSH; a server whose
-  system git already authenticates to GitHub via an SSH key also works
-  (Composer falls back to a git clone).
-- *CI*: expose the token as an environment variable at install time:
-  `COMPOSER_AUTH='{"github-oauth":{"github.com":"<token>"}}'`.
+- *Machine de développement* : lancez `composer require falcon/analytics` et
+  suivez l'invite — Composer vous renvoie vers
+  `https://github.com/settings/tokens/new?scopes=repo`, vous collez le jeton une
+  fois, et il est retenu pour toute la machine dans `~/.composer/auth.json`
+  (jamais dans le projet). Ou réglez-le à l'avance :
+  `composer config --global github-oauth.github.com ghp_VOTRE_JETON`.
+- *Serveur* : la même commande `composer config` globale en SSH ; un serveur dont
+  le git système s'authentifie déjà auprès de GitHub par clé SSH marche aussi
+  (Composer se rabat sur un clone git).
+- *Intégration continue* : exposez le jeton en variable d'environnement au
+  moment de l'installation :
+  `COMPOSER_AUTH='{"github-oauth":{"github.com":"<jeton>"}}'`.
 
-**If the host already uses Livewire.** Livewire is a shared dependency, not a
-bundled one: Composer resolves a single installation for the whole app and the
-package plugs into it (same update endpoint, same Alpine runtime). A host on
-Livewire 4 needs nothing; a host on Livewire 3 gets a hard Composer version
-conflict — upgrade the host to Livewire 4 first, nothing breaks silently.
+**Si l'hôte utilise déjà Livewire.** Livewire est une dépendance partagée et non
+embarquée : Composer résout une seule installation pour toute l'application, et
+le paquet s'y branche (même point de mise à jour, même exécution Alpine). Un
+hôte en Livewire 4 n'a rien à faire ; un hôte en Livewire 3 obtient un conflit
+de version franc — montez l'hôte en Livewire 4 d'abord, rien ne casse en
+silence.
 
-### 2. Install command
+### 2. La commande d'installation
 
 ```bash
 php artisan analytics:install
 ```
 
-Composer already brought `falcon/ui-kit` (the dashboards are built on it), and
-this command installs it too. **One command, not two.**
+Composer a déjà apporté `falcon/ui-kit` (les tableaux de bord sont bâtis
+dessus), et cette commande l'installe également. **Une commande, pas deux.**
 
-It asks four questions:
+Elle pose trois questions :
 
 ```
   Feuille de styles du back-office ?  [resources/css/app.css]
   Script du back-office ?             [resources/js/app.js]
-  Feuille de styles du site public ?  [resources/css/app.css]
   Script du site public ?             [resources/js/app.js]
 ```
 
-Accept the defaults on a fresh project. Two answers are not used yet — the
-package has no back-office script and its collector has no stylesheet — but they
-are remembered in `config/analytics.php`, so a later version asks nothing again.
+Acceptez les valeurs par défaut sur un projet neuf. Les trois réponses servent :
+deux portent un import, la troisième est passée à `ui-kit:install`. Il n'y a pas
+de feuille publique à demander, le paquet n'en livrant aucune.
 
-It then installs the kit, publishes `config/analytics.php`, appends the
-`ANALYTICS_*` variables to `.env` / `.env.example`, **writes its two imports**,
-and runs the migrations (tables are prefixed `falcon_analytics_*`). Re-run with
-`--force` to overwrite the published config.
+La commande installe ensuite le kit, publie `config/analytics.php`, ajoute les
+variables `ANALYTICS_*` à `.env` et `.env.example`, **écrit ses deux imports**,
+et lance les migrations (les tables sont préfixées `falcon_analytics_*`).
+Relancez avec `--force` pour écraser la configuration publiée.
 
-Non-interactive:
+Sans interaction :
 
 ```bash
 php artisan analytics:install --admin-css=resources/css/admin.css \
                               --admin-js=resources/js/admin.js \
-                              --web-css=resources/css/web.css \
                               --web-js=resources/js/web.js \
                               --no-interaction
 ```
 
-The env scaffold is append-only and idempotent: only the variables missing from
-each file are appended (grouped and commented), existing values are never
-rewritten, and a file that does not exist is left untouched. The published
-config stays the source of truth — every variable has a safe default.
+L'écriture dans les fichiers d'environnement n'ajoute que ce qui manque et se
+rejoue sans dommage : seules les variables absentes de chaque fichier sont
+ajoutées, groupées et commentées ; une valeur existante n'est jamais réécrite,
+et un fichier qui n'existe pas est laissé tel quel. La configuration publiée
+reste la référence — chaque variable a une valeur par défaut sûre.
 
-### 3. What the command wrote
+### 3. Ce que la commande a écrit
 
 ```css
 /* resources/css/admin.css */
@@ -138,87 +141,93 @@ config stays the source of truth — every variable has a safe default.
 import '../../vendor/falcon/analytics/resources/js/collector.js';
 ```
 
-**The package compiles nothing.** `analytics-admin.css` declares its views as a
-Tailwind source, and **your** build compiles them into the one stylesheet of
-that space. Two Tailwind stylesheets on a page write the same class names, and
-the last one loaded wins by position alone — which is why there is only ever
-one.
+**Le paquet ne compile rien.** `analytics-admin.css` déclare ses vues comme
+source Tailwind, et c'est **votre** build qui les compile dans l'unique feuille
+de cet espace. Deux feuilles Tailwind sur une page écrivent les mêmes noms de
+classes, et la dernière chargée gagne par sa seule position — d'où l'unicité.
 
-**The collector goes into the public script, never the back-office one**: you do
-not measure the visits of the person running the dashboard. It is
-self-contained — no `import`, no npm dependency — and it exits on its own when
-`window.__falconAnalytics` is missing, so you write no condition of your own.
+**Le collecteur va dans le script public, jamais dans celui du back-office** :
+on ne mesure pas les visites de qui consulte le tableau de bord. Il est autonome
+— aucun `import`, aucune dépendance npm — et il s'arrête de lui-même quand
+`window.__falconAnalytics` est absent, donc vous n'écrivez aucune condition.
 
-Then declare your entries in `vite.config.js`, load them with `@vite`, and
-build:
+Déclarez ensuite vos points d'entrée dans `vite.config.js`, chargez-les avec
+`@vite`, et compilez :
 
 ```bash
 npm run build
 ```
 
-### 4. Wire the host
+### 4. Brancher l'hôte
 
-Follow the [Host integration](#host-integration) checklist below. The short
-version:
+Suivez la liste d'[intégration](#intégration-dans-lhôte) ci-dessous. En bref :
 
-1. Set your guards (and consent cookie, if any) in the `identity` block of
-   `config/analytics.php`.
-2. If you use a consent cookie, exclude it from encryption
+1. Réglez vos gardes (et le cookie de consentement, s'il y en a un) dans le
+   bloc `identity` de `config/analytics.php`.
+2. Si vous utilisez un cookie de consentement, sortez-le du chiffrement
    (`bootstrap/app.php` → `encryptCookies(except: [...])`).
-3. Behind a proxy or load balancer, configure `trustProxies` so the real
-   client IP reaches the package (geolocation and exclusions depend on it).
-4. Add `@analyticsConfig` to the public layouts you want to track.
-5. Protect the dashboard with your admin middleware and link to it from your
-   navigation (or rely on the package's standalone shell).
-6. Ensure the standard scheduler cron (`php artisan schedule:run` every
-   minute) is active: maintenance is self-scheduled by the package.
-7. Optional: set up [geolocation](#geolocation) (local database, one command).
+3. Derrière un proxy ou un répartiteur de charge, réglez `trustProxies` pour que
+   la véritable adresse du client parvienne au paquet (la géolocalisation et les
+   exclusions en dépendent).
+4. Ajoutez `@analyticsConfig` aux gabarits publics que vous voulez suivre.
+5. Protégez les tableaux de bord avec votre middleware d'administration et
+   liez-les depuis votre navigation (ou reposez-vous sur la coquille autonome du
+   paquet).
+6. Assurez-vous que le cron standard du planificateur
+   (`php artisan schedule:run` chaque minute) est actif : la maintenance est
+   planifiée par le paquet lui-même.
+7. Facultatif : mettez en place la [géolocalisation](#géolocalisation) (base
+   locale, une commande).
 
-## Host integration
+## Intégration dans l'hôte
 
-The package never touches your application code, routes or navigation. All
-integration is declarative config plus one Blade directive.
+Le paquet ne touche ni à votre code, ni à vos routes, ni à votre navigation.
+Toute l'intégration tient dans de la configuration déclarative et une directive
+Blade.
 
-### 1. Identity
+### 1. Identité
 
-The subject type is the guard name. Declare which authenticated users are
-tracked as identified subjects, and which are internal staff to exclude
-entirely:
+Le type de sujet est le nom de la garde. Déclarez quels utilisateurs authentifiés
+sont suivis comme sujets identifiés, et lesquels sont des personnes internes à
+exclure entièrement :
 
 ```php
 'identity' => [
-    'subject_guards' => ['client', 'lessor'], // authenticated users tracked as subjects
-    'exclude_guards' => ['admin'],            // internal staff, never stored
-    'consent_cookie' => 'consent_marketing',  // cookie whose value "1" grants the persistent visitor id
+    'subject_guards' => ['client', 'lessor'], // utilisateurs authentifies suivis comme sujets
+    'exclude_guards' => ['admin'],            // personnes internes, jamais stockees
+    'consent_cookie' => 'consent_marketing',  // cookie dont la valeur "1" accorde l'identifiant persistant
     'subjects' => [
-        // Display metadata per guard, resolved at render time only (never stored).
+        // Metadonnees d'affichage par garde, resolues au rendu seulement (jamais stockees).
         'client' => ['label' => 'Client', 'name' => ['first_name', 'last_name']],
         'lessor' => ['label' => 'Loueur', 'name' => ['company_name'], 'fallback' => ['first_name', 'last_name']],
     ],
 ],
 ```
 
-- **`subject_guards`** — when a user authenticated on one of these guards
-  browses, their sessions are stitched to a subject (`type` = guard name,
-  `id` = user id). One known person always resolves to **one visitor
-  profile**: when a browser gets identified and the subject already owns a
-  profile, the profiles merge automatically (see [Privacy](#privacy--gdpr)).
-- **`exclude_guards`** — nothing is collected while such a user is
-  authenticated: `@analyticsConfig` renders nothing on their pages, and the
-  collector exits on its own for want of a configuration.
-- **`consent_cookie`** — when set, a visitor only receives the *persistent*
-  cross-visit id if the cookie holds `"1"`; otherwise tracking is
-  session-scoped. `null` means the persistent id is always granted (use this
-  when consent is handled at a different level, or not required).
-- **`subjects`** — how identified visitors are displayed in the dashboard.
-  For each guard: an optional `label` (defaults to the guard name) and a
-  `name` column list concatenated into a display name, read from the guard's
-  own model (derived from `config/auth.php`, or overridable with explicit
-  `model` / `table` / `key` entries). `fallback` columns are used when the
-  `name` columns are all empty.
+- **`subject_guards`** — quand un utilisateur authentifié sur l'une de ces
+  gardes navigue, ses sessions sont rattachées à un sujet (`type` = nom de la
+  garde, `id` = identifiant de l'utilisateur). Une même personne connue résout
+  toujours vers **un seul profil de visiteur** : quand un navigateur devient
+  identifié et que le sujet possède déjà un profil, les profils fusionnent
+  d'eux-mêmes (voir [Vie privée](#vie-privée-et-rgpd)).
+- **`exclude_guards`** — rien n'est collecté tant qu'un tel utilisateur est
+  authentifié : `@analyticsConfig` ne rend rien sur ses pages, et le collecteur
+  s'arrête de lui-même faute de configuration.
+- **`consent_cookie`** — quand il est renseigné, un visiteur ne reçoit
+  l'identifiant *persistant* entre visites que si le cookie vaut `"1"` ; sinon
+  le suivi reste borné à la session. `null` signifie que l'identifiant
+  persistant est toujours accordé (à utiliser quand le consentement est traité
+  ailleurs, ou n'est pas requis).
+- **`subjects`** — comment les visiteurs identifiés sont affichés dans le
+  tableau de bord. Pour chaque garde : un `label` facultatif (le nom de la garde
+  par défaut) et une liste de colonnes `name` concaténées en nom d'affichage,
+  lues sur le modèle de la garde (déduit de `config/auth.php`, ou imposé par des
+  entrées explicites `model` / `table` / `key`). Les colonnes `fallback` servent
+  quand toutes les colonnes `name` sont vides.
 
-For dynamic logic, register closures on the `Analytics` manager from a service
-provider — they take precedence over the declarative config:
+Pour une logique dynamique, enregistrez des fermetures sur le gestionnaire
+`Analytics` depuis un fournisseur de services — elles priment sur la
+configuration déclarative :
 
 ```php
 use Falcon\Analytics\Facades\Analytics;
@@ -228,81 +237,83 @@ Analytics::consentUsing(fn () => ...);        // bool
 Analytics::excludeUsing(fn () => ...);        // bool
 ```
 
-> **Host requirements.** A consent cookie must be excluded from encryption
-> (`bootstrap/app.php` → `encryptCookies(except: [...])`) so the server can
-> read it. Behind a proxy, configure `trustProxies` so the real client IP is
-> used — otherwise every visitor shares the proxy's IP (breaks geolocation,
-> `exclude_ips` and the realtime map).
+> **Ce que l'hôte doit garantir.** Un cookie de consentement doit être sorti du
+> chiffrement (`bootstrap/app.php` → `encryptCookies(except: [...])`) pour que le
+> serveur puisse le lire. Derrière un proxy, réglez `trustProxies` pour que la
+> véritable adresse du client soit utilisée — sans quoi tous les visiteurs
+> partagent l'adresse du proxy, ce qui casse la géolocalisation, `exclude_ips` et
+> la carte du temps réel.
 
-Additional exclusions: `exclude_ips` accepts IPs and CIDR ranges (office
-network, uptime monitors). Bot traffic is detected server-side
-(device-detector) and excluded from every dashboard read.
+Autres exclusions : `exclude_ips` accepte des adresses et des plages CIDR
+(réseau du bureau, sondes de disponibilité). Le trafic de robots est détecté
+côté serveur (device-detector) et exclu de toute lecture des tableaux de bord.
 
-### 2. Collector configuration
+### 2. Configuration du collecteur
 
-The collector's **code** lives in your public bundle, imported by
-`analytics:install`. What still comes from the server is its **configuration**,
-and that is what the directive carries. Add it to the layouts you want to track
-(typically the public layout, before `</body>`):
+Le **code** du collecteur vit dans votre bundle public, importé par
+`analytics:install`. Ce qui vient encore du serveur, c'est sa **configuration**,
+et c'est ce que la directive porte. Ajoutez-la aux gabarits que vous voulez
+suivre (typiquement le gabarit public, avant `</body>`) :
 
 ```blade
 @analyticsConfig
 ```
 
-It renders one inline config object and nothing else:
+Elle rend un seul objet de configuration en ligne, et rien d'autre :
 
 ```html
 <script>window.__falconAnalytics={"endpoint":"/fa","route":"prestations",…};</script>
 ```
 
-**This cannot be bundled**, which is why the directive still exists: the route
-name changes on every page, and tracking is cut when an authenticated admin is
-browsing. It is the same split Livewire makes between `@livewireScripts`, which
-is code, and `@livewireScriptConfig`, which is data.
+**Cela ne peut pas être compilé dans un bundle**, et c'est pourquoi la directive
+existe encore : le nom de la route change à chaque page, et le suivi se coupe
+quand une personne authentifiée sur une garde exclue navigue. C'est la même
+séparation que fait Livewire entre `@livewireScripts`, qui est du code, et
+`@livewireScriptConfig`, qui est de la donnée.
 
-It renders **nothing at all** when tracking is disabled or the current context
-is excluded, and degrades to an empty string on any internal failure — it can
-never break a host page. **Rendering nothing means tracking off**: the collector
-reads `window.__falconAnalytics` and exits on its own when it is missing, so you
-write no condition of your own.
+Elle ne rend **rien du tout** quand le suivi est désactivé ou que le contexte
+courant est exclu, et se dégrade en chaîne vide sur n'importe quelle erreur
+interne — elle ne peut jamais casser une page de l'hôte. **Ne rien rendre
+signifie suivi éteint** : le collecteur lit `window.__falconAnalytics` et
+s'arrête de lui-même quand il est absent, donc vous n'écrivez aucune condition.
 
-> Named `@analyticsScripts` until 2026-09-06, when it still carried the script
-> tag. The script route was removed with it.
+Le collecteur capture ensuite tout seul, sans une ligne de code :
 
-The collector then captures automatically, no code required:
+- les **pages vues** à chaque chargement (URL, nom de route, référent) ;
+- les **clics sur les éléments réellement interactifs** (voir
+  [Instrumentation](#instrumentation-data-track-)) ;
+- des **battements** tant que l'onglet est visible, qui alimentent l'activité de
+  session, sa durée et l'écran temps réel ;
+- l'**acquisition** (domaine du référent, `utm_*` et paramètres d'URL
+  publicitaires) et l'**appareil** (type, navigateur) par session.
 
-- **Page views** on every load (URL, route name, referrer);
-- **Clicks on genuinely interactive elements** (see
-  [Instrumentation](#instrumentation-data-track-));
-- **Heartbeats** while the tab is visible, which drive session activity,
-  duration and the realtime screen;
-- **Acquisition** (referrer domain, `utm_*` and ad URL parameters) and
-  **device** (type, browser) per session.
+Les événements sont mis en mémoire tampon côté client et envoyés par lots (5 s
+par défaut) au point d'ingestion (`/__analytics` par défaut), qui est limité en
+débit et vérifie l'origine. Aucune dépendance à une bannière de consentement : le
+collecteur fonctionne toujours, et le réglage de consentement ne décide que de
+la persistance de l'identifiant entre les visites.
 
-Events are buffered client-side and flushed in batches (default every 5 s) to
-the ingestion endpoint (`/__analytics` by default), which is rate-limited and
-origin-checked. No cookie banner dependency: the collector always works, and
-the consent setting only decides whether the visitor id persists across
-visits.
+> **Limite connue de la vérification d'origine.** Une balise `beacon` ne peut pas
+> porter de jeton CSRF, donc le point d'ingestion vérifie l'origine de la requête
+> à la place : cela arrête les requêtes forgées entre sites depuis un navigateur,
+> mais un client serveur à serveur peut falsifier l'en-tête et injecter des
+> événements. La portée est bornée par la limite de débit (`throttle`), la
+> validation stricte de la charge utile et les plafonds de taille — le compromis
+> habituel de tout point d'ingestion propriétaire.
 
-> **Known limit of the origin check.** Beacons cannot carry a CSRF token, so
-> the endpoint verifies the request origin instead: that stops forged
-> cross-site requests from browsers, but a server-to-server client can spoof
-> the header and inject events. The blast radius is bounded by the rate limit
-> (`throttle`), the strict payload validation and the size caps — the standard
-> trade-off of every first-party beacon endpoint.
+### 3. Montage des écrans et navigation
 
-### 3. Dashboard mounting & navigation
-
-Two independent admin modules are registered, each mounted entirely from
-config — URL prefix, route-name prefix, middleware and layout:
+Deux modules d'administration indépendants sont enregistrés, montés entièrement
+depuis la configuration — préfixe d'URL, préfixe de nom de route, middleware et
+gabarit :
 
 ```php
 'dashboard' => [
     'route_prefix' => 'admin/analytics',
     'route_name'   => 'analytics',
-    'middleware'   => ['web', 'auth'],   // e.g. ['web', 'auth:admin'] for a dedicated guard
-    'layout'       => null,              // null = package shell; or a host layout view name
+    'middleware'   => ['web', 'auth'],   // par exemple ['web', 'auth:admin'] pour une garde dediee
+    'layout'       => null,              // null = coquille du paquet ; ou le nom d'une vue de l'hote
+    'layout_section' => 'content',       // la section que le gabarit de l'hote rend
 ],
 
 'marketing' => [
@@ -310,43 +321,47 @@ config — URL prefix, route-name prefix, middleware and layout:
     'route_name'   => 'marketing',
     'middleware'   => ['web', 'auth'],
     'layout'       => null,
+    'layout_section' => 'content',
 ],
 ```
 
-Package routes are registered outside your route groups, so the middleware
-must include a session stack (`web`) alongside your auth guard.
+Les routes du paquet sont enregistrées hors de vos groupes de routes, donc le
+middleware doit comprendre une pile de session (`web`) à côté de votre garde.
 
-The configured middleware (minus `web`, which Livewire always runs) is also
-registered as **Livewire persistent middleware**: it is re-applied on every
-component update (`/livewire/update`), so dashboard actions (GDPR erasure,
-campaign/ad CRUD, Search Console disconnect) keep replaying your auth guard
-after the page has loaded.
+Le middleware configuré, `web` mis à part puisque Livewire le passe toujours,
+est aussi enregistré comme **middleware persistant Livewire** : il est rejoué à
+chaque mise à jour de composant (`/livewire/update`), pour que les actions des
+écrans (effacement RGPD, création et modification de campagnes et de publicités,
+déconnexion de la Search Console) continuent de rejouer votre garde une fois la
+page chargée.
 
-**Analytics pages** (`{name}` = `dashboard.route_name`, default `analytics`):
+**Pages d'analytique** (`{nom}` = `dashboard.route_name`, `analytics` par
+défaut) :
 
-| Route name | Page |
+| Nom de route | Page |
 |---|---|
-| `{name}.overview` | Digest: KPIs, trend, acquisition, audience, localities, top events |
-| `{name}.realtime` | Realtime: online now, world map, live activity (see [Realtime](#realtime)) |
-| `{name}.visitors` | All-time visitor directory (+ `{name}.visitors.show` profile detail) |
-| `{name}.sessions` | Session list (+ `{name}.sessions.show` full journey detail) |
-| `{name}.events` | Named events: volumes, values, conversions |
-| `{name}.funnels` | Funnels declared in code |
-| `{name}.integrations` | Integrations (Google Search Console connection); shown only when [configured](#google-search-console) |
+| `{nom}.overview` | Synthèse : indicateurs, tendance, acquisition, audience, localités, principaux événements |
+| `{nom}.realtime` | Temps réel : présents, carte du monde, activité en direct (voir [Temps réel](#temps-réel)) |
+| `{nom}.visitors` | Annuaire des visiteurs depuis toujours (+ `{nom}.visitors.show`, le détail d'un profil) |
+| `{nom}.sessions` | Liste des sessions (+ `{nom}.sessions.show`, le parcours complet) |
+| `{nom}.events` | Événements nommés : volumes, valeurs, conversions |
+| `{nom}.funnels` | Tunnels déclarés dans le code |
+| `{nom}.integrations` | Intégrations (connexion Google Search Console) ; visible seulement une fois [configurée](#google-search-console) |
 
-**Marketing pages** (`{name}` = `marketing.route_name`, default `marketing`):
+**Pages marketing** (`{nom}` = `marketing.route_name`, `marketing` par défaut) :
 
-| Route name | Page |
+| Nom de route | Page |
 |---|---|
-| `{name}.dashboard` | Marketing digest: spend-free performance of campaigns and ads |
-| `{name}.campaigns` | Campaign list (+ `{name}.campaigns.show` detail) |
-| `{name}.ads` | Ad list (+ `{name}.ads.show` detail) |
+| `{nom}.dashboard` | Synthèse marketing : performance des campagnes et des publicités, hors dépenses |
+| `{nom}.campaigns` | Liste des campagnes (+ `{nom}.campaigns.show`, le détail) |
+| `{nom}.ads` | Liste des publicités (+ `{nom}.ads.show`, le détail) |
 
-**Layout.** With `layout => null`, pages render into the package's standalone
-shell: its own sidebar (both modules' links, built from the configured route
-names), topbar, dark-mode toggle — a ready-made admin area. Set a host layout
-view name (e.g. `layouts.admin`) to nest the pages inside your own chrome
-instead; in that case add the links to your navigation yourself, e.g.:
+**Gabarit.** Avec `layout => null`, les pages se rendent dans la coquille
+autonome du paquet : sa propre barre latérale (les liens des deux modules,
+construits depuis les noms de route configurés), sa barre du haut, sa bascule de
+thème sombre — un espace d'administration prêt à l'emploi. Donnez le nom d'une
+vue de l'hôte (`layouts.admin`, par exemple) pour imbriquer les pages dans votre
+propre habillage ; dans ce cas, ajoutez vous-même les liens à votre navigation :
 
 ```blade
 <a href="{{ route('analytics.overview') }}">Vue d'ensemble</a>
@@ -357,97 +372,98 @@ instead; in that case add the links to your navigation yourself, e.g.:
 <a href="{{ route('analytics.funnels') }}">Tunnels</a>
 ```
 
-A host layout must load its own Vite entries (the ones `analytics:install` wrote
-into), carry `{{ falcon_theme_class() }}` on `<html>` for dark mode, and render
-`{{ $slot }}`.
+Un gabarit d'hôte doit charger ses propres points d'entrée Vite (ceux dans
+lesquels `analytics:install` a écrit), porter `{{ falcon_theme_class() }}` sur
+`<html>` pour le thème sombre, et rendre la section nommée par `layout_section`
+(`@yield('content')` avec la valeur par défaut).
 
-### 4. Styling (Tailwind sources)
+### 4. Styles (sources Tailwind)
 
-The dashboard views use ui-kit components and Tailwind utilities; they are
-compiled by the **host's** Vite build. One line, written by `analytics:install`
-into the stylesheet you named:
+Les vues des tableaux de bord emploient les composants du kit et les utilitaires
+Tailwind ; elles sont compilées par le build Vite de **l'hôte**. Une ligne,
+écrite par `analytics:install` dans la feuille que vous avez nommée :
 
 ```css
 @import '../../vendor/falcon/analytics/resources/css/analytics-admin.css';
 ```
 
-That file declares our views, with a path resolved **from it** — you read them
-without naming them, and without knowing where they live. We could add fifty
-screens and your line would not change.
+Ce fichier déclare nos vues, avec un chemin résolu **depuis lui** — vous les
+lisez sans les nommer, et sans savoir où elles vivent. Nous pourrions ajouter
+cinquante écrans, votre ligne ne changerait pas.
 
-> It used to be a `@source` pointing straight into `vendor/`, which meant your
-> stylesheet had to know our directory layout. Replaced by the entry point above
-> on 2026-09-06.
-
-After every package update, rebuild (`npm run build`) so new utility classes
-used by new screens are compiled.
+Après chaque mise à jour du paquet, recompilez (`npm run build`) pour que les
+nouvelles classes utilitaires des nouveaux écrans entrent dans la feuille.
 
 ## Instrumentation (`data-track-*`)
 
-Page views are captured on every load. **Clicks are only captured on genuinely
-interactive elements**: a click on plain text or empty space carries no signal
-and is never recorded. An element counts as interactive when it is:
+Les pages vues sont capturées à chaque chargement. **Les clics ne sont capturés
+que sur les éléments réellement interactifs** : un clic sur du texte ou sur du
+vide ne porte aucun signal et n'est jamais enregistré. Un élément compte comme
+interactif quand il est :
 
-- a native control: `<a>`, `<button>`, `<summary>`, or an actionable `<input>`
-  (`submit` / `button` / `reset` / `image` / `checkbox` / `radio`);
-- an ARIA widget: `role="button" | link | menuitem | menuitemcheckbox |
-  menuitemradio | tab | option | switch`;
-- made interactive by a handler: `wire:click`, `@click`, `x-on:click`, `onclick`.
+- un contrôle natif : `<a>`, `<button>`, `<summary>`, ou un `<input>` actionnable
+  (`submit` / `button` / `reset` / `image` / `checkbox` / `radio`) ;
+- un composant ARIA : `role="button" | link | menuitem | menuitemcheckbox |
+  menuitemradio | tab | option | switch` ;
+- rendu interactif par un gestionnaire : `wire:click`, `@click`, `x-on:click`,
+  `onclick`.
 
-If an element is interactive only through custom code and carries none of the
-above in its markup, opt it in explicitly with `data-track-event`. On a
-`<form>`, `data-track-event` is captured on **submit**, not on click.
+Si un élément n'est interactif que par du code à vous et ne porte rien de ce qui
+précède dans son balisage, déclarez-le explicitement avec `data-track-event`. Sur
+un `<form>`, `data-track-event` est capturé à la **soumission**, pas au clic.
 
-Attributes enrich a captured click:
+Des attributs enrichissent un clic capturé :
 
-| Attribute | Effect |
+| Attribut | Effet |
 |---|---|
-| `data-track-event="domain.action"` | names the action (declared event / funnel join key) |
-| `data-track-value="3"` | optional base value (overridden by the funnel step) |
-| `data-track-prop-*="..."` | arbitrary props (`data-track-prop-listing-id` → `props.listing_id`) |
-| `data-track-section="hero"` | logical zone applied to the subtree |
-| `data-track-label="..."` | human label (otherwise the auto text) |
-| `data-track-ignore` | excludes the element/subtree |
+| `data-track-event="domaine.action"` | nomme l'action (clé de l'événement déclaré et de la jointure des tunnels) |
+| `data-track-value="3"` | valeur de base facultative (l'étape du tunnel prime) |
+| `data-track-prop-*="..."` | propriétés libres (`data-track-prop-listing-id` → `props.listing_id`) |
+| `data-track-section="hero"` | zone logique appliquée à tout le sous-arbre |
+| `data-track-label="..."` | libellé humain (sinon le texte détecté) |
+| `data-track-ignore` | exclut l'élément et son sous-arbre |
 
-## Named events & conversions
+## Événements nommés et conversions
 
-Anonymous clicks are captured automatically; **named events** are the ones you
-declare, and they power the events screen, the funnels and the marketing
-objectives. Declare them in `app/Analytics/events.php` (path configurable via
-`analytics.events_path`) — the single source of truth:
+Les clics anonymes sont capturés tout seuls ; les **événements nommés** sont ceux
+que vous déclarez, et ce sont eux qui alimentent l'écran des événements, les
+tunnels et les objectifs marketing. Déclarez-les dans `app/Analytics/events.php`
+(chemin réglable par `analytics.events_path`) — la source unique :
 
 ```php
 use Falcon\Analytics\Events\TrackedEvent;
 
 TrackedEvent::define('auth.client.register.submit', 'Inscription client (soumission)', value: 5.0);
 TrackedEvent::define('listing.publish.submit', 'Publication d\'une annonce', value: 15.0);
-TrackedEvent::define('review.submit', 'Avis déposé', conversion: true);
-TrackedEvent::define('nav.catalog.click', 'Accès au catalogue');
+TrackedEvent::define('review.submit', 'Avis depose', conversion: true);
+TrackedEvent::define('nav.catalog.click', 'Acces au catalogue');
 ```
 
-- **`name`** — the technical key, as used by `data-track-event` or
-  `Analytics::record()`. Convention: `domain.action`.
-- **`label`** — what the dashboard displays.
-- **`value`** — optional default monetary/score value attached to each hit.
-- **`conversion`** — flags the event as a conversion (highlighted in the
-  dashboards, counted in the realtime and marketing KPIs). When omitted,
-  events carrying a value count as conversions.
+- **`name`** — la clé technique, telle qu'employée par `data-track-event` ou
+  `Analytics::record()`. Convention : `domaine.action`.
+- **`label`** — ce que le tableau de bord affiche.
+- **`value`** — valeur monétaire ou de score attachée par défaut à chaque
+  occurrence.
+- **`conversion`** — marque l'événement comme une conversion (mis en avant dans
+  les tableaux de bord, compté dans les indicateurs du temps réel et du
+  marketing). Sans ce drapeau, les événements portant une valeur comptent comme
+  des conversions.
 
-Two commands keep the declarations honest:
+Deux commandes tiennent les déclarations honnêtes :
 
-- `php artisan analytics:events:scan` compares the file with the events
-  actually used in the code (`data-track-event` attributes and
-  `Analytics::record` calls, scanned under `analytics.events_scan_paths`);
-  `--fix` appends the missing declarations.
-- `php artisan analytics:events:check` verifies every funnel step references a
-  declared event.
+- `php artisan analytics:events:scan` compare le fichier aux événements
+  réellement employés dans le code (attributs `data-track-event` et appels à
+  `Analytics::record`, cherchés sous `analytics.events_scan_paths`) ; `--fix`
+  ajoute les déclarations manquantes.
+- `php artisan analytics:events:check` vérifie que chaque étape de tunnel
+  référence un événement déclaré.
 
-## Server-sent events
+## Événements émis par le serveur
 
-Beyond what the collector captures in the browser, application code can emit
-events directly: same visitor/session, same storage, same funnels. Useful for
-true conversions a click can't confirm (a registration was validated, a
-payment succeeded):
+Au-delà de ce que le collecteur capture dans le navigateur, le code applicatif
+peut émettre des événements directement : même visiteur, même session, même
+stockage, mêmes tunnels. Utile pour les vraies conversions qu'un clic ne peut
+pas confirmer (une inscription validée, un paiement abouti) :
 
 ```php
 use Falcon\Analytics\Facades\Analytics;
@@ -455,15 +471,16 @@ use Falcon\Analytics\Facades\Analytics;
 Analytics::record('CompleteRegistration', value: 5.0, props: ['plan' => 'pro']);
 ```
 
-The call is deferred (never blocks the response), a no-op when tracking is off
-or the context is excluded (e.g. an admin), and never throws to the caller.
+L'appel est différé (il ne bloque jamais la réponse), sans effet quand le suivi
+est éteint ou que le contexte est exclu, et ne lève jamais rien vers l'appelant.
 
-## Funnels
+## Tunnels
 
-Declare funnels in `app/Analytics/funnels.php` (path configurable via
-`analytics.funnels_path`). Each step matches a named event **xor** a pageview
-route, and carries its own weight; the same event may belong to several
-funnels with a different value in each:
+Déclarez les tunnels dans `app/Analytics/funnels.php` (chemin réglable par
+`analytics.funnels_path`). Chaque étape correspond à un événement nommé **ou** à
+une route de page vue, jamais aux deux, et porte son propre poids ; le même
+événement peut appartenir à plusieurs tunnels avec une valeur différente dans
+chacun :
 
 ```php
 use Falcon\Analytics\Funnels\Funnel;
@@ -473,13 +490,13 @@ Funnel::define('acquisition_client', 'Acquisition client')
     ->step('Soumission',       value: 5, event: 'auth.client.register.submit');
 ```
 
-The funnels screen renders each funnel's per-step volumes, conversion rates
-between steps and total value over the selected period.
+L'écran des tunnels rend, pour chacun, les volumes par étape, les taux de
+conversion entre étapes et la valeur totale sur la période choisie.
 
-**Parallel branches.** A milestone is often reachable more than one way. Since
-progression is sequential, laying the alternatives out as consecutive steps
-would read "went through one, *then* the other" and report zeros. Declare them
-at the same depth instead:
+**Branches parallèles.** Un jalon est souvent atteignable de plusieurs façons.
+La progression étant séquentielle, poser les alternatives en étapes consécutives
+se lirait « est passé par l'une, *puis* par l'autre » et rapporterait des zéros.
+Déclarez-les à la même profondeur :
 
 ```php
 use Falcon\Analytics\Funnels\Funnel;
@@ -494,285 +511,307 @@ Funnel::define('acquisition', 'Acquisition')
     ->step('Demande envoyee', value: 100, event: 'lead.created');
 ```
 
-A visitor advances once, whichever branch they take, and the step reports how
-many came through each -- including the branches nobody took, since a zero is
-itself a reading. A step accepts exactly one of `event`, `route` or `anyOf`, and
-`anyOf` needs at least two branches.
+Un visiteur avance une fois, quelle que soit la branche empruntée, et l'étape
+rapporte combien sont passés par chacune — y compris par les branches que
+personne n'a prises, un zéro étant lui aussi une lecture. Une étape accepte
+exactement un `event`, un `route` ou un `anyOf`, et `anyOf` demande au moins
+deux branches.
 
-## Marketing module
+## Module marketing
 
-A separate top-level module measuring ad performance **without any ad-platform
-API**: campaigns and ads are defined from the marketing screens (stored in
-your database), and matched to sessions by the URL parameters the ad's links
-carry.
+Un module de premier niveau distinct, qui mesure la performance publicitaire
+**sans aucune API de régie** : les campagnes et les publicités sont définies
+depuis les écrans marketing (stockées dans votre base) et rapprochées des
+sessions par les paramètres d'URL que portent les liens de la publicité.
 
-- **Campaigns and ads** are created in the UI. Each carries free
-  URL-parameter conditions (e.g. `utm_source=facebook` +
-  `utm_campaign=summer`); a session whose landing parameters satisfy them is
-  attributed to the ad, at report time.
-- **Objectives** are declared per ad by picking among the declared events
-  (see [Named events](#named-events--conversions)); the module reports
-  reach, conversions and value per ad and per campaign.
-- **Attribution is first-touch and retroactive**: the visitor's first
-  ad-attributed session marks the acquisition, and later conversions by the
-  same visitor credit that ad, even across visits.
+- Les **campagnes et les publicités** se créent dans l'interface. Chacune porte
+  des conditions libres sur les paramètres d'URL (par exemple
+  `utm_source=facebook` et `utm_campaign=summer`) ; une session dont les
+  paramètres d'arrivée les satisfont est attribuée à la publicité, au moment du
+  rapport.
+- Les **objectifs** se déclarent par publicité en choisissant parmi les
+  événements déclarés (voir
+  [Événements nommés](#événements-nommés-et-conversions)) ; le module rapporte la
+  portée, les conversions et la valeur par publicité et par campagne.
+- **L'attribution est au premier contact et rétroactive** : la première session
+  attribuée d'un visiteur marque l'acquisition, et ses conversions ultérieures
+  créditent cette publicité, y compris d'une visite à l'autre.
 
-## Realtime
+## Temps réel
 
-`{name}.realtime` shows who is online now: KPIs of the recent window, a world
-map of connections (embedded SVG — no tile server, no mapping library, no
-external request), country/source/device breakdowns, pages being viewed, a
-per-minute pulse chart, recent visitors and a live activity feed.
+`{nom}.realtime` montre qui est en ligne maintenant : les indicateurs de la
+fenêtre récente, une carte du monde des connexions (SVG intégré — aucun serveur
+de tuiles, aucune bibliothèque cartographique, aucune requête externe), des
+répartitions par pays, source et appareil, les pages consultées, un graphique de
+pouls par minute, les visiteurs récents et un fil d'activité en direct.
 
-- **Refresh** is plain Livewire polling (`wire:poll.visible`, 10 s default),
-  suspended while the tab is hidden. No websocket, no worker, no external
-  service: it works on any host by construction. The page is admin-only, so
-  the polling load is marginal (every tick is a handful of bounded, indexed
-  queries).
-- **"Online now"** counts distinct visitors active within
-  `realtime.online_seconds` (default 60 s, i.e. three collector heartbeats).
-- The map needs [geolocation](#geolocation) to place points; without a
-  database, sessions count as "not located".
+- Le **rafraîchissement** est un simple sondage Livewire (`wire:poll.visible`,
+  10 s par défaut), suspendu tant que l'onglet est caché. Aucun websocket, aucun
+  worker, aucun service externe : cela fonctionne sur n'importe quel hébergement,
+  par construction. La page est réservée à l'administration, donc la charge du
+  sondage est marginale (chaque tour est une poignée de requêtes bornées et
+  indexées).
+- **« En ligne maintenant »** compte les visiteurs distincts actifs dans
+  `realtime.online_seconds` (60 s par défaut, soit trois battements du
+  collecteur).
+- La carte a besoin de la [géolocalisation](#géolocalisation) pour placer ses
+  points ; sans base, les sessions comptent comme non localisées.
 
 ```php
 'realtime' => [
-    'poll_seconds' => 10,     // page refresh interval
-    'online_seconds' => 60,   // "online now" activity window
-    'window_minutes' => 30,   // the "recent" window of every block
-    'feed_limit' => 25,       // hard bound of the activity feed
+    'poll_seconds' => 10,     // intervalle de rafraichissement de la page
+    'online_seconds' => 60,   // fenetre d'activite du « en ligne maintenant »
+    'window_minutes' => 30,   // fenetre « recente » de chaque bloc
+    'feed_limit' => 25,       // borne du fil d'activite
 ],
 ```
 
 ## Google Search Console
 
-Google strips the search query from referrers, so organic keywords never reach
-a first-party tracker. The optional Search Console integration displays them
-anyway — "Clics par recherches Google" on the overview — by letting the admin
-connect the site's own Search Console through OAuth (read-only).
+Google retire la requête de recherche du référent, donc les mots-clés organiques
+ne parviennent jamais à une mesure propriétaire. L'intégration facultative de la
+Search Console les affiche quand même — « Clics par recherches Google » sur la
+vue d'ensemble — en laissant l'administration connecter la Search Console du site
+par OAuth, en lecture seule.
 
-**Host setup — Google Cloud, step by step** (the feature stays entirely
-hidden until this is done). All of this happens on
-<https://console.cloud.google.com>, and **the Google account you use
-matters**: the project belongs to that account, and only that account can
-manage it later. Use the account that administers the site.
+**Mise en place côté hôte — Google Cloud, pas à pas** (la fonctionnalité reste
+entièrement cachée tant que ce n'est pas fait). Tout se passe sur
+<https://console.cloud.google.com>, et **le compte Google employé compte** : le
+projet appartient à ce compte, et lui seul pourra l'administrer ensuite. Prenez
+le compte qui administre le site.
 
-1. **Project** — pick (or create via *IAM & Admin → Create a project*) the
-   Google Cloud project that will own the OAuth client. If the site already
-   uses Google sign-in (Socialite), reuse that same project: one project can
-   hold several OAuth clients. Make sure the project shown in the console's
-   top bar is the right one before every step below.
-2. **Enable the API** — *APIs & Services → Library*, search "Google Search
-   Console API" (direct link:
+1. **Projet** — choisissez (ou créez par *IAM & Admin → Create a project*) le
+   projet Google Cloud qui portera le client OAuth. Si le site emploie déjà la
+   connexion Google (Socialite), reprenez ce même projet : un projet peut porter
+   plusieurs clients OAuth. Vérifiez que le projet affiché dans la barre du haut
+   est le bon avant chacune des étapes suivantes.
+2. **Activer l'API** — *APIs & Services → Library*, cherchez « Google Search
+   Console API » (lien direct :
    <https://console.cloud.google.com/apis/library/searchconsole.googleapis.com>),
-   click **Enable** *on that project*. Do not skip this: the OAuth consent
-   works without it, but every data call is then rejected (the integrations
-   screen shows "the property list could not be loaded").
-3. **Consent screen** — *APIs & Services → OAuth consent screen*: user type
-   *External* is fine. While the app's publishing status is *Testing*, only
-   accounts listed under **Test users** can authorise: add the Google account
-   that will connect the Search Console. (Publishing the app is not required
-   for this single-admin integration.)
-4. **OAuth client** — *APIs & Services → Credentials → Create credentials →
-   OAuth client ID*, type **Web application**. Under *Authorized redirect
-   URIs*, add the package callback **exactly** as shown on the integrations
-   screen:
-   `https://your-host/{dashboard.route_prefix}/integrations/search-console/callback`.
-   Google only accepts public domains (plus `localhost`); a local `.test`
-   domain will be refused, so the OAuth round-trip is validated on a deployed
-   environment.
-5. **Credentials** — copy the client ID and secret into the host `.env`:
+   cliquez **Enable** *sur ce projet*. Ne sautez pas cette étape : le
+   consentement OAuth fonctionne sans elle, mais tous les appels de données sont
+   ensuite rejetés (l'écran des intégrations affiche alors que la liste des
+   propriétés n'a pas pu être chargée).
+3. **Écran de consentement** — *APIs & Services → OAuth consent screen* : le type
+   *External* convient. Tant que l'application est en statut *Testing*, seuls les
+   comptes listés sous **Test users** peuvent autoriser : ajoutez-y le compte
+   Google qui connectera la Search Console. (Publier l'application n'est pas
+   nécessaire pour cette intégration à un seul administrateur.)
+4. **Client OAuth** — *APIs & Services → Credentials → Create credentials → OAuth
+   client ID*, type **Web application**. Sous *Authorized redirect URIs*, ajoutez
+   l'adresse de retour du paquet **exactement** telle que l'écran des
+   intégrations l'affiche :
+   `https://votre-hote/{dashboard.route_prefix}/integrations/search-console/callback`.
+   Google n'accepte que des domaines publics (plus `localhost`) ; un domaine
+   local en `.test` est refusé, donc l'aller-retour OAuth se valide sur un
+   environnement déployé.
+5. **Identifiants** — copiez l'identifiant et le secret du client dans le `.env`
+   de l'hôte :
 
 ```dotenv
 ANALYTICS_GSC_CLIENT_ID=xxx.apps.googleusercontent.com
 ANALYTICS_GSC_CLIENT_SECRET=xxx
 ```
 
-   (then `php artisan config:cache` if the host caches its config).
-6. **Search Console side** — the Google account that will authorise must own
-   the site as a **verified property** in
-   <https://search.google.com/search-console> (any verification method).
-   Unverified properties are not offered by the package.
+   (puis `php artisan config:cache` si l'hôte met sa configuration en cache).
+6. **Côté Search Console** — le compte Google qui autorisera doit posséder le
+   site comme **propriété vérifiée** dans
+   <https://search.google.com/search-console> (peu importe la méthode de
+   vérification). Le paquet ne propose pas les propriétés non vérifiées.
 
-**Admin flow**: on `{name}.integrations`, "Connecter Google Search Console"
-starts the OAuth consent (scope `webmasters.readonly`, offline access); back
-from Google, the admin picks the verified **property** to attach.
-Disconnecting (confirmed by modal) revokes the token and deletes the
-connection.
+**Parcours d'administration** : sur `{nom}.integrations`, « Connecter Google
+Search Console » lance le consentement OAuth (portée `webmasters.readonly`,
+accès hors ligne) ; de retour de Google, on choisit la **propriété** vérifiée à
+rattacher. La déconnexion, confirmée par une modale, révoque le jeton et
+supprime la connexion.
 
-**Troubleshooting the connection**:
+**Dépanner la connexion** :
 
-| Symptom | Cause and fix |
+| Symptôme | Cause et remède |
 |---|---|
-| Google shows `redirect_uri_mismatch` | The URI registered on the OAuth client differs from the one the package sends. Copy it verbatim from the integrations screen. |
-| Google shows `access_denied` / "app not verified" | The consent screen is in *Testing* and the connecting account is not among the **Test users** (step 3). |
-| Connected, but "the property list could not be loaded" | The Search Console API is not enabled **on the project owning the client** (step 2). Enable it, then hit "Réessayer" — no reconnection needed. |
-| Property list is empty | The authorising account owns no verified Search Console property (step 6). |
-| Card shows "Erreur" later on | Google revoked or expired the grant (password change, permission removal). "Reconnecter" runs the consent again; cached data stays. |
+| Google affiche `redirect_uri_mismatch` | L'adresse enregistrée sur le client OAuth diffère de celle que le paquet envoie. Recopiez-la mot pour mot depuis l'écran des intégrations. |
+| Google affiche `access_denied` ou « app not verified » | L'écran de consentement est en *Testing* et le compte qui se connecte n'est pas dans les **Test users** (étape 3). |
+| Connecté, mais la liste des propriétés ne se charge pas | L'API Search Console n'est pas activée **sur le projet qui porte le client** (étape 2). Activez-la, puis « Réessayer » — aucune reconnexion n'est nécessaire. |
+| La liste des propriétés est vide | Le compte qui autorise ne possède aucune propriété vérifiée (étape 6). |
+| La carte affiche « Erreur » plus tard | Google a révoqué ou expiré l'autorisation (changement de mot de passe, retrait de droits). « Reconnecter » relance le consentement ; les données en cache restent. |
 
-**Sync**: `analytics:search-console:sync` runs daily (self-scheduled), and
-the integrations screen offers the same sync on demand ("Synchroniser
-maintenant" — inline, no worker required; the initial backfill may take a
-moment). GSC data trails reality by ~3 days and the API is quota-limited, so
-the dashboard only ever reads the local cache
-(`falcon_analytics_search_queries`): the first run backfills the API's
-~16-month history in paginated calls, then each run re-reads the trailing
-days. The refresh token is stored **encrypted**; a revoked access flags the
-connection on the integrations screen and on the overview card.
+**Synchronisation** : `analytics:search-console:sync` tourne chaque jour
+(planifiée par le paquet), et l'écran des intégrations offre la même
+synchronisation à la demande (« Synchroniser maintenant » — en ligne, sans
+worker ; le premier rattrapage peut prendre un moment). Les données de la Search
+Console ont environ trois jours de retard sur la réalité et l'API impose des
+quotas, donc le tableau de bord ne lit jamais que le cache local
+(`falcon_analytics_search_queries`) : la première exécution rattrape l'historique
+d'environ seize mois offert par l'API, en appels paginés, puis chaque exécution
+relit les derniers jours. Le jeton de rafraîchissement est stocké **chiffré** ;
+un accès révoqué signale la connexion sur l'écran des intégrations et sur la
+carte de la vue d'ensemble.
 
-**Display**: the overview section lists the period's top queries by clicks,
-with impressions, CTR and impressions-weighted average position, plus a
-"Données Google jusqu'au …" freshness note. Not to be confused with the
-campaign term (`utm_term`): these are the words actually typed into Google.
+**Affichage** : la section de la vue d'ensemble liste les principales requêtes de
+la période par clics, avec impressions, taux de clic et position moyenne pondérée
+par les impressions, plus une mention de fraîcheur « Données Google jusqu'au … ».
+À ne pas confondre avec le terme de campagne (`utm_term`) : ce sont les mots
+réellement tapés dans Google.
 
-## Commands & scheduling
+## Commandes et planification
 
-| Command | Role |
+| Commande | Rôle |
 |---|---|
-| `analytics:install` | install the kit, publish config, write the two imports, scaffold env variables, run migrations |
-| `analytics:check` | diagnose an installation: migrations, imports, collector, endpoint, module protection |
-| `analytics:geoip:download` | download/refresh the local GeoLite2 City database |
-| `analytics:geoip:check` | say whether the database is usable, and why an address does or does not resolve |
-| `analytics:sweep` | stamp `ended_at` on sessions idle past the timeout |
-| `analytics:prune` | delete raw events older than `retention_days` |
-| `analytics:events:scan` | diff declared events vs events used in code (`--fix` appends) |
-| `analytics:events:check` | verify funnel steps reference declared events |
-| `analytics:search-console:sync` | pull the organic queries into the local cache |
+| `analytics:install` | installer le kit, publier la configuration, écrire les deux imports, ajouter les variables d'environnement, lancer les migrations |
+| `analytics:check` | diagnostiquer une installation : migrations, imports, collecteur, point d'ingestion, protection des modules |
+| `analytics:geoip:download` | télécharger ou rafraîchir la base GeoLite2 City locale |
+| `analytics:geoip:check` | dire si la base est utilisable, et pourquoi une adresse résout ou non |
+| `analytics:sweep` | poser `ended_at` sur les sessions inactives au-delà du délai |
+| `analytics:prune` | supprimer les événements bruts plus vieux que `retention_days` |
+| `analytics:events:scan` | comparer les événements déclarés à ceux employés dans le code (`--fix` complète) |
+| `analytics:events:check` | vérifier que les étapes de tunnel référencent des événements déclarés |
+| `analytics:search-console:sync` | tirer les requêtes organiques dans le cache local |
 
-`sweep` (every 5 min), `prune` (daily, 03:30), the Search Console sync
-(daily, 05:00, inert without an attached connection) and the monthly GeoLite2
-refresh (inert until a licence key is set) are **self-scheduled** by the
-package: the host only needs to trigger Laravel's standard scheduler every
-minute, no dedicated analytics cron. Both trigger styles work: a real cron
-(`* * * * * php artisan schedule:run`) or, on shared hosting, an HTTP
-endpoint calling `Artisan::call('schedule:run')`.
+`sweep` (toutes les 5 minutes), `prune` (chaque jour à 03:30), la synchronisation
+Search Console (chaque jour à 05:00, inerte sans connexion rattachée) et le
+rafraîchissement mensuel de GeoLite2 (le 1er à 04:00, inerte tant qu'aucune clé
+de licence n'est posée) sont **planifiés par le paquet lui-même** : l'hôte n'a
+qu'à déclencher le planificateur standard de Laravel chaque minute, sans cron
+dédié à l'analytique. Les deux formes de déclenchement conviennent : un vrai cron
+(`* * * * * php artisan schedule:run`) ou, en hébergement mutualisé, un point
+HTTP appelant `Artisan::call('schedule:run')`.
 
-## Geolocation
+## Géolocalisation
 
-Localities are resolved from the visitor IP against a **local MMDB database**,
-so an IP never leaves the server (no third-party call at request time).
+Les localités sont résolues depuis l'adresse IP du visiteur contre une **base
+MMDB locale**, donc une adresse ne quitte jamais le serveur (aucun appel tiers au
+moment de la requête).
 
-**MaxMind GeoLite2 City** (free, integrated download):
+**MaxMind GeoLite2 City** (gratuite, téléchargement intégré) :
 
-1. Create a free account and licence key:
+1. Créez un compte et une clé de licence gratuits :
    <https://www.maxmind.com/en/geolite2/signup>
-2. Add the key to `.env`: `ANALYTICS_GEOIP_LICENSE_KEY=xxxxxxxx`
-3. Download the database: `php artisan analytics:geoip:download`
+2. Ajoutez la clé au `.env` : `ANALYTICS_GEOIP_LICENSE_KEY=xxxxxxxx`
+3. Téléchargez la base : `php artisan analytics:geoip:download`
 
-The `.mmdb` lands at `storage/app/analytics/GeoLite2-City.mmdb` and is
-refreshed monthly by the self-scheduled command.
+Le `.mmdb` se pose dans `storage/app/analytics/GeoLite2-City.mmdb` et se
+rafraîchit chaque mois par la commande planifiée.
 
-**When localities stay empty, ask why.** Geolocation degrades to "unknown" whatever
-the cause -- no database, a truncated one, or a private address -- so the screen
-alone cannot tell you which to fix. `php artisan analytics:geoip:check` reports the
-database path, size and date, the configured development address, and resolves a
-probe address, naming the state. Pass an address to test that one:
-`php artisan analytics:geoip:check 92.222.0.1`. The Sessions and Visitors screens
-carry the same notice when there is something to do about it.
+**Quand les localités restent vides, demandez pourquoi.** La géolocalisation se
+dégrade en « inconnu » quelle qu'en soit la cause — pas de base, une base
+tronquée, ou une adresse privée — donc l'écran seul ne dit pas laquelle
+corriger. `php artisan analytics:geoip:check` rapporte le chemin, la taille et la
+date de la base, l'adresse de développement configurée, et résout une adresse
+témoin en nommant l'état. Passez une adresse pour tester celle-là :
+`php artisan analytics:geoip:check 92.222.0.1`. Les écrans Sessions et Visiteurs
+portent le même avertissement quand il y a quelque chose à y faire.
 
+**N'importe quelle autre base MMDB au niveau ville convient** (par exemple
+[DB-IP City Lite](https://db-ip.com/db/download/ip-to-city-lite), sans compte) :
+téléchargez le `.mmdb` vous-même et pointez `ANALYTICS_GEOIP_DATABASE` sur son
+chemin absolu.
 
-**Any other City-level MMDB works** (e.g. [DB-IP City
-Lite](https://db-ip.com/db/download/ip-to-city-lite), no account required):
-download the `.mmdb` yourself and point `ANALYTICS_GEOIP_DATABASE` at its
-absolute path.
+**En développement local** : les adresses privées ou de bouclage (`127.0.0.1`) ne
+peuvent jamais être localisées. Réglez `ANALYTICS_GEOIP_DEV_IP` sur n'importe
+quelle adresse publique pour qu'elle se substitue aux adresses privées ou
+réservées — inerte en production par construction, une vraie adresse publique
+n'étant jamais remplacée. Prenez-en une qui résout vers une ville et non vers un
+simple pays, sans quoi la colonne n'affichera jamais qu'un drapeau ;
+`analytics:geoip:check <ip>` dit ce qu'une candidate résout avant qu'on s'y
+engage.
 
-**Local development**: private/loopback IPs (`127.0.0.1`) can never be
-located. Set `ANALYTICS_GEOIP_DEV_IP` to any public IP to substitute it for
-private/reserved request IPs — inert in production by design, since real
-public IPs are never overridden. Pick one that resolves to a city rather than
-just a country, or the column will only ever show a flag; `analytics:geoip:check
-<ip>` tells you what a candidate resolves to before you commit to it.
+La géolocalisation par IP est par nature au niveau de la ville ou de la région ;
+elle ne désignera pas une rue.
 
-IP geolocation is inherently city/region level; it will not pinpoint an exact
-street.
+## Vie privée et RGPD
 
-## Privacy & GDPR
+- **Propriétaire de bout en bout.** Tout — collecte, stockage, tableaux de bord,
+  géolocalisation — se passe sur votre propre infrastructure ; aucune donnée n'en
+  sort jamais.
+- **Consentement pris en compte.** Avec `identity.consent_cookie` renseigné,
+  l'identifiant persistant entre visites n'est accordé qu'après consentement ;
+  tout le reste demeure borné à la session.
+- **Anonymisation d'IP** — `privacy.anonymize_ip = true` stocke une adresse
+  tronquée au lieu de l'adresse brute (la localité est résolue avant la
+  troncature).
+- **Nettoyage des URL** — les paramètres de requête listés dans
+  `privacy.redact_query_params` (jetons, secrets, adresses de courriel…) sont
+  retirés des URL stockées ; les paramètres de suivi (`utm_*`, identifiants
+  publicitaires) sont conservés.
+- **Rétention** — les événements bruts sont purgés au-delà de `retention_days`
+  (90 par défaut) par `analytics:prune`, planifiée par le paquet ; les sessions et
+  les profils de visiteur sont conservés.
+- **Droit à l'effacement** — depuis la page de détail d'un visiteur,
+  l'administration peut l'effacer : profil, alias fusionnés, sessions et
+  événements sont supprimés en une action.
+- **Une personne, un profil** — quand un sujet identifié est reconnu dans un
+  second navigateur ou sur un second appareil, les profils fusionnent (le plus
+  ancien survit, l'autre devient un alias qui y renvoie) ; une connexion sur un
+  navigateur partagé mène au profil de la personne connectée, sans voler celui du
+  propriétaire du navigateur.
+- **Exclusion des personnes internes** — `exclude_guards` et `exclude_ips`
+  tiennent le trafic interne entièrement dehors ; les robots sont filtrés de tous
+  les rapports.
 
-- **First-party only.** Everything (collection, storage, dashboards,
-  geolocation) happens on your own infrastructure; no data ever leaves it.
-- **Consent-aware.** With `identity.consent_cookie` set, the persistent
-  cross-visit id is only granted when the visitor consented; everything else
-  stays session-scoped.
-- **IP anonymisation** — set `privacy.anonymize_ip = true` to store a
-  truncated IP instead of the raw one (locality is resolved before
-  truncation).
-- **URL redaction** — query parameters in `privacy.redact_query_params`
-  (tokens, secrets, emails…) are stripped from stored URLs; tracking
-  parameters (`utm_*`, ad ids) are kept.
-- **Retention** — raw events are pruned past `retention_days` (default 90) by
-  the self-scheduled `analytics:prune`; sessions and visitor profiles are
-  kept.
-- **Right to erasure** — from the visitor detail page, an admin can erase a
-  visitor: profile, merged aliases, sessions and events are deleted in one
-  action.
-- **One person, one profile** — when an identified subject is recognised in a
-  second browser/device, the profiles merge (oldest survives, the other
-  becomes an alias routing to it); a login on a shared browser lands on the
-  logged-in person's own profile without stealing the browser's owner.
-- **Staff exclusion** — `exclude_guards` and `exclude_ips` keep internal
-  traffic out entirely; bots are filtered from every report.
+## Référence de configuration
 
-## Configuration reference
+Toutes les clés vivent dans `config/analytics.php` ; les valeurs pilotées par
+l'environnement sont entre parenthèses.
 
-All keys live in `config/analytics.php`; env-driven values in parentheses.
-
-| Key | Default | Role |
+| Clé | Défaut | Rôle |
 |---|---|---|
-| `enabled` (`ANALYTICS_ENABLED`) | `true` | master switch: no ingestion, no collector when off |
-| `log_channel` | `null` | package log channel (`null` = app default) |
-| `funnels_path` | `null` → `app/Analytics/funnels.php` | code-declared funnels file |
-| `events_path` | `null` → `app/Analytics/events.php` | declared events file |
-| `events_scan_paths` | `['app', 'resources/views']` | paths scanned by `analytics:events:scan` |
-| `endpoint` | `__analytics` | ingestion path (`/__analytics`) |
-| `assets.admin_css` · `assets.web_js` | `resources/css/app.css` · `resources/js/app.js` | your entries, where `analytics:install` wrote its two imports |
-| `throttle` | `120,1` | ingestion rate limit (requests, minutes) |
-| `exclude_ips` | `[]` | IPs/CIDRs excluded from tracking |
-| `identity.subject_guards` | `['web']` | guards tracked as identified subjects |
-| `identity.exclude_guards` | `[]` | guards excluded entirely |
-| `identity.consent_cookie` | `null` | cookie gating the persistent visitor id |
-| `identity.subjects` | `[]` | display metadata per guard (label, name columns) |
-| `dashboard.route_prefix` | `admin/analytics` | dashboard URL prefix |
-| `dashboard.route_name` | `analytics` | dashboard route-name prefix |
-| `dashboard.middleware` | `['web', 'auth']` | dashboard protection |
-| `dashboard.layout` | `null` | `null` = package shell, or host layout view |
-| `marketing.*` | `admin/marketing` / `marketing` / … | same four keys for the marketing module |
-| `retention_days` | `90` | raw-event retention |
-| `session.timeout_minutes` | `5` | inactivity after which a session is ended |
-| `session.heartbeat_seconds` | `20` | collector heartbeat interval (tab visible) |
-| `session.flush_seconds` | `5` | collector batch flush interval |
-| `realtime.poll_seconds` | `10` | realtime page refresh |
-| `realtime.online_seconds` | `60` | "online now" window |
-| `realtime.window_minutes` | `30` | realtime recent window |
-| `realtime.feed_limit` | `25` | activity feed bound |
-| `search_console.client_id` (`ANALYTICS_GSC_CLIENT_ID`) | `''` | Google OAuth client id (empty = feature hidden) |
-| `search_console.client_secret` (`ANALYTICS_GSC_CLIENT_SECRET`) | `''` | Google OAuth client secret |
-| `search_console.redirect` (`ANALYTICS_GSC_REDIRECT`) | `null` | redirect URI override (`null` = package callback route) |
-| `privacy.anonymize_ip` | `false` | store truncated IPs |
-| `privacy.redact_query_params` | tokens/secrets/email | query params stripped from stored URLs |
-| `geoip.license_key` (`ANALYTICS_GEOIP_LICENSE_KEY`) | `''` | MaxMind licence key |
-| `geoip.edition` (`ANALYTICS_GEOIP_EDITION`) | `GeoLite2-City` | MaxMind edition |
-| `geoip.database_path` (`ANALYTICS_GEOIP_DATABASE`) | `storage/app/analytics/GeoLite2-City.mmdb` | MMDB location |
-| `geoip.dev_ip` (`ANALYTICS_GEOIP_DEV_IP`) | `null` | public IP substituted for private/reserved IPs (dev) |
-| `geoip.download_url` | MaxMind permalink | download URL template (`{edition}` and `{license_key}` substituted) |
+| `enabled` (`ANALYTICS_ENABLED`) | `true` | interrupteur général : ni ingestion ni collecteur une fois éteint |
+| `log_channel` | `null` | canal de journalisation du paquet (`null` = celui de l'application) |
+| `funnels_path` | `null` → `app/Analytics/funnels.php` | fichier des tunnels déclarés dans le code |
+| `events_path` | `null` → `app/Analytics/events.php` | fichier des événements déclarés |
+| `events_scan_paths` | `['app', 'resources/views']` | chemins parcourus par `analytics:events:scan` |
+| `endpoint` | `__analytics` | chemin d'ingestion (`/__analytics`) |
+| `assets.admin_css` · `assets.admin_js` · `assets.web_js` | `resources/css/app.css` · `resources/js/app.js` · `resources/js/app.js` | vos points d'entrée, là où `analytics:install` a écrit ses deux imports |
+| `throttle` | `120,1` | limite de débit de l'ingestion (requêtes, minutes) |
+| `exclude_ips` | `[]` | adresses et plages CIDR exclues du suivi |
+| `identity.subject_guards` | `['web']` | gardes suivies comme sujets identifiés |
+| `identity.exclude_guards` | `[]` | gardes entièrement exclues |
+| `identity.consent_cookie` | `null` | cookie qui conditionne l'identifiant persistant |
+| `identity.subjects` | `[]` | métadonnées d'affichage par garde (libellé, colonnes de nom) |
+| `dashboard.route_prefix` | `admin/analytics` | préfixe d'URL des tableaux de bord |
+| `dashboard.route_name` | `analytics` | préfixe des noms de route |
+| `dashboard.middleware` | `['web', 'auth']` | protection des tableaux de bord |
+| `dashboard.layout` | `null` | `null` = coquille du paquet, ou vue de gabarit de l'hôte |
+| `dashboard.layout_section` | `content` | section que le gabarit de l'hôte rend |
+| `marketing.*` | `admin/marketing` / `marketing` / … | les mêmes cinq clés pour le module marketing |
+| `retention_days` | `90` | rétention des événements bruts |
+| `session.timeout_minutes` | `5` | inactivité au-delà de laquelle une session est close |
+| `session.heartbeat_seconds` | `20` | intervalle des battements du collecteur (onglet visible) |
+| `session.flush_seconds` | `5` | intervalle d'envoi des lots par le collecteur |
+| `realtime.poll_seconds` | `10` | rafraîchissement de la page temps réel |
+| `realtime.online_seconds` | `60` | fenêtre du « en ligne maintenant » |
+| `realtime.window_minutes` | `30` | fenêtre récente du temps réel |
+| `realtime.feed_limit` | `25` | borne du fil d'activité |
+| `search_console.client_id` (`ANALYTICS_GSC_CLIENT_ID`) | `''` | identifiant du client OAuth Google (vide = fonctionnalité cachée) |
+| `search_console.client_secret` (`ANALYTICS_GSC_CLIENT_SECRET`) | `''` | secret du client OAuth Google |
+| `search_console.redirect` (`ANALYTICS_GSC_REDIRECT`) | `null` | adresse de retour imposée (`null` = route de retour du paquet) |
+| `privacy.anonymize_ip` | `false` | stocker des adresses tronquées |
+| `privacy.redact_query_params` | jetons, secrets, courriel | paramètres retirés des URL stockées |
+| `geoip.license_key` (`ANALYTICS_GEOIP_LICENSE_KEY`) | `''` | clé de licence MaxMind |
+| `geoip.edition` (`ANALYTICS_GEOIP_EDITION`) | `GeoLite2-City` | édition MaxMind |
+| `geoip.database_path` (`ANALYTICS_GEOIP_DATABASE`) | `storage/app/analytics/GeoLite2-City.mmdb` | emplacement du MMDB |
+| `geoip.dev_ip` (`ANALYTICS_GEOIP_DEV_IP`) | `null` | adresse publique substituée aux adresses privées ou réservées (développement) |
+| `geoip.download_url` | permalien MaxMind | modèle d'URL de téléchargement (`{edition}` et `{license_key}` sont remplacés) |
 
-## Data model
+## Modèle de données
 
-Eight tables, all prefixed `falcon_analytics_`:
+Huit tables, toutes préfixées `falcon_analytics_` :
 
-| Table | Content |
+| Table | Contenu |
 |---|---|
-| `falcon_analytics_visitors` | one row per browser/person (uuid, subject stitching, merge aliases) |
-| `falcon_analytics_sessions` | one row per visit (activity, device, acquisition, locality, marketing params) |
-| `falcon_analytics_events` | raw events (pageviews, clicks, named events), pruned past retention |
-| `falcon_analytics_campaigns` | marketing campaigns (UI-defined) |
-| `falcon_analytics_ads` | ads and their URL-parameter conditions |
-| `falcon_analytics_ad_objectives` | events picked as objectives per ad |
-| `falcon_analytics_search_console` | the Search Console connection (encrypted OAuth tokens, property, status) |
-| `falcon_analytics_search_queries` | cached organic queries per day (clicks, impressions, position) |
+| `falcon_analytics_visitors` | une ligne par navigateur ou personne (uuid, rattachement au sujet, alias de fusion) |
+| `falcon_analytics_sessions` | une ligne par visite (activité, appareil, acquisition, localité, paramètres marketing) |
+| `falcon_analytics_events` | les événements bruts (pages vues, clics, événements nommés), purgés au-delà de la rétention |
+| `falcon_analytics_campaigns` | les campagnes marketing, définies dans l'interface |
+| `falcon_analytics_ads` | les publicités et leurs conditions sur les paramètres d'URL |
+| `falcon_analytics_ad_objectives` | les événements choisis comme objectifs, par publicité |
+| `falcon_analytics_search_console` | la connexion Search Console (jetons OAuth chiffrés, propriété, état) |
+| `falcon_analytics_search_queries` | les requêtes organiques en cache, par jour (clics, impressions, position) |
 
-Migrations load from the package (no publishing needed); every dashboard read
-goes through bounded, indexed queries so the screens stay fast on large
-datasets.
+Les migrations se chargent depuis le paquet, sans publication ; chaque lecture
+des tableaux de bord passe par des requêtes bornées et indexées, pour que les
+écrans restent rapides sur de gros volumes.
 
-## License
+## Licence
 
-Proprietary.
+Propriétaire.
