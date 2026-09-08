@@ -27,13 +27,10 @@ trait EditsAd
     public string $adName = '';
 
     /*
-     * `array<int, …>` et non `list<…>`, et c'est voulu.
-     *
-     * `removeAdCondition()` et `removeObjective()` font un `unset` sans
-     * reindexer, expres : reindexer deplacerait le `wire:key` d'un champ sur
-     * une autre ligne, et Livewire casserait le nettoyage d'Alpine au morph.
-     * Ces tableaux ont donc des trous apres une suppression, et `list`
-     * promettait l'inverse de ce que le code fait exprès.
+     * `array<int, …>` and never `list<…>`: removing a row unsets without
+     * reindexing, because reindexing would move a field's `wire:key` onto
+     * another row and Livewire would break Alpine's teardown at the morph.
+     * These arrays therefore carry holes.
      */
 
     /** @var array<int, array{param: string, value: string}> */
@@ -145,9 +142,8 @@ trait EditsAd
         ]);
 
         try {
-            // `array_values` a l'enregistrement, et seulement la · les trous
-            // laisses par `unset` servent au formulaire vivant, pas a ce qui
-            // part en base.
+            // `array_values` on save and only there: the holes serve the live
+            // form, not what reaches the database.
             $action->execute(
                 $this->adId,
                 $this->adFormCampaignId(),

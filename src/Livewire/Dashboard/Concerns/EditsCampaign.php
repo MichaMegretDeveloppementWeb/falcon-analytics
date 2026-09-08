@@ -25,9 +25,9 @@ trait EditsCampaign
     public string $campaignPlatform = '';
 
     /*
-     * `array<int, …>` et non `list<…>` · la suppression d'une ligne fait un
-     * `unset` sans reindexer, expres, pour ne pas deplacer le `wire:key` d'un
-     * champ sur une autre ligne. Voir {@see EditsAd} pour le detail.
+     * `array<int, …>` and never `list<…>`: removing a row unsets without
+     * reindexing, so a field's `wire:key` never moves onto another row. See
+     * {@see EditsAd} for the detail.
      */
 
     /** @var array<int, array{param: string, value: string}> */
@@ -92,9 +92,8 @@ trait EditsCampaign
         ]);
 
         try {
-            // `array_values` a l'enregistrement, et seulement la · les trous
-            // laisses par `unset` servent au formulaire vivant, pas a ce qui
-            // part en base.
+            // `array_values` on save and only there: the holes serve the live
+            // form, not what reaches the database.
             $action->execute(
                 $this->campaignFormId(),
                 $this->campaignName,

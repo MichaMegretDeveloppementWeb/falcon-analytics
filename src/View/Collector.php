@@ -15,20 +15,14 @@ final class Collector
      * The markup emitted by @analyticsConfig: an inline config object, and
      * nothing else.
      *
-     * **Le code du collecteur n'est plus ici.** L'hote l'importe dans son
-     * entree JavaScript publique, et c'est son build qui le nomme, le versionne
-     * et le sert · une balise de moins, et un fichier de moins servi par PHP.
+     * The collector's code lives in the host's public JavaScript entrypoint,
+     * which its build names, versions and serves. What stays here cannot be
+     * bundled: the route name changes on every page, and tracking is cut while
+     * an excluded guard is authenticated.
      *
-     * **Ce qui reste ne peut pas etre empaquete**, et c'est pour cela que la
-     * directive existe encore · le nom de la route change a chaque page, et le
-     * suivi se coupe quand l'administratrice est connectee. Un fichier compile
-     * ne peut porter ni l'un ni l'autre. C'est la separation que fait Livewire
-     * entre `@livewireScripts`, du code, et `@livewireScriptConfig`, des
-     * donnees.
-     *
-     * **Ne rien emettre vaut suivi coupe** · le collecteur lit
-     * `window.__falconAnalytics` et sort de lui-meme quand il est absent, donc
-     * l'hote n'a aucune condition a ecrire de son cote.
+     * Emitting nothing amounts to tracking cut: the collector reads
+     * `window.__falconAnalytics` and exits on its own when it is absent, so the
+     * host writes no condition of its own.
      *
      * Runs inline on every host page, so any failure degrades to an empty
      * string rather than breaking the host.
