@@ -21,8 +21,6 @@
                             :total="number_format($sourcesTotal, 0, ',', ' ')"
                             :caption="__('sessions')" />
                     </div>
-                    {{-- Voir overview-audience : la colonne des nombres commence apres le plus
-                         long libelle, et non au bord de la carte. --}}
                     <dl class="grid min-w-0 max-w-[19rem] flex-1 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-5 gap-y-2.5">
                         @foreach ($topSources as $item)
                             <dt class="flex min-w-0 items-center gap-2 text-[13px] text-secondary">

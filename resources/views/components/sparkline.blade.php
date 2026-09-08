@@ -8,9 +8,8 @@
     class="{{ $height }} w-full"
     x-data="{
         async init() {
-            {{-- Chart.js arrive a la demande · le kit en fait un fichier a part,
-                 que les pages sans graphique ne telechargent jamais. Chaque
-                 lecteur de `_chart` plus bas garde deja son absence. --}}
+            {{-- Chart.js loads on demand: the kit ships it as a separate file
+                 that pages without a chart never download. --}}
             await window.falconCharts();
 
             const color = @js($color);

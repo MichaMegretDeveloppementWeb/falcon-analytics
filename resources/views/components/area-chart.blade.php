@@ -22,9 +22,8 @@
         muted() { return this.isDark ? '#6b7280' : '#9ca3af'; },
         grid() { return this.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(17,24,39,0.06)'; },
         async init() {
-            {{-- Chart.js arrive a la demande · le kit en fait un fichier a part,
-                 que les pages sans graphique ne telechargent jamais. Chaque
-                 lecteur de `_chart` plus bas garde deja son absence. --}}
+            {{-- Chart.js loads on demand: the kit ships it as a separate file
+                 that pages without a chart never download. --}}
             await window.falconCharts();
 
             const color = @js($color);
@@ -74,12 +73,8 @@
                     yAxisID: 'y2',
                 });
             }
-            /*
-             * Aucune famille de police n'est nommee ici, ni plus bas · le kit
-             * pose celle de la page en defaut quand il livre Chart.js, et tout
-             * ce qui se dessine en herite. La nommer serait la figer, et un
-             * hote qui en choisit une autre ne pourrait plus rien y faire.
-             */
+            // No font family is named here or below: the kit sets the page's
+            // as Chart.js's default, and naming one would freeze it.
             const scales = {
                 x: { border: { display: false }, grid: { display: false }, ticks: { maxTicksLimit: 8, maxRotation: 0, autoSkip: true, font: { size: 11 }, color: this.muted() } },
                 y: { beginAtZero: true, border: { display: false }, grid: { color: this.grid(), drawTicks: false }, ticks: { maxTicksLimit: 5, padding: 8, precision: 0, font: { size: 11 }, color: this.muted() } },

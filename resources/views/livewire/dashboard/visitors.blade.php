@@ -27,7 +27,7 @@
     {{-- La localité manquait sans qu'on sache pourquoi : base absente, tronquée, ou adresse privée. --}}
     <x-analytics::geo-notice />
 
-    {{-- Activité de la période (KPI seulement : la liste ci-dessous est tous temps) --}}
+    {{-- The KPIs are scoped to the period; the list below is all time. --}}
     <div>
         <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
             <x-ui.section-header

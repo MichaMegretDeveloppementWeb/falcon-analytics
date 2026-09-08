@@ -1,10 +1,9 @@
 @php
     /*
-     * Dit pourquoi les localités manquent, sur les écrans qui en affichent.
-     *
-     * La géolocalisation dégrade en silence : base absente, base tronquée, adresse privée, tout
-     * finissait en « Inconnu » dans la colonne, et rien ne disait lequel des trois corriger.
-     * Muet dès qu'il n'y a rien à signaler.
+     * Says why localities are missing, on the screens that show them.
+     * Geolocation degrades silently: a missing database, a truncated one and a
+     * private address all read as « Inconnu ». Silent when there is nothing to
+     * report.
      */
     $statut = app(\Falcon\Analytics\Support\GeoResolver::class)->status(request()->ip());
 @endphp

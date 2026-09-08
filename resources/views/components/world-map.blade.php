@@ -37,9 +37,8 @@
         },
         esc(value) { return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/\x22/g, '&quot;'); },
         apply() {
-            {{-- Rayon calcule en pixels ECRAN (unites/px du rendu reel) : les
-                 marqueurs gardent la meme taille sur mobile comme sur grand
-                 ecran. --}}
+            {{-- Radius computed in screen pixels, so markers keep the same size
+                 on a phone and on a wide display. --}}
             const unitsPerPx = 1000 / (this.$refs.svg.clientWidth || 1000);
             let html = '';
             for (const p of this.visible()) {

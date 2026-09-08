@@ -169,7 +169,6 @@
                     <p class="mb-3 text-[14px] font-medium {{ $inkMuted }}">{{ __('Pages vues') }}</p>
                     @forelse ($topPages as $item)
                         @php $pct = $maxPages > 0 ? round($item['total'] / $maxPages * 100) : 0; @endphp
-                        {{-- Petit écran : URL + compte sur la ligne, barre pleine largeur dessous. --}}
                         <div class="py-1.5" wire:key="rt-page-{{ md5($item['url']) }}">
                             <div class="flex items-center gap-3">
                                 <span class="min-w-0 flex-1 truncate text-[14px] {{ $ink }} sm:w-56 sm:flex-none"><x-analytics::page-url :url="$item['url']" /></span>
@@ -188,7 +187,6 @@
                 </div>
             </div>
 
-            {{-- Activité par minute (sous la carte) --}}
             <x-ui.card>
                 <div class="mb-3 flex flex-wrap items-baseline justify-between gap-3">
                     <p class="text-[16px] font-bold {{ $ink }}">{{ __('Activité par minute') }}</p>

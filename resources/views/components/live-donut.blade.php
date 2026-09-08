@@ -23,9 +23,8 @@
         isDark: document.documentElement.classList.contains('dark'),
         surface() { return this.isDark ? '#111827' : '#ffffff'; },
         async init() {
-            {{-- Chart.js arrive a la demande · le kit en fait un fichier a part,
-                 que les pages sans graphique ne telechargent jamais. Chaque
-                 lecteur de `_chart` plus bas garde deja son absence. --}}
+            {{-- Chart.js loads on demand: the kit ships it as a separate file
+                 that pages without a chart never download. --}}
             await window.falconCharts();
 
             {{-- Chart kept on the DOM node, not in Alpine's reactive state (see area-chart). --}}

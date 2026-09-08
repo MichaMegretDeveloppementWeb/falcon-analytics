@@ -39,11 +39,6 @@ Route::post('/'.ltrim((string) config('analytics.endpoint'), '/'), IngestControl
     ])
     ->name('analytics.ingest');
 
-// Le collecteur etait servi ici, par une route, avec un an de cache et une
-// empreinte dans l'adresse. L'hote l'importe desormais dans son entree
-// JavaScript publique, et c'est son build qui le nomme, le versionne et le
-// sert. Retire le 2026-09-06.
-
 // Dashboard. Fully configurable mounting (prefix, route-name prefix, middleware)
 // so it drops into any host: the defaults suit a single-guard app, and the
 // middleware must include a session stack (e.g. 'web') since package routes are
