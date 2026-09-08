@@ -46,10 +46,9 @@ enum GeoStatus: string
     /**
      * What to do about it, when there is something to do.
      *
-     * `__()` rend `array|string|null` · le traducteur rend un tableau quand une
-     * cle en designe un. Ce n'est pas le cas ici, mais plutot que de l'affirmer
-     * par un transtypage, qui donnerait « Array » a lire, un tableau vaut
-     * absence de conseil.
+     * `__()` returns `array|string|null`, the translator answering an array
+     * when a key designates one. Rather than assert otherwise with a cast that
+     * would render « Array », an array counts as no advice.
      */
     public function hint(): ?string
     {

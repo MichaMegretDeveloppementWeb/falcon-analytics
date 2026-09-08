@@ -28,8 +28,8 @@ final class GeoipCheckCommand extends Command
     {
         $path = (string) config('analytics.geoip.database_path');
         $devIp = trim((string) config('analytics.geoip.dev_ip'));
-        // `argument()` peut rendre un tableau, pour un argument variadique ·
-        // celui-ci ne l'est pas, mais la signature ne le sait pas.
+        // `argument()` may return an array for a variadic argument. This one is
+        // not, but the signature does not say so.
         $given = $this->argument('ip');
         $ip = is_string($given) && $given !== '' ? $given : self::PROBE;
 

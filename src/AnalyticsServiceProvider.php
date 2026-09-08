@@ -97,19 +97,13 @@ final class AnalyticsServiceProvider extends ServiceProvider
 
         Blade::anonymousComponentNamespace('analytics::components', 'analytics');
 
-        // La seule directive du paquet, et elle ne porte que des donnees du
-        // serveur · le nom de la route courante, et le suivi coupe quand
-        // l'administratrice est connectee. Le code du collecteur, lui, est
-        // importe par l'hote dans son entree publique et compile par son build.
-        // Elle s'appelait `analyticsScripts` jusqu'au 2026-09-06, quand elle
-        // portait encore la balise du script.
+        // The package's only directive, and it carries server data alone: the
+        // current route's name, and tracking cut while an excluded guard is
+        // authenticated. The collector's code is imported by the host in its
+        // public entrypoint and compiled by its build.
         Blade::directive('analyticsConfig', fn (): string => '<?php echo \Falcon\Analytics\View\Collector::render(); ?>');
 
-        /*
-         * Les quatorze ecrans. Ils etaient montes par `Route::livewire`, donc
-         * nommes par leur classe et jamais enregistres ; ils sont desormais
-         * embarques par une vue mince, qui les appelle par leur alias.
-         */
+        // The screens, each carried by a thin view that calls it by its alias.
         Livewire::component('analytics-overview', OverviewPage::class);
         Livewire::component('analytics-realtime', RealtimePage::class);
         Livewire::component('analytics-visitors', VisitorsPage::class);
@@ -125,7 +119,7 @@ final class AnalyticsServiceProvider extends ServiceProvider
         Livewire::component('analytics-ads', AdsPage::class);
         Livewire::component('analytics-ad-detail', AdDetailPage::class);
 
-        // Les blocs differes, qui vivent a l'interieur d'un ecran.
+        // The deferred blocks, which live inside a screen.
         Livewire::component('analytics-trend-chart', TrendChart::class);
         Livewire::component('analytics-events-content', EventsContent::class);
         Livewire::component('analytics-marketing-dashboard-content', MarketingDashboardContent::class);
@@ -187,14 +181,14 @@ final class AnalyticsServiceProvider extends ServiceProvider
             ], 'analytics-config');
 
             /*
-             * Les vues, pour l'hote qui veut envelopper un ecran · y poser un
-             * bandeau, un fil d'Ariane, un conteneur a lui. Ce sont les vues
-             * minces qui l'interessent · trois lignes chacune, et le corps de
-             * l'ecran reste au paquet, donc il continue d'etre mis a jour.
+             * The views, for a host that wants to wrap a screen in a banner, a
+             * breadcrumb or a container of its own. The thin views are the ones
+             * that matter: the screen's body stays the package's, so it keeps
+             * being updated.
              *
-             * Rien n'oblige a publier · une vue posee dans
-             * `resources/views/vendor/analytics/` est prise en compte de toute
-             * facon. La commande evite seulement de recopier a la main.
+             * Publishing is never required, a view laid in
+             * `resources/views/vendor/analytics/` being taken into account
+             * anyway.
              */
             $this->publishes([
                 __DIR__.'/../resources/views' => resource_path('views/vendor/analytics'),

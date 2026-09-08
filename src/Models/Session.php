@@ -52,12 +52,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 final class Session extends Model
 {
     /**
-     * Le nom de la table, en constante.
-     *
-     * `SessionWriteRepository::recordActivity()` ecrit un UPDATE litteral pour
-     * lier ses valeurs plutot que les interpoler, et il lui faut ce nom sous une
-     * forme que l'analyse reconnait comme litterale. La propriete ci-dessous la
-     * relit : le nom n'est ecrit qu'a un seul endroit.
+     * The table name as a constant, because
+     * `SessionWriteRepository::recordActivity()` writes a literal UPDATE and
+     * needs it in a form static analysis recognises as literal. The property
+     * below reads it back, so the name is written in one place.
      */
     public const TABLE = 'falcon_analytics_sessions';
 

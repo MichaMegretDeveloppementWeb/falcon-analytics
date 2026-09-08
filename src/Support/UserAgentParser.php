@@ -42,13 +42,12 @@ final readonly class UserAgentParser
     }
 
     /**
-     * Garde une valeur de device-detector, tronquee, ou rien.
+     * Keeps a device-detector value, truncated, or nothing.
      *
-     * **Le parametre est `mixed`, et ce n'est pas un relachement.**
-     * `getClient()` et `getOs()` rendent `array|string|null` : la bibliotheque
-     * rend un tableau quand on ne lui demande pas une cle precise. Le `?string`
-     * d'avant promettait donc quelque chose de faux, et un tableau serait
-     * arrive jusqu'a `mb_substr` en erreur fatale. Il est rejete ici.
+     * The parameter is `mixed` and not `?string`: `getClient()` and `getOs()`
+     * return `array|string|null`, the library answering an array when no
+     * precise key is asked for. An array would reach `mb_substr` and die, so it
+     * is refused here.
      */
     private function clean(mixed $value, int $limit): ?string
     {

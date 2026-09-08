@@ -10,18 +10,13 @@ use Falcon\UiKit\Installer\AssetEntry;
 use Illuminate\Console\Command;
 
 /**
- * L'installation du paquet.
+ * Installs the package. Three entrypoints are asked for whatever happens: the
+ * back office's sheet and script, and the public site's script, which carries
+ * the collector.
  *
- * **Les quatre questions sont posées quoi qu'il arrive.** Le paquet a deux
- * faces — des tableaux de bord, un collecteur sur le site public — et chacune a
- * une feuille et un script. Deux réponses ne servent pas encore ; elles sont
- * rangées dans la configuration, et la version qui en aura besoin ne
- * redemandera rien.
- *
- * **Il installe aussi falcon/ui-kit**, dont il dépend, en lui passant les
- * chemins du back-office : c'est là qu'il s'en sert, ses tableaux de bord étant
- * dessinés avec ses composants. Aucune vérification — les étapes du kit sont
- * idempotentes, donc l'appel ne coûte rien quand tout est déjà en place.
+ * It also installs falcon/ui-kit, which it depends on, passing it the back
+ * office's paths: that is where its dashboards use it. The kit's steps are
+ * idempotent, so the call costs nothing when everything is already in place.
  */
 final class InstallCommand extends Command
 {
@@ -114,22 +109,16 @@ final class InstallCommand extends Command
     // ─── Les chemins ─────────────────────────────────────────────
 
     /**
-     * Le défaut proposé est toujours celui de Laravel, sans rien détecter.
+     * The default offered is always Laravel's, with nothing detected: a fresh
+     * project has only `app.css` and validates without reading, while a project
+     * split into spaces types the name it chose.
      *
-     * Un projet neuf n'a que `app.css` et valide sans lire ; un projet rangé en
-     * espaces tape le nom qu'il a choisi.
+     * Three questions, and three answers that serve: two carry an import, the
+     * third is passed to `ui-kit:install`. There is no public sheet to ask for,
+     * the package shipping no public CSS.
      */
     private function collectEntries(): void
     {
-        /*
-         * Trois questions, et trois réponses qui servent · deux portent un
-         * import, la troisième est passée à `ui-kit:install`.
-         *
-         * Un `web_css` a existé ici et a été retiré le 2026-09-07 · le paquet
-         * n'a aucun CSS public, donc la question n'avait rien à écrire. Poser
-         * une question dont la réponse ne sert à rien est ce qu'on cherche à
-         * retirer de ces installateurs.
-         */
         $this->entries = [
             'admin_css' => AssetEntry::css($this->pathFor('admin-css', 'Feuille de styles du back-office', 'resources/css/app.css')),
             'admin_js' => AssetEntry::js($this->pathFor('admin-js', 'Script du back-office', 'resources/js/app.js')),
@@ -143,11 +132,9 @@ final class InstallCommand extends Command
     }
 
     /**
-     * falcon/ui-kit, dont ce paquet dépend.
-     *
-     * Composer l'a forcément installé — le `composer.json` l'exige — mais ses
-     * étapes à lui n'ont peut-être jamais été jouées. On les joue donc, avec
-     * les chemins du back-office : c'est là que les tableaux de bord vivent.
+     * Composer has necessarily installed falcon/ui-kit, the manifest requiring
+     * it, but its own steps may never have run. They run here, with the back
+     * office's paths, where the dashboards live.
      */
     private function installTheKit(): void
     {
@@ -159,10 +146,8 @@ final class InstallCommand extends Command
     }
 
     /**
-     * Range les quatre chemins dans `config/analytics.php`.
-     *
-     * Publié juste avant, donc les valeurs par défaut y sont ; on les remplace
-     * par les réponses. Une clé absente laisse le fichier intact.
+     * Files the collected paths into `config/analytics.php`, published just
+     * before, replacing its defaults. A missing key leaves the file untouched.
      */
     private function rememberEntries(): void
     {
@@ -182,7 +167,7 @@ final class InstallCommand extends Command
                 1,
             );
 
-            // Et en mémoire · rien ne relit le fichier dans ce processus.
+            // And in memory: nothing reads the file back in this process.
             config()->set('analytics.assets.'.$key, $entry->relativePath);
         }
 
@@ -191,13 +176,12 @@ final class InstallCommand extends Command
     }
 
     /**
-     * Les deux lignes · la feuille des tableaux de bord, le collecteur.
+     * The two lines: the dashboards' sheet, and the collector.
      *
-     * **Le collecteur va dans le script du site public, pas dans celui du
-     * back-office** · on ne mesure pas les visites de la personne qui
-     * administre. Il est autonome — aucun `import`, aucune dépendance npm — et
-     * il sort de lui-même quand `window.__falconAnalytics` est absent, donc
-     * l'hôte n'a aucune condition à écrire.
+     * The collector goes into the public site's script and never into the back
+     * office's, an administrator's visits not being measured. It is standalone,
+     * with no `import` and no npm dependency, and exits on its own when
+     * `window.__falconAnalytics` is absent.
      */
     private function writeImports(): void
     {

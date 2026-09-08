@@ -21,16 +21,14 @@ use Throwable;
  * Separate from the installer on purpose: most of what breaks an installation
  * breaks it later, when configuration changes or an entrypoint is rewritten.
  *
- * **Analytics fails quietly**, which is why this matters more here than for a
+ * Analytics fails quietly, which is why this matters more here than for a
  * package that draws screens. A collector that is never rendered, an ingestion
  * route behind the wrong middleware, a master switch left off: every one of
  * them leaves working screens showing an empty dashboard, and an empty
  * dashboard reads as « nobody came » rather than « nothing was measured ».
  *
- * It also gives `analytics.assets` its first reader. Until 2026-09-07 the
- * installer wrote that block and nothing ever looked at it again, so a host
- * that moved an entrypoint had no way of learning that the import had been
- * left behind.
+ * It is also what reads `analytics.assets` back, so a host that moves an
+ * entrypoint learns that the import was left behind.
  */
 final class CheckCommand extends Command
 {
@@ -124,13 +122,9 @@ final class CheckCommand extends Command
     }
 
     /**
-     * L'interrupteur general, et pourquoi il merite une ligne.
-     *
-     * Eteint, rien n'est ingere et le collecteur n'est pas rendu · c'est un
-     * etat legitime, en preproduction par exemple. Mais c'est aussi la
-     * premiere chose qu'on oublie apres l'avoir coupe pour une demonstration,
-     * et le symptome est un tableau de bord vide, qui ne dit pas la difference
-     * entre « personne n'est venu » et « rien n'a ete mesure ».
+     * The master switch. Off is a legitimate state, but its symptom is an empty
+     * dashboard, which does not tell « nobody came » from « nothing was
+     * measured ».
      *
      * @return array{0: string, 1: string, 2: string}
      */
@@ -149,16 +143,12 @@ final class CheckCommand extends Command
     }
 
     /**
-     * Les deux imports, dans les entrees que l'hote a nommees.
+     * The imports, in the entrypoints the host named. The paths come from
+     * `analytics.assets`, so a host that moves an entrypoint fixes the
+     * configuration and the diagnostic follows.
      *
-     * Les chemins viennent de `analytics.assets`, ou `analytics:install` les a
-     * ranges · on ouvre le bon fichier au lieu de balayer `resources/`. Un hote
-     * qui deplace une entree corrige la configuration, et le diagnostic suit.
-     *
-     * **Une cle absente est un defaut, pas une dispense.** Une configuration
-     * publiee par une version anterieure ne porte pas ce bloc ; passer outre
-     * dirait « Assets OK » alors que rien n'est importe, ce que ce point existe
-     * precisement pour attraper.
+     * A missing key is a fault and not an exemption: skipping it would report
+     * « Assets OK » while nothing is imported.
      *
      * @return array{0: string, 1: string, 2: string}
      */
@@ -187,22 +177,17 @@ final class CheckCommand extends Command
             return [
                 'Assets',
                 'KO',
-                // Pas de tiret cadratin : la console est lue par une personne.
+                // No em dash: the console is read by a person.
                 'Import manquant. Ajoutez-le puis lancez npm run build · '.implode(' · ', $missing),
             ];
         }
 
-        // Le collecteur n'a rien a faire dans le script du back-office · on ne
-        // mesure pas les visites de la personne qui administre, et l'y trouver
-        // fausse chaque chiffre du tableau de bord sans rien casser.
+        // The collector has no business in the back office's script: finding it
+        // there skews every dashboard figure without breaking anything.
         //
-        // **Seulement quand les deux entrees sont deux fichiers.** La
-        // configuration livree les fait pointer le meme `resources/js/app.js`,
-        // et l'import demande dans l'une est alors forcement dans l'autre :
-        // crier au loup sur une installation par defaut apprend a ignorer ce
-        // point, ce qui coute plus que le point ne rapporte. Un hote qui n'a
-        // qu'un script ecarte de toute facon l'administration par
-        // `identity.exclude_guards`.
+        // Only when the two entrypoints are two files. The shipped
+        // configuration points both at the same `resources/js/app.js`, where
+        // the import asked for in one is necessarily in the other.
         $adminJs = (string) config('analytics.assets.admin_js');
         $webJs = (string) config('analytics.assets.web_js');
         $collector = AnalyticsAssets::hostImports()['web_js'][1];
@@ -220,23 +205,19 @@ final class CheckCommand extends Command
     }
 
     /**
-     * La directive qui pose le collecteur, quelque part dans les vues.
+     * The directive that lays the collector down, somewhere in the host's
+     * views. The point most often missing, and the only one whose symptom is
+     * strictly invisible: screens work, routes answer, tables exist, and not a
+     * single visit arrives.
      *
-     * **C'est le point qui manque le plus souvent**, et le seul dont le
-     * symptome soit rigoureusement invisible · les ecrans fonctionnent, les
-     * routes repondent, les tables existent, et pas une visite n'arrive.
+     * Searched across every host view rather than in a named layout, the
+     * package not knowing which one carries the public site. Package views are
+     * skipped, ours included: finding the directive under `vendor/` would say
+     * « laid down » about someone else's file.
      *
-     * Cherchee dans toutes les vues de l'hote plutot que dans un gabarit
-     * nomme · le paquet ne sait pas lequel porte le site public, et deviner un
-     * chemin rendrait un faux negatif chez qui l'a range ailleurs.
-     *
-     * **Les vues des paquets sont ecartees**, celles du notre comprises · la
-     * directive appartient a l'hote, et la trouver dans un `vendor/` dirait
-     * « c'est pose » sur le fichier de quelqu'un d'autre.
-     *
-     * `resource_path('views')` est lu quoi qu'il arrive, avant ce filtre · sur
-     * un banc d'essai les vues de l'hote vivent sous `vendor/`, et la regle
-     * generale les ecarterait sans rien dire.
+     * `resource_path('views')` is read whatever happens, before that filter: on
+     * a test bench the host's views live under `vendor/`, and the general rule
+     * would skip them silently.
      *
      * @return array{0: string, 1: string, 2: string}
      */
@@ -245,9 +226,9 @@ final class CheckCommand extends Command
         $paths = [resource_path('views')];
         $finder = View::getFinder();
 
-        // `getPaths()` appartient au chercheur de fichiers, pas a l'interface ·
-        // un hote qui en branche un autre garde le dossier standard, lu
-        // au-dessus, et perd seulement ses emplacements supplementaires.
+        // `getPaths()` belongs to the file finder and not to the interface: a
+        // host wiring another one keeps the standard folder read above, and
+        // loses only its extra locations.
         if ($finder instanceof FileViewFinder) {
             foreach ($finder->getPaths() as $path) {
                 if (! str_contains(str_replace('\\', '/', $path), '/vendor/')) {
@@ -277,12 +258,10 @@ final class CheckCommand extends Command
     }
 
     /**
-     * La route qui recoit les lots du collecteur.
-     *
-     * Elle est declaree par le paquet, donc sa presence ne se discute pas · ce
-     * qui se verifie, c'est que le chemin configure est bien celui qu'elle
-     * porte. Un `endpoint` change en configuration sans nouveau build laisse un
-     * collecteur qui parle a une adresse qui repond 404.
+     * The route that receives the collector's batches. The package declares it,
+     * so what is checked is that the configured path is the one it carries: an
+     * `endpoint` changed without a new build leaves a collector talking to an
+     * address that answers 404.
      *
      * @return array{0: string, 1: string, 2: string}
      */
@@ -308,12 +287,9 @@ final class CheckCommand extends Command
     }
 
     /**
-     * Les deux modules, et leur protection.
-     *
-     * Une liste **explicitement vide** monte les ecrans sans session ni
-     * authentification · le journal le dit deja au demarrage, mais un
-     * avertissement dans un fichier de log n'est lu par personne. Ici, il est
-     * devant les yeux de qui pose la question.
+     * The two modules and what guards them. An explicitly empty list mounts the
+     * screens with neither session nor authentication; the log says so at boot,
+     * where nobody reads it.
      *
      * @return array{0: string, 1: string, 2: string}
      */
@@ -339,11 +315,9 @@ final class CheckCommand extends Command
     }
 
     /**
-     * Le gabarit de l'hote, quand il en nomme un.
-     *
-     * `null` monte les ecrans dans la coquille du paquet et se passe de tout
-     * reglage. Un nom, en revanche, est une promesse · un gabarit absent fait
-     * tomber chaque ecran du module a la premiere visite, et jamais avant.
+     * The host's layout, when it names one. `null` mounts the screens in the
+     * package's own shell; a name is a promise, and a missing layout drops
+     * every screen of the module on the first visit and never before.
      *
      * @return array{0: string, 1: string, 2: string}
      */
@@ -367,14 +341,12 @@ final class CheckCommand extends Command
     }
 
     /**
-     * La base de localisation, et seulement quand elle est demandee.
+     * The geolocation database, and only when it is asked for. Without a
+     * licence key the feature is off and its absence is no fault; a key laid
+     * down without a downloaded database is one, and the symptom is an empty
+     * « country » column that nothing explains.
      *
-     * Sans cle de licence, la fonctionnalite est eteinte et son absence n'est
-     * pas un defaut · une cle posee sans base telechargee en est un, et le
-     * symptome est une colonne « pays » vide que rien n'explique.
-     *
-     * Le detail fin appartient a `analytics:geoip:check`, qui dit pourquoi une
-     * adresse donnee se resout ou non · on ne le recopie pas ici.
+     * The fine detail belongs to `analytics:geoip:check`.
      *
      * @return array{0: string, 1: string, 2: string}
      */
