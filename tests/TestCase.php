@@ -256,11 +256,37 @@ abstract class TestCase extends Orchestra
         }
     }
 
+    /**
+     * Whether this run has already migrated. Static, so it spans the whole
+     * process rather than one test.
+     */
+    private static bool $migratedThisRun = false;
+
+    /**
+     * Testbench calls this hook on every test, and `loadMigrationsFrom` makes
+     * it migrate and roll back around each one: nineteen migrations up and
+     * nineteen down, three hundred and sixty-seven times over. On MySQL every
+     * schema statement is an implicit commit that reaches the disk, and that is
+     * what the suite was paying for.
+     *
+     * The fixture path is handed to the migrator directly rather than through
+     * `loadMigrationsFrom`, whose tear-down rollback is the half that costs.
+     * Registered on every test all the same, so a `migrate:fresh` from
+     * `RefreshDatabase` still finds it; only the run itself is guarded.
+     */
     protected function defineDatabaseMigrations(): void
     {
+        $this->app?->make('migrator')->path(__DIR__.'/Fixtures/migrations');
+
+        if (self::$migratedThisRun) {
+            return;
+        }
+
         self::ensureTheDatabaseExists();
 
-        $this->loadMigrationsFrom(__DIR__.'/Fixtures/migrations');
+        $this->artisan('migrate')->run();
+
+        self::$migratedThisRun = true;
     }
 
     protected function defineRoutes($router): void

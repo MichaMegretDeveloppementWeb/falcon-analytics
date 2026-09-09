@@ -48,15 +48,15 @@
         }
     },
     "scripts": {
-        "test": "@php vendor/bin/paratest --processes=8 --stop-on-failure",
-        "test:all": "@php vendor/bin/paratest --processes=8",
+        "test": "@php vendor/bin/paratest --processes=4 --stop-on-failure",
+        "test:all": "@php vendor/bin/paratest --processes=4",
         "test:serial": "@php vendor/bin/phpunit",
         "format": "@php vendor/bin/pint",
         "analyse": "@php vendor/bin/phpstan analyse --memory-limit=2G",
         "qa": [
             "@php vendor/bin/pint --test",
             "@php vendor/bin/phpstan analyse --no-progress --memory-limit=2G",
-            "@php vendor/bin/paratest --processes=8"
+            "@php vendor/bin/paratest --processes=4"
         ]
     },
     "config": {
