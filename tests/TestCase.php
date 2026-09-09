@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
+use PDO;
 use RuntimeException;
 
 abstract class TestCase extends Orchestra
@@ -99,7 +100,48 @@ abstract class TestCase extends Orchestra
             );
         }
 
-        return $name;
+        return $name.self::parallelSuffix();
+    }
+
+    /**
+     * One database per parallel worker, or none when the run is sequential.
+     *
+     * Paratest names its workers in `TEST_TOKEN`. Without a database each, the
+     * workers would migrate over one another and refresh each other's rows.
+     */
+    protected static function parallelSuffix(): string
+    {
+        $token = getenv('TEST_TOKEN');
+
+        return is_string($token) && $token !== '' ? '_'.$token : '';
+    }
+
+    /**
+     * Creates the worker's database when it is not there yet.
+     *
+     * Paratest hands out tokens, never databases, and asking the developer to
+     * create eight by hand is a step that will be forgotten on the next machine.
+     */
+    protected static function ensureTheDatabaseExists(): void
+    {
+        if (self::parallelSuffix() === '') {
+            return;
+        }
+
+        $connection = self::connectionForTests();
+
+        $server = new PDO(
+            sprintf('mysql:host=%s;port=%s', $connection['host'], $connection['port']),
+            (string) $connection['username'],
+            (string) $connection['password'],
+        );
+
+        $server->exec(sprintf(
+            'CREATE DATABASE IF NOT EXISTS `%s` CHARACTER SET %s COLLATE %s',
+            str_replace('`', '', (string) $connection['database']),
+            $connection['charset'],
+            $connection['collation'],
+        ));
     }
 
     /**
@@ -216,6 +258,8 @@ abstract class TestCase extends Orchestra
 
     protected function defineDatabaseMigrations(): void
     {
+        self::ensureTheDatabaseExists();
+
         $this->loadMigrationsFrom(__DIR__.'/Fixtures/migrations');
     }
 
