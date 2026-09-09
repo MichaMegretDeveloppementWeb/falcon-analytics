@@ -21,12 +21,12 @@ use Illuminate\Console\Command;
 final class InstallCommand extends Command
 {
     protected $signature = 'analytics:install
-                            {--force : Overwrite existing published files}
+                            {--force : Écrase les fichiers déjà publiés}
                             {--admin-css= : Feuille de styles du back-office}
                             {--admin-js= : Script du back-office}
                             {--web-js= : Script du site public}';
 
-    protected $description = 'Install Falcon Analytics: publish the config file, scaffold env variables and run the migrations.';
+    protected $description = 'Installe Falcon Analytics : publie la configuration, ajoute les variables d\'environnement et lance les migrations.';
 
     /** @var array<string, AssetEntry> */
     private array $entries = [];

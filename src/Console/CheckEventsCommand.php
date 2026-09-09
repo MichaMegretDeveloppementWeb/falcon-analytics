@@ -16,7 +16,7 @@ final class CheckEventsCommand extends Command
 {
     protected $signature = 'analytics:events:check';
 
-    protected $description = 'Verify that every funnel step event is a declared tracked event.';
+    protected $description = 'Vérifie que chaque étape de tunnel référence un événement déclaré.';
 
     public function handle(FunnelRegistry $funnels, EventRegistry $events): int
     {

@@ -19,7 +19,7 @@ final class SyncSearchConsoleCommand extends Command
 {
     protected $signature = 'analytics:search-console:sync';
 
-    protected $description = 'Pull the organic search queries from Google Search Console into the local cache.';
+    protected $description = 'Tire les requêtes organiques de Google Search Console dans le cache local.';
 
     public function handle(SearchConsoleSynchronizer $synchronizer): int
     {

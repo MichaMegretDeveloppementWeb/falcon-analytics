@@ -14,7 +14,7 @@ final class SweepCommand extends Command
 {
     protected $signature = 'analytics:sweep';
 
-    protected $description = 'Close analytics sessions that have been idle past the timeout.';
+    protected $description = 'Clôt les sessions inactives au-delà du délai.';
 
     public function handle(SessionWriteRepository $sessions): int
     {

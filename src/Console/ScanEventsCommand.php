@@ -17,9 +17,9 @@ use Illuminate\Support\Facades\File;
  */
 final class ScanEventsCommand extends Command
 {
-    protected $signature = 'analytics:events:scan {--fix : Append the events used in the code but not yet declared}';
+    protected $signature = 'analytics:events:scan {--fix : Ajoute les événements employés dans le code mais pas encore déclarés}';
 
-    protected $description = 'Reconcile the declared tracked events with those used in the code.';
+    protected $description = 'Compare les événements déclarés à ceux réellement employés dans le code.';
 
     public function handle(EventRegistry $registry): int
     {

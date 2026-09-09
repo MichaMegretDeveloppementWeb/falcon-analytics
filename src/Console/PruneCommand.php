@@ -14,7 +14,7 @@ final class PruneCommand extends Command
 {
     protected $signature = 'analytics:prune';
 
-    protected $description = 'Delete raw analytics events older than the retention window.';
+    protected $description = 'Supprime les événements bruts plus vieux que la fenêtre de rétention.';
 
     public function handle(EventWriteRepository $events): int
     {

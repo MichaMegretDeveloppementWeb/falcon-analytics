@@ -17,7 +17,7 @@ final class GeoipDownloadCommand extends Command
 {
     protected $signature = 'analytics:geoip:download';
 
-    protected $description = 'Download the MaxMind GeoLite2 City database used to resolve visitor localities.';
+    protected $description = 'Télécharge la base MaxMind GeoLite2 City qui résout les localités des visiteurs.';
 
     public function handle(): int
     {

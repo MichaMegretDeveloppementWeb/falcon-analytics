@@ -17,9 +17,9 @@ use Illuminate\Console\Command;
  */
 final class GeoipCheckCommand extends Command
 {
-    protected $signature = 'analytics:geoip:check {ip? : An address to resolve, defaults to a known public one}';
+    protected $signature = 'analytics:geoip:check {ip? : Une adresse à résoudre ; à défaut, une adresse publique connue}';
 
-    protected $description = 'Report whether the GeoIP database is usable, and why an address does or does not resolve.';
+    protected $description = 'Dit si la base GeoIP est utilisable, et pourquoi une adresse résout ou non.';
 
     /** A well-known public resolver: always in the database, so it isolates local misconfiguration. */
     private const PROBE = '9.9.9.9';
