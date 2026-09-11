@@ -1,5 +1,5 @@
 @extends($analyticsLayout)
 
 @section($analyticsSection)
-    <livewire:analytics-realtime />
+    <livewire:analytics::admin.realtime-page />
 @endsection

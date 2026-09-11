@@ -19,33 +19,33 @@
     </x-ui::page-header>
 
     {{-- Headline KPIs + engagement stats (deferred) --}}
-    <livewire:analytics-overview-headline :period="$period" :subject="$subject" :key="'ov-headline-'.$period.'-'.$subject" />
+    <livewire:analytics::admin.widgets.overview-headline :period="$period" :subject="$subject" :key="'ov-headline-'.$period.'-'.$subject" />
 
     {{-- Traffic trend (deferred) --}}
-    <livewire:analytics-trend-chart :period="$period" :subject="$subject" :key="'ov-trend-'.$period.'-'.$subject" />
+    <livewire:analytics::admin.widgets.trend-chart :period="$period" :subject="$subject" :key="'ov-trend-'.$period.'-'.$subject" />
 
     {{-- Deferred heavy sections : each loads independently after paint --}}
     <div class="border-t border-base pt-8">
         <x-ui::section-header :title="__('Audience')" :description="__('Visiteurs et appareils')" class="mb-4" />
-        <livewire:analytics-overview-audience :period="$period" :subject="$subject" :key="'ov-audience-'.$period.'-'.$subject" />
+        <livewire:analytics::admin.widgets.overview-audience :period="$period" :subject="$subject" :key="'ov-audience-'.$period.'-'.$subject" />
     </div>
 
     <div class="border-t border-base pt-8">
         <x-ui::section-header :title="__('Acquisition')" :description="__('D\'où viennent les sessions')" class="mb-4" />
-        <livewire:analytics-overview-acquisition :period="$period" :subject="$subject" :key="'ov-acq-'.$period.'-'.$subject" />
+        <livewire:analytics::admin.widgets.overview-acquisition :period="$period" :subject="$subject" :key="'ov-acq-'.$period.'-'.$subject" />
     </div>
 
     <div class="border-t border-base pt-8">
         <x-ui::section-header :title="__('Contenu')" :description="__('Pages et clics')" class="mb-4" />
-        <livewire:analytics-overview-content :period="$period" :subject="$subject" :key="'ov-content-'.$period.'-'.$subject" />
+        <livewire:analytics::admin.widgets.overview-content :period="$period" :subject="$subject" :key="'ov-content-'.$period.'-'.$subject" />
     </div>
 
-    <livewire:analytics-overview-events :period="$period" :subject="$subject" :key="'ov-events-'.$period.'-'.$subject" />
+    <livewire:analytics::admin.widgets.overview-events :period="$period" :subject="$subject" :key="'ov-events-'.$period.'-'.$subject" />
 
     {{-- Organic Google queries via Search Console; the whole section stays
          hidden while the host has not configured the OAuth credentials. --}}
     @if (trim((string) config('analytics.search_console.client_id')) !== '')
-        <livewire:analytics-overview-search-queries :period="$period" :key="'ov-gsc-'.$period" />
+        <livewire:analytics::admin.widgets.overview-search-queries :period="$period" :key="'ov-gsc-'.$period" />
     @endif
 
 </div>

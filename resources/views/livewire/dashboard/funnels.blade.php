@@ -11,6 +11,6 @@
         @include('analytics::livewire.dashboard.partials.filters')
     </x-ui::page-header>
 
-    <livewire:analytics-funnels-content :period="$period" :subject="$subject" :key="'funnels-'.$period.'-'.$subject" />
+    <livewire:analytics::admin.widgets.funnels-content :period="$period" :subject="$subject" :key="'funnels-'.$period.'-'.$subject" />
 
 </div>

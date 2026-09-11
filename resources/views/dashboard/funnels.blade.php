@@ -1,5 +1,5 @@
 @extends($analyticsLayout)
 
 @section($analyticsSection)
-    <livewire:analytics-funnels />
+    <livewire:analytics::admin.funnels-page />
 @endsection

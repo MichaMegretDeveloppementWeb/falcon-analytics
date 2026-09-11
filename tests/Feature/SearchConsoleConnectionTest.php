@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Tests\Feature;
 
 use Falcon\Analytics\Exceptions\SearchConsoleException;
-use Falcon\Analytics\Livewire\Dashboard\IntegrationsPage;
+use Falcon\Analytics\Livewire\Admin\IntegrationsPage;
 use Falcon\Analytics\Models\SearchConsoleConnection;
 use Falcon\Analytics\Models\SearchQuery;
 use Falcon\Analytics\Services\SearchConsole\SearchConsoleAuth;

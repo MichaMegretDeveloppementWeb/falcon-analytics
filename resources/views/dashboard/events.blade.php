@@ -1,5 +1,5 @@
 @extends($analyticsLayout)
 
 @section($analyticsSection)
-    <livewire:analytics-events />
+    <livewire:analytics::admin.events-page />
 @endsection

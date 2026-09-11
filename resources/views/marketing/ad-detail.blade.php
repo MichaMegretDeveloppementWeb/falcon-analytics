@@ -1,5 +1,5 @@
 @extends($analyticsLayout)
 
 @section($analyticsSection)
-    <livewire:analytics-ad-detail :ad="$ad" />
+    <livewire:analytics::admin.ad-detail-page :ad="$ad" />
 @endsection

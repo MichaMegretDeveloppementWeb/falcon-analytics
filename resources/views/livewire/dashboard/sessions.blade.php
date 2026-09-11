@@ -47,7 +47,7 @@
     <x-analytics::geo-notice />
 
     {{-- Engagement stats (deferred) --}}
-    <livewire:analytics-sessions-headline :period="$period" :subject="$subject" :key="'sessions-headline-'.$period.'-'.$subject" />
+    <livewire:analytics::admin.widgets.sessions-headline :period="$period" :subject="$subject" :key="'sessions-headline-'.$period.'-'.$subject" />
 
     {{-- Toolbar --}}
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center">

@@ -34,7 +34,7 @@
             <x-ui::section-header :title="__('Performance')" :description="__('du :from au :to', ['from' => $range->from->isoFormat('D MMM'), 'to' => $range->to->isoFormat('D MMM YYYY')])" />
             @include('analytics::livewire.dashboard.partials.filters')
         </div>
-        <livewire:analytics-ad-detail-content :period="$period" :subject="$subject" :ref-id="$ad->id" :key="'ad-content-'.$ad->id.'-'.$period.'-'.$subject" />
+        <livewire:analytics::admin.widgets.ad-detail-content :period="$period" :subject="$subject" :ref-id="$ad->id" :key="'ad-content-'.$ad->id.'-'.$period.'-'.$subject" />
     </div>
 
     {{-- Conditions --}}

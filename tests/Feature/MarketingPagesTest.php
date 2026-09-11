@@ -6,10 +6,10 @@ namespace Falcon\Analytics\Tests\Feature;
 
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Events\TrackedEvent;
-use Falcon\Analytics\Livewire\Dashboard\AdDetailPage;
-use Falcon\Analytics\Livewire\Dashboard\CampaignDetailPage;
-use Falcon\Analytics\Livewire\Dashboard\CampaignsPage;
-use Falcon\Analytics\Livewire\Dashboard\Widgets\CampaignDetailContent;
+use Falcon\Analytics\Livewire\Admin\AdDetailPage;
+use Falcon\Analytics\Livewire\Admin\CampaignDetailPage;
+use Falcon\Analytics\Livewire\Admin\CampaignsPage;
+use Falcon\Analytics\Livewire\Admin\Widgets\CampaignDetailContent;
 use Falcon\Analytics\Models\Ad;
 use Falcon\Analytics\Models\AdObjective;
 use Falcon\Analytics\Models\Campaign;

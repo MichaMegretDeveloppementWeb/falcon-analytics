@@ -6,7 +6,7 @@ namespace Falcon\Analytics\Tests\Feature;
 
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\DTOs\Dashboard\Period;
-use Falcon\Analytics\Livewire\Dashboard\Widgets\OverviewSearchQueries;
+use Falcon\Analytics\Livewire\Admin\Widgets\OverviewSearchQueries;
 use Falcon\Analytics\Models\SearchConsoleConnection;
 use Falcon\Analytics\Models\SearchQuery;
 use Falcon\Analytics\Repositories\Dashboard\SearchQueryReadRepository;
@@ -151,6 +151,6 @@ final class SearchQueriesWidgetTest extends TestCase
 
         $this->get(route('analytics.overview'))
             ->assertSuccessful()
-            ->assertSeeHtml('analytics-overview-search-queries');
+            ->assertSeeHtml('admin.widgets.overview-search-queries');
     }
 }

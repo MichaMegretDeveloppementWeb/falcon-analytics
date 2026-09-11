@@ -9,6 +9,6 @@
         @include('analytics::livewire.dashboard.partials.filters')
     </x-ui::page-header>
 
-    <livewire:analytics-events-content :period="$period" :subject="$subject" :key="'events-content-'.$period.'-'.$subject" />
+    <livewire:analytics::admin.widgets.events-content :period="$period" :subject="$subject" :key="'events-content-'.$period.'-'.$subject" />
 
 </div>

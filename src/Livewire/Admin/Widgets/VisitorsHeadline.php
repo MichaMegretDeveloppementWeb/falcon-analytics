@@ -1,0 +1,50 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Falcon\Analytics\Livewire\Admin\Widgets;
+
+use Falcon\Analytics\DTOs\Dashboard\Period;
+use Falcon\Analytics\Livewire\Admin\Concerns\GuardsWidgetRead;
+use Falcon\Analytics\Repositories\Dashboard\VisitorListReadRepository;
+use Falcon\Analytics\Services\Dashboard\VisitorMetricsCalculator;
+use Illuminate\Contracts\View\View;
+use Livewire\Attributes\Lazy;
+use Livewire\Component;
+
+/**
+ * Deferred headline for the visitors screen: four KPI cards with sparklines
+ * (visitors, new, returning, sessions per visitor) from a single metrics
+ * computation. Deferred so the visitor list and shell paint first.
+ */
+#[Lazy]
+final class VisitorsHeadline extends Component
+{
+    use GuardsWidgetRead;
+
+    public int $period = Period::DEFAULT_DAYS;
+
+    public string $subject = '';
+
+    public function placeholder(): View
+    {
+        return view('analytics::livewire.dashboard.widgets.kpi-row-skeleton');
+    }
+
+    public function render(VisitorListReadRepository $repository, VisitorMetricsCalculator $metrics): View
+    {
+        return $this->guardedWidget(function () use ($repository, $metrics): array {
+            $period = Period::ofDays($this->period);
+            $subjectType = $this->subject !== '' ? $this->subject : null;
+
+            return [
+                'metrics' => $metrics->compute(
+                    $repository->visitorCounts($period, $subjectType),
+                    $repository->visitorCounts($period->previous(), $subjectType),
+                    $repository->visitorDailyRows($period, $subjectType),
+                    $period,
+                ),
+            ];
+        }, fn (array $data): View => view('analytics::livewire.dashboard.widgets.visitors-headline', $data));
+    }
+}

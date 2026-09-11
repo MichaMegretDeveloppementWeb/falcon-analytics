@@ -1,5 +1,5 @@
 @extends($analyticsLayout)
 
 @section($analyticsSection)
-    <livewire:analytics-visitor-detail :visitor="$visitor" />
+    <livewire:analytics::admin.visitor-detail-page :visitor="$visitor" />
 @endsection

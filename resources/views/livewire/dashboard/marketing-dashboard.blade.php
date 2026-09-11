@@ -9,6 +9,6 @@
         @include('analytics::livewire.dashboard.partials.filters')
     </x-ui::page-header>
 
-    <livewire:analytics-marketing-dashboard-content :period="$period" :subject="$subject" :key="'mkt-dash-'.$period.'-'.$subject" />
+    <livewire:analytics::admin.widgets.marketing-dashboard-content :period="$period" :subject="$subject" :key="'mkt-dash-'.$period.'-'.$subject" />
 
 </div>

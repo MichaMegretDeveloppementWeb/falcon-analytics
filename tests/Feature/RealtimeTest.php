@@ -6,7 +6,7 @@ namespace Falcon\Analytics\Tests\Feature;
 
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\Enums\EventType;
-use Falcon\Analytics\Livewire\Dashboard\RealtimePage;
+use Falcon\Analytics\Livewire\Admin\RealtimePage;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;

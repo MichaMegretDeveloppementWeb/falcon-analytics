@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Tests\Feature;
 
-use Falcon\Analytics\Livewire\Dashboard\VisitorDetailPage;
+use Falcon\Analytics\Livewire\Admin\VisitorDetailPage;
 use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Tests\Fixtures\Models\TestAdmin;
 use Falcon\Analytics\Tests\TestCase;

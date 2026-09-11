@@ -1,5 +1,5 @@
 @extends($analyticsLayout)
 
 @section($analyticsSection)
-    <livewire:analytics-campaigns />
+    <livewire:analytics::admin.campaigns-page />
 @endsection

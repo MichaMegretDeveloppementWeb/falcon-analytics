@@ -41,7 +41,7 @@
             </div>
         </div>
 
-        <livewire:analytics-visitors-headline :period="$period" :subject="$subject" :key="'visitors-headline-'.$period.'-'.$subject" />
+        <livewire:analytics::admin.widgets.visitors-headline :period="$period" :subject="$subject" :key="'visitors-headline-'.$period.'-'.$subject" />
     </div>
 
     {{-- Annuaire tous temps --}}

@@ -15,34 +15,6 @@ use Falcon\Analytics\Console\SweepCommand;
 use Falcon\Analytics\Console\SyncSearchConsoleCommand;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
-use Falcon\Analytics\Livewire\Dashboard\AdDetailPage;
-use Falcon\Analytics\Livewire\Dashboard\AdsPage;
-use Falcon\Analytics\Livewire\Dashboard\CampaignDetailPage;
-use Falcon\Analytics\Livewire\Dashboard\CampaignsPage;
-use Falcon\Analytics\Livewire\Dashboard\EventsPage;
-use Falcon\Analytics\Livewire\Dashboard\FunnelsPage;
-use Falcon\Analytics\Livewire\Dashboard\IntegrationsPage;
-use Falcon\Analytics\Livewire\Dashboard\MarketingDashboardPage;
-use Falcon\Analytics\Livewire\Dashboard\OverviewPage;
-use Falcon\Analytics\Livewire\Dashboard\RealtimePage;
-use Falcon\Analytics\Livewire\Dashboard\SessionDetailPage;
-use Falcon\Analytics\Livewire\Dashboard\SessionsPage;
-use Falcon\Analytics\Livewire\Dashboard\VisitorDetailPage;
-use Falcon\Analytics\Livewire\Dashboard\VisitorsPage;
-use Falcon\Analytics\Livewire\Dashboard\Widgets\AdDetailContent;
-use Falcon\Analytics\Livewire\Dashboard\Widgets\CampaignDetailContent;
-use Falcon\Analytics\Livewire\Dashboard\Widgets\EventsContent;
-use Falcon\Analytics\Livewire\Dashboard\Widgets\FunnelsContent;
-use Falcon\Analytics\Livewire\Dashboard\Widgets\MarketingDashboardContent;
-use Falcon\Analytics\Livewire\Dashboard\Widgets\OverviewAcquisition;
-use Falcon\Analytics\Livewire\Dashboard\Widgets\OverviewAudience;
-use Falcon\Analytics\Livewire\Dashboard\Widgets\OverviewContent;
-use Falcon\Analytics\Livewire\Dashboard\Widgets\OverviewEvents;
-use Falcon\Analytics\Livewire\Dashboard\Widgets\OverviewHeadline;
-use Falcon\Analytics\Livewire\Dashboard\Widgets\OverviewSearchQueries;
-use Falcon\Analytics\Livewire\Dashboard\Widgets\SessionsHeadline;
-use Falcon\Analytics\Livewire\Dashboard\Widgets\TrendChart;
-use Falcon\Analytics\Livewire\Dashboard\Widgets\VisitorsHeadline;
 use Falcon\Analytics\Support\GeoResolver;
 use Falcon\Ui\Config\CompletesDefaults;
 use Illuminate\Console\Scheduling\Schedule;
@@ -110,37 +82,21 @@ final class AnalyticsServiceProvider extends ServiceProvider
         // public entrypoint and compiled by its build.
         Blade::directive('analyticsConfig', fn (): string => '<?php echo \Falcon\Analytics\View\Collector::render(); ?>');
 
-        // The screens, each carried by a thin view that calls it by its alias.
-        Livewire::component('analytics-overview', OverviewPage::class);
-        Livewire::component('analytics-realtime', RealtimePage::class);
-        Livewire::component('analytics-visitors', VisitorsPage::class);
-        Livewire::component('analytics-visitor-detail', VisitorDetailPage::class);
-        Livewire::component('analytics-events', EventsPage::class);
-        Livewire::component('analytics-funnels', FunnelsPage::class);
-        Livewire::component('analytics-sessions', SessionsPage::class);
-        Livewire::component('analytics-session-detail', SessionDetailPage::class);
-        Livewire::component('analytics-integrations', IntegrationsPage::class);
-        Livewire::component('analytics-marketing-dashboard', MarketingDashboardPage::class);
-        Livewire::component('analytics-campaigns', CampaignsPage::class);
-        Livewire::component('analytics-campaign-detail', CampaignDetailPage::class);
-        Livewire::component('analytics-ads', AdsPage::class);
-        Livewire::component('analytics-ad-detail', AdDetailPage::class);
-
-        // The deferred blocks, which live inside a screen.
-        Livewire::component('analytics-trend-chart', TrendChart::class);
-        Livewire::component('analytics-events-content', EventsContent::class);
-        Livewire::component('analytics-marketing-dashboard-content', MarketingDashboardContent::class);
-        Livewire::component('analytics-funnels-content', FunnelsContent::class);
-        Livewire::component('analytics-ad-detail-content', AdDetailContent::class);
-        Livewire::component('analytics-campaign-detail-content', CampaignDetailContent::class);
-        Livewire::component('analytics-overview-headline', OverviewHeadline::class);
-        Livewire::component('analytics-overview-audience', OverviewAudience::class);
-        Livewire::component('analytics-overview-acquisition', OverviewAcquisition::class);
-        Livewire::component('analytics-overview-content', OverviewContent::class);
-        Livewire::component('analytics-overview-events', OverviewEvents::class);
-        Livewire::component('analytics-overview-search-queries', OverviewSearchQueries::class);
-        Livewire::component('analytics-sessions-headline', SessionsHeadline::class);
-        Livewire::component('analytics-visitors-headline', VisitorsHeadline::class);
+        /*
+         * Les ecrans et leurs blocs, par espace de noms.
+         *
+         * Trente lignes d'enregistrement manuel vivaient ici, une par classe.
+         * Un ecran ajoute sans sa ligne n'existait pas, et l'absence ne se
+         * voyait qu'a l'affichage.
+         *
+         * Le nom se deduit maintenant du chemin de la classe · celle qui porte
+         * la vue d'ensemble repond a `<livewire:analytics::admin.overview-page />`,
+         * et un bloc range sous `Widgets` a `admin.widgets.trend-chart`.
+         *
+         * Livewire ne decouvre tout seul que `app/Livewire` · les classes d'un
+         * paquet vivent ailleurs, d'ou cette declaration.
+         */
+        Livewire::addNamespace('analytics', classNamespace: 'Falcon\\Analytics\\Livewire');
 
         // Registered OUTSIDE any runningInConsole() guard on purpose: shared
         // hosts often trigger the scheduler through an HTTP endpoint calling
@@ -204,17 +160,6 @@ final class AnalyticsServiceProvider extends ServiceProvider
     }
 
     /**
-     * Tell the thin screen views which layout to extend, and in which section.
-     *
-     * A screen names neither: it says what it shows, and stays unaware of how it
-     * is being mounted. The host decides, from its config, and gets the package
-     * standalone shell while it decides nothing.
-     *
-     * Two composers rather than one because the two modules are configured
-     * separately — a host can hang marketing off another shell than analytics,
-     * or not mount it at all.
-     */
-    /**
      * A configured string, or the fallback when the key says nothing.
      *
      * **A blank value counts as saying nothing**, and that is the whole point of
@@ -233,6 +178,17 @@ final class AnalyticsServiceProvider extends ServiceProvider
         return is_string($value) && $value !== '' ? $value : $fallback;
     }
 
+    /**
+     * Tell the thin screen views which layout to extend, and in which section.
+     *
+     * A screen names neither: it says what it shows, and stays unaware of how it
+     * is being mounted. The host decides, from its config, and gets the package
+     * standalone shell while it decides nothing.
+     *
+     * Two composers rather than one because the two modules are configured
+     * separately — a host can hang marketing off another shell than analytics,
+     * or not mount it at all.
+     */
     private function shareLayoutWithScreens(): void
     {
         foreach (['dashboard', 'marketing'] as $module) {

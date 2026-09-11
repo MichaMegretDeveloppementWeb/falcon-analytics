@@ -1,5 +1,5 @@
 @extends($analyticsLayout)
 
 @section($analyticsSection)
-    <livewire:analytics-session-detail :session="$session" />
+    <livewire:analytics::admin.session-detail-page :session="$session" />
 @endsection
