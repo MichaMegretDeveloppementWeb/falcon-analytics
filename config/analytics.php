@@ -2,6 +2,10 @@
 
 declare(strict_types=1);
 
+// Une variable d'environnement laissee vide vaut une variable absente · elle se
+// lit `''`, et ce n'est pas un chemin de base de donnees.
+$geoipDatabase = env('ANALYTICS_GEOIP_DATABASE');
+
 return [
 
     /*
@@ -277,7 +281,9 @@ return [
         'edition' => env('ANALYTICS_GEOIP_EDITION', 'GeoLite2-City'),
 
         // Where analytics:geoip:download writes the extracted .mmdb.
-        'database_path' => env('ANALYTICS_GEOIP_DATABASE') ?: storage_path('app/analytics/GeoLite2-City.mmdb'),
+        'database_path' => is_string($geoipDatabase) && $geoipDatabase !== ''
+            ? $geoipDatabase
+            : storage_path('app/analytics/GeoLite2-City.mmdb'),
 
         // Local development: public IP substituted for private/reserved request
         // IPs (127.0.0.1 can never be located). Inert in production by design,

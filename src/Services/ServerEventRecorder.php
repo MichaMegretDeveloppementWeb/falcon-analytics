@@ -41,7 +41,7 @@ final readonly class ServerEventRecorder
      */
     public function record(string $name, ?float $value = null, array $props = []): void
     {
-        if (! config('analytics.enabled')) {
+        if (config('analytics.enabled') !== true) {
             return;
         }
 

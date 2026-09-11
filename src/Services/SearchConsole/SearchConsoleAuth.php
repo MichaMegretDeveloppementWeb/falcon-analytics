@@ -6,6 +6,7 @@ namespace Falcon\Analytics\Services\SearchConsole;
 
 use Falcon\Analytics\Exceptions\SearchConsoleException;
 use Falcon\Analytics\Models\SearchConsoleConnection;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Throwable;
 
@@ -69,7 +70,7 @@ final class SearchConsoleAuth
         ]);
 
         if ($response->failed()) {
-            throw new SearchConsoleException('Google token exchange failed: '.((string) $response->json('error') ?: "HTTP {$response->status()}"));
+            throw new SearchConsoleException('Google token exchange failed: '.self::reasonFrom($response));
         }
 
         $refreshToken = (string) $response->json('refresh_token');
@@ -97,7 +98,11 @@ final class SearchConsoleAuth
     {
         $cached = $connection->access_token;
 
-        if ($cached !== null && $cached !== '' && $connection->token_expires_at?->subSeconds(self::EXPIRY_MARGIN_SECONDS)->isFuture()) {
+        // `?->` rend null quand la date d'expiration manque · sans echeance
+        // connue, le jeton en cache ne peut pas etre declare encore valable.
+        $stillValid = $connection->token_expires_at?->subSeconds(self::EXPIRY_MARGIN_SECONDS)->isFuture() === true;
+
+        if ($cached !== null && $cached !== '' && $stillValid) {
             return $cached;
         }
 
@@ -109,7 +114,7 @@ final class SearchConsoleAuth
         ]);
 
         if ($response->failed()) {
-            $error = (string) $response->json('error') ?: "HTTP {$response->status()}";
+            $error = self::reasonFrom($response);
             $connection->update(['status' => SearchConsoleConnection::STATUS_ERROR, 'last_error' => 'token_refresh: '.$error]);
 
             throw new SearchConsoleException('Google token refresh failed: '.$error);
@@ -146,5 +151,20 @@ final class SearchConsoleAuth
         }
 
         return route((string) config('analytics.dashboard.route_name', 'analytics').'.integrations.search-console.callback');
+    }
+
+    /**
+     * Why Google refused, in the words it gave — or its status code.
+     *
+     * The `error` field is the useful part when it is there, and it often is
+     * not: a gateway between here and Google answers in its own format, or with
+     * an empty body. The status code is then all there is to say, and saying it
+     * beats storing an empty reason next to a failed connection.
+     */
+    private static function reasonFrom(Response $response): string
+    {
+        $error = $response->json('error');
+
+        return is_string($error) && $error !== '' ? $error : "HTTP {$response->status()}";
     }
 }

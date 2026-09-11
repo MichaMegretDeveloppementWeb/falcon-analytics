@@ -51,7 +51,11 @@ trait EditsCampaign
         $this->campaignId = $campaign->id;
         $this->campaignName = $campaign->name;
         $this->campaignPlatform = (string) $campaign->platform;
-        $this->campaignConditions = $campaign->match_conditions ?: [['param' => '', 'value' => '']];
+        // Voir `EditsAd` · une ligne vide plutot que rien du tout.
+        $conditions = $campaign->match_conditions;
+        $this->campaignConditions = $conditions === null || $conditions === []
+            ? [['param' => '', 'value' => '']]
+            : $conditions;
     }
 
     public function addCampaignCondition(): void

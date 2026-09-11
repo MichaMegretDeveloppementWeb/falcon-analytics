@@ -32,7 +32,10 @@ final class SubjectReadRepository
      */
     public function matchingIds(string $table, string $key, array $columns, string $term): array
     {
-        $words = preg_split('/\s+/', trim($term), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        // `preg_split` rend `false` sur motif invalide · celui-ci ne l'est pas,
+        // mais la signature le dit et le contrat de cette methode est un tableau.
+        $words = preg_split('/\s+/', trim($term), -1, PREG_SPLIT_NO_EMPTY);
+        $words = $words === false ? [] : $words;
 
         if ($words === []) {
             return [];

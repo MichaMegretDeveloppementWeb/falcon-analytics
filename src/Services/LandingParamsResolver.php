@@ -22,7 +22,10 @@ final readonly class LandingParamsResolver
      */
     public function resolve(?string $landingUrl): array
     {
-        $query = $landingUrl !== null ? (parse_url($landingUrl, PHP_URL_QUERY) ?: '') : '';
+        // `parse_url` rend `null` quand l'URL n'a pas de partie requete, et
+        // `false` quand elle est malformee · les deux valent « rien a lire ».
+        $query = $landingUrl === null ? null : parse_url($landingUrl, PHP_URL_QUERY);
+        $query = is_string($query) ? $query : '';
         parse_str($query, $params);
 
         $result = [];

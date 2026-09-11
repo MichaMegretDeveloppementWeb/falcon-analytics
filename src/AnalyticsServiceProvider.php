@@ -59,15 +59,15 @@ final class AnalyticsServiceProvider extends ServiceProvider
         $this->app->singleton(Analytics::class);
 
         $this->app->singleton(GeoResolver::class, fn (): GeoResolver => new GeoResolver(
-            config('analytics.geoip.database_path') ?: null,
-            config('analytics.geoip.dev_ip') ?: null,
+            self::configured('analytics.geoip.database_path'),
+            self::configured('analytics.geoip.dev_ip'),
         ));
 
         $this->app->singleton(FunnelRegistry::class, function (): FunnelRegistry {
             $registry = new FunnelRegistry;
-            $path = config('analytics.funnels_path') ?: base_path('app/Analytics/funnels.php');
+            $path = self::configured('analytics.funnels_path', base_path('app/Analytics/funnels.php'));
 
-            if (is_string($path) && is_file($path)) {
+            if ($path !== null && is_file($path)) {
                 $registry->load($path);
             }
 
@@ -76,9 +76,9 @@ final class AnalyticsServiceProvider extends ServiceProvider
 
         $this->app->singleton(EventRegistry::class, function (): EventRegistry {
             $registry = new EventRegistry;
-            $path = config('analytics.events_path') ?: base_path('app/Analytics/events.php');
+            $path = self::configured('analytics.events_path', base_path('app/Analytics/events.php'));
 
-            if (is_string($path) && is_file($path)) {
+            if ($path !== null && is_file($path)) {
                 $registry->load($path);
             }
 
@@ -207,12 +207,31 @@ final class AnalyticsServiceProvider extends ServiceProvider
      * separately — a host can hang marketing off another shell than analytics,
      * or not mount it at all.
      */
+    /**
+     * A configured string, or the fallback when the key says nothing.
+     *
+     * **A blank value counts as saying nothing**, and that is the whole point of
+     * this method. An environment variable left empty in a `.env` reads back as
+     * `''`, not as absent: `??` alone would take that empty string for an
+     * answer and hand it on as a file path or a view name.
+     *
+     * A value that is not a string is treated the same way. A published
+     * configuration that has drifted — an array where a path was expected —
+     * falls back rather than travelling on to fail somewhere else.
+     */
+    private static function configured(string $key, ?string $fallback = null): ?string
+    {
+        $value = config($key);
+
+        return is_string($value) && $value !== '' ? $value : $fallback;
+    }
+
     private function shareLayoutWithScreens(): void
     {
         foreach (['dashboard', 'marketing'] as $module) {
             View::composer("analytics::{$module}.*", static function ($view) use ($module): void {
                 $view->with([
-                    'analyticsLayout' => config("analytics.{$module}.layout") ?: 'analytics::layouts.dashboard',
+                    'analyticsLayout' => self::configured("analytics.{$module}.layout", 'analytics::layouts.dashboard'),
                     'analyticsSection' => config("analytics.{$module}.layout_section", 'content'),
                 ]);
             });

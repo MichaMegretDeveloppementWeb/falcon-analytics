@@ -82,7 +82,12 @@ final class SubjectResolver
      */
     public function names(string $guard, array $ids): array
     {
-        $ids = array_values(array_unique(array_filter($ids)));
+        // Un identifiant vaut 1 ou plus · zero ne designe personne, et le
+        // laisser passer ferait une requete sur une cle qui n'existe pas.
+        $ids = array_values(array_unique(array_filter(
+            $ids,
+            static fn (int $id): bool => $id > 0,
+        )));
 
         if ($ids === []) {
             return [];
@@ -192,10 +197,15 @@ final class SubjectResolver
      */
     private function join(object $row, array $columns): ?string
     {
+        // Les colonnes viennent de la configuration de l'hote, donc leur nom
+        // n'est connu qu'a l'execution. On lit la ligne comme un tableau plutot
+        // que par une propriete au nom variable · meme resultat, et l'outillage
+        // peut suivre ce qui se passe.
+        $values = (array) $row;
         $parts = [];
 
         foreach ($columns as $column) {
-            $part = $row->{$column} ?? null;
+            $part = $values[$column] ?? null;
 
             if (is_string($part) && trim($part) !== '') {
                 $parts[] = trim($part);

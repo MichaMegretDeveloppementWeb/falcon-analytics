@@ -80,7 +80,7 @@ final class Analytics
     public function hasConsent(): bool
     {
         if ($this->consentResolver !== null) {
-            return (bool) ($this->consentResolver)();
+            return ($this->consentResolver)();
         }
 
         $cookie = config('analytics.identity.consent_cookie');
@@ -92,7 +92,7 @@ final class Analytics
     public function isExcluded(): bool
     {
         if ($this->exclusionResolver !== null) {
-            return (bool) ($this->exclusionResolver)();
+            return ($this->exclusionResolver)();
         }
 
         foreach ($this->guards('exclude_guards') as $guard) {

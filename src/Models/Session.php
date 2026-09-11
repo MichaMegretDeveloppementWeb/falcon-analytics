@@ -68,7 +68,7 @@ final class Session extends Model
      * explicit attribute arrays (never raw request input), so mass assignment
      * is intentionally unguarded.
      *
-     * @var list<string>
+     * @var array<string>
      */
     protected $guarded = [];
 

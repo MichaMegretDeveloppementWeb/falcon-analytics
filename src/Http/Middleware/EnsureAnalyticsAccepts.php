@@ -28,7 +28,7 @@ final class EnsureAnalyticsAccepts
 
     private function shouldDrop(Request $request): bool
     {
-        return ! config('analytics.enabled')
+        return config('analytics.enabled') !== true
             || ! $this->isSameOrigin($request)
             || Analytics::isExcluded()
             || IpUtils::checkIp((string) $request->ip(), config('analytics.exclude_ips', []));

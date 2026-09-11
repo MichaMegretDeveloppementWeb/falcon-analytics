@@ -61,7 +61,13 @@ trait EditsAd
 
         $this->adId = $ad->id;
         $this->adName = $ad->name;
-        $this->adConditions = $ad->match_conditions ?: [['param' => '', 'value' => '']];
+        // Sans condition enregistree, le formulaire ouvre sur une ligne vide
+        // plutot que sur rien · la colonne est nullable, et un tableau vide dit
+        // la meme chose qu'un null.
+        $conditions = $ad->match_conditions;
+        $this->adConditions = $conditions === null || $conditions === []
+            ? [['param' => '', 'value' => '']]
+            : $conditions;
         $this->objectives = $ad->objectives->map(fn (AdObjective $objective): array => [
             'type' => $objective->type->value,
             'reference' => $objective->reference,

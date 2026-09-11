@@ -128,7 +128,12 @@ final class InstallCommand extends Command
 
     private function pathFor(string $option, string $question, string $default): string
     {
-        return (string) ($this->option($option) ?: $this->ask($question, $default));
+        $given = $this->option($option);
+
+        // Une option passee vide vaut une option absente · on demande alors.
+        return is_string($given) && $given !== ''
+            ? $given
+            : (string) $this->ask($question, $default);
     }
 
     /**

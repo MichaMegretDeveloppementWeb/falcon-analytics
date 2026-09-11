@@ -45,7 +45,7 @@ final class ScanEventsCommand extends Command
             return self::SUCCESS;
         }
 
-        if ($this->option('fix')) {
+        if ($this->option('fix') === true) {
             return $this->appendMissing($usedNotDeclared);
         }
 
@@ -64,7 +64,7 @@ final class ScanEventsCommand extends Command
         $names = [];
 
         foreach ($paths as $relative) {
-            $dir = is_dir((string) $relative) ? (string) $relative : base_path((string) $relative);
+            $dir = is_dir($relative) ? $relative : base_path($relative);
 
             if (! is_dir($dir)) {
                 continue;
@@ -93,9 +93,12 @@ final class ScanEventsCommand extends Command
      */
     private function appendMissing(array $names): int
     {
-        $path = config('analytics.events_path') ?: base_path('app/Analytics/events.php');
+        $configured = config('analytics.events_path');
+        $path = is_string($configured) && $configured !== ''
+            ? $configured
+            : base_path('app/Analytics/events.php');
 
-        if (! is_string($path) || ! is_file($path)) {
+        if (! is_file($path)) {
             $this->components->error('Events file not found; create app/Analytics/events.php first.');
 
             return self::FAILURE;

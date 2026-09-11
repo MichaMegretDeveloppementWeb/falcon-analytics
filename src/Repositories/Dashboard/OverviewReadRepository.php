@@ -249,13 +249,13 @@ final readonly class OverviewReadRepository
      */
     private function mergeRanked(Collection $current, Collection $previous, int $limit): array
     {
-        return array_values($current->map(fn ($total): int => (int) $total)
+        return array_values($current
             ->sortDesc()
             ->take($limit)
             ->map(fn (int $total, string $label): array => [
-                'label' => (string) $label,
-                'total' => (int) $total,
-                'previous' => (int) ($previous[$label] ?? 0),
+                'label' => $label,
+                'total' => $total,
+                'previous' => $previous[$label] ?? 0,
             ])
             ->all());
     }

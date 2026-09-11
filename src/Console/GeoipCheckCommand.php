@@ -46,11 +46,12 @@ final class GeoipCheckCommand extends Command
         if ($status === GeoStatus::Ready) {
             $location = $resolver->locate($ip);
 
-            $this->components->twoColumnDetail('Locality', implode(', ', array_filter([
-                $location->city,
-                $location->region,
-                $location->country,
-            ])) ?: 'none');
+            $parts = array_filter(
+                [$location->city, $location->region, $location->country],
+                static fn (?string $part): bool => $part !== null && $part !== '',
+            );
+
+            $this->components->twoColumnDetail('Locality', $parts === [] ? 'none' : implode(', ', $parts));
 
             $this->newLine();
             $this->components->info('Geolocation is working.');

@@ -18,12 +18,12 @@ final readonly class MetricDelta
 
     public function hasBaseline(): bool
     {
-        return $this->previous != 0.0;
+        return $this->previous !== 0.0;
     }
 
     public function changePercent(): float
     {
-        if ($this->previous == 0.0) {
+        if ($this->previous === 0.0) {
             return 0.0;
         }
 

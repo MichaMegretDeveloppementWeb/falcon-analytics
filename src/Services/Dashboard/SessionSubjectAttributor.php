@@ -36,9 +36,9 @@ final class SessionSubjectAttributor
 
         foreach ($sessions as $session) {
             if ($session->subject_type !== null && $session->subject_id !== null) {
-                $attributions[(int) $session->id] = new SessionSubjectAttribution(
-                    guard: (string) $session->subject_type,
-                    id: (int) $session->subject_id,
+                $attributions[$session->id] = new SessionSubjectAttribution(
+                    guard: $session->subject_type,
+                    id: $session->subject_id,
                     viaVisitor: false,
                 );
 
@@ -48,7 +48,7 @@ final class SessionSubjectAttributor
             $visitor = $session->visitor;
 
             if ($visitor->subject_type !== null && $visitor->subject_id !== null) {
-                $candidates[(int) $session->id] = $visitor;
+                $candidates[$session->id] = $visitor;
             }
         }
 
@@ -59,7 +59,7 @@ final class SessionSubjectAttributor
         $ambiguous = $this->ambiguousVisitorIds($candidates);
 
         foreach ($candidates as $sessionId => $visitor) {
-            if (in_array((int) $visitor->id, $ambiguous, true)) {
+            if (in_array($visitor->id, $ambiguous, true)) {
                 continue;
             }
 
@@ -84,7 +84,7 @@ final class SessionSubjectAttributor
     {
         $visitors = [];
         foreach ($candidates as $visitor) {
-            $visitors[(int) $visitor->id] = $visitor;
+            $visitors[$visitor->id] = $visitor;
         }
 
         $pairs = Session::query()
@@ -95,7 +95,7 @@ final class SessionSubjectAttributor
 
         $ambiguous = [];
         foreach ($pairs as $pair) {
-            $visitor = $visitors[(int) $pair->visitor_id] ?? null;
+            $visitor = $visitors[$pair->visitor_id] ?? null;
 
             if ($visitor === null) {
                 continue;
@@ -103,7 +103,7 @@ final class SessionSubjectAttributor
 
             if ((string) $pair->subject_type !== (string) $visitor->subject_type
                 || (int) $pair->subject_id !== (int) $visitor->subject_id) {
-                $ambiguous[] = (int) $visitor->id;
+                $ambiguous[] = $visitor->id;
             }
         }
 

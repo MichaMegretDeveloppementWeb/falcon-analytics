@@ -30,7 +30,9 @@ final class EnvScaffolder
         foreach ($groups as $group) {
             $missing = array_filter(
                 $group['entries'],
-                fn (string $key): bool => ! preg_match('/^'.preg_quote($key, '/').'=/m', $contents),
+                // `preg_match` rend 1, 0, ou `false` sur motif invalide · la cle
+                // est echappee, donc seul 1 signifie « deja presente ».
+                fn (string $key): bool => preg_match('/^'.preg_quote($key, '/').'=/m', $contents) !== 1,
                 ARRAY_FILTER_USE_KEY,
             );
 

@@ -36,15 +36,21 @@ final class SessionJourneyBuilder
         $steps = [];
         $children = [];
 
+        // L'indice de l'etape en cours, tenu plutot que redemande · les deux
+        // listes grandissent ensemble, et la seconde branche n'est atteinte
+        // qu'apres au moins une poussee.
+        $current = -1;
+
         foreach ($events as $event) {
             if ($event->type === EventType::Pageview || $steps === []) {
                 $steps[] = $event;
                 $children[] = [];
+                $current++;
 
                 continue;
             }
 
-            $children[array_key_last($children)][] = $event;
+            $children[$current][] = $event;
         }
 
         $clamp = fn (CarbonInterface $moment): CarbonInterface => $moment->lessThan($windowStart)
@@ -83,7 +89,8 @@ final class SessionJourneyBuilder
                 continue;
             }
 
-            $label = PageUrl::resolve($step['event']->route, $step['event']->url) ?: '·';
+            $label = PageUrl::resolve($step['event']->route, $step['event']->url);
+            $label = $label === '' ? '·' : $label;
 
             $byPage[$label] = ($byPage[$label] ?? 0) + $step['seconds'];
         }

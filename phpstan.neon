@@ -1,10 +1,27 @@
-includes:
-    - vendor/larastan/larastan/extension.neon
+# Aucun `includes:` ici, et c'est voulu · `phpstan/extension-installer` monte
+# seul les extensions des paquets installes — larastan, celle de Carbon, et les
+# regles strictes. Un `includes:` ecrit a la main ferait doublon, et il faudrait
+# le tenir a jour a chaque extension ajoutee.
 
 parameters:
-    # Le meme palier que falcon/booking et falcon/ui-kit · c'est celui qui
-    # verifie les types passes aux fonctions.
-    level: 7
+    # Le niveau 8 · le palier qui refuse qu'une valeur potentiellement nulle
+    # circule sans etre verifiee. Le meme que le kit.
+    level: 8
+
+    # Les regles strictes sont actives, sauf une.
+    #
+    # `dynamicCallOnStaticMethod` interdit d'appeler une methode statique sur
+    # une instance. Eloquent modelise son constructeur de requetes ainsi : un
+    # `$query->whereIn(...)` ou un `$query->count()` y passe pour un appel
+    # statique. Mesure sur ce paquet · 153 erreurs, toutes de cette forme, et
+    # aucune n'est un defaut. Le kit ne les rencontre pas · il n'a pas de
+    # modeles.
+    #
+    # Les vingt autres regles restent, et elles ont deja rendu 88 signalements
+    # reels. Cette regle-la se rallumera le jour ou l'outillage saura distinguer
+    # le transfert d'Eloquent d'un vrai appel statique sur instance.
+    strictRules:
+        dynamicCallOnStaticMethod: false
 
     paths:
         - src

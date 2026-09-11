@@ -67,7 +67,11 @@ final class SessionsPage extends DashboardComponent
                     }
                 }
 
-                $sessions = $sessionsRepository->paginateSessions($period, $subjectType, $this->search, $this->device ?: null, $this->source ?: null, $subjects, $this->sort, $this->direction, conversionNames: $conversionNames);
+                // Un filtre vide vaut « pas de filtre ».
+                $device = $this->device === '' ? null : $this->device;
+                $source = $this->source === '' ? null : $this->source;
+
+                $sessions = $sessionsRepository->paginateSessions($period, $subjectType, $this->search, $device, $source, $subjects, $this->sort, $this->direction, conversionNames: $conversionNames);
                 $attributions = $attributor->attribute($sessions->items());
 
                 return [

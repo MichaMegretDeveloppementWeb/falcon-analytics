@@ -37,7 +37,7 @@ final class PropsEncoder
             }
 
             if ($value === null || $this->isStorableScalar($value)) {
-                $clean[mb_substr((string) $key, 0, self::MAX_KEY_LENGTH)] = $this->truncate($value);
+                $clean[mb_substr($key, 0, self::MAX_KEY_LENGTH)] = $this->truncate($value);
             }
         }
 

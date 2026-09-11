@@ -69,7 +69,7 @@ final class EngagementMetricsCalculator
 
             $series['visitors'][] = (float) $row['visitors'];
             $series['sessions'][] = (float) $sessions;
-            $series['avgSeconds'][] = (float) $row['avgSeconds'];
+            $series['avgSeconds'][] = $row['avgSeconds'];
             $series['bounceRate'][] = $this->bounceRate($row['bounces'], $sessions);
             $series['pagesPerSession'][] = $this->perSession($row['pageviews'], $sessions);
         }

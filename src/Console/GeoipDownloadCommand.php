@@ -173,7 +173,7 @@ final class GeoipDownloadCommand extends Command
             $remaining = $size;
 
             while ($remaining > 0) {
-                $chunk = fread($in, (int) min(1 << 20, $remaining));
+                $chunk = fread($in, min(1 << 20, $remaining));
 
                 if ($chunk === false || $chunk === '') {
                     throw new RuntimeException('the archive ended before the database did');

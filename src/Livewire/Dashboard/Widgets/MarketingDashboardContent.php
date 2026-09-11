@@ -70,13 +70,17 @@ final class MarketingDashboardContent extends Component
 
             $adRows = collect($performance['ads'])
                 ->map(function (array $row, int $id) use ($adModels, $conversions): array {
+                    // L'annonce a pu disparaitre entre l'agregation et cette
+                    // lecture. La ligne des campagnes, juste au-dessus, degrade
+                    // deja de la meme facon plutot que de faire tomber tout le
+                    // tableau de bord pour une ligne.
                     $ad = $adModels->firstWhere('id', $id);
 
                     return [
                         'id' => $id,
-                        'name' => $ad->name,
-                        'campaign' => $ad->campaign->name,
-                        'campaign_id' => $ad->campaign_id,
+                        'name' => $ad->name ?? '·',
+                        'campaign' => $ad->campaign->name ?? '·',
+                        'campaign_id' => $ad?->campaign_id,
                         'conversions' => $conversions['ads'][$id] ?? 0,
                         ...$row,
                     ];

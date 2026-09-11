@@ -57,7 +57,7 @@ final readonly class FunnelEventWalker
         $pointer = [];
 
         foreach ($this->eventQuery($period, $subjectType, $visitorIds, $names, $routes)->cursor() as $event) {
-            $visitorId = (int) $event->visitor_id;
+            $visitorId = $event->visitor_id;
             $position = $pointer[$visitorId] ?? 0;
 
             if ($position < $stepCount && $steps[$position]->matches($event)) {

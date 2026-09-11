@@ -147,7 +147,7 @@ final class MarketingReportBuilder
         foreach ($this->taggedSessionRows($period, $subjectType) as $session) {
             if ($this->attribution->mostSpecific($campaigns, $session->mkt_params ?? []) instanceof Campaign) {
                 $sessions++;
-                $visitors[(int) $session->visitor_id] = true;
+                $visitors[$session->visitor_id] = true;
             }
         }
 
@@ -191,7 +191,7 @@ final class MarketingReportBuilder
         $sources = [];
         foreach ($this->taggedSessionRows($period, $subjectType) as $session) {
             if ($this->attribution->mostSpecific($campaigns, $session->mkt_params ?? []) instanceof Campaign) {
-                $sources[(int) $session->id] = (string) ($session->source ?? 'direct');
+                $sources[$session->id] = $session->source ?? 'direct';
             }
         }
 
@@ -219,7 +219,7 @@ final class MarketingReportBuilder
 
         foreach ($this->taggedSessionRows($period, $subjectType) as $session) {
             $params = $session->mkt_params ?? [];
-            $visitor = (int) $session->visitor_id;
+            $visitor = $session->visitor_id;
 
             $campaign = $this->attribution->mostSpecific($campaigns, $params);
             if ($campaign instanceof Campaign) {
@@ -270,7 +270,7 @@ final class MarketingReportBuilder
                 continue;
             }
 
-            $visitor = (int) $session->visitor_id;
+            $visitor = $session->visitor_id;
             $sessions++;
             $visitors[$visitor] = true;
             $daily[$session->started_at->toDateString()] = ($daily[$session->started_at->toDateString()] ?? 0) + 1;
@@ -313,7 +313,7 @@ final class MarketingReportBuilder
             }
 
             $sessions++;
-            $visitors[(int) $session->visitor_id] = true;
+            $visitors[$session->visitor_id] = true;
             $daily[$session->started_at->toDateString()] = ($daily[$session->started_at->toDateString()] ?? 0) + 1;
         }
 
@@ -364,7 +364,7 @@ final class MarketingReportBuilder
         foreach ($this->taggedSessionRows($period, $subjectType) as $session) {
             $ad = $this->attribution->mostSpecific($ads, $session->mkt_params ?? []);
             if ($ad instanceof Ad) {
-                $visitorAds[(int) $session->visitor_id][$ad->id] = true;
+                $visitorAds[$session->visitor_id][$ad->id] = true;
             }
         }
 
@@ -416,7 +416,7 @@ final class MarketingReportBuilder
 
         foreach ($this->repository->objectiveEventRows($visitorIds, $names, $period) as $row) {
             $name = (string) $row->name;
-            $visitorId = (int) $row->visitor_id;
+            $visitorId = $row->visitor_id;
             $day = $row->occurred_at->toDateString();
             if (! isset($completers[$name][$visitorId]) || $day < $completers[$name][$visitorId]) {
                 $completers[$name][$visitorId] = $day;
@@ -597,7 +597,7 @@ final class MarketingReportBuilder
         foreach ($this->taggedSessionRows($period, $subjectType) as $session) {
             $ad = $this->attribution->mostSpecific($allAds, $session->mkt_params ?? []);
             if ($ad instanceof Ad && in_array($ad->id, $wantedIds, true)) {
-                $adVisitors[$ad->id][(int) $session->visitor_id] = true;
+                $adVisitors[$ad->id][$session->visitor_id] = true;
             }
         }
 
@@ -656,7 +656,7 @@ final class MarketingReportBuilder
                     'label' => $funnelLabels[$objective->reference] ?? $objective->reference,
                     'adId' => $ad->id,
                     'adName' => $ad->name,
-                    'conversions' => $reach === [] ? 0 : (int) end($reach),
+                    'conversions' => $reach === [] ? 0 : end($reach),
                     'steps' => $steps,
                 ];
             }
@@ -703,7 +703,7 @@ final class MarketingReportBuilder
         /** @var array<string, array<int, true>> $eventVisitors */
         $eventVisitors = [];
         foreach ($this->repository->distinctObjectiveEventRows(array_keys($allVisitorIds), array_keys($eventRefs), $period) as $row) {
-            $eventVisitors[(string) $row->name][(int) $row->visitor_id] = true;
+            $eventVisitors[(string) $row->name][$row->visitor_id] = true;
         }
 
         return $eventVisitors;

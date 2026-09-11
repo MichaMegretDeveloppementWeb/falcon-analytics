@@ -52,10 +52,14 @@ final readonly class SessionListReadRepository
             ->when($device !== null && $device !== '', fn (Builder $q): Builder => $q->where('device_type', $device))
             ->when($source !== null && $source !== '', fn (Builder $q): Builder => $q->where('source', $source))
             ->when($search !== null && $search !== '', function (Builder $query) use ($period, $subjectType, $search, $subjects): void {
-                $term = '%'.$search.'%';
-                $countryCodes = $this->matchingCountryCodes($period, $subjectType, $search);
+                // Le test de `when()` ne retrecit pas le type a l'interieur de
+                // la fermeture · on le refait une fois ici plutot qu'a chacun
+                // des quatre usages plus bas.
+                $needle = (string) $search;
+                $term = '%'.$needle.'%';
+                $countryCodes = $this->matchingCountryCodes($period, $subjectType, $needle);
 
-                $query->where(function (Builder $inner) use ($term, $search, $subjects, $countryCodes): void {
+                $query->where(function (Builder $inner) use ($term, $needle, $subjects, $countryCodes): void {
                     $inner->where('city', 'like', $term)
                         ->orWhere('country', 'like', $term)
                         ->orWhereHas('visitor', fn (Builder $visitor): Builder => $visitor->where('uuid', 'like', $term));
@@ -69,14 +73,14 @@ final readonly class SessionListReadRepository
                     // surface them: hence each subject clause below pairs a match
                     // on the session's own subject with a match on the visitor's
                     // stitched subject restricted to anonymous sessions.
-                    if (ctype_digit($search)) {
-                        $inner->orWhere('subject_id', (int) $search)
+                    if (ctype_digit($needle)) {
+                        $inner->orWhere('subject_id', (int) $needle)
                             ->orWhere(fn (Builder $q): Builder => $q->whereNull('subject_id')
-                                ->whereHas('visitor', fn (Builder $visitor): Builder => $visitor->where('subject_id', (int) $search)));
+                                ->whereHas('visitor', fn (Builder $visitor): Builder => $visitor->where('subject_id', (int) $needle)));
                     }
 
                     foreach ($subjects->guards() as $guard) {
-                        $ids = $subjects->matchIds($guard, $search);
+                        $ids = $subjects->matchIds($guard, $needle);
 
                         if ($ids !== []) {
                             $inner->orWhere(fn (Builder $q): Builder => $q->where('subject_type', $guard)->whereIn('subject_id', $ids))

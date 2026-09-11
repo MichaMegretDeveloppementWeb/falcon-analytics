@@ -42,7 +42,7 @@ final readonly class VisitorListReadRepository
 
         return [
             'visitors' => (int) ($totals->visitors ?? 0),
-            'new' => (int) $new,
+            'new' => $new,
             'sessions' => (int) ($totals->sessions ?? 0),
         ];
     }
@@ -131,17 +131,20 @@ final readonly class VisitorListReadRepository
                     ->limit(1),
             ])
             ->when($search !== null && $search !== '', function (Builder $query) use ($search, $subjects): void {
-                $term = '%'.$search.'%';
+                // Voir `SessionListReadRepository` · le test de `when()` ne
+                // retrecit pas le type a l'interieur de la fermeture.
+                $needle = (string) $search;
+                $term = '%'.$needle.'%';
 
-                $query->where(function (Builder $inner) use ($term, $search, $subjects): void {
+                $query->where(function (Builder $inner) use ($term, $needle, $subjects): void {
                     $inner->where('uuid', 'like', $term);
 
-                    if (ctype_digit($search)) {
-                        $inner->orWhere('subject_id', (int) $search);
+                    if (ctype_digit($needle)) {
+                        $inner->orWhere('subject_id', (int) $needle);
                     }
 
                     foreach ($subjects->guards() as $guard) {
-                        $ids = $subjects->matchIds($guard, $search);
+                        $ids = $subjects->matchIds($guard, $needle);
 
                         if ($ids !== []) {
                             $inner->orWhere(fn (Builder $q): Builder => $q->where('subject_type', $guard)->whereIn('subject_id', $ids));

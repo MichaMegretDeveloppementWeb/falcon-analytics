@@ -243,7 +243,7 @@ final class CheckCommand extends Command
             }
 
             foreach (File::allFiles($path) as $file) {
-                if (str_contains((string) File::get($file->getPathname()), '@analyticsConfig')) {
+                if (str_contains(File::get($file->getPathname()), '@analyticsConfig')) {
                     return ['Collecteur', 'OK', 'La directive @analyticsConfig est posée dans vos vues.'];
                 }
             }

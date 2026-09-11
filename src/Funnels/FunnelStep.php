@@ -69,10 +69,16 @@ final readonly class FunnelStep
             return $this->event !== null ? [$this->event] : [];
         }
 
-        return array_values(array_filter(array_map(
-            static fn (FunnelBranch $branch): ?string => $branch->event,
-            $this->branches,
-        )));
+        // `!== null`, comme la branche unique juste au-dessus · un `array_filter`
+        // sans rappel laissait aussi tomber une chaine vide et le nom « 0 », que
+        // le cas simple garde. Les deux chemins repondent maintenant pareil.
+        return array_values(array_filter(
+            array_map(
+                static fn (FunnelBranch $branch): ?string => $branch->event,
+                $this->branches,
+            ),
+            static fn (?string $name): bool => $name !== null,
+        ));
     }
 
     /**
@@ -86,9 +92,12 @@ final readonly class FunnelStep
             return $this->route !== null ? [$this->route] : [];
         }
 
-        return array_values(array_filter(array_map(
-            static fn (FunnelBranch $branch): ?string => $branch->route,
-            $this->branches,
-        )));
+        return array_values(array_filter(
+            array_map(
+                static fn (FunnelBranch $branch): ?string => $branch->route,
+                $this->branches,
+            ),
+            static fn (?string $route): bool => $route !== null,
+        ));
     }
 }

@@ -57,8 +57,8 @@ final class SearchConsoleClient
                 }
 
                 $rows[] = [
-                    'date' => (string) $keys[0],
-                    'query' => mb_substr((string) $keys[1], 0, self::QUERY_COLUMN_LIMIT),
+                    'date' => $keys[0],
+                    'query' => mb_substr($keys[1], 0, self::QUERY_COLUMN_LIMIT),
                     'clicks' => (int) ($row['clicks'] ?? 0),
                     'impressions' => (int) ($row['impressions'] ?? 0),
                     'position' => round((float) ($row['position'] ?? 0), 2),
@@ -118,8 +118,8 @@ final class SearchConsoleClient
         $properties = [];
 
         foreach ($entries as $entry) {
-            $siteUrl = (string) ($entry['siteUrl'] ?? '');
-            $permission = (string) ($entry['permissionLevel'] ?? '');
+            $siteUrl = $entry['siteUrl'] ?? '';
+            $permission = $entry['permissionLevel'] ?? '';
 
             if ($siteUrl === '' || $permission === 'siteUnverifiedUser') {
                 continue;

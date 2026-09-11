@@ -14,12 +14,18 @@ final class DeviceLabel
 {
     public static function for(?string $type): string
     {
-        return match ($type !== null ? strtolower($type) : '') {
+        // Normalise une fois, et c'est cette valeur que le dernier cas emploie ·
+        // un type absent tombe alors sur le cas vide, et le defaut ne peut plus
+        // recevoir null. `Str::title` rend le meme libelle dans les deux cas,
+        // sa conversion passant deja par une mise en minuscules.
+        $normalised = $type !== null ? strtolower($type) : '';
+
+        return match ($normalised) {
             'desktop' => __('Ordinateur'),
             'mobile' => __('Mobile'),
             'tablet' => __('Tablette'),
             '' => __('Inconnu'),
-            default => Str::title($type),
+            default => Str::title($normalised),
         };
     }
 }
