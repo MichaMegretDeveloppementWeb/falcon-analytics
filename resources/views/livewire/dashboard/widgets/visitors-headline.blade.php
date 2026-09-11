@@ -1,4 +1,4 @@
-<div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+<x-analytics::root area="admin" class="grid grid-cols-2 gap-4 lg:grid-cols-4">
     <x-analytics::kpi-card :label="__('Visiteurs')" :value="number_format($metrics->visitors->delta->current, 0, ',', ' ')" icon="users"
         :metric="$metrics->visitors->delta">
         <div wire:key="spark-v-visitors-{{ $period }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$metrics->visitors->sparkline" /></div>
@@ -15,4 +15,4 @@
         :metric="$metrics->sessionsPerVisitor->delta">
         <div wire:key="spark-v-spv-{{ $period }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$metrics->sessionsPerVisitor->sparkline" /></div>
     </x-analytics::kpi-card>
-</div>
+</x-analytics::root>

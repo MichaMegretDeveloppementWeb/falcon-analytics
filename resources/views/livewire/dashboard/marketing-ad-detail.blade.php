@@ -2,7 +2,7 @@
     $campaignUrl = route('analytics.admin.marketing.campaigns.show', $ad->campaign_id);
 @endphp
 
-<div class="space-y-6">
+<x-analytics::root area="admin" class="space-y-6">
 
     <div>
         <a href="{{ $campaignUrl }}" class="inline-flex cursor-pointer items-center gap-x-1 text-[12px] font-medium text-secondary transition-colors hover:text-primary">
@@ -53,4 +53,4 @@
         @include('analytics::livewire.dashboard.partials.marketing-ad-form')
     </div>
 
-</div>
+</x-analytics::root>

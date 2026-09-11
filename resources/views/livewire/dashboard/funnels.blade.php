@@ -1,4 +1,4 @@
-<div class="space-y-8">
+<x-analytics::root area="admin" class="space-y-8">
 
     @include('analytics::livewire.dashboard.partials.tooltip-host')
 
@@ -13,4 +13,4 @@
 
     <livewire:analytics::admin.widgets.funnels-content :period="$period" :subject="$subject" :key="'funnels-'.$period.'-'.$subject" />
 
-</div>
+</x-analytics::root>

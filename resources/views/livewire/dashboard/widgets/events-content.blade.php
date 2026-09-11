@@ -1,4 +1,4 @@
-<div class="space-y-8">
+<x-analytics::root area="admin" class="space-y-8">
 
     {{-- KPIs with integrated sparklines --}}
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -65,4 +65,4 @@
         @endif
     </div>
 
-</div>
+</x-analytics::root>

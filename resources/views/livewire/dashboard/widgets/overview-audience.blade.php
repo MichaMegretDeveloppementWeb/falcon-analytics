@@ -7,6 +7,10 @@
     $devicePalette = ['#1684ea', '#7cb8f2', '#bcdcfa', '#d1d5db'];
 @endphp
 
+{{-- La racine enveloppe la carte plutot que de la remplacer · la carte est un
+     composant du kit, et c'est justement elle qui doit etre dessinee dans le
+     contexte du paquet. --}}
+<x-analytics::root area="admin">
 <x-ui::card>
     <div class="grid grid-cols-1 divide-y divide-subtle lg:grid-cols-2 lg:divide-x lg:divide-y-0">
 
@@ -79,3 +83,4 @@
 
     </div>
 </x-ui::card>
+</x-analytics::root>

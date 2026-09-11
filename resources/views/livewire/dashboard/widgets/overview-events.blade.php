@@ -2,7 +2,7 @@
     $conversionsTotal = array_sum(array_column($topConversions, 'count'));
 @endphp
 
-<div class="border-t border-base pt-8">
+<x-analytics::root area="admin" class="border-t border-base pt-8">
     <div class="mb-4 flex items-end justify-between gap-4">
         <x-ui::section-header :title="__('Événements & conversions')" />
         <a href="{{ $eventsRoute }}" class="shrink-0 cursor-pointer whitespace-nowrap text-[12px] font-medium text-secondary transition-colors hover:text-primary">{{ __('Voir tout') }} <span aria-hidden="true">&rarr;</span></a>
@@ -53,4 +53,4 @@
 
         </div>
     </x-ui::card>
-</div>
+</x-analytics::root>

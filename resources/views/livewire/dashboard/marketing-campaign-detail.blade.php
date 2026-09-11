@@ -2,7 +2,7 @@
     use Illuminate\Support\Str;
 @endphp
 
-<div class="space-y-6">
+<x-analytics::root area="admin" class="space-y-6">
 
     <div>
         <a href="{{ route('analytics.admin.marketing.campaigns') }}" class="inline-flex cursor-pointer items-center gap-x-1 text-[12px] font-medium text-secondary transition-colors hover:text-primary">
@@ -179,4 +179,4 @@
         </div>
 
     </div>
-</div>
+</x-analytics::root>

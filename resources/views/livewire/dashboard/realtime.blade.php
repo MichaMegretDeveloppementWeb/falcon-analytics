@@ -30,6 +30,10 @@
     $listTime = fn ($moment) => $moment->isToday() ? $moment->format('H:i') : $moment->translatedFormat('j M, H:i');
 @endphp
 
+{{-- La racine enveloppe plutot que de remplacer · l'intervalle est dans le NOM
+     de la directive, et une balise de composant n'accepte pas d'interpolation
+     dans un nom d'attribut. --}}
+<x-analytics::root area="admin">
 <div class="space-y-6" wire:poll.{{ $pollSeconds }}s.visible>
 
     @include('analytics::livewire.dashboard.partials.tooltip-host')
@@ -292,3 +296,4 @@
         </div>
     </div>
 </div>
+</x-analytics::root>

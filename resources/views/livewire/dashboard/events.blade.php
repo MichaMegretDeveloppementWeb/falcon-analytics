@@ -1,4 +1,4 @@
-<div class="space-y-8">
+<x-analytics::root area="admin" class="space-y-8">
 
     <x-ui::page-header
         :title="__('Événements & conversions')"
@@ -11,4 +11,4 @@
 
     <livewire:analytics::admin.widgets.events-content :period="$period" :subject="$subject" :key="'events-content-'.$period.'-'.$subject" />
 
-</div>
+</x-analytics::root>

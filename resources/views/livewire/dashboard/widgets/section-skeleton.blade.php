@@ -1,4 +1,4 @@
-<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+<x-analytics::root area="admin" class="grid grid-cols-1 gap-6 lg:grid-cols-2">
     @foreach (range(1, 2) as $i)
         <div class="animate-pulse rounded-xl border border-base bg-surface px-5 py-4">
             <div class="mb-4 h-3.5 w-28 rounded bg-elevated"></div>
@@ -13,4 +13,4 @@
             </div>
         </div>
     @endforeach
-</div>
+</x-analytics::root>

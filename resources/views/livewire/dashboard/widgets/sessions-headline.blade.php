@@ -14,7 +14,7 @@
     $percent = fn ($v): string => number_format((float) $v, 1, ',', ' ')."\u{00A0}%";
 @endphp
 
-<div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+<x-analytics::root area="admin" class="grid grid-cols-2 gap-4 lg:grid-cols-4">
     <x-analytics::kpi-card :label="__('Sessions')" :value="number_format($headline['sessions']->current, 0, ',', ' ')" icon="cursor-arrow-rays"
         :metric="$headline['sessions']">
         <div wire:key="spark-s-sessions-{{ $period }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$sparklines['sessions']" /></div>
@@ -31,4 +31,4 @@
         :metric="$headline['bounceRate']" :inverse="true">
         <div wire:key="spark-s-bounce-{{ $period }}-{{ $subject }}" class="mt-3"><x-analytics::sparkline :values="$sparklines['bounceRate']" /></div>
     </x-analytics::kpi-card>
-</div>
+</x-analytics::root>

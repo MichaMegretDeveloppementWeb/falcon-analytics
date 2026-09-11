@@ -1,4 +1,4 @@
-<div class="space-y-6">
+<x-analytics::root area="admin" class="space-y-6">
 
     <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <x-analytics::kpi-card :label="__('Sessions')" :value="number_format($sessions, 0, ',', ' ')" icon="cursor-arrow-rays" :metric="$sessionsDelta">
@@ -28,4 +28,4 @@
 
     @include('analytics::livewire.dashboard.partials.marketing-conversions', ['showAd' => true])
 
-</div>
+</x-analytics::root>

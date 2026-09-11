@@ -7,7 +7,7 @@
     l'ecart exterieur d'un groupe n'excedait pas ses ecarts interieurs, et la page se lisait
     comme une seule longue liste. A 48 px, avec un filet, chaque bloc redevient un bloc.
 --}}
-<div class="space-y-12">
+<x-analytics::root area="admin" class="space-y-12">
 
     @include('analytics::livewire.dashboard.partials.tooltip-host')
 
@@ -48,4 +48,4 @@
         <livewire:analytics::admin.widgets.overview-search-queries :period="$period" :key="'ov-gsc-'.$period" />
     @endif
 
-</div>
+</x-analytics::root>

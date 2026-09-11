@@ -77,8 +77,18 @@ final class AnalyticsServiceProvider extends ServiceProvider
         $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
 
         $this->registerPersistentMiddleware();
-        $this->shareLayoutWithScreens();
 
+        /*
+         * Les composants, sous un seul prefixe et par deux mecanismes.
+         *
+         * Laravel cherche d'abord une classe, et retombe sur la vue anonyme
+         * quand elle n'existe pas · `<x-analytics::page>` touche la classe,
+         * `<x-analytics::kpi-card>` la vue.
+         *
+         * Page et racine sont des classes parce qu'elles ouvrent le contexte du
+         * kit avant leur slot · une vue ne peut rien faire avant d'etre rendue.
+         */
+        Blade::componentNamespace('Falcon\\Analytics\\View\\Components', 'analytics');
         Blade::anonymousComponentNamespace('analytics::components', 'analytics');
 
         // The package's only directive, and it carries server data alone: the
@@ -181,35 +191,6 @@ final class AnalyticsServiceProvider extends ServiceProvider
         $value = config($key);
 
         return is_string($value) && $value !== '' ? $value : $fallback;
-    }
-
-    /**
-     * Tell the thin screen views which layout to extend, and in which section.
-     *
-     * A screen names neither: it says what it shows, and stays unaware of how it
-     * is being mounted. The host decides, from its config, and gets the package
-     * standalone shell while it decides nothing.
-     *
-     * Two composers rather than one because the two entities are configured
-     * separately — a host can hang marketing off another shell than the
-     * analytics screens, or not mount it at all.
-     */
-    private function shareLayoutWithScreens(): void
-    {
-        // Le prefixe des vues, et le bloc de configuration qui repond pour lui.
-        $areas = [
-            'admin.dashboard' => 'analytics.admin',
-            'admin.marketing' => 'analytics.admin.marketing',
-        ];
-
-        foreach ($areas as $views => $block) {
-            View::composer("analytics::{$views}.*", static function ($view) use ($block): void {
-                $view->with([
-                    'analyticsLayout' => self::configured("{$block}.layout", 'analytics::layouts.dashboard'),
-                    'analyticsSection' => config("{$block}.layout_section", 'content'),
-                ]);
-            });
-        }
     }
 
     /**

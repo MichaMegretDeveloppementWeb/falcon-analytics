@@ -5,7 +5,7 @@
     $callbackUrl = route('analytics.admin.integrations.search-console.callback');
 @endphp
 
-<div class="space-y-8">
+<x-analytics::root area="admin" class="space-y-8">
     <x-ui::page-header :title="__('Intégrations')" :description="__('Sources de données externes du tableau de bord')" />
 
     <div class="max-w-4xl">
@@ -157,4 +157,4 @@
             </div>
         </div>
     </div>
-</div>
+</x-analytics::root>

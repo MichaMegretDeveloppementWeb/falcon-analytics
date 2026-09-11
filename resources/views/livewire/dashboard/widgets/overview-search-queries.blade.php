@@ -1,4 +1,4 @@
-<div>
+<x-analytics::root area="admin">
     <div class="mb-4 flex items-end justify-between gap-4">
         <x-ui::section-header :title="__('Clics par recherches Google')" />
         @if ($connected && $freshestDate !== null)
@@ -50,4 +50,4 @@
             </div>
         @endif
     </x-ui::card>
-</div>
+</x-analytics::root>

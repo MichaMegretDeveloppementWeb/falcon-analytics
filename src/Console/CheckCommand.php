@@ -7,10 +7,13 @@ namespace Falcon\Analytics\Console;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Database\Migrations\Migrator;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
+use Illuminate\View\Compilers\ComponentTagCompiler;
 use Illuminate\View\FileViewFinder;
+use InvalidArgumentException;
 use Throwable;
 
 /**
@@ -24,9 +27,6 @@ use Throwable;
  * route behind the wrong middleware, a master switch left off: every one of
  * them leaves working screens showing an empty dashboard, and an empty
  * dashboard reads as « nobody came » rather than « nothing was measured ».
- *
- * It is also what reads `analytics.assets` back, so a host that moves an
- * entrypoint learns that the import was left behind.
  */
 final class CheckCommand extends Command
 {
@@ -73,7 +73,7 @@ final class CheckCommand extends Command
             $this->checkCollector(),
             $this->checkEndpoint($config),
             $this->checkModuleMiddleware($config),
-            $this->checkModuleLayouts($config),
+            $this->checkAreaLayout($config),
             $this->checkGeoip($config),
         ];
     }
@@ -261,27 +261,36 @@ final class CheckCommand extends Command
     /**
      * The host's layout, when it names one. `null` mounts the screens in the
      * package's own shell; a name is a promise, and a missing layout drops
-     * every screen of the group on the first visit and never before.
+     * every screen of the area on the first visit and never before.
+     *
+     * A layout is a Blade COMPONENT, so it is never found under its own name:
+     * `layout.admin` lives in `components/layout/admin.blade.php`, and a class
+     * component lives in no view at all. The resolution Blade itself performs
+     * answers for both; it raises when the name designates nothing.
      *
      * @return array{0: string, 1: string, 2: string}
      */
-    private function checkModuleLayouts(Config $config): array
+    private function checkAreaLayout(Config $config): array
     {
-        $missing = [];
+        $layout = $config->get('analytics.admin.layout');
 
-        foreach (self::screenGroups() as $key => $label) {
-            $layout = $config->get($key.'.layout');
-
-            if (is_string($layout) && $layout !== '' && ! View::exists($layout)) {
-                $missing[] = $label.' : la vue '.$layout.' n’existe pas';
-            }
+        if (! is_string($layout) || $layout === '') {
+            return ['Gabarit', 'OK', 'Les écrans utilisent la coquille du paquet.'];
         }
 
-        if ($missing === []) {
-            return ['Gabarits', 'OK', 'Les gabarits nommés existent, ou les écrans utilisent celui du paquet.'];
+        $resolver = new ComponentTagCompiler(
+            Blade::getClassComponentAliases(),
+            Blade::getClassComponentNamespaces(),
+            Blade::getFacadeRoot(),
+        );
+
+        try {
+            $resolver->componentClass($layout);
+        } catch (InvalidArgumentException) {
+            return ['Gabarit', 'KO', 'Aucun composant ne répond au nom '.$layout.' : les écrans tomberaient à la première visite.'];
         }
 
-        return ['Gabarits', 'KO', implode(' · ', $missing)];
+        return ['Gabarit', 'OK', 'Le composant '.$layout.' existe.'];
     }
 
     /**
@@ -289,6 +298,8 @@ final class CheckCommand extends Command
      *
      * Marketing sits inside the admin block rather than beside it: it is a
      * second entity of the same area, with its own address and its own guard.
+     * The layout is not among them — it belongs to the area, and both entities
+     * of the administration are drawn by the same one.
      *
      * @return array<string, string>
      */

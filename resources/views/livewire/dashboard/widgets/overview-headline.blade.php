@@ -20,7 +20,7 @@
     ]);
 @endphp
 
-<div class="space-y-8">
+<x-analytics::root area="admin" class="space-y-8">
 
     {{-- Headline KPIs : reach, volume and two engagement-quality signals --}}
     <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -77,4 +77,4 @@
         </div>
     </x-ui::card>
 
-</div>
+</x-analytics::root>

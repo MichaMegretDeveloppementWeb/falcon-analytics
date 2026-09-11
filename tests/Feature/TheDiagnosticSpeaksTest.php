@@ -137,7 +137,7 @@ final class TheDiagnosticSpeaksTest extends TestCase
     /** Un gabarit non nomme monte la coquille du paquet · ce n'est pas un defaut. */
     public function test_it_accepts_screens_that_use_the_package_shell(): void
     {
-        config(['analytics.admin.layout' => null, 'analytics.admin.marketing.layout' => null]);
+        config(['analytics.admin.layout' => null]);
 
         $this->artisan('analytics:check')->assertSuccessful();
     }

@@ -1,4 +1,4 @@
-<div class="space-y-6">
+<x-analytics::root area="admin" class="space-y-6">
 
     <x-ui::page-header
         :title="__('Campagnes')"
@@ -115,4 +115,4 @@
         </div>
 
     </div>
-</div>
+</x-analytics::root>

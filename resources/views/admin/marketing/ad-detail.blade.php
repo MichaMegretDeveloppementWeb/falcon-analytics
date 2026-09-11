@@ -1,5 +1,3 @@
-@extends($analyticsLayout)
-
-@section($analyticsSection)
+<x-analytics::page area="admin" :title="$analyticsTitle">
     <livewire:analytics::admin.ad-detail-page :ad="$ad" />
-@endsection
+</x-analytics::page>

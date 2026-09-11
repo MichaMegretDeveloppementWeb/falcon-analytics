@@ -105,4 +105,25 @@ final class ScreenMountingTest extends TestCase
             ->get(route('analytics.admin.marketing.campaigns.show', $campaign))
             ->assertSee('<title>Été 2026 · '.__('Marketing').'</title>', false);
     }
+
+    /**
+     * Le titre traverse deux composants, et il doit en sortir entier.
+     *
+     * **Blade échappe les attributs d'un composant de classe au moment où il les
+     * pose**, parce qu'un attribut finit dans une balise. Un titre passé de
+     * cette façon arrivait au gabarit déjà échappé et ressortait de `{{ }}`
+     * échappé une seconde fois · `Vue d&amp;#039;ensemble` dans l'onglet du
+     * navigateur, pendant que le reste de la page allait bien.
+     *
+     * Il voyage donc par le constructeur de la page, où c'est une donnée. Les
+     * deux essais ci-dessus ne l'auraient jamais vu · aucun de leurs titres ne
+     * porte d'apostrophe.
+     */
+    public function test_it_escapes_the_title_once_and_not_twice(): void
+    {
+        $this->actingAs($this->admin(), 'admin')
+            ->get(route('analytics.admin.overview'))
+            ->assertSee('<title>Vue d&#039;ensemble · '.__('Analytics').'</title>', false)
+            ->assertDontSee('&amp;#039;', false);
+    }
 }

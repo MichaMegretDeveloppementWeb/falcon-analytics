@@ -1,4 +1,4 @@
-<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+<x-analytics::root area="admin" class="grid grid-cols-1 gap-6 lg:grid-cols-2">
     @forelse ($reports as $report)
         @php
             $lastStep = $report->steps === [] ? null : $report->steps[array_key_last($report->steps)];
@@ -98,4 +98,4 @@
                 :description="__('Aucun tunnel n\'est déclaré dans app/Analytics/funnels.php.')" />
         </div>
     @endforelse
-</div>
+</x-analytics::root>

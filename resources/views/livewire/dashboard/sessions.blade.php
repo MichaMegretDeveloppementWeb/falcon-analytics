@@ -35,7 +35,7 @@
     }
 @endphp
 
-<div class="space-y-6">
+<x-analytics::root area="admin" class="space-y-6">
 
     @include('analytics::livewire.dashboard.partials.tooltip-host')
 
@@ -159,4 +159,4 @@
         @endif
     @endif
 
-</div>
+</x-analytics::root>

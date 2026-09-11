@@ -21,7 +21,7 @@
     $sourceTotal = array_sum($sources);
 @endphp
 
-<div class="space-y-6">
+<x-analytics::root area="admin" class="space-y-6">
 
     <div>
         <a href="{{ route('analytics.admin.visitors') }}" class="inline-flex cursor-pointer items-center gap-x-1 text-[12px] font-medium text-secondary transition-colors hover:text-primary">
@@ -187,4 +187,4 @@
             <x-ui::button variant="danger" wire:click="forget" @click="$dispatch('close-modal', 'forget-visitor')">{{ __('Supprimer définitivement') }}</x-ui::button>
         </x-slot:actions>
     </x-ui::modal>
-</div>
+</x-analytics::root>
