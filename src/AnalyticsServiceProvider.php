@@ -69,9 +69,10 @@ final class AnalyticsServiceProvider extends ServiceProvider
     {
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'analytics');
+
         // Un fichier par espace · l'administration et ses ecrans, le public et
-        // son point d'ingestion. Les deux sont charges, toujours · un groupe
-        // sans fichier leve, un fichier sans groupe est mort.
+        // son point d'ingestion. Les deux sont charges, toujours · un fichier
+        // qu'on cesserait de charger serait du code mort qui a l'air vivant.
         $this->loadRoutesFrom(__DIR__.'/../routes/admin.php');
         $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
 
