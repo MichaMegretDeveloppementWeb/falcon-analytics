@@ -6,13 +6,26 @@
 # quiconque clone sous Windows, sans que rien ne soit en cause dans le code.
 *               text=auto eol=lf
 
+# Ce qui est produit par la compilation ne se normalise pas, et ne se montre pas
+# dans un diff : c'est du bruit, la source est ailleurs. Et le controle de
+# reproductibilite compare des octets · une normalisation le ferait echouer sur
+# un ecart que personne n'a demande.
+public/*        -text -diff
+
 # Ce qui ne part pas dans l'archive distribuee. Une application qui installe le
-# paquet n'a besoin ni de ses tests ni de son outillage.
-/.github        export-ignore
-/.gitattributes export-ignore
-/.gitignore     export-ignore
-/phpstan.neon   export-ignore
+# paquet n'a besoin ni de sa chaine de compilation, ni de ses tests, ni de son
+# outillage d'analyse. Elle recoit `public/`, deja compile, et rien pour le
+# refabriquer.
+/.github            export-ignore
+/.gitattributes     export-ignore
+/.gitignore         export-ignore
+/.nvmrc             export-ignore
+/node_modules       export-ignore
+/package.json       export-ignore
+/package-lock.json  export-ignore
 /phpstan-bootstrap.php export-ignore
-/phpunit.xml    export-ignore
-/pint.json      export-ignore
-/tests          export-ignore
+/phpstan.neon       export-ignore
+/phpunit.xml        export-ignore
+/pint.json          export-ignore
+/scripts            export-ignore
+/tests              export-ignore
