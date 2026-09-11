@@ -137,13 +137,13 @@ final class CheckCommand extends Command
         }
 
         if ($pending === []) {
-            return ['Migrations', 'OK', 'Aucune migration du package en attente.'];
+            return ['Migrations', 'OK', 'Aucune migration du paquet en attente.'];
         }
 
         $count = count($pending);
         $label = $count === 1
-            ? '1 migration du package est en attente'
-            : "{$count} migrations du package sont en attente";
+            ? '1 migration du paquet est en attente'
+            : "{$count} migrations du paquet sont en attente";
 
         return ['Migrations', 'KO', $label.', dont '.$pending[0].'. Exécutez php artisan migrate.'];
     }

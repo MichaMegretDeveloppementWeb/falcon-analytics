@@ -8,6 +8,12 @@
  * parce que le generateur d'utilitaires les lit · une classe ajoutee dans un
  * ecran change la feuille livree aussi surement qu'une regle ecrite a la main.
  *
+ * **Ce qui n'y entre pas encore : `resources/js`.** Rien ne le compile
+ * aujourd'hui · le collecteur est importe par l'hote dans sa propre entree, et
+ * le paquet n'a aucun script d'administration. Le jour ou la chaine construit
+ * un script, il rejoint cette liste — sinon l'empreinte dirait « a jour »
+ * devant un script modifie.
+ *
  * Les fins de ligne sont normalisees avant hachage : sans cela l'empreinte
  * change entre un poste Windows et un poste Unix, et l'essai echouerait sur une
  * difference qui n'existe pas.

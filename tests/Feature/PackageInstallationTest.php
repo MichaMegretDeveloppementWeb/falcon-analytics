@@ -114,6 +114,20 @@ final class PackageInstallationTest extends TestCase
             $this->artisan('analytics:install')->assertSuccessful();
 
             $this->assertFileExists($base.DIRECTORY_SEPARATOR.'config'.DIRECTORY_SEPARATOR.'analytics.php');
+
+            /*
+             * La feuille compilee, sans quoi le premier ecran leve · le kit
+             * refuse de batir l'adresse d'un fichier que l'hote n'a pas publie.
+             * L'installateur du kit publie les siens ; personne d'autre ne
+             * publie les notres.
+             */
+            $this->assertFileExists(
+                $base.DIRECTORY_SEPARATOR.'public'.DIRECTORY_SEPARATOR.'vendor'
+                .DIRECTORY_SEPARATOR.'falcon'.DIRECTORY_SEPARATOR.'analytics'
+                .DIRECTORY_SEPARATOR.'analytics.css',
+                'Une installation fraiche doit publier la feuille du paquet.',
+            );
+
             $this->assertStringContainsString('# --- Falcon Analytics', File::get($base.DIRECTORY_SEPARATOR.'.env'));
             $this->assertStringContainsString('ANALYTICS_ENABLED=true', File::get($base.DIRECTORY_SEPARATOR.'.env'));
             $this->assertStringContainsString('ANALYTICS_GSC_CLIENT_ID=', File::get($base.DIRECTORY_SEPARATOR.'.env.example'));
