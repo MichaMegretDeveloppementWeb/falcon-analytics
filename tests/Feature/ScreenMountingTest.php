@@ -32,7 +32,7 @@ final class ScreenMountingTest extends TestCase
 
         View::addLocation(__DIR__.'/../Fixtures/views');
 
-        config()->set('analytics.dashboard.layout', 'host-shell');
+        config()->set('analytics.admin.layout', 'host-shell');
     }
 
     private function admin(): TestAdmin
@@ -53,7 +53,7 @@ final class ScreenMountingTest extends TestCase
          * assertion held even with the section deliberately misnamed.
          */
         $this->actingAs($this->admin(), 'admin')
-            ->get(route('analytics.overview'))
+            ->get(route('analytics.admin.overview'))
             ->assertOk()
             ->assertSee('chrome fourni par le gabarit')
             ->assertSee(__('Visiteurs et appareils'));
@@ -73,7 +73,7 @@ final class ScreenMountingTest extends TestCase
 
         $this->withoutTable('falcon_analytics_sessions', function () use ($admin): void {
             $this->actingAs($admin, 'admin')
-                ->get(route('analytics.sessions'))
+                ->get(route('analytics.admin.sessions'))
                 ->assertOk()
                 ->assertSee(__('Données indisponibles'))
                 ->assertSee('chrome fourni par le gabarit');
@@ -84,7 +84,7 @@ final class ScreenMountingTest extends TestCase
     public function test_it_lets_the_controller_name_the_browser_tab(): void
     {
         $this->actingAs($this->admin(), 'admin')
-            ->get(route('analytics.realtime'))
+            ->get(route('analytics.admin.realtime'))
             ->assertSee('<title>'.__('Temps réel').' · '.__('Analytics').'</title>', false);
     }
 
@@ -102,7 +102,7 @@ final class ScreenMountingTest extends TestCase
         ]);
 
         $this->actingAs($this->admin(), 'admin')
-            ->get(route('marketing.campaigns.show', $campaign))
+            ->get(route('analytics.admin.marketing.campaigns.show', $campaign))
             ->assertSee('<title>Été 2026 · '.__('Marketing').'</title>', false);
     }
 }

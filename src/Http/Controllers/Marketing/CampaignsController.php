@@ -10,7 +10,7 @@ final readonly class CampaignsController
 {
     public function __invoke(): View
     {
-        return view('analytics::marketing.campaigns', [
+        return view('analytics::admin.marketing.campaigns', [
             'analyticsTitle' => __('Campagnes').' · '.__('Marketing'),
         ]);
     }

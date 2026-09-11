@@ -116,16 +116,9 @@ final class TheDiagnosticSpeaksTest extends TestCase
             ->assertFailed();
     }
 
-    /**
-     * Le premier lecteur de `analytics.assets`.
-     *
-     * L'installateur ecrivait ce bloc et personne ne le relisait · un hote qui
-     * deplacait une entree n'avait aucun moyen d'apprendre que l'import etait
-     * reste derriere.
-     */
-    public function test_it_says_when_a_module_is_mounted_without_any_middleware(): void
+    public function test_it_says_when_a_screen_group_is_mounted_without_any_middleware(): void
     {
-        config(['analytics.dashboard.middleware' => []]);
+        config(['analytics.admin.middleware' => []]);
 
         $this->artisan('analytics:check')
             ->expectsOutputToContain('Tableau de bord')
@@ -134,7 +127,7 @@ final class TheDiagnosticSpeaksTest extends TestCase
 
     public function test_it_says_when_a_named_host_layout_does_not_exist(): void
     {
-        config(['analytics.dashboard.layout' => 'layouts.absent']);
+        config(['analytics.admin.layout' => 'layouts.absent']);
 
         $this->artisan('analytics:check')
             ->expectsOutputToContain('layouts.absent')
@@ -142,9 +135,9 @@ final class TheDiagnosticSpeaksTest extends TestCase
     }
 
     /** Un gabarit non nomme monte la coquille du paquet · ce n'est pas un defaut. */
-    public function test_it_accepts_a_module_that_uses_the_package_shell(): void
+    public function test_it_accepts_screens_that_use_the_package_shell(): void
     {
-        config(['analytics.dashboard.layout' => null, 'analytics.marketing.layout' => null]);
+        config(['analytics.admin.layout' => null, 'analytics.admin.marketing.layout' => null]);
 
         $this->artisan('analytics:check')->assertSuccessful();
     }

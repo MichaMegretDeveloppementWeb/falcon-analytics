@@ -1,6 +1,5 @@
 @php
     $showAd = $showAd ?? true;
-    $routeName = config('analytics.marketing.route_name', 'marketing');
 @endphp
 
 {{-- Sorted list of conversion elements (objectives): what converted, how many
@@ -27,7 +26,7 @@
                             <span class="min-w-0 flex-1 truncate text-[13px] font-medium text-primary">{{ $el['label'] }}</span>
                             <x-ui::badge :color="$el['type'] === 'funnel' ? 'blue' : 'emerald'">{{ $el['type'] === 'funnel' ? __('Tunnel') : __('Événement') }}</x-ui::badge>
                             @if ($showAd)
-                                <a href="{{ route($routeName.'.ads.show', $el['adId']) }}" class="hidden w-32 shrink-0 cursor-pointer truncate text-right text-[12px] text-secondary hover:text-primary hover:underline sm:inline">{{ $el['adName'] }}</a>
+                                <a href="{{ route('analytics.admin.marketing.ads.show', $el['adId']) }}" class="hidden w-32 shrink-0 cursor-pointer truncate text-right text-[12px] text-secondary hover:text-primary hover:underline sm:inline">{{ $el['adName'] }}</a>
                             @endif
                             <span class="w-16 shrink-0 text-right text-base font-semibold text-primary tabular-nums">{{ number_format($el['conversions'], 0, ',', ' ') }}</span>
                         </div>

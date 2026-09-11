@@ -1,7 +1,3 @@
-@php
-    $routeName = config('analytics.marketing.route_name', 'marketing');
-@endphp
-
 <div class="space-y-6">
 
     <x-ui::page-header
@@ -28,8 +24,8 @@
             <x-ui::table.body>
                 @foreach ($ads as $ad)
                     @php
-                        $adUrl = route($routeName.'.ads.show', $ad->id);
-                        $campaignUrl = route($routeName.'.campaigns.show', $ad->campaign_id);
+                        $adUrl = route('analytics.admin.marketing.ads.show', $ad->id);
+                        $campaignUrl = route('analytics.admin.marketing.campaigns.show', $ad->campaign_id);
                     @endphp
                     <x-ui::table.row
                         wire:key="ad-{{ $ad->id }}"

@@ -262,7 +262,7 @@ final class RealtimeTest extends TestCase
         $this->event($session, EventType::Pageview, ['url' => 'https://x.test/catalogue']);
 
         $this->actingAs(TestAdmin::create([]), 'admin')
-            ->get(route('analytics.realtime'))
+            ->get(route('analytics.admin.realtime'))
             ->assertSuccessful()
             ->assertSeeText(__('Temps réel'))
             ->assertSeeText(__('Visiteurs en ligne'))
@@ -276,14 +276,14 @@ final class RealtimeTest extends TestCase
         config()->set('analytics.realtime.poll_seconds', 5);
 
         $this->actingAs(TestAdmin::create([]), 'admin')
-            ->get(route('analytics.realtime'))
+            ->get(route('analytics.admin.realtime'))
             ->assertSuccessful()
             ->assertSee('wire:poll.5s.visible', false);
     }
 
     public function test_it_redirects_a_guest_to_the_login_page(): void
     {
-        $this->get(route('analytics.realtime'))->assertRedirect();
+        $this->get(route('analytics.admin.realtime'))->assertRedirect();
     }
 
     public function test_it_dispatches_the_fresh_series_for_the_live_charts_on_every_tick(): void
@@ -322,7 +322,7 @@ final class RealtimeTest extends TestCase
         $this->assertNotFalse($region, 'la region CH doit avoir un libelle');
 
         $this->actingAs(TestAdmin::create([]), 'admin')
-            ->get(route('analytics.realtime'))
+            ->get(route('analytics.admin.realtime'))
             ->assertSuccessful()
             ->assertSeeText(__('Pays'))
             ->assertSeeText($region)

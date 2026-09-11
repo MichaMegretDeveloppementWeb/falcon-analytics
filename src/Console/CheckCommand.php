@@ -231,9 +231,9 @@ final class CheckCommand extends Command
     }
 
     /**
-     * The two modules and what guards them. An explicitly empty list mounts the
-     * screens with neither session nor authentication; the log says so at boot,
-     * where nobody reads it.
+     * The two screen groups and what guards them. An explicitly empty list
+     * mounts them with neither session nor authentication; the log says so at
+     * boot, where nobody reads it.
      *
      * @return array{0: string, 1: string, 2: string}
      */
@@ -241,14 +241,14 @@ final class CheckCommand extends Command
     {
         $exposed = [];
 
-        foreach (['dashboard' => 'Tableau de bord', 'marketing' => 'Marketing'] as $module => $label) {
-            if ($config->get('analytics.'.$module.'.middleware') === []) {
-                $exposed[] = $label.' (analytics.'.$module.'.middleware)';
+        foreach (self::screenGroups() as $key => $label) {
+            if ($config->get($key.'.middleware') === []) {
+                $exposed[] = $label.' ('.$key.'.middleware)';
             }
         }
 
         if ($exposed === []) {
-            return ['Protection', 'OK', 'Les deux modules sont montés derrière un middleware.'];
+            return ['Protection', 'OK', 'Les deux groupes d’écrans sont montés derrière un middleware.'];
         }
 
         return [
@@ -261,7 +261,7 @@ final class CheckCommand extends Command
     /**
      * The host's layout, when it names one. `null` mounts the screens in the
      * package's own shell; a name is a promise, and a missing layout drops
-     * every screen of the module on the first visit and never before.
+     * every screen of the group on the first visit and never before.
      *
      * @return array{0: string, 1: string, 2: string}
      */
@@ -269,8 +269,8 @@ final class CheckCommand extends Command
     {
         $missing = [];
 
-        foreach (['dashboard' => 'Tableau de bord', 'marketing' => 'Marketing'] as $module => $label) {
-            $layout = $config->get('analytics.'.$module.'.layout');
+        foreach (self::screenGroups() as $key => $label) {
+            $layout = $config->get($key.'.layout');
 
             if (is_string($layout) && $layout !== '' && ! View::exists($layout)) {
                 $missing[] = $label.' : la vue '.$layout.' n’existe pas';
@@ -278,10 +278,26 @@ final class CheckCommand extends Command
         }
 
         if ($missing === []) {
-            return ['Gabarits', 'OK', 'Les gabarits nommés existent, ou les modules utilisent celui du paquet.'];
+            return ['Gabarits', 'OK', 'Les gabarits nommés existent, ou les écrans utilisent celui du paquet.'];
         }
 
         return ['Gabarits', 'KO', implode(' · ', $missing)];
+    }
+
+    /**
+     * The two groups of screens the administration holds, by config block.
+     *
+     * Marketing sits inside the admin block rather than beside it: it is a
+     * second entity of the same area, with its own address and its own guard.
+     *
+     * @return array<string, string>
+     */
+    private static function screenGroups(): array
+    {
+        return [
+            'analytics.admin' => 'Tableau de bord',
+            'analytics.admin.marketing' => 'Marketing',
+        ];
     }
 
     /**

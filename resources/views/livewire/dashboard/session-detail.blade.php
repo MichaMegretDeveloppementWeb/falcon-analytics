@@ -2,7 +2,6 @@
     use Falcon\Analytics\Enums\EventType;
     use Falcon\Analytics\Support\DeviceLabel;
 
-    $routeName = config('analytics.dashboard.route_name', 'analytics');
     $value = fn ($raw) => filled($raw) ? $raw : null;
     $visitorLabel = $subjectLabel;
     $visitorName = $subjectName;
@@ -96,7 +95,7 @@
     @include('analytics::livewire.dashboard.partials.tooltip-host')
 
     <div>
-        <a href="{{ route($routeName.'.sessions') }}" class="inline-flex cursor-pointer items-center gap-x-1 text-[12px] font-medium text-secondary transition-colors hover:text-primary">
+        <a href="{{ route('analytics.admin.sessions') }}" class="inline-flex cursor-pointer items-center gap-x-1 text-[12px] font-medium text-secondary transition-colors hover:text-primary">
             <x-ui::icon name="arrow-left" class="h-3.5 w-3.5" />
             {{ __('Retour aux sessions') }}
         </a>
@@ -108,7 +107,7 @@
             {{ __('Session') }} #{{ $session->id }} <span class="text-muted">·</span> {{ $session->started_at->translatedFormat('d F Y à H:i') }}
         </h1>
         <div class="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-sm text-secondary">
-            <a href="{{ route($routeName.'.visitors.show', $session->visitor_id) }}" class="inline-flex cursor-pointer items-center gap-1 font-medium text-primary hover:underline" title="{{ __('Voir le profil du visiteur') }}">
+            <a href="{{ route('analytics.admin.visitors.show', $session->visitor_id) }}" class="inline-flex cursor-pointer items-center gap-1 font-medium text-primary hover:underline" title="{{ __('Voir le profil du visiteur') }}">
                 {{ $visitorPrimary }}
                 <x-ui::icon name="arrow-top-right-on-square" class="h-3 w-3 text-muted" />
             </a>

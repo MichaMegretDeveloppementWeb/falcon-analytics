@@ -2,6 +2,10 @@
 
 declare(strict_types=1);
 
+use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
+use Illuminate\Cookie\Middleware\EncryptCookies;
+use Illuminate\Session\Middleware\StartSession;
+
 // Une variable d'environnement laissee vide vaut une variable absente · elle se
 // lit `''`, et ce n'est pas un chemin de base de donnees.
 $geoipDatabase = env('ANALYTICS_GEOIP_DATABASE');
@@ -85,26 +89,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Marketing module
-    |--------------------------------------------------------------------------
-    |
-    | The marketing screens (dashboard, campaigns, ads) mount as their own
-    | top-level module, separate from the analytics dashboard, mirroring the
-    | dashboard block below. A campaign or ad is matched to a session by the free
-    | URL-parameter conditions captured on it (mkt_params), at report time.
-    |
-    */
-
-    'marketing' => [
-        'route_prefix' => 'admin/marketing',
-        'route_name' => 'marketing',
-        'middleware' => ['web', 'auth'],
-        'layout' => null,
-        'layout_section' => 'content',
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
     | Ingestion endpoint
     |--------------------------------------------------------------------------
     |
@@ -155,18 +139,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Dashboard
+    | Administration area
     |--------------------------------------------------------------------------
+    |
+    | Where the screens mount, and behind what. The route NAMES are not here on
+    | purpose: they are fixed (analytics.admin.overview,
+    | analytics.admin.marketing.campaigns, ...) so that a menu or a redirect can
+    | write one down. Only the addresses move.
+    |
     */
 
-    'dashboard' => [
-        // What appears in the URL for every dashboard page (e.g. /admin/analytics).
+    'admin' => [
+        // What appears in the URL for every analytics page (e.g. /admin/analytics).
         'route_prefix' => 'admin/analytics',
 
-        // Prefix for the route NAMES: 'analytics' -> route('analytics.overview').
-        'route_name' => 'analytics',
-
-        // Middleware protecting the dashboard. The default suits a single-guard
+        // Middleware protecting the screens. The default suits a single-guard
         // app; override to match the project (e.g. ['web', 'auth:admin']).
         'middleware' => ['web', 'auth'],
 
@@ -177,6 +164,44 @@ return [
         // The section that layout yields the screen into. Only matters when the
         // host layout names it something other than 'content'.
         'layout_section' => 'content',
+
+        /*
+        | Marketing: a second entity of the administration, with its own
+        | address, its own guard and its own place in the menu — a host can
+        | mount it elsewhere than the analytics screens, or not at all. A
+        | campaign or ad is matched to a session by the free URL-parameter
+        | conditions captured on it (mkt_params), at report time.
+        */
+        'marketing' => [
+            'route_prefix' => 'admin/marketing',
+            'middleware' => ['web', 'auth'],
+            'layout' => null,
+            'layout_section' => 'content',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Public area
+    |--------------------------------------------------------------------------
+    |
+    | The collector posts to the ingestion endpoint, and that is the whole of
+    | this area. The session stack below is what the package lays in front of
+    | it; the package routes are registered outside the host's route groups, so
+    | they inherit nothing and the stack has to be complete.
+    |
+    | There is no CSRF here, and there cannot be: a beacon carries no token.
+    | The origin check and the rate limit hold that role instead, and they are
+    | not configurable — they are appended after this list.
+    |
+    */
+
+    'web' => [
+        'middleware' => [
+            EncryptCookies::class,
+            AddQueuedCookiesToResponse::class,
+            StartSession::class,
+        ],
     ],
 
     /*
@@ -244,7 +269,7 @@ return [
         'client_secret' => env('ANALYTICS_GSC_CLIENT_SECRET', ''),
 
         // Absolute redirect URI registered on the OAuth client. Null uses the
-        // package callback route ({dashboard.route_prefix}/integrations/search-console/callback).
+        // package callback route ({admin.route_prefix}/integrations/search-console/callback).
         'redirect' => env('ANALYTICS_GSC_REDIRECT'),
     ],
 

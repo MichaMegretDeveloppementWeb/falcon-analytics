@@ -211,8 +211,8 @@ abstract class TestCase extends Orchestra
                 'lessor' => ['label' => 'Loueur', 'name' => ['first_name', 'last_name']],
             ]);
 
-            $config->set('analytics.dashboard.middleware', ['web', 'auth:admin']);
-            $config->set('analytics.dashboard.layout', null);
+            $config->set('analytics.admin.middleware', ['web', 'auth:admin']);
+            $config->set('analytics.admin.layout', null);
         });
     }
 

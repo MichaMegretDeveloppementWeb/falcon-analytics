@@ -1,7 +1,3 @@
-@php
-    $routeName = config('analytics.marketing.route_name', 'marketing');
-@endphp
-
 <div class="space-y-6">
 
     <x-ui::page-header
@@ -30,7 +26,7 @@
             </x-ui::table.head>
             <x-ui::table.body>
                 @foreach ($campaigns as $campaign)
-                    @php $showUrl = route($routeName.'.campaigns.show', $campaign); @endphp
+                    @php $showUrl = route('analytics.admin.marketing.campaigns.show', $campaign); @endphp
                     <x-ui::table.row
                         wire:key="campaign-{{ $campaign->id }}"
                         onclick="if (!event.target.closest('a,button')) window.location='{{ $showUrl }}'"

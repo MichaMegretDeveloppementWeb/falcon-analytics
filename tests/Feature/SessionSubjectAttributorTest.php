@@ -132,7 +132,7 @@ final class SessionSubjectAttributorTest extends TestCase
         $this->sessionRow($visitor);
 
         $this->actingAs($this->admin, 'admin')
-            ->get(route('analytics.sessions'))
+            ->get(route('analytics.admin.sessions'))
             ->assertSuccessful()
             ->assertSeeText('Marie Dupont')
             ->assertSeeText(__('Non connecté'));
@@ -145,7 +145,7 @@ final class SessionSubjectAttributorTest extends TestCase
         $session = $this->sessionRow($visitor);
 
         $this->actingAs($this->admin, 'admin')
-            ->get(route('analytics.sessions.show', $session))
+            ->get(route('analytics.admin.sessions.show', $session))
             ->assertSuccessful()
             ->assertSeeText('Marie Dupont')
             ->assertSeeText(__('Non connecté'))
@@ -157,7 +157,7 @@ final class SessionSubjectAttributorTest extends TestCase
         $session = $this->sessionRow($this->visitor());
 
         $this->actingAs($this->admin, 'admin')
-            ->get(route('analytics.sessions.show', $session))
+            ->get(route('analytics.admin.sessions.show', $session))
             ->assertSuccessful()
             ->assertSeeText(__('Visiteur anonyme'));
     }
@@ -169,7 +169,7 @@ final class SessionSubjectAttributorTest extends TestCase
         $this->sessionRow($visitor);
 
         $this->actingAs($this->admin, 'admin')
-            ->get(route('analytics.visitors.show', $visitor))
+            ->get(route('analytics.admin.visitors.show', $visitor))
             ->assertSuccessful()
             ->assertSeeText(__('Connecté'));
     }

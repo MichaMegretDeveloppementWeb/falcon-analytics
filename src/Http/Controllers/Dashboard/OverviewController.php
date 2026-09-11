@@ -10,7 +10,7 @@ final readonly class OverviewController
 {
     public function __invoke(): View
     {
-        return view('analytics::dashboard.overview', [
+        return view('analytics::admin.dashboard.overview', [
             'analyticsTitle' => __('Vue d\'ensemble').' · '.__('Analytics'),
         ]);
     }

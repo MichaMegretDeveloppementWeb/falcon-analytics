@@ -1,8 +1,6 @@
 @php
     use Falcon\Analytics\Support\DeviceLabel;
 
-    $routeName = config('analytics.dashboard.route_name', 'analytics');
-
     $visitorPrimary = $subjectName
         ?? ($visitor->subject_type ? $subjectLabel.' #'.$visitor->subject_id : __('Visiteur #:id', ['id' => $visitor->id]));
     $isReturning = $visitor->session_count > 1;
@@ -26,7 +24,7 @@
 <div class="space-y-6">
 
     <div>
-        <a href="{{ route($routeName.'.visitors') }}" class="inline-flex cursor-pointer items-center gap-x-1 text-[12px] font-medium text-secondary transition-colors hover:text-primary">
+        <a href="{{ route('analytics.admin.visitors') }}" class="inline-flex cursor-pointer items-center gap-x-1 text-[12px] font-medium text-secondary transition-colors hover:text-primary">
             <x-ui::icon name="arrow-left" class="h-3.5 w-3.5" />
             {{ __('Retour aux visiteurs') }}
         </a>
@@ -125,7 +123,7 @@
                 <x-ui::table.body>
                     @foreach ($sessions as $s)
                         @php
-                            $sessionUrl = route($routeName.'.sessions.show', $s);
+                            $sessionUrl = route('analytics.admin.sessions.show', $s);
                             $seconds = (int) $s->started_at->diffInSeconds($s->last_activity_at);
                         @endphp
                         <x-ui::table.row wire:key="session-{{ $s->id }}" onclick="if (!event.target.closest('a')) window.location='{{ $sessionUrl }}'" class="cursor-pointer">

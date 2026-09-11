@@ -94,7 +94,7 @@ final class CampaignDetailPage extends DashboardComponent
             return;
         }
 
-        $this->redirect(route(config('analytics.marketing.route_name', 'marketing').'.campaigns'));
+        $this->redirect(route('analytics.admin.marketing.campaigns'));
     }
 
     public function newAd(): void

@@ -42,7 +42,7 @@ final class OverviewEvents extends Component
             return [
                 'topConversions' => array_slice($conversions, 0, 6),
                 'topEvents' => array_slice($breakdown, 0, 6),
-                'eventsRoute' => route(config('analytics.dashboard.route_name', 'analytics').'.events'),
+                'eventsRoute' => route('analytics.admin.events'),
             ];
         }, fn (array $data): View => view('analytics::livewire.dashboard.widgets.overview-events', $data));
     }

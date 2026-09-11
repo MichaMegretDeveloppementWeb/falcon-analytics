@@ -10,7 +10,7 @@ final readonly class RealtimeController
 {
     public function __invoke(): View
     {
-        return view('analytics::dashboard.realtime', [
+        return view('analytics::admin.dashboard.realtime', [
             'analyticsTitle' => __('Temps réel').' · '.__('Analytics'),
         ]);
     }

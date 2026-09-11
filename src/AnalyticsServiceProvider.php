@@ -69,7 +69,11 @@ final class AnalyticsServiceProvider extends ServiceProvider
     {
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'analytics');
-        $this->loadRoutesFrom(__DIR__.'/../routes/analytics.php');
+        // Un fichier par espace · l'administration et ses ecrans, le public et
+        // son point d'ingestion. Les deux sont charges, toujours · un groupe
+        // sans fichier leve, un fichier sans groupe est mort.
+        $this->loadRoutesFrom(__DIR__.'/../routes/admin.php');
+        $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
 
         $this->registerPersistentMiddleware();
         $this->shareLayoutWithScreens();
@@ -185,36 +189,42 @@ final class AnalyticsServiceProvider extends ServiceProvider
      * is being mounted. The host decides, from its config, and gets the package
      * standalone shell while it decides nothing.
      *
-     * Two composers rather than one because the two modules are configured
-     * separately — a host can hang marketing off another shell than analytics,
-     * or not mount it at all.
+     * Two composers rather than one because the two entities are configured
+     * separately — a host can hang marketing off another shell than the
+     * analytics screens, or not mount it at all.
      */
     private function shareLayoutWithScreens(): void
     {
-        foreach (['dashboard', 'marketing'] as $module) {
-            View::composer("analytics::{$module}.*", static function ($view) use ($module): void {
+        // Le prefixe des vues, et le bloc de configuration qui repond pour lui.
+        $areas = [
+            'admin.dashboard' => 'analytics.admin',
+            'admin.marketing' => 'analytics.admin.marketing',
+        ];
+
+        foreach ($areas as $views => $block) {
+            View::composer("analytics::{$views}.*", static function ($view) use ($block): void {
                 $view->with([
-                    'analyticsLayout' => self::configured("analytics.{$module}.layout", 'analytics::layouts.dashboard'),
-                    'analyticsSection' => config("analytics.{$module}.layout_section", 'content'),
+                    'analyticsLayout' => self::configured("{$block}.layout", 'analytics::layouts.dashboard'),
+                    'analyticsSection' => config("{$block}.layout_section", 'content'),
                 ]);
             });
         }
     }
 
     /**
-     * Replay the host's dashboard and marketing middleware on every Livewire
-     * component update (/livewire/update). Livewire only re-runs middleware
-     * registered as persistent, so without this a signed component snapshot
-     * from a formerly authorized session could keep triggering actions (GDPR
-     * erasure, campaign CRUD) after the host middleware would deny the page.
-     * The 'web' stack is excluded: Livewire already runs it on updates.
+     * Replay the host's administration middleware on every Livewire component
+     * update (/livewire/update). Livewire only re-runs middleware registered as
+     * persistent, so without this a signed component snapshot from a formerly
+     * authorized session could keep triggering actions (GDPR erasure, campaign
+     * CRUD) after the host middleware would deny the page. The 'web' stack is
+     * excluded: Livewire already runs it on updates.
      */
     private function registerPersistentMiddleware(): void
     {
         $middleware = array_values(array_unique(array_filter(
             [
-                ...(array) config('analytics.dashboard.middleware', []),
-                ...(array) config('analytics.marketing.middleware', []),
+                ...(array) config('analytics.admin.middleware', []),
+                ...(array) config('analytics.admin.marketing.middleware', []),
             ],
             fn (mixed $entry): bool => is_string($entry) && $entry !== '' && $entry !== 'web',
         )));

@@ -150,7 +150,7 @@ final class SearchConsoleAuth
             return $configured;
         }
 
-        return route((string) config('analytics.dashboard.route_name', 'analytics').'.integrations.search-console.callback');
+        return route('analytics.admin.integrations.search-console.callback');
     }
 
     /**

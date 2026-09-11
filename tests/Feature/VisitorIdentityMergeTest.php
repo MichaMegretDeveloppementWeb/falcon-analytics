@@ -244,7 +244,7 @@ final class VisitorIdentityMergeTest extends TestCase
         $alias->update(['merged_into_id' => $canonical->id]);
 
         $this->actingAs(TestAdmin::create([]), 'admin')
-            ->get(route('analytics.visitors.show', $alias))
-            ->assertRedirect(route('analytics.visitors.show', $canonical));
+            ->get(route('analytics.admin.visitors.show', $alias))
+            ->assertRedirect(route('analytics.admin.visitors.show', $canonical));
     }
 }

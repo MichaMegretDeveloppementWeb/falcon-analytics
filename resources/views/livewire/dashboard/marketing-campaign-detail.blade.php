@@ -1,13 +1,11 @@
 @php
     use Illuminate\Support\Str;
-
-    $routeName = config('analytics.marketing.route_name', 'marketing');
 @endphp
 
 <div class="space-y-6">
 
     <div>
-        <a href="{{ route($routeName.'.campaigns') }}" class="inline-flex cursor-pointer items-center gap-x-1 text-[12px] font-medium text-secondary transition-colors hover:text-primary">
+        <a href="{{ route('analytics.admin.marketing.campaigns') }}" class="inline-flex cursor-pointer items-center gap-x-1 text-[12px] font-medium text-secondary transition-colors hover:text-primary">
             <x-ui::icon name="arrow-left" class="h-3.5 w-3.5" />
             {{ __('Retour aux campagnes') }}
         </a>
@@ -67,7 +65,7 @@
                 </x-ui::table.head>
                 <x-ui::table.body>
                     @foreach ($ads as $ad)
-                        @php $adUrl = route($routeName.'.ads.show', $ad->id); @endphp
+                        @php $adUrl = route('analytics.admin.marketing.ads.show', $ad->id); @endphp
                         <x-ui::table.row
                             wire:key="ad-{{ $ad->id }}"
                             onclick="if (!event.target.closest('a,button')) window.location='{{ $adUrl }}'"

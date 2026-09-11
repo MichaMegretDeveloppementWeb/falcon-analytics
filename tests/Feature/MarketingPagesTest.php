@@ -41,23 +41,23 @@ final class MarketingPagesTest extends TestCase
         ]);
     }
 
-    public function test_it_mounts_the_marketing_module_at_its_own_prefix_and_route_names(): void
+    public function test_it_mounts_the_marketing_screens_at_their_own_prefix_under_fixed_route_names(): void
     {
-        $this->assertSame('/admin/marketing', route('marketing.dashboard', absolute: false));
-        $this->assertSame('/admin/marketing/campaigns', route('marketing.campaigns', absolute: false));
-        $this->assertSame('/admin/marketing/campaigns/1', route('marketing.campaigns.show', ['campaign' => 1], absolute: false));
-        $this->assertSame('/admin/marketing/ads', route('marketing.ads', absolute: false));
-        $this->assertSame('/admin/marketing/ads/1', route('marketing.ads.show', ['ad' => 1], absolute: false));
+        $this->assertSame('/admin/marketing', route('analytics.admin.marketing.dashboard', absolute: false));
+        $this->assertSame('/admin/marketing/campaigns', route('analytics.admin.marketing.campaigns', absolute: false));
+        $this->assertSame('/admin/marketing/campaigns/1', route('analytics.admin.marketing.campaigns.show', ['campaign' => 1], absolute: false));
+        $this->assertSame('/admin/marketing/ads', route('analytics.admin.marketing.ads', absolute: false));
+        $this->assertSame('/admin/marketing/ads/1', route('analytics.admin.marketing.ads.show', ['ad' => 1], absolute: false));
     }
 
     public function test_it_protects_the_marketing_module_from_guests(): void
     {
         $campaign = $this->campaign();
 
-        $this->get(route('marketing.dashboard'))->assertRedirect(route('login'));
-        $this->get(route('marketing.campaigns'))->assertRedirect(route('login'));
-        $this->get(route('marketing.campaigns.show', $campaign))->assertRedirect(route('login'));
-        $this->get(route('marketing.ads'))->assertRedirect(route('login'));
+        $this->get(route('analytics.admin.marketing.dashboard'))->assertRedirect(route('login'));
+        $this->get(route('analytics.admin.marketing.campaigns'))->assertRedirect(route('login'));
+        $this->get(route('analytics.admin.marketing.campaigns.show', $campaign))->assertRedirect(route('login'));
+        $this->get(route('analytics.admin.marketing.ads'))->assertRedirect(route('login'));
     }
 
     public function test_it_defers_the_campaign_performance_and_dispatches_the_ads_table_metrics(): void
@@ -93,14 +93,14 @@ final class MarketingPagesTest extends TestCase
 
         $this->actingAs($this->admin, 'admin');
 
-        $this->get(route('marketing.dashboard'))->assertSuccessful()->assertSeeText(__('Vue d\'ensemble'));
-        $this->get(route('marketing.campaigns'))->assertSuccessful()->assertSeeText('Été 2026')->assertSeeText('meta_ete');
-        $this->get(route('marketing.campaigns.show', $campaign))->assertSuccessful()->assertSeeText('Cabriolet')->assertSeeText('cabrio');
-        $this->get(route('marketing.ads'))->assertSuccessful()->assertSeeText('Cabriolet');
+        $this->get(route('analytics.admin.marketing.dashboard'))->assertSuccessful()->assertSeeText(__('Vue d\'ensemble'));
+        $this->get(route('analytics.admin.marketing.campaigns'))->assertSuccessful()->assertSeeText('Été 2026')->assertSeeText('meta_ete');
+        $this->get(route('analytics.admin.marketing.campaigns.show', $campaign))->assertSuccessful()->assertSeeText('Cabriolet')->assertSeeText('cabrio');
+        $this->get(route('analytics.admin.marketing.ads'))->assertSuccessful()->assertSeeText('Cabriolet');
 
         $ad = Ad::where('name', 'Cabriolet')->firstOrFail();
 
-        $this->get(route('marketing.ads.show', $ad))->assertSuccessful()
+        $this->get(route('analytics.admin.marketing.ads.show', $ad))->assertSuccessful()
             ->assertSeeText('Cabriolet')
             ->assertSeeText('Été 2026')
             ->assertSeeText(__('Performance'));

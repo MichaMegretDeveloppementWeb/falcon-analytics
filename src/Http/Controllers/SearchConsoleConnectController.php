@@ -18,10 +18,8 @@ final class SearchConsoleConnectController
 {
     public function __invoke(Request $request, SearchConsoleAuth $auth): RedirectResponse
     {
-        $routeName = (string) config('analytics.dashboard.route_name', 'analytics');
-
         if (! $auth->configured()) {
-            return redirect()->route($routeName.'.integrations');
+            return redirect()->route('analytics.admin.integrations');
         }
 
         $state = Str::random(40);

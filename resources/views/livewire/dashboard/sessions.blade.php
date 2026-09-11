@@ -88,7 +88,7 @@
                     @php
                         $duration = $formatSeconds((int) $session->started_at->diffInSeconds($session->last_activity_at));
                     @endphp
-                    @php $sessionUrl = route('analytics.sessions.show', $session); @endphp
+                    @php $sessionUrl = route('analytics.admin.sessions.show', $session); @endphp
                     <x-ui::table.row
                         wire:key="session-{{ $session->id }}"
                         onclick="if (!event.target.closest('a')) window.location='{{ $sessionUrl }}'"

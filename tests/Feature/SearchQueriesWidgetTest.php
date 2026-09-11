@@ -142,14 +142,14 @@ final class SearchQueriesWidgetTest extends TestCase
     {
         $this->actingAs($this->admin, 'admin');
 
-        $this->get(route('analytics.overview'))
+        $this->get(route('analytics.admin.overview'))
             ->assertSuccessful()
             ->assertDontSeeText(__('Clics par recherches Google'));
 
         config()->set('analytics.search_console.client_id', 'client-id-123');
         config()->set('analytics.search_console.client_secret', 'secret-456');
 
-        $this->get(route('analytics.overview'))
+        $this->get(route('analytics.admin.overview'))
             ->assertSuccessful()
             ->assertSeeHtml('admin.widgets.overview-search-queries');
     }

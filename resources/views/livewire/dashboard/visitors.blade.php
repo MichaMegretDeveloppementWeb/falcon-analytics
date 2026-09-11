@@ -70,7 +70,7 @@
                     @php
                         $subjectName = $visitor->subject_type ? ($subjectNames[$visitor->subject_type.':'.$visitor->subject_id] ?? null) : null;
                         $subjectLabel = $visitor->subject_type ? $subjectResolver->label($visitor->subject_type) : null;
-                        $visitorUrl = route(config('analytics.dashboard.route_name', 'analytics').'.visitors.show', $visitor);
+                        $visitorUrl = route('analytics.admin.visitors.show', $visitor);
                     @endphp
                     <x-ui::table.row wire:key="visitor-{{ $visitor->id }}" onclick="if (!event.target.closest('a')) window.location='{{ $visitorUrl }}'" class="cursor-pointer">
                         <x-ui::table.cell :first="true">

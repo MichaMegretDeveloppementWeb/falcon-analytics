@@ -10,7 +10,7 @@ final readonly class MarketingDashboardController
 {
     public function __invoke(): View
     {
-        return view('analytics::marketing.dashboard', [
+        return view('analytics::admin.marketing.dashboard', [
             'analyticsTitle' => __('Vue d\'ensemble').' · '.__('Marketing'),
         ]);
     }

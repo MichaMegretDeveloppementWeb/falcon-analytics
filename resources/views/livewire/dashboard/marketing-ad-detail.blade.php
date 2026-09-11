@@ -1,6 +1,5 @@
 @php
-    $routeName = config('analytics.marketing.route_name', 'marketing');
-    $campaignUrl = route($routeName.'.campaigns.show', $ad->campaign_id);
+    $campaignUrl = route('analytics.admin.marketing.campaigns.show', $ad->campaign_id);
 @endphp
 
 <div class="space-y-6">

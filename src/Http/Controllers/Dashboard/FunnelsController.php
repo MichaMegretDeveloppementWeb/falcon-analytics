@@ -10,7 +10,7 @@ final readonly class FunnelsController
 {
     public function __invoke(): View
     {
-        return view('analytics::dashboard.funnels', [
+        return view('analytics::admin.dashboard.funnels', [
             'analyticsTitle' => __('Tunnels').' · '.__('Analytics'),
         ]);
     }

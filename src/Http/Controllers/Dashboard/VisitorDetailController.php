@@ -18,7 +18,7 @@ final readonly class VisitorDetailController
 {
     public function __invoke(Visitor $visitor): View
     {
-        return view('analytics::dashboard.visitor-detail', [
+        return view('analytics::admin.dashboard.visitor-detail', [
             'visitor' => $visitor,
             'analyticsTitle' => __('Visiteur').' · '.__('Analytics'),
         ]);

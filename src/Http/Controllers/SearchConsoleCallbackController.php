@@ -20,16 +20,15 @@ final class SearchConsoleCallbackController
 {
     public function __invoke(Request $request, SearchConsoleAuth $auth): RedirectResponse
     {
-        $routeName = (string) config('analytics.dashboard.route_name', 'analytics');
         $expected = (string) $request->session()->pull('analytics.search_console.state', '');
         $received = (string) $request->query('state', '');
 
         if ($expected === '' || ! hash_equals($expected, $received)) {
-            return $this->fail($routeName, __('La connexion a expiré ou la requête est invalide. Réessayez.'));
+            return $this->fail(__('La connexion a expiré ou la requête est invalide. Réessayez.'));
         }
 
         if ($request->query('error') !== null || (string) $request->query('code', '') === '') {
-            return $this->fail($routeName, __('L\'autorisation Google a été refusée ou annulée.'));
+            return $this->fail(__('L\'autorisation Google a été refusée ou annulée.'));
         }
 
         try {
@@ -37,7 +36,7 @@ final class SearchConsoleCallbackController
         } catch (Throwable $e) {
             Log::channel(config('analytics.log_channel'))->error('SearchConsole.exchange_failed', ['exception' => $e]);
 
-            return $this->fail($routeName, __('L\'échange avec Google a échoué. Réessayez.'));
+            return $this->fail(__('L\'échange avec Google a échoué. Réessayez.'));
         }
 
         $request->session()->flash('analytics.search_console.flash', [
@@ -45,13 +44,13 @@ final class SearchConsoleCallbackController
             'title' => __('Compte Google connecté. Choisissez la propriété à rattacher.'),
         ]);
 
-        return redirect()->route($routeName.'.integrations');
+        return redirect()->route('analytics.admin.integrations');
     }
 
-    private function fail(string $routeName, string $message): RedirectResponse
+    private function fail(string $message): RedirectResponse
     {
         session()->flash('analytics.search_console.flash', ['type' => 'danger', 'title' => $message]);
 
-        return redirect()->route($routeName.'.integrations');
+        return redirect()->route('analytics.admin.integrations');
     }
 }

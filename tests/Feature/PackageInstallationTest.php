@@ -82,18 +82,18 @@ final class PackageInstallationTest extends TestCase
         $this->assertNotContains('web', $persistent);
     }
 
-    public function test_it_warns_when_a_module_is_mounted_with_an_empty_middleware_list(): void
+    public function test_it_warns_when_a_screen_group_is_mounted_with_an_empty_middleware_list(): void
     {
-        config(['analytics.dashboard.middleware' => [], 'analytics.marketing.middleware' => []]);
+        config(['analytics.admin.middleware' => [], 'analytics.admin.marketing.middleware' => []]);
 
         Log::shouldReceive('channel')->twice()->andReturnSelf();
         Log::shouldReceive('warning')
             ->twice()
             ->withArgs(fn (string $message): bool => str_contains($message, 'empty middleware list'));
 
-        require dirname(__DIR__, 2).'/routes/analytics.php';
+        require dirname(__DIR__, 2).'/routes/admin.php';
 
-        $this->assertTrue(Route::has('analytics.overview'));
+        $this->assertTrue(Route::has('analytics.admin.overview'));
     }
 
     public function test_it_runs_analytics_install_for_real_against_a_temporary_base_path(): void

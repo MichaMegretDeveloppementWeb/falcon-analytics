@@ -1,9 +1,8 @@
 @php
     use Falcon\Analytics\Models\SearchConsoleConnection;
 
-    $routeName = config('analytics.dashboard.route_name', 'analytics');
-    $connectUrl = route($routeName.'.integrations.search-console.connect');
-    $callbackUrl = route($routeName.'.integrations.search-console.callback');
+    $connectUrl = route('analytics.admin.integrations.search-console.connect');
+    $callbackUrl = route('analytics.admin.integrations.search-console.callback');
 @endphp
 
 <div class="space-y-8">

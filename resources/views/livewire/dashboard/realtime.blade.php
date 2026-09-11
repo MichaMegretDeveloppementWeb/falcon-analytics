@@ -2,7 +2,6 @@
     use Falcon\Analytics\Enums\EventType;
     use Falcon\Analytics\Support\DeviceLabel;
 
-    $routeName = config('analytics.dashboard.route_name', 'analytics');
     $subjectResolver = app(\Falcon\Analytics\Services\SubjectResolver::class);
 
     // Palette de reference (Wix) : encre #000624, accent #116DFF, en ligne #54CE91.
@@ -223,7 +222,7 @@
                                 $isOnline = $session->last_activity_at->greaterThanOrEqualTo($onlineThreshold);
                             @endphp
                             <li wire:key="rt-session-{{ $session->id }}">
-                                <a href="{{ route($routeName.'.sessions.show', $session) }}" class="flex cursor-pointer items-center gap-3 px-5 py-3 transition-colors hover:bg-elevated/50">
+                                <a href="{{ route('analytics.admin.sessions.show', $session) }}" class="flex cursor-pointer items-center gap-3 px-5 py-3 transition-colors hover:bg-elevated/50">
                                     <x-ui::icon :name="$deviceIcon($session->device_type)" class="h-5 w-5 shrink-0 {{ $inkSoft }}" />
                                     <span class="min-w-0 flex-1">
                                         <span class="flex items-center gap-x-1.5">
@@ -273,7 +272,7 @@
                                 };
                             @endphp
                             <li wire:key="rt-feed-{{ $event->id }}">
-                                <a href="{{ $event->session_id !== null ? route($routeName.'.sessions.show', $event->session_id) : '#' }}"
+                                <a href="{{ $event->session_id !== null ? route('analytics.admin.sessions.show', $event->session_id) : '#' }}"
                                    class="flex cursor-pointer items-start gap-3 px-5 py-3 transition-colors hover:bg-elevated/50">
                                     <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg {{ $isConversion ? 'bg-[#54CE91]/15' : 'bg-elevated' }}">
                                         <x-ui::icon :name="$feedIcon($event)" class="h-3.5 w-3.5 {{ $isConversion ? 'text-[#22A96F]' : $inkSoft }}" />

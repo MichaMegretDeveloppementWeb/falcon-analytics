@@ -85,15 +85,15 @@ final class DashboardPagesTest extends TestCase
         ], $attributes));
     }
 
-    public function test_it_mounts_the_dashboard_at_the_configured_prefix_and_route_names(): void
+    public function test_it_mounts_the_screens_at_the_configured_prefix_under_fixed_route_names(): void
     {
-        $this->assertSame('/admin/analytics', route('analytics.overview', absolute: false));
-        $this->assertSame('/admin/analytics/visitors', route('analytics.visitors', absolute: false));
-        $this->assertSame('/admin/analytics/funnels', route('analytics.funnels', absolute: false));
-        $this->assertSame('/admin/analytics/events', route('analytics.events', absolute: false));
-        $this->assertSame('/admin/analytics/sessions', route('analytics.sessions', absolute: false));
-        $this->assertSame('/admin/analytics/sessions/1', route('analytics.sessions.show', ['session' => 1], absolute: false));
-        $this->assertSame('/admin/analytics/visitors/1', route('analytics.visitors.show', ['visitor' => 1], absolute: false));
+        $this->assertSame('/admin/analytics', route('analytics.admin.overview', absolute: false));
+        $this->assertSame('/admin/analytics/visitors', route('analytics.admin.visitors', absolute: false));
+        $this->assertSame('/admin/analytics/funnels', route('analytics.admin.funnels', absolute: false));
+        $this->assertSame('/admin/analytics/events', route('analytics.admin.events', absolute: false));
+        $this->assertSame('/admin/analytics/sessions', route('analytics.admin.sessions', absolute: false));
+        $this->assertSame('/admin/analytics/sessions/1', route('analytics.admin.sessions.show', ['session' => 1], absolute: false));
+        $this->assertSame('/admin/analytics/visitors/1', route('analytics.admin.visitors.show', ['visitor' => 1], absolute: false));
     }
 
     public function test_it_renders_the_events_screen_with_the_per_event_breakdown(): void
@@ -160,12 +160,12 @@ final class DashboardPagesTest extends TestCase
     {
         $session = $this->seedSession();
 
-        $this->get(route('analytics.overview'))->assertRedirect(route('login'));
-        $this->get(route('analytics.visitors'))->assertRedirect(route('login'));
-        $this->get(route('analytics.funnels'))->assertRedirect(route('login'));
-        $this->get(route('analytics.sessions'))->assertRedirect(route('login'));
-        $this->get(route('analytics.sessions.show', $session))->assertRedirect(route('login'));
-        $this->get(route('analytics.visitors.show', $session->visitor_id))->assertRedirect(route('login'));
+        $this->get(route('analytics.admin.overview'))->assertRedirect(route('login'));
+        $this->get(route('analytics.admin.visitors'))->assertRedirect(route('login'));
+        $this->get(route('analytics.admin.funnels'))->assertRedirect(route('login'));
+        $this->get(route('analytics.admin.sessions'))->assertRedirect(route('login'));
+        $this->get(route('analytics.admin.sessions.show', $session))->assertRedirect(route('login'));
+        $this->get(route('analytics.admin.visitors.show', $session->visitor_id))->assertRedirect(route('login'));
     }
 
     public function test_it_renders_the_overview_digest_for_an_authenticated_admin(): void
@@ -175,7 +175,7 @@ final class DashboardPagesTest extends TestCase
 
         $this->actingAs($this->admin, 'admin');
 
-        $this->get(route('analytics.overview'))->assertSuccessful()->assertSeeText(__('Vue d\'ensemble'));
+        $this->get(route('analytics.admin.overview'))->assertSuccessful()->assertSeeText(__('Vue d\'ensemble'));
 
         Livewire::test(OverviewHeadline::class, ['period' => 30])->call('$refresh')
             ->assertSeeText(__('Visiteurs'))
@@ -226,7 +226,7 @@ final class DashboardPagesTest extends TestCase
         $this->seedSession(['city' => 'Genève', 'subject_type' => 'client', 'subject_id' => 1]);
 
         $this->actingAs($this->admin, 'admin')
-            ->get(route('analytics.sessions'))
+            ->get(route('analytics.admin.sessions'))
             ->assertSuccessful()
             ->assertSeeText(__('Sessions'))
             ->assertSeeText('Genève')
@@ -256,7 +256,7 @@ final class DashboardPagesTest extends TestCase
 
         $this->actingAs($this->admin, 'admin');
 
-        $this->get(route('analytics.visitors'))->assertSuccessful()
+        $this->get(route('analytics.admin.visitors'))->assertSuccessful()
             ->assertSeeText(__('Visiteurs'))
             ->assertSeeText('Client #1')
             ->assertSeeText('Genève');
@@ -273,7 +273,7 @@ final class DashboardPagesTest extends TestCase
         Event::create(['session_id' => $session->id, 'visitor_id' => $session->visitor_id, 'occurred_at' => now()->subMinute(), 'type' => EventType::Click, 'name' => 'cta.contact', 'target_text' => 'Nous contacter', 'route' => 'catalog']);
 
         $this->actingAs($this->admin, 'admin')
-            ->get(route('analytics.sessions.show', $session))
+            ->get(route('analytics.admin.sessions.show', $session))
             ->assertSuccessful()
             ->assertSeeText(__('Parcours'))
             ->assertSee('Client #3')
@@ -281,7 +281,7 @@ final class DashboardPagesTest extends TestCase
             ->assertSeeText('Chrome')
             ->assertSeeText('Nous contacter')
             ->assertSeeText('/catalog')
-            ->assertSee(route('analytics.visitors.show', $session->visitor_id, absolute: false));
+            ->assertSee(route('analytics.admin.visitors.show', $session->visitor_id, absolute: false));
     }
 
     public function test_it_renders_a_visitor_detail_with_its_sessions_engagement_and_breakdowns(): void
@@ -305,13 +305,13 @@ final class DashboardPagesTest extends TestCase
         ]);
 
         $this->actingAs($this->admin, 'admin')
-            ->get(route('analytics.visitors.show', $visitor))
+            ->get(route('analytics.admin.visitors.show', $visitor))
             ->assertSuccessful()
             ->assertSeeText(__('Visiteur #:id', ['id' => $visitor->id]))
             ->assertSeeText(__('Appareils'))
             ->assertSeeText(__('Acquisition'))
             ->assertSeeText('Genève')
-            ->assertSee(route('analytics.sessions.show', $session, absolute: false));
+            ->assertSee(route('analytics.admin.sessions.show', $session, absolute: false));
     }
 
     public function test_it_erases_only_the_target_visitor_leaving_other_visitors_untouched(): void
@@ -331,7 +331,7 @@ final class DashboardPagesTest extends TestCase
 
         Livewire::test(VisitorDetailPage::class, ['visitor' => $target])
             ->call('forget')
-            ->assertRedirect(route('analytics.visitors'));
+            ->assertRedirect(route('analytics.admin.visitors'));
 
         // La cible est entièrement effacée ; les données de l'autre visiteur
         // doivent survivre, ce qui prouve le cadrage.
@@ -368,7 +368,7 @@ final class DashboardPagesTest extends TestCase
 
         $this->actingAs($this->admin, 'admin');
 
-        $this->get(route('analytics.funnels'))->assertSuccessful()->assertSeeText(__('Tunnels'));
+        $this->get(route('analytics.admin.funnels'))->assertSuccessful()->assertSeeText(__('Tunnels'));
 
         Livewire::test(FunnelsContent::class, ['period' => 30])->call('$refresh')->assertSeeText('Sample funnel');
     }

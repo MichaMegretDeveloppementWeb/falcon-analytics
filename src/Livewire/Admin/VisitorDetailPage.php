@@ -36,10 +36,7 @@ final class VisitorDetailPage extends Component
         // A folded profile has no data of its own anymore: an old link or
         // bookmark lands on the canonical profile instead.
         if ($visitor->merged_into_id !== null) {
-            $this->redirect(route(
-                config('analytics.dashboard.route_name', 'analytics').'.visitors.show',
-                $visitor->merged_into_id,
-            ));
+            $this->redirect(route('analytics.admin.visitors.show', $visitor->merged_into_id));
         }
     }
 
@@ -68,7 +65,7 @@ final class VisitorDetailPage extends Component
             'actor_user_id' => auth()->id(),
         ]);
 
-        $this->redirect(route(config('analytics.dashboard.route_name', 'analytics').'.visitors'));
+        $this->redirect(route('analytics.admin.visitors'));
     }
 
     public function render(SubjectResolver $subjects, VisitorProfileReadRepository $repository, VisitorEngagementCalculator $engagement): View

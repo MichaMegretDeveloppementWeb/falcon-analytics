@@ -47,7 +47,7 @@ final class OverviewSearchQueries extends Component
                 'totals' => $connected ? $repository->clicksTotals($range) : ['current' => 0, 'previous' => 0],
                 'freshestDate' => $connected ? $repository->freshestDate($range) : null,
                 'range' => $range,
-                'integrationsRoute' => route(config('analytics.dashboard.route_name', 'analytics').'.integrations'),
+                'integrationsRoute' => route('analytics.admin.integrations'),
             ];
         }, fn (array $data): View => view('analytics::livewire.dashboard.widgets.overview-search-queries', $data));
     }

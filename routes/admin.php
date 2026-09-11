@@ -11,7 +11,6 @@ use Falcon\Analytics\Http\Controllers\Dashboard\SessionDetailController;
 use Falcon\Analytics\Http\Controllers\Dashboard\SessionsController;
 use Falcon\Analytics\Http\Controllers\Dashboard\VisitorDetailController;
 use Falcon\Analytics\Http\Controllers\Dashboard\VisitorsController;
-use Falcon\Analytics\Http\Controllers\IngestController;
 use Falcon\Analytics\Http\Controllers\Marketing\AdDetailController;
 use Falcon\Analytics\Http\Controllers\Marketing\AdsController;
 use Falcon\Analytics\Http\Controllers\Marketing\CampaignDetailController;
@@ -19,42 +18,34 @@ use Falcon\Analytics\Http\Controllers\Marketing\CampaignsController;
 use Falcon\Analytics\Http\Controllers\Marketing\MarketingDashboardController;
 use Falcon\Analytics\Http\Controllers\SearchConsoleCallbackController;
 use Falcon\Analytics\Http\Controllers\SearchConsoleConnectController;
-use Falcon\Analytics\Http\Middleware\EnsureAnalyticsAccepts;
-use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
-use Illuminate\Cookie\Middleware\EncryptCookies;
-use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 
-// Ingestion endpoint. A minimal stack (cookies + session) without CSRF: the
-// beacon cannot carry a token, so forged requests are stopped by the origin
-// check and rate limit inside EnsureAnalyticsAccepts / throttle instead.
-Route::post('/'.ltrim((string) config('analytics.endpoint'), '/'), IngestController::class)
-    ->middleware([
-        EncryptCookies::class,
-        AddQueuedCookiesToResponse::class,
-        StartSession::class,
-        EnsureAnalyticsAccepts::class,
-        'throttle:'.config('analytics.throttle'),
-    ])
-    ->name('analytics.ingest');
+/*
+ * The administration area, and the two entities it holds: the analytics
+ * screens, and the marketing screens. Each mounts from its own config block —
+ * address and middleware — so a host can hang them wherever it wants, and give
+ * marketing another guard than analytics.
+ *
+ * The route NAMES are fixed. A host reads them in its menu and its redirects;
+ * a name that moves with the configuration cannot be written down anywhere.
+ *
+ * The middleware must carry a session stack ('web', typically): package routes
+ * are registered outside the host's own route groups, so they inherit nothing.
+ */
 
-// Dashboard. Fully configurable mounting (prefix, route-name prefix, middleware)
-// so it drops into any host: the defaults suit a single-guard app, and the
-// middleware must include a session stack (e.g. 'web') since package routes are
-// registered outside the host's route groups.
-$dashboard = config('analytics.dashboard');
+$admin = config('analytics.admin');
 
-// An explicitly empty middleware list mounts the module without any protection
+// An explicitly empty middleware list mounts the screens without any protection
 // (no session, no auth): almost certainly a host misconfiguration, so say it.
-if (($dashboard['middleware'] ?? null) === []) {
+if (($admin['middleware'] ?? null) === []) {
     Log::channel(config('analytics.log_channel'))
-        ->warning('Analytics dashboard mounted with an empty middleware list: the screens are publicly reachable.');
+        ->warning('Analytics screens mounted with an empty middleware list: they are publicly reachable.');
 }
 
-Route::prefix((string) ($dashboard['route_prefix'] ?? 'admin/analytics'))
-    ->middleware($dashboard['middleware'] ?? ['web', 'auth'])
-    ->name(($dashboard['route_name'] ?? 'analytics').'.')
+Route::prefix((string) ($admin['route_prefix'] ?? 'admin/analytics'))
+    ->middleware($admin['middleware'] ?? ['web', 'auth'])
+    ->name('analytics.admin.')
     ->group(function (): void {
         Route::get('/', OverviewController::class)->name('overview');
         Route::get('/realtime', RealtimeController::class)->name('realtime');
@@ -66,24 +57,24 @@ Route::prefix((string) ($dashboard['route_prefix'] ?? 'admin/analytics'))
         Route::get('/sessions/{session}', SessionDetailController::class)->name('sessions.show');
 
         // Integrations (Google Search Console): the page plus the two OAuth
-        // legs, all behind the same admin middleware as the dashboard.
+        // legs, all behind the same middleware as the screens.
         Route::get('/integrations', IntegrationsController::class)->name('integrations');
         Route::get('/integrations/search-console/connect', SearchConsoleConnectController::class)->name('integrations.search-console.connect');
         Route::get('/integrations/search-console/callback', SearchConsoleCallbackController::class)->name('integrations.search-console.callback');
     });
 
-// Marketing. A separate top-level module (its own prefix, route names and menu),
-// mounted like the dashboard from its own config block.
-$marketing = config('analytics.marketing');
+// Marketing: a second entity of the administration, with its own address and
+// its own place in the menu, mounted from its own nested block.
+$marketing = $admin['marketing'] ?? [];
 
 if (($marketing['middleware'] ?? null) === []) {
     Log::channel(config('analytics.log_channel'))
-        ->warning('Analytics marketing module mounted with an empty middleware list: the screens are publicly reachable.');
+        ->warning('Analytics marketing screens mounted with an empty middleware list: they are publicly reachable.');
 }
 
 Route::prefix((string) ($marketing['route_prefix'] ?? 'admin/marketing'))
     ->middleware($marketing['middleware'] ?? ['web', 'auth'])
-    ->name(($marketing['route_name'] ?? 'marketing').'.')
+    ->name('analytics.admin.marketing.')
     ->group(function (): void {
         Route::get('/', MarketingDashboardController::class)->name('dashboard');
         Route::get('/campaigns', CampaignsController::class)->name('campaigns');

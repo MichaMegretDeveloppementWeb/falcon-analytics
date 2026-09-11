@@ -11,7 +11,7 @@ final readonly class AdDetailController
 {
     public function __invoke(Ad $ad): View
     {
-        return view('analytics::marketing.ad-detail', [
+        return view('analytics::admin.marketing.ad-detail', [
             'ad' => $ad,
             'analyticsTitle' => $ad->name.' · '.__('Marketing'),
         ]);

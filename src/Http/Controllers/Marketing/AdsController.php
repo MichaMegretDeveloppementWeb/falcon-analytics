@@ -10,7 +10,7 @@ final readonly class AdsController
 {
     public function __invoke(): View
     {
-        return view('analytics::marketing.ads', [
+        return view('analytics::admin.marketing.ads', [
             'analyticsTitle' => __('Pubs').' · '.__('Marketing'),
         ]);
     }

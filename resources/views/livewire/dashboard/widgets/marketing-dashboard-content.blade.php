@@ -1,7 +1,3 @@
-@php
-    $routeName = config('analytics.marketing.route_name', 'marketing');
-@endphp
-
 <div class="space-y-8">
 
     {{-- KPIs with integrated sparklines --}}
@@ -41,7 +37,7 @@
         <div class="lg:col-span-7">
             <div class="mb-4 flex items-center justify-between">
                 <x-ui::section-header :title="__('Performance des campagnes')" />
-                <a href="{{ route($routeName.'.campaigns') }}" class="inline-flex cursor-pointer items-center gap-x-1 text-[12px] font-medium text-secondary transition-colors hover:text-primary">{{ __('Toutes les campagnes') }} <x-ui::icon name="arrow-right" class="h-3.5 w-3.5" /></a>
+                <a href="{{ route('analytics.admin.marketing.campaigns') }}" class="inline-flex cursor-pointer items-center gap-x-1 text-[12px] font-medium text-secondary transition-colors hover:text-primary">{{ __('Toutes les campagnes') }} <x-ui::icon name="arrow-right" class="h-3.5 w-3.5" /></a>
             </div>
             @if ($campaignRows === [])
                 <x-ui::empty-state icon="megaphone" :title="__('Aucune campagne active sur la période')" :description="__('Le trafic taggé sera attribué ici dès qu\'une campagne correspondra.')" />
@@ -56,7 +52,7 @@
                     </x-ui::table.head>
                     <x-ui::table.body>
                         @foreach ($campaignRows as $row)
-                            @php $showUrl = route($routeName.'.campaigns.show', $row['id']); @endphp
+                            @php $showUrl = route('analytics.admin.marketing.campaigns.show', $row['id']); @endphp
                             <x-ui::table.row wire:key="perf-{{ $row['id'] }}" onclick="window.location='{{ $showUrl }}'" class="cursor-pointer">
                                 <x-ui::table.cell :first="true" variant="primary">
                                     <a href="{{ $showUrl }}" class="cursor-pointer text-[13px] font-medium text-primary hover:underline">{{ $row['name'] }}</a>
@@ -75,11 +71,11 @@
         <div class="lg:col-span-5">
             <div class="mb-4 flex items-center justify-between">
                 <x-ui::section-header :title="__('Top pubs')" />
-                <a href="{{ route($routeName.'.ads') }}" class="inline-flex cursor-pointer items-center gap-x-1 text-[12px] font-medium text-secondary transition-colors hover:text-primary">{{ __('Toutes les pubs') }} <x-ui::icon name="arrow-right" class="h-3.5 w-3.5" /></a>
+                <a href="{{ route('analytics.admin.marketing.ads') }}" class="inline-flex cursor-pointer items-center gap-x-1 text-[12px] font-medium text-secondary transition-colors hover:text-primary">{{ __('Toutes les pubs') }} <x-ui::icon name="arrow-right" class="h-3.5 w-3.5" /></a>
             </div>
             <x-ui::card>
                 @forelse ($adRows as $row)
-                    <a href="{{ $row['campaign_id'] ? route($routeName.'.campaigns.show', $row['campaign_id']) : '#' }}" class="flex items-center justify-between gap-4 py-2 {{ $row['campaign_id'] ? 'cursor-pointer' : '' }}" wire:key="topad-{{ $row['id'] }}">
+                    <a href="{{ $row['campaign_id'] ? route('analytics.admin.marketing.campaigns.show', $row['campaign_id']) : '#' }}" class="flex items-center justify-between gap-4 py-2 {{ $row['campaign_id'] ? 'cursor-pointer' : '' }}" wire:key="topad-{{ $row['id'] }}">
                         <span class="flex min-w-0 items-center gap-2.5">
                             <span class="w-5 shrink-0 text-[11px] font-medium tabular-nums text-muted">{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
                             <span class="min-w-0">

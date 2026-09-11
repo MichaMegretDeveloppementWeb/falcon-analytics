@@ -15,7 +15,7 @@ final readonly class CampaignDetailController
 {
     public function __invoke(Campaign $campaign): View
     {
-        return view('analytics::marketing.campaign-detail', [
+        return view('analytics::admin.marketing.campaign-detail', [
             'campaign' => $campaign,
             'analyticsTitle' => $campaign->name.' · '.__('Marketing'),
         ]);

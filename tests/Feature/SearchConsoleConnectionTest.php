@@ -65,7 +65,7 @@ final class SearchConsoleConnectionTest extends TestCase
         $this->configureCredentials();
         $this->actingAs($this->admin, 'admin');
 
-        $response = $this->get(route('analytics.integrations.search-console.connect'));
+        $response = $this->get(route('analytics.admin.integrations.search-console.connect'));
 
         $state = session('analytics.search_console.state');
 
@@ -81,15 +81,15 @@ final class SearchConsoleConnectionTest extends TestCase
         $this->assertSame('offline', $query['access_type']);
         $this->assertSame('consent', $query['prompt']);
         $this->assertSame($state, $query['state']);
-        $this->assertSame(route('analytics.integrations.search-console.callback'), $query['redirect_uri']);
+        $this->assertSame(route('analytics.admin.integrations.search-console.callback'), $query['redirect_uri']);
     }
 
     public function test_it_sends_the_connect_route_back_to_the_integrations_page_when_unconfigured(): void
     {
         $this->actingAs($this->admin, 'admin');
 
-        $this->get(route('analytics.integrations.search-console.connect'))
-            ->assertRedirect(route('analytics.integrations'));
+        $this->get(route('analytics.admin.integrations.search-console.connect'))
+            ->assertRedirect(route('analytics.admin.integrations'));
     }
 
     public function test_it_rejects_a_callback_whose_state_does_not_match_the_session(): void
@@ -98,8 +98,8 @@ final class SearchConsoleConnectionTest extends TestCase
         $this->actingAs($this->admin, 'admin');
 
         $this->withSession(['analytics.search_console.state' => 'expected-state'])
-            ->get(route('analytics.integrations.search-console.callback', ['state' => 'forged', 'code' => 'abc']))
-            ->assertRedirect(route('analytics.integrations'));
+            ->get(route('analytics.admin.integrations.search-console.callback', ['state' => 'forged', 'code' => 'abc']))
+            ->assertRedirect(route('analytics.admin.integrations'));
 
         $this->assertSame(0, SearchConsoleConnection::query()->count());
     }
@@ -110,8 +110,8 @@ final class SearchConsoleConnectionTest extends TestCase
         $this->actingAs($this->admin, 'admin');
 
         $this->withSession(['analytics.search_console.state' => 'state-1'])
-            ->get(route('analytics.integrations.search-console.callback', ['state' => 'state-1', 'error' => 'access_denied']))
-            ->assertRedirect(route('analytics.integrations'));
+            ->get(route('analytics.admin.integrations.search-console.callback', ['state' => 'state-1', 'error' => 'access_denied']))
+            ->assertRedirect(route('analytics.admin.integrations'));
 
         $this->assertSame(0, SearchConsoleConnection::query()->count());
     }
@@ -131,8 +131,8 @@ final class SearchConsoleConnectionTest extends TestCase
         $this->actingAs($this->admin, 'admin');
 
         $this->withSession(['analytics.search_console.state' => 'state-1'])
-            ->get(route('analytics.integrations.search-console.callback', ['state' => 'state-1', 'code' => 'auth-code']))
-            ->assertRedirect(route('analytics.integrations'));
+            ->get(route('analytics.admin.integrations.search-console.callback', ['state' => 'state-1', 'code' => 'auth-code']))
+            ->assertRedirect(route('analytics.admin.integrations'));
 
         $connection = SearchConsoleConnection::current();
 
@@ -161,7 +161,7 @@ final class SearchConsoleConnectionTest extends TestCase
         $this->actingAs($this->admin, 'admin');
 
         $this->withSession(['analytics.search_console.state' => 's'])
-            ->get(route('analytics.integrations.search-console.callback', ['state' => 's', 'code' => 'c']));
+            ->get(route('analytics.admin.integrations.search-console.callback', ['state' => 's', 'code' => 'c']));
 
         $current = SearchConsoleConnection::current();
 
@@ -221,7 +221,7 @@ final class SearchConsoleConnectionTest extends TestCase
     {
         $this->actingAs($this->admin, 'admin');
 
-        $this->get(route('analytics.integrations'))
+        $this->get(route('analytics.admin.integrations'))
             ->assertSuccessful()
             ->assertSeeText(__('Intégrations'))
             ->assertSeeText('ANALYTICS_GSC_CLIENT_ID');
@@ -232,7 +232,7 @@ final class SearchConsoleConnectionTest extends TestCase
         $this->configureCredentials();
         $this->actingAs($this->admin, 'admin');
 
-        $this->get(route('analytics.integrations'))
+        $this->get(route('analytics.admin.integrations'))
             ->assertSuccessful()
             ->assertSeeText(__('Connecter Google Search Console'));
     }
@@ -306,7 +306,7 @@ final class SearchConsoleConnectionTest extends TestCase
         $this->connection();
         $this->actingAs($this->admin, 'admin');
 
-        $this->get(route('analytics.integrations'))
+        $this->get(route('analytics.admin.integrations'))
             ->assertSuccessful()
             ->assertSeeText('sc-domain:example.com')
             ->assertSeeText(__('Connectée'))
@@ -398,8 +398,8 @@ final class SearchConsoleConnectionTest extends TestCase
     {
         $this->configureCredentials();
 
-        $this->get(route('analytics.integrations'))->assertRedirect(route('login'));
-        $this->get(route('analytics.integrations.search-console.connect'))->assertRedirect(route('login'));
-        $this->get(route('analytics.integrations.search-console.callback'))->assertRedirect(route('login'));
+        $this->get(route('analytics.admin.integrations'))->assertRedirect(route('login'));
+        $this->get(route('analytics.admin.integrations.search-console.connect'))->assertRedirect(route('login'));
+        $this->get(route('analytics.admin.integrations.search-console.callback'))->assertRedirect(route('login'));
     }
 }

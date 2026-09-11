@@ -10,7 +10,7 @@ final readonly class VisitorsController
 {
     public function __invoke(): View
     {
-        return view('analytics::dashboard.visitors', [
+        return view('analytics::admin.dashboard.visitors', [
             'analyticsTitle' => __('Visiteurs').' · '.__('Analytics'),
         ]);
     }

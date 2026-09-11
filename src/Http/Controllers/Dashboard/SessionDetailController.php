@@ -11,7 +11,7 @@ final readonly class SessionDetailController
 {
     public function __invoke(Session $session): View
     {
-        return view('analytics::dashboard.session-detail', [
+        return view('analytics::admin.dashboard.session-detail', [
             'session' => $session,
             'analyticsTitle' => __('Session').' · '.__('Analytics'),
         ]);
