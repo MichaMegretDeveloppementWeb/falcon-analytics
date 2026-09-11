@@ -116,6 +116,28 @@ final class TheDiagnosticSpeaksTest extends TestCase
             ->assertFailed();
     }
 
+    /**
+     * La copie servie, et non le fichier livré.
+     *
+     * Le paquet compile et livre ; l'application publie une copie. Un
+     * déploiement qui met le paquet à jour sans republier laisse la feuille du
+     * mois dernier en place, et **rien ne le dit tant que personne n'ouvre un
+     * écran** · le kit lève alors, mais ça peut venir longtemps après.
+     *
+     * **On déplace le dossier attendu plutôt que d'effacer la copie.** Les
+     * essais tournent en parallèle et partagent un même dossier public · en
+     * retirer les fichiers faisait tomber, au hasard, un autre essai en train
+     * de dessiner un écran. Un réglage ne sort pas du processus.
+     */
+    public function test_it_says_when_the_compiled_sheet_was_never_published(): void
+    {
+        config(['ui.assets.path' => 'vendor/falcon-jamais-publie']);
+
+        $this->artisan('analytics:check')
+            ->expectsOutputToContain('vendor:publish')
+            ->assertFailed();
+    }
+
     public function test_it_says_when_a_screen_group_is_mounted_without_any_middleware(): void
     {
         config(['analytics.admin.middleware' => []]);

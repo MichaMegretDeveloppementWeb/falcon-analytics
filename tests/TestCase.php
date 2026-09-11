@@ -30,10 +30,8 @@ abstract class TestCase extends Orchestra
         $this->publishTheCompiledFiles();
     }
 
-    private static bool $assetsPublished = false;
-
     /**
-     * Publier les fichiers compilés, une fois par processus.
+     * Publier les fichiers compilés, quand ils manquent.
      *
      * **Le kit refuse de bâtir l'adresse d'un fichier que l'hôte n'a pas
      * publié**, et il a raison · une copie absente ou périmée servirait la
@@ -44,19 +42,29 @@ abstract class TestCase extends Orchestra
      * une copie ne dirait rien de l'étiquette ni du dossier de destination, et
      * c'est justement ce qu'on veut tenir.
      *
+     * **La condition porte sur les fichiers, pas sur un drapeau de processus.**
+     * Elle se rattrape donc toute seule si quelque chose retire la copie en
+     * cours de route ; un drapeau, lui, laisserait tous les essais suivants
+     * sans feuille, et leur échec ne parlerait pas de lui.
+     *
      * Avant, les fichiers du kit n'étaient là que parce qu'un `vendor:publish`
      * lancé un jour à la main les y avait laissés. Un `composer install` les
      * effaçait, et la suite tombait sur une erreur qui ne parlait pas d'elle.
      */
     private function publishTheCompiledFiles(): void
     {
-        if (self::$assetsPublished) {
-            return;
+        $expected = [
+            public_path('vendor/falcon/ui/ui.css'),
+            public_path('vendor/falcon/analytics/analytics.css'),
+        ];
+
+        foreach ($expected as $file) {
+            if (! is_file($file)) {
+                $this->artisan('vendor:publish', ['--tag' => 'laravel-assets', '--force' => true])->run();
+
+                return;
+            }
         }
-
-        $this->artisan('vendor:publish', ['--tag' => 'laravel-assets', '--force' => true])->run();
-
-        self::$assetsPublished = true;
     }
 
     /**

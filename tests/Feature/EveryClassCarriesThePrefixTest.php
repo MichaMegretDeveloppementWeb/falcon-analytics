@@ -39,16 +39,29 @@ final class EveryClassCarriesThePrefixTest extends TestCase
      *
      * Les variantes d'abord · leur forme est sans ambiguïté.
      *
+     * **Ce qui manque ici ne sera pas attrapé**, et c'est le seul défaut de
+     * cette approche. La liste couvre donc tout ce que les vues emploient,
+     * relevé sur elles, et pas seulement les familles les plus courantes.
+     *
+     * Une famille en est volontairement absente · `cursor-`, parce que le kit
+     * a une icône nommée `cursor-arrow-rays` et qu'aucune règle de forme ne
+     * distingue un nom d'icône d'une classe.
+     *
      * @var list<string>
      */
     private const SHAPES = [
         'dark:', 'hover:', 'focus:', 'focus-within:', 'group-hover:', 'disabled:', 'peer-checked:',
-        'sm:', 'md:', 'lg:', 'xl:', 'wide:', 'max-md:', 'last:', 'first:',
+        'sm:', 'md:', 'lg:', 'xl:', 'wide:', 'max-md:', 'last:', 'first:', 'placeholder:',
         'bg-', 'text-', 'border-', 'rounded-', 'ring-', 'shadow-', 'divide-', 'fill-', 'stroke-',
-        'px-', 'py-', 'pt-', 'pb-', 'pl-', 'pr-',
+        'px-', 'py-', 'pt-', 'pb-', 'pl-', 'pr-', 'p-',
         'mx-', 'my-', 'mt-', 'mb-', 'ml-', 'mr-',
         'gap-', 'gap-x-', 'gap-y-', 'space-x-', 'space-y-',
-        'w-', 'h-', 'min-w-', 'max-w-', 'max-h-', 'flex-', 'items-', 'justify-', 'grid-cols-',
+        'w-', 'h-', 'min-w-', 'min-h-', 'max-w-', 'max-h-',
+        'flex-', 'items-', 'justify-', 'grid-cols-', 'col-span-', 'row-span-',
+        'shrink-', 'grow-', 'order-', 'self-', 'place-', 'content-', 'object-', 'aspect-',
+        'font-', 'leading-', 'tracking-', 'align-', 'whitespace-', 'break-', 'truncate-',
+        'opacity-', 'overflow-', 'transition-', 'animate-', 'backdrop-', 'tabular-',
+        'inset-', 'top-', 'bottom-', 'left-', 'right-', 'z-', 'pointer-events-',
     ];
 
     public function test_no_view_writes_an_unprefixed_class(): void

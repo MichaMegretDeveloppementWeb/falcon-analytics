@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Console;
 
+use Falcon\Ui\Assets;
+use Falcon\Ui\Exceptions\UiException;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Database\Migrations\Migrator;
@@ -74,8 +76,36 @@ final class CheckCommand extends Command
             $this->checkEndpoint($config),
             $this->checkModuleMiddleware($config),
             $this->checkAreaLayout($config),
+            $this->checkPublishedAssets(),
             $this->checkGeoip($config),
         ];
+    }
+
+    /**
+     * La feuille compilée, telle que l'application la sert.
+     *
+     * Le paquet compile et livre ; l'application publie une copie et sert
+     * celle-là. Entre les deux, la copie peut manquer — une installation qui
+     * n'a pas publié — ou dater d'avant la dernière mise à jour du paquet.
+     *
+     * **Le kit tient déjà cette vérification**, et il lève au moment de bâtir
+     * l'adresse, avec la commande à lancer. Ce contrôle-ci ne la refait pas :
+     * il la déclenche, ici plutôt qu'à la première visite. C'est tout ce qu'il
+     * apporte, et ça suffit · une copie absente ne se voit sinon que le jour
+     * où quelqu'un ouvre un écran, ce qui peut être longtemps après le
+     * déploiement qui l'a oubliée.
+     *
+     * @return array{0: string, 1: string, 2: string}
+     */
+    private function checkPublishedAssets(): array
+    {
+        try {
+            Assets::url('analytics', 'analytics.css');
+        } catch (UiException $e) {
+            return ['Feuille publiée', 'KO', $e->getMessage()];
+        }
+
+        return ['Feuille publiée', 'OK', 'La copie servie correspond au fichier que le paquet livre.'];
     }
 
     /**
@@ -138,15 +168,6 @@ final class CheckCommand extends Command
             .'Posez ANALYTICS_ENABLED=true.',
         ];
     }
-
-    // Le controle des assets a ete retire ici, et il reviendra autrement.
-    //
-    // Il verifiait que l'hote avait bien importe les sources du paquet dans ses
-    // propres entrees, et que le collecteur n'etait pas tombe dans le script du
-    // back-office. Ce modele n'existe plus · le paquet compile et publie ses
-    // fichiers, et l'hote n'importe rien. Ce qu'il faudra verifier a la place —
-    // qu'une copie publiee correspond au fichier livre — appartient au
-    // sous-chantier de la compilation, qui les fera naitre.
 
     /**
      * The directive that lays the collector down, somewhere in the host's
