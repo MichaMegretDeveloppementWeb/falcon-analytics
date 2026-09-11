@@ -38,16 +38,16 @@ final class CollectorDirectiveTest extends TestCase
      * **L'essai qui compte** · une page publique reçoit le collecteur, et rien
      * d'autre.
      *
-     * La balise est écrite par la vue, avec le constructeur d'adresses du kit ·
-     * versionnée, différée, à la place de la directive.
+     * La vue déclare le fichier au kit, qui bâtit son adresse versionnée et la
+     * pose avant la fermeture du corps · le gabarit ci-dessous ne rend aucune
+     * directive de pile, exactement comme la page publique d'un site ordinaire.
      *
-     * La seconde moitié de l'essai est celle qui protège l'hôte. Déclarer le
-     * fichier au kit aurait été la voie normale, et elle a été essayée · son
-     * injection place bien la balise, mais elle pose du même coup **ses
-     * propres** balises, reset compris. Une page publique ordinaire s'est
-     * retrouvée avec soixante kilo-octets de feuille d'administration, un
-     * script et un conteneur de notifications. Le site de l'hôte en aurait été
-     * redessiné.
+     * La seconde moitié de l'essai est celle qui protège l'hôte, et elle garde
+     * une correction du kit datée du 2026-09-12. Son injection posait alors
+     * **ses propres** balises dès qu'un paquet avait déclaré quoi que ce soit ·
+     * une page publique se retrouvait avec le reset du kit, soixante
+     * kilo-octets de feuille d'administration, un script et un conteneur de
+     * notifications. Le site de l'hôte en sortait redessiné.
      */
     public function test_a_public_page_receives_the_collector_and_nothing_else(): void
     {
