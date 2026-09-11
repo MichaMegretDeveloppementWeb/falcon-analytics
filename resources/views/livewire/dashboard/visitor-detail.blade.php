@@ -21,32 +21,32 @@
     $sourceTotal = array_sum($sources);
 @endphp
 
-<x-analytics::root area="admin" class="space-y-6">
+<x-analytics::root area="admin" class="an:space-y-6">
 
     <div>
-        <a href="{{ route('analytics.admin.visitors') }}" class="inline-flex cursor-pointer items-center gap-x-1 text-[12px] font-medium text-secondary transition-colors hover:text-primary">
-            <x-ui::icon name="arrow-left" class="h-3.5 w-3.5" />
+        <a href="{{ route('analytics.admin.visitors') }}" class="an:inline-flex an:cursor-pointer an:items-center an:gap-x-1 an:text-[12px] an:font-medium an:text-secondary an:transition-colors an:hover:text-primary">
+            <x-ui::icon name="arrow-left" class="an:h-3.5 an:w-3.5" />
             {{ __('Retour aux visiteurs') }}
         </a>
     </div>
 
     {{-- Header --}}
-    <div class="min-w-0">
-        <h1 class="text-2xl font-semibold tracking-tight text-primary">{{ $visitorPrimary }}</h1>
-        <div class="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-sm text-secondary">
+    <div class="an:min-w-0">
+        <h1 class="an:text-2xl an:font-semibold an:tracking-tight an:text-primary">{{ $visitorPrimary }}</h1>
+        <div class="an:mt-1.5 an:flex an:flex-wrap an:items-center an:gap-x-2.5 an:gap-y-1 an:text-sm an:text-secondary">
             <span>{{ $visitor->subject_type ? $subjectLabel : __('Visiteur anonyme') }}</span>
             @if ($isReturning)
                 <x-ui::badge color="blue">{{ __('Récurrent') }}</x-ui::badge>
             @endif
-            <span class="text-muted">·</span>
+            <span class="an:text-muted">·</span>
             <x-analytics::visitor-id :uuid="$visitor->uuid" />
-            <span class="text-muted">·</span>
+            <span class="an:text-muted">·</span>
             <span>{{ __('Première visite le :date', ['date' => $visitor->first_seen_at->translatedFormat('d M Y')]) }}</span>
         </div>
     </div>
 
     {{-- Engagement figures --}}
-    <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+    <div class="an:grid an:grid-cols-2 an:gap-3 an:sm:grid-cols-4 an:sm:gap-4">
         <x-ui::stat-card :label="__('Sessions')" :value="(string) $visitor->session_count" icon="rectangle-stack" />
         <x-ui::stat-card :label="__('Pages vues')" :value="(string) $totalPageviews" icon="document-text" />
         <x-ui::stat-card :label="__('Durée moy.')" :value="$formatSeconds($avgSeconds)" icon="clock" />
@@ -54,22 +54,22 @@
     </div>
 
     {{-- Comportement : appareils + acquisition --}}
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+    <div class="an:grid an:grid-cols-1 an:gap-6 an:lg:grid-cols-2">
         <x-ui::card>
-            <x-ui::section-header :title="__('Appareils')" class="mb-4" />
+            <x-ui::section-header :title="__('Appareils')" class="an:mb-4" />
             @if ($deviceTotal > 0)
-                <div class="flex items-center gap-5">
+                <div class="an:flex an:items-center an:gap-5">
                     <x-analytics::donut
                         :labels="collect($devices)->keys()->map(fn ($d) => DeviceLabel::for($d))->all()"
                         :values="array_values($devices)"
                         :colors="array_slice($palette, 0, count($devices))"
                         :total="(string) $deviceTotal"
                         :caption="__('sessions')" />
-                    <div class="flex-1 space-y-2.5">
+                    <div class="an:flex-1 an:space-y-2.5">
                         @foreach ($devices as $device => $c)
-                            <div class="flex items-center justify-between gap-2">
-                                <span class="flex items-center gap-2 text-[13px] text-secondary"><span class="h-2 w-2 rounded-full" style="background:{{ $palette[$loop->index] ?? '#d1d5db' }}"></span>{{ DeviceLabel::for($device) }}</span>
-                                <span class="text-[13px]"><span class="font-semibold text-primary">{{ ((int) round($c / $deviceTotal * 100))."\u{00A0}%" }}</span> <span class="text-muted">{{ $c }}</span></span>
+                            <div class="an:flex an:items-center an:justify-between an:gap-2">
+                                <span class="an:flex an:items-center an:gap-2 an:text-[13px] an:text-secondary"><span class="an:h-2 an:w-2 an:rounded-full" style="background:{{ $palette[$loop->index] ?? '#d1d5db' }}"></span>{{ DeviceLabel::for($device) }}</span>
+                                <span class="an:text-[13px]"><span class="an:font-semibold an:text-primary">{{ ((int) round($c / $deviceTotal * 100))."\u{00A0}%" }}</span> <span class="an:text-muted">{{ $c }}</span></span>
                             </div>
                         @endforeach
                     </div>
@@ -80,18 +80,18 @@
         </x-ui::card>
 
         <x-ui::card>
-            <x-ui::section-header :title="__('Acquisition')" class="mb-4" />
+            <x-ui::section-header :title="__('Acquisition')" class="an:mb-4" />
             @if ($sourceTotal > 0)
-                <div class="space-y-3">
+                <div class="an:space-y-3">
                     @foreach ($sources as $source => $c)
                         @php $pct = (int) round($c / $sourceTotal * 100); @endphp
                         <div>
-                            <div class="mb-1 flex items-center justify-between text-[13px]">
-                                <span class="text-secondary">@if ($source === 'direct'){{ __('Directe') }}@else<x-analytics::source :value="$source" />@endif</span>
-                                <span><span class="font-semibold text-primary">{{ $pct."\u{00A0}%" }}</span> <span class="text-muted">{{ $c }}</span></span>
+                            <div class="an:mb-1 an:flex an:items-center an:justify-between an:text-[13px]">
+                                <span class="an:text-secondary">@if ($source === 'direct'){{ __('Directe') }}@else<x-analytics::source :value="$source" />@endif</span>
+                                <span><span class="an:font-semibold an:text-primary">{{ $pct."\u{00A0}%" }}</span> <span class="an:text-muted">{{ $c }}</span></span>
                             </div>
-                            <div class="h-1 w-full overflow-hidden rounded-full bg-elevated">
-                                <div class="h-full rounded-full bg-[#1684ea]/70" style="width: {{ $pct }}%"></div>
+                            <div class="an:h-1 an:w-full an:overflow-hidden an:rounded-full an:bg-elevated">
+                                <div class="an:h-full an:rounded-full an:bg-[#1684ea]/70" style="width: {{ $pct }}%"></div>
                             </div>
                         </div>
                     @endforeach
@@ -104,10 +104,10 @@
 
     {{-- Sessions --}}
     <div>
-        <x-ui::section-header :title="__('Sessions')" class="mb-4" />
+        <x-ui::section-header :title="__('Sessions')" class="an:mb-4" />
 
         @if ($sessions->isEmpty())
-            <div class="rounded-xl border border-base bg-surface px-5 py-10 text-center text-[13px] text-secondary">
+            <div class="an:rounded-xl an:border an:border-base an:bg-surface an:px-5 an:py-10 an:text-center an:text-[13px] an:text-secondary">
                 {{ __('Aucune session pour ce visiteur.') }}
             </div>
         @else
@@ -126,30 +126,30 @@
                             $sessionUrl = route('analytics.admin.sessions.show', $s);
                             $seconds = (int) $s->started_at->diffInSeconds($s->last_activity_at);
                         @endphp
-                        <x-ui::table.row wire:key="session-{{ $s->id }}" onclick="if (!event.target.closest('a')) window.location='{{ $sessionUrl }}'" class="cursor-pointer">
-                            <x-ui::table.cell :first="true" variant="primary" class="whitespace-nowrap">
-                                <span class="inline-flex items-center gap-x-2">
-                                    <a href="{{ $sessionUrl }}" class="cursor-pointer hover:underline">{{ $s->started_at->translatedFormat('d M Y, H:i') }}</a>
+                        <x-ui::table.row wire:key="session-{{ $s->id }}" onclick="if (!event.target.closest('a')) window.location='{{ $sessionUrl }}'" class="an:cursor-pointer">
+                            <x-ui::table.cell :first="true" variant="primary" class="an:whitespace-nowrap">
+                                <span class="an:inline-flex an:items-center an:gap-x-2">
+                                    <a href="{{ $sessionUrl }}" class="an:cursor-pointer an:hover:underline">{{ $s->started_at->translatedFormat('d M Y, H:i') }}</a>
                                     @if ($visitor->subject_type && $s->subject_type)
                                         <x-ui::badge color="blue">{{ __('Connecté') }}</x-ui::badge>
                                     @endif
                                 </span>
                             </x-ui::table.cell>
-                            <x-ui::table.cell class="whitespace-nowrap">{{ $formatSeconds($seconds) }}</x-ui::table.cell>
-                            <x-ui::table.cell class="tabular-nums">{{ $s->pageview_count }}</x-ui::table.cell>
+                            <x-ui::table.cell class="an:whitespace-nowrap">{{ $formatSeconds($seconds) }}</x-ui::table.cell>
+                            <x-ui::table.cell class="an:tabular-nums">{{ $s->pageview_count }}</x-ui::table.cell>
                             <x-ui::table.cell>{{ DeviceLabel::for($s->device_type) }}</x-ui::table.cell>
                             <x-ui::table.cell>
                                 @if ($s->source)
                                     <x-ui::badge color="gray"><x-analytics::source :value="$s->source" /></x-ui::badge>
                                 @else
-                                    <span class="text-muted">{{ __('Directe') }}</span>
+                                    <span class="an:text-muted">{{ __('Directe') }}</span>
                                 @endif
                             </x-ui::table.cell>
-                            <x-ui::table.cell :last="true" class="whitespace-nowrap">
+                            <x-ui::table.cell :last="true" class="an:whitespace-nowrap">
                                 @if ($s->country || $s->city)
                                     <x-analytics::country :code="$s->country" :city="$s->city" />
                                 @else
-                                    <span class="text-muted">{{ __('Inconnu') }}</span>
+                                    <span class="an:text-muted">{{ __('Inconnu') }}</span>
                                 @endif
                             </x-ui::table.cell>
                         </x-ui::table.row>
@@ -157,25 +157,25 @@
                 </x-ui::table.body>
             </x-ui::table>
 
-            <div class="mt-6"><x-ui::pagination :paginator="$sessions" mode="livewire" /></div>
+            <div class="an:mt-6"><x-ui::pagination :paginator="$sessions" mode="livewire" /></div>
         @endif
     </div>
 
     {{-- Zone de danger : effacement RGPD --}}
-    <div class="pt-2">
-        <x-ui::section-header :title="__('Zone de danger')" :danger="true" :description="__('L\'effacement des données de ce visiteur est définitif.')" class="mb-4" />
+    <div class="an:pt-2">
+        <x-ui::section-header :title="__('Zone de danger')" :danger="true" :description="__('L\'effacement des données de ce visiteur est définitif.')" class="an:mb-4" />
 
         @error('visitor-erasure-failed')
-            <x-ui::alert variant="danger" class="mb-4">{{ $message }}</x-ui::alert>
+            <x-ui::alert variant="danger" class="an:mb-4">{{ $message }}</x-ui::alert>
         @enderror
 
-        <div class="flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50/40 px-5 py-4 dark:border-red-500/20 dark:bg-red-500/[0.06] sm:flex-row sm:items-center sm:justify-between">
+        <div class="an:flex an:flex-col an:gap-3 an:rounded-xl an:border an:border-red-200 an:bg-red-50/40 an:px-5 an:py-4 an:dark:border-red-500/20 an:dark:bg-red-500/[0.06] an:sm:flex-row an:sm:items-center an:sm:justify-between">
             <div>
-                <p class="text-[13px] font-medium text-primary">{{ __('Supprimer les données de ce visiteur') }}</p>
-                <p class="mt-0.5 text-[12px] text-secondary">{{ __('Efface le visiteur, ses sessions et ses évènements. Action irréversible (droit à l\'effacement).') }}</p>
+                <p class="an:text-[13px] an:font-medium an:text-primary">{{ __('Supprimer les données de ce visiteur') }}</p>
+                <p class="an:mt-0.5 an:text-[12px] an:text-secondary">{{ __('Efface le visiteur, ses sessions et ses évènements. Action irréversible (droit à l\'effacement).') }}</p>
             </div>
-            <x-ui::button variant="danger" class="shrink-0" @click="$dispatch('open-modal', 'forget-visitor')">
-                <x-ui::icon name="trash" class="h-4 w-4" /> {{ __('Supprimer') }}
+            <x-ui::button variant="danger" class="an:shrink-0" @click="$dispatch('open-modal', 'forget-visitor')">
+                <x-ui::icon name="trash" class="an:h-4 an:w-4" /> {{ __('Supprimer') }}
             </x-ui::button>
         </div>
     </div>

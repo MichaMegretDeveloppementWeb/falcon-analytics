@@ -1,9 +1,9 @@
-<x-analytics::root area="admin" class="grid animate-pulse grid-cols-2 gap-4 lg:grid-cols-4">
+<x-analytics::root area="admin" class="an:grid an:animate-pulse an:grid-cols-2 an:gap-4 an:lg:grid-cols-4">
     @foreach (range(1, 4) as $i)
-        <div class="rounded-xl border border-base bg-surface px-5 py-4">
-            <div class="h-3 w-20 rounded bg-elevated"></div>
-            <div class="mt-3 h-6 w-16 rounded bg-elevated"></div>
-            <div class="mt-4 h-8 w-full rounded bg-elevated"></div>
+        <div class="an:rounded-xl an:border an:border-base an:bg-surface an:px-5 an:py-4">
+            <div class="an:h-3 an:w-20 an:rounded an:bg-elevated"></div>
+            <div class="an:mt-3 an:h-6 an:w-16 an:rounded an:bg-elevated"></div>
+            <div class="an:mt-4 an:h-8 an:w-full an:rounded an:bg-elevated"></div>
         </div>
     @endforeach
 </x-analytics::root>

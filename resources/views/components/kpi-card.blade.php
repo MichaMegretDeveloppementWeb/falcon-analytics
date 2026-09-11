@@ -34,30 +34,30 @@
     }
 @endphp
 
-<div {{ $attributes->merge(['class' => 'rounded-xl bg-surface px-4 py-3.5 sm:px-5 sm:py-4']) }}>
-    <div class="flex items-center justify-between">
-        <p class="text-[12px] font-medium text-secondary sm:text-[13px]">{{ $label }}</p>
+<div {{ $attributes->merge(['class' => 'an:rounded-xl an:bg-surface an:px-4 an:py-3.5 an:sm:px-5 an:sm:py-4']) }}>
+    <div class="an:flex an:items-center an:justify-between">
+        <p class="an:text-[12px] an:font-medium an:text-secondary an:sm:text-[13px]">{{ $label }}</p>
         @if ($icon)
-            <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-elevated">
-                <x-ui::icon :name="$icon" class="h-4 w-4 text-muted" />
+            <span class="an:flex an:h-8 an:w-8 an:items-center an:justify-center an:rounded-lg an:bg-elevated">
+                <x-ui::icon :name="$icon" class="an:h-4 an:w-4 an:text-muted" />
             </span>
         @endif
     </div>
-    <div class="mt-1 flex items-baseline gap-x-2 sm:mt-1.5">
-        <span class="text-xl font-semibold tracking-tight text-primary sm:text-2xl">{{ $value }}</span>
+    <div class="an:mt-1 an:flex an:items-baseline an:gap-x-2 an:sm:mt-1.5">
+        <span class="an:text-xl an:font-semibold an:tracking-tight an:text-primary an:sm:text-2xl">{{ $value }}</span>
         @if ($badge)
             <span @class([
-                'inline-flex items-center gap-x-0.5 rounded-full px-1.5 py-0.5 text-[11px] font-medium',
-                'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400' => $badge['good'],
-                'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400' => ! $badge['good'],
+                'an:inline-flex an:items-center an:gap-x-0.5 an:rounded-full an:px-1.5 an:py-0.5 an:text-[11px] an:font-medium',
+                'an:bg-emerald-50 an:text-emerald-700 an:dark:bg-emerald-500/10 an:dark:text-emerald-400' => $badge['good'],
+                'an:bg-red-50 an:text-red-600 an:dark:bg-red-500/10 an:dark:text-red-400' => ! $badge['good'],
             ])>
-                <x-ui::icon :name="$badge['up'] ? 'arrow-up-right' : 'arrow-down-right'" class="h-3 w-3" stroke-width="2.5" />
+                <x-ui::icon :name="$badge['up'] ? 'arrow-up-right' : 'arrow-down-right'" class="an:h-3 an:w-3" stroke-width="2.5" />
                 {{ $badge['text'] }}
             </span>
         @endif
     </div>
     @if ($description)
-        <p class="mt-0.5 text-[11px] text-muted sm:mt-1">{{ $description }}</p>
+        <p class="an:mt-0.5 an:text-[11px] an:text-muted an:sm:mt-1">{{ $description }}</p>
     @endif
     {{ $slot }}
 </div>

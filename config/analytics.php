@@ -25,37 +25,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Assets
-    |--------------------------------------------------------------------------
-    |
-    | Vos entrées, où `analytics:install` a écrit ses imports.
-    |
-    | Le paquet ne compile rien : ces fichiers sont les vôtres, et c'est votre
-    | `npm run build` qui les lit. Deux lignes seulement — la feuille des
-    | tableaux de bord dans `admin_css`, le collecteur dans `web_js`.
-    |
-    | À modifier quand vous déplacez ou renommez un de ces fichiers :
-    |
-    |     'admin_css' => 'resources/css/back-office/index.css',
-    |
-    | Chemins relatifs à la racine du projet.
-    |
-    | `admin_css` reçoit la feuille des tableaux de bord, `web_js` le collecteur.
-    | `admin_js` ne porte aucun import du paquet : c'est ce qu'il passe à
-    | `ui-kit:install`, le kit dessinant ses écrans.
-    |
-    | Il n'y a pas de `web_css` : le paquet n'a aucun CSS public à importer.
-    |
-    */
-
-    'assets' => [
-        'admin_css' => 'resources/css/app.css',
-        'admin_js' => 'resources/js/app.js',
-        'web_js' => 'resources/js/app.js',
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
     | Log channel
     |--------------------------------------------------------------------------
     |

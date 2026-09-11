@@ -4,7 +4,7 @@
     'colors' => [],
     'total' => '',
     'caption' => null,
-    'size' => 'h-28 w-28',
+    'size' => 'an:h-28 an:w-28',
     'event' => 'analytics-realtime-tick',
     'channel' => 'devices',
 ])
@@ -16,7 +16,7 @@
 --}}
 <div
     wire:ignore
-    class="relative shrink-0 {{ $size }}"
+    class="an:relative an:shrink-0 {{ $size }}"
     x-data="{
         observer: null,
         total: @js((string) $total),
@@ -91,11 +91,11 @@
 >
     {{-- Center content sits behind the canvas and shows through the doughnut hole,
          so tooltips (drawn on the canvas) render above it instead of being hidden. --}}
-    <canvas x-ref="canvas" class="relative z-10"></canvas>
-    <div class="pointer-events-none absolute inset-0 z-0 flex flex-col items-center justify-center px-2 text-center leading-tight">
-        <span class="text-base font-semibold tracking-tight text-primary" x-text="total">{{ $total }}</span>
+    <canvas x-ref="canvas" class="an:relative an:z-10"></canvas>
+    <div class="an:pointer-events-none an:absolute an:inset-0 an:z-0 an:flex an:flex-col an:items-center an:justify-center an:px-2 an:text-center an:leading-tight">
+        <span class="an:text-base an:font-semibold an:tracking-tight an:text-primary" x-text="total">{{ $total }}</span>
         @if ($caption)
-            <span class="text-[10px] uppercase tracking-wide text-muted">{{ $caption }}</span>
+            <span class="an:text-[10px] an:uppercase an:tracking-wide an:text-muted">{{ $caption }}</span>
         @endif
     </div>
 </div>

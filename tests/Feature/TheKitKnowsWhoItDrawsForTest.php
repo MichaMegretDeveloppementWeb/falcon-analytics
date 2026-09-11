@@ -60,6 +60,38 @@ final class TheKitKnowsWhoItDrawsForTest extends TestCase
     }
 
     /**
+     * L'écran sert la feuille du paquet, et une seule fois.
+     *
+     * La page la déclare, et chacune des racines qu'elle contient la déclare
+     * aussi — parce qu'un bloc réactif peut être dessiné ailleurs que dans un
+     * écran du paquet. Sur une page complète, ces déclarations se comptent par
+     * dizaines et **doivent produire une seule balise** · c'est le kit qui
+     * déduplique, sur un identifiant que le paquet ne connaît même pas.
+     *
+     * L'ordre compte aussi · celle du kit d'abord, celle du paquet ensuite.
+     * C'est ce que le contrat des couches suppose, et une feuille lue dans le
+     * mauvais ordre ouvre des couches vides qui renversent la priorité.
+     */
+    public function test_a_screen_serves_the_package_sheet_exactly_once(): void
+    {
+        $this->actingAs(TestAdmin::create([]), 'admin');
+
+        $html = (string) $this->get(route('analytics.admin.overview'))->getContent();
+
+        $this->assertSame(
+            1,
+            substr_count($html, 'analytics/analytics.css'),
+            'La feuille du paquet doit paraître une fois et une seule.',
+        );
+
+        $this->assertLessThan(
+            strpos($html, 'analytics/analytics.css'),
+            strpos($html, 'ui/ui.css'),
+            'La feuille du kit se lit avant celle du paquet.',
+        );
+    }
+
+    /**
      * Aucune vue réactive n'a été oubliée.
      *
      * La liste n'est pas écrite ici : elle se relève dans les composants

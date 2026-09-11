@@ -12,15 +12,15 @@
      contexte du paquet. --}}
 <x-analytics::root area="admin">
 <x-ui::card>
-    <div class="grid grid-cols-1 divide-y divide-subtle lg:grid-cols-2 lg:divide-x lg:divide-y-0">
+    <div class="an:grid an:grid-cols-1 an:divide-y an:divide-subtle an:lg:grid-cols-2 an:lg:divide-x an:lg:divide-y-0">
 
-        <div class="pb-5 lg:pb-0 lg:pr-8">
-            <div class="mb-4 flex items-center justify-between gap-2">
+        <div class="an:pb-5 an:lg:pb-0 an:lg:pr-8">
+            <div class="an:mb-4 an:flex an:items-center an:justify-between an:gap-2">
                 <x-ui::section-header :title="__('Nouveaux vs récurrents')" />
-                <span class="flex items-center gap-1.5 text-[11px] text-muted">{{ __('Nouveaux') }} @include('analytics::livewire.dashboard.partials.delta', ['current' => $newVisitorRate->current, 'previous' => $newVisitorRate->previous])</span>
+                <span class="an:flex an:items-center an:gap-1.5 an:text-[11px] an:text-muted">{{ __('Nouveaux') }} @include('analytics::livewire.dashboard.partials.delta', ['current' => $newVisitorRate->current, 'previous' => $newVisitorRate->previous])</span>
             </div>
             @if ($newTotal > 0)
-                <div class="flex items-center gap-6">
+                <div class="an:flex an:items-center an:gap-6">
                     <div wire:key="donut-audience-{{ $period }}-{{ $subject }}">
                         <x-analytics::donut
                             :labels="[__('Nouveaux'), __('Récurrents')]"
@@ -41,12 +41,12 @@
                         cela, et deux nombres de taille voisine cote a cote obligeaient a
                         decider lequel on lit.
                     --}}
-                    <dl class="grid min-w-0 max-w-[15rem] flex-1 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-6 gap-y-2.5">
-                        <dt class="flex items-center gap-2 text-[13px] text-secondary"><span class="h-2 w-2 shrink-0 rounded-full" style="background:#1684ea"></span>{{ __('Nouveaux') }}</dt>
-                        <dd class="text-right text-[13px] font-semibold tabular-nums text-primary" title="{{ $newPct."\u{00A0}%" }}">{{ number_format($newVsReturning['new'], 0, ',', ' ') }}</dd>
+                    <dl class="an:grid an:min-w-0 an:max-w-[15rem] an:flex-1 an:grid-cols-[minmax(0,1fr)_auto] an:items-center an:gap-x-6 an:gap-y-2.5">
+                        <dt class="an:flex an:items-center an:gap-2 an:text-[13px] an:text-secondary"><span class="an:h-2 an:w-2 an:shrink-0 an:rounded-full" style="background:#1684ea"></span>{{ __('Nouveaux') }}</dt>
+                        <dd class="an:text-right an:text-[13px] an:font-semibold an:tabular-nums an:text-primary" title="{{ $newPct."\u{00A0}%" }}">{{ number_format($newVsReturning['new'], 0, ',', ' ') }}</dd>
 
-                        <dt class="flex items-center gap-2 text-[13px] text-secondary"><span class="h-2 w-2 shrink-0 rounded-full" style="background:#bcdcfa"></span>{{ __('Récurrents') }}</dt>
-                        <dd class="text-right text-[13px] font-semibold tabular-nums text-primary" title="{{ (100 - $newPct)."\u{00A0}%" }}">{{ number_format($newVsReturning['returning'], 0, ',', ' ') }}</dd>
+                        <dt class="an:flex an:items-center an:gap-2 an:text-[13px] an:text-secondary"><span class="an:h-2 an:w-2 an:shrink-0 an:rounded-full" style="background:#bcdcfa"></span>{{ __('Récurrents') }}</dt>
+                        <dd class="an:text-right an:text-[13px] an:font-semibold an:tabular-nums an:text-primary" title="{{ (100 - $newPct)."\u{00A0}%" }}">{{ number_format($newVsReturning['returning'], 0, ',', ' ') }}</dd>
                     </dl>
                 </div>
             @else
@@ -54,10 +54,10 @@
             @endif
         </div>
 
-        <div class="pt-5 lg:pl-8 lg:pt-0">
-            <x-ui::section-header :title="__('Appareils')" class="mb-4" />
+        <div class="an:pt-5 an:lg:pl-8 an:lg:pt-0">
+            <x-ui::section-header :title="__('Appareils')" class="an:mb-4" />
             @if ($deviceTotal > 0)
-                <div class="flex items-center gap-6">
+                <div class="an:flex an:items-center an:gap-6">
                     <div wire:key="donut-devices-{{ $period }}-{{ $subject }}">
                         <x-analytics::donut
                             :labels="collect($devices)->keys()->map(fn ($d) => DeviceLabel::for($d))->all()"
@@ -66,13 +66,13 @@
                             :total="number_format($deviceTotal, 0, ',', ' ')"
                             :caption="__('sessions')" />
                     </div>
-                    <dl class="grid min-w-0 max-w-[15rem] flex-1 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-6 gap-y-2.5">
+                    <dl class="an:grid an:min-w-0 an:max-w-[15rem] an:flex-1 an:grid-cols-[minmax(0,1fr)_auto] an:items-center an:gap-x-6 an:gap-y-2.5">
                         @foreach ($devices as $device => $count)
-                            <dt class="flex min-w-0 items-center gap-2 text-[13px] text-secondary">
-                                <span class="h-2 w-2 shrink-0 rounded-full" style="background:{{ $devicePalette[$loop->index] ?? '#d1d5db' }}"></span>
-                                <span class="truncate">{{ DeviceLabel::for($device) }}</span>
+                            <dt class="an:flex an:min-w-0 an:items-center an:gap-2 an:text-[13px] an:text-secondary">
+                                <span class="an:h-2 an:w-2 an:shrink-0 an:rounded-full" style="background:{{ $devicePalette[$loop->index] ?? '#d1d5db' }}"></span>
+                                <span class="an:truncate">{{ DeviceLabel::for($device) }}</span>
                             </dt>
-                            <dd class="text-right text-[13px] font-semibold tabular-nums text-primary" title="{{ ((int) round($count / $deviceTotal * 100))."\u{00A0}%" }}">{{ number_format($count, 0, ',', ' ') }}</dd>
+                            <dd class="an:text-right an:text-[13px] an:font-semibold an:tabular-nums an:text-primary" title="{{ ((int) round($count / $deviceTotal * 100))."\u{00A0}%" }}">{{ number_format($count, 0, ',', ' ') }}</dd>
                         @endforeach
                     </dl>
                 </div>

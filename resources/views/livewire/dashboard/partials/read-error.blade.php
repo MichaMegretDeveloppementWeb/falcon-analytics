@@ -1,9 +1,9 @@
 <x-analytics::root area="admin">
-    <div class="rounded-xl border border-base bg-surface px-5 py-12 text-center">
-        <div class="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-red-50 dark:bg-red-500/10">
-            <x-ui::icon name="exclamation-triangle" class="h-5 w-5 text-red-600 dark:text-red-400" />
+    <div class="an:rounded-xl an:border an:border-base an:bg-surface an:px-5 an:py-12 an:text-center">
+        <div class="an:mx-auto an:flex an:h-11 an:w-11 an:items-center an:justify-center an:rounded-full an:bg-red-50 an:dark:bg-red-500/10">
+            <x-ui::icon name="exclamation-triangle" class="an:h-5 an:w-5 an:text-red-600 an:dark:text-red-400" />
         </div>
-        <p class="mt-3 text-[13px] font-medium text-primary">{{ __('Données indisponibles') }}</p>
-        <p class="mt-1 text-[12px] text-secondary">{{ __('Les données n\'ont pas pu être chargées. Réessayez dans un instant.') }}</p>
+        <p class="an:mt-3 an:text-[13px] an:font-medium an:text-primary">{{ __('Données indisponibles') }}</p>
+        <p class="an:mt-1 an:text-[12px] an:text-secondary">{{ __('Les données n\'ont pas pu être chargées. Réessayez dans un instant.') }}</p>
     </div>
 </x-analytics::root>

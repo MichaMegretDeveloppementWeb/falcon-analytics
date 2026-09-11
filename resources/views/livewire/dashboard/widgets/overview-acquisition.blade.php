@@ -11,12 +11,12 @@
      contexte du paquet. --}}
 <x-analytics::root area="admin">
 <x-ui::card>
-    <div class="grid grid-cols-1 divide-y divide-subtle lg:grid-cols-2 lg:divide-x lg:divide-y-0">
+    <div class="an:grid an:grid-cols-1 an:divide-y an:divide-subtle an:lg:grid-cols-2 an:lg:divide-x an:lg:divide-y-0">
 
-        <div class="pb-5 lg:pb-0 lg:pr-8">
-            <x-ui::section-header :title="__('Sources de trafic')" class="mb-4" />
+        <div class="an:pb-5 an:lg:pb-0 an:lg:pr-8">
+            <x-ui::section-header :title="__('Sources de trafic')" class="an:mb-4" />
             @if ($topSources !== [])
-                <div class="flex items-center gap-6">
+                <div class="an:flex an:items-center an:gap-6">
                     <div wire:key="donut-sources-{{ $period }}-{{ $subject }}">
                         <x-analytics::donut
                             :labels="collect($topSources)->map(fn ($s) => SourceLabel::for($s['label']))->all()"
@@ -25,15 +25,15 @@
                             :total="number_format($sourcesTotal, 0, ',', ' ')"
                             :caption="__('sessions')" />
                     </div>
-                    <dl class="grid min-w-0 max-w-[19rem] flex-1 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-5 gap-y-2.5">
+                    <dl class="an:grid an:min-w-0 an:max-w-[19rem] an:flex-1 an:grid-cols-[minmax(0,1fr)_auto] an:items-center an:gap-x-5 an:gap-y-2.5">
                         @foreach ($topSources as $item)
-                            <dt class="flex min-w-0 items-center gap-2 text-[13px] text-secondary">
-                                <span class="h-2 w-2 shrink-0 rounded-full" style="background:{{ $sourcePalette[$loop->index] ?? '#d1d5db' }}"></span>
-                                <span class="truncate"><x-analytics::source :value="$item['label']" /></span>
+                            <dt class="an:flex an:min-w-0 an:items-center an:gap-2 an:text-[13px] an:text-secondary">
+                                <span class="an:h-2 an:w-2 an:shrink-0 an:rounded-full" style="background:{{ $sourcePalette[$loop->index] ?? '#d1d5db' }}"></span>
+                                <span class="an:truncate"><x-analytics::source :value="$item['label']" /></span>
                             </dt>
-                            <dd class="flex shrink-0 items-center gap-2">
+                            <dd class="an:flex an:shrink-0 an:items-center an:gap-2">
                                 @include('analytics::livewire.dashboard.partials.delta', ['current' => $item['total'], 'previous' => $item['previous']])
-                                <span class="w-8 text-right text-[13px] font-semibold tabular-nums text-primary">{{ number_format($item['total'], 0, ',', ' ') }}</span>
+                                <span class="an:w-8 an:text-right an:text-[13px] an:font-semibold an:tabular-nums an:text-primary">{{ number_format($item['total'], 0, ',', ' ') }}</span>
                             </dd>
                         @endforeach
                     </dl>
@@ -43,25 +43,25 @@
             @endif
         </div>
 
-        <div class="pt-5 lg:pl-8 lg:pt-0">
-            <x-ui::section-header :title="__('Localités')" class="mb-4" />
+        <div class="an:pt-5 an:lg:pl-8 an:lg:pt-0">
+            <x-ui::section-header :title="__('Localités')" class="an:mb-4" />
             @if ($topLocalities !== [])
                 {{--
                     Une figure d'entree, comme le beignet en donne une a son voisin. Sans elle
                     ce bloc s'ouvrait sur une liste sans point d'accroche : c'est le contraste
                     de taille qui cree la hierarchie, aucune zone ne se signalait.
                 --}}
-                <p class="text-2xl font-semibold tracking-tight text-primary">{{ number_format($localitiesTotal, 0, ',', ' ') }}</p>
-                <p class="mb-4 text-[11px] uppercase tracking-wider text-muted">{{ __('sessions localisées') }}</p>
+                <p class="an:text-2xl an:font-semibold an:tracking-tight an:text-primary">{{ number_format($localitiesTotal, 0, ',', ' ') }}</p>
+                <p class="an:mb-4 an:text-[11px] an:uppercase an:tracking-wider an:text-muted">{{ __('sessions localisées') }}</p>
 
-                <dl class="grid max-w-[22rem] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-5 gap-y-2.5">
+                <dl class="an:grid an:max-w-[22rem] an:grid-cols-[minmax(0,1fr)_auto] an:items-center an:gap-x-5 an:gap-y-2.5">
                     @foreach ($topLocalities as $item)
-                        <dt class="min-w-0 truncate text-[13px] text-secondary">
+                        <dt class="an:min-w-0 an:truncate an:text-[13px] an:text-secondary">
                             <x-analytics::country :code="$item['country']" :city="$item['city']" />
                         </dt>
-                        <dd class="flex shrink-0 items-center gap-2">
+                        <dd class="an:flex an:shrink-0 an:items-center an:gap-2">
                             @include('analytics::livewire.dashboard.partials.delta', ['current' => $item['total'], 'previous' => $item['previous']])
-                            <span class="w-8 text-right text-[13px] font-semibold tabular-nums text-primary">{{ number_format($item['total'], 0, ',', ' ') }}</span>
+                            <span class="an:w-8 an:text-right an:text-[13px] an:font-semibold an:tabular-nums an:text-primary">{{ number_format($item['total'], 0, ',', ' ') }}</span>
                         </dd>
                     @endforeach
                 </dl>

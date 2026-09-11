@@ -1,0 +1,14 @@
+{
+    "name": "falcon-analytics",
+    "description": "Chaine de compilation du paquet. Elle produit public/analytics.css, que le paquet livre deja compile. Ce manifeste ne sert qu a compiler : un hote n installe rien d ici, et ce qui importe le kit passe par le dossier des dependances PHP, jamais par npm.",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "build": "tailwindcss -i resources/css/analytics.css -o public/analytics.css --minify && node ./scripts/fingerprint.mjs",
+        "check-assets": "node ./scripts/check-assets.mjs"
+    },
+    "devDependencies": {
+        "@tailwindcss/cli": "^4.0.0",
+        "tailwindcss": "^4.0.0"
+    }
+}

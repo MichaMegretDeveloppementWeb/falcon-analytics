@@ -1,11 +1,11 @@
 @props([
     'values' => [],
     'color' => '#1684ea',
-    'height' => 'h-8',
+    'height' => 'an:h-8',
 ])
 
 <div
-    class="{{ $height }} w-full"
+    class="{{ $height }} an:w-full"
     x-data="{
         async init() {
             {{-- Chart.js loads on demand: the kit ships it as a separate file

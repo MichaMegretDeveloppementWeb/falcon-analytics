@@ -1,5 +1,10 @@
 /vendor
+/node_modules
 composer.lock
+
+# Le dossier ou `npm run check-assets` recompile pour comparer. Il se supprime
+# tout seul ; il ne survit qu'a une compilation interrompue.
+/.build-check
 .env.test
 .phpunit.result.cache
 /.phpunit.cache

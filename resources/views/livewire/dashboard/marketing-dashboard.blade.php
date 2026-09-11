@@ -1,4 +1,4 @@
-<x-analytics::root area="admin" class="space-y-8">
+<x-analytics::root area="admin" class="an:space-y-8">
 
     <x-ui::page-header
         :title="__('Vue d\'ensemble')"

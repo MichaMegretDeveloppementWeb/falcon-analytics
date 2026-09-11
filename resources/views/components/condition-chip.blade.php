@@ -1,8 +1,8 @@
 @props(['param' => '', 'value' => ''])
 
 {{-- A URL-matching condition shown as a compact param = value chip. --}}
-<span class="inline-flex items-center gap-1 rounded-lg border border-base px-2 py-0.5 text-[11px]">
-    <span class="text-muted">{{ $param }}</span>
-    <span class="text-muted">=</span>
-    <span class="font-medium text-primary">{{ $value }}</span>
+<span class="an:inline-flex an:items-center an:gap-1 an:rounded-lg an:border an:border-base an:px-2 an:py-0.5 an:text-[11px]">
+    <span class="an:text-muted">{{ $param }}</span>
+    <span class="an:text-muted">=</span>
+    <span class="an:font-medium an:text-primary">{{ $value }}</span>
 </span>

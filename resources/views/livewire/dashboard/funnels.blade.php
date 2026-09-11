@@ -1,4 +1,4 @@
-<x-analytics::root area="admin" class="space-y-8">
+<x-analytics::root area="admin" class="an:space-y-8">
 
     @include('analytics::livewire.dashboard.partials.tooltip-host')
 

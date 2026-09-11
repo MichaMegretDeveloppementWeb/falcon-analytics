@@ -17,4 +17,4 @@
     $countryTitle = $name.($city ? ' ('.$city.')' : '');
 @endphp
 
-<span data-tooltip="{{ $countryTitle }}">{{ $name }}@if ($city) <span class="text-secondary">({{ $city }})</span>@endif</span>
+<span data-tooltip="{{ $countryTitle }}">{{ $name }}@if ($city) <span class="an:text-secondary">({{ $city }})</span>@endif</span>

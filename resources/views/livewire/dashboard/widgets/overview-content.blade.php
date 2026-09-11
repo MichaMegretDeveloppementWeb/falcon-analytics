@@ -7,23 +7,23 @@
      contexte du paquet. --}}
 <x-analytics::root area="admin">
 <x-ui::card>
-    <div class="grid grid-cols-1 divide-y divide-subtle lg:grid-cols-2 lg:divide-x lg:divide-y-0">
+    <div class="an:grid an:grid-cols-1 an:divide-y an:divide-subtle an:lg:grid-cols-2 an:lg:divide-x an:lg:divide-y-0">
 
-        <div class="pb-5 lg:pb-0 lg:pr-8">
-            <x-ui::section-header :title="__('Pages les plus vues')" class="mb-4" />
-            <div class="space-y-3">
+        <div class="an:pb-5 an:lg:pb-0 an:lg:pr-8">
+            <x-ui::section-header :title="__('Pages les plus vues')" class="an:mb-4" />
+            <div class="an:space-y-3">
                 @forelse ($topPages as $item)
                     @php $pct = $maxPages > 0 ? max(round($item['total'] / $maxPages * 100), 2) : 0; @endphp
                     <div>
-                        <div class="flex items-center justify-between gap-4">
-                            <span class="min-w-0 truncate text-[13px] text-primary"><x-analytics::page-url :url="$item['label']" /></span>
-                            <span class="flex shrink-0 items-center gap-2">
+                        <div class="an:flex an:items-center an:justify-between an:gap-4">
+                            <span class="an:min-w-0 an:truncate an:text-[13px] an:text-primary"><x-analytics::page-url :url="$item['label']" /></span>
+                            <span class="an:flex an:shrink-0 an:items-center an:gap-2">
                                 @include('analytics::livewire.dashboard.partials.delta', ['current' => $item['total'], 'previous' => $item['previous']])
-                                <span class="w-8 text-right text-[13px] font-semibold text-primary">{{ number_format($item['total'], 0, ',', ' ') }}</span>
+                                <span class="an:w-8 an:text-right an:text-[13px] an:font-semibold an:text-primary">{{ number_format($item['total'], 0, ',', ' ') }}</span>
                             </span>
                         </div>
-                        <div class="mt-1.5 h-1 overflow-hidden rounded-full bg-elevated">
-                            <div class="h-full rounded-full bg-[#1684ea]/70" style="width: {{ $pct }}%"></div>
+                        <div class="an:mt-1.5 an:h-1 an:overflow-hidden an:rounded-full an:bg-elevated">
+                            <div class="an:h-full an:rounded-full an:bg-[#1684ea]/70" style="width: {{ $pct }}%"></div>
                         </div>
                     </div>
                 @empty
@@ -32,20 +32,20 @@
             </div>
         </div>
 
-        <div class="pt-5 lg:pl-8 lg:pt-0">
-            <x-ui::section-header :title="__('Clics principaux')" class="mb-4" />
+        <div class="an:pt-5 an:lg:pl-8 an:lg:pt-0">
+            <x-ui::section-header :title="__('Clics principaux')" class="an:mb-4" />
             @if ($topClicks !== [])
                 {{-- Le libelle porte deja deux lignes : la colonne du nombre le suit d'assez
                      pres, sans le tronquer davantage. --}}
-                <dl class="grid max-w-[26rem] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-5 gap-y-3">
+                <dl class="an:grid an:max-w-[26rem] an:grid-cols-[minmax(0,1fr)_auto] an:items-center an:gap-x-5 an:gap-y-3">
                     @foreach ($topClicks as $click)
-                        <dt class="min-w-0">
-                            <span class="block truncate text-[13px] text-secondary" data-tooltip="{{ $click['label'] }}">{{ $click['label'] }}</span>
+                        <dt class="an:min-w-0">
+                            <span class="an:block an:truncate an:text-[13px] an:text-secondary" data-tooltip="{{ $click['label'] }}">{{ $click['label'] }}</span>
                             @if ($click['route'])
-                                <span class="block truncate text-[11px] text-muted"><x-analytics::page-url :route="$click['route']" /></span>
+                                <span class="an:block an:truncate an:text-[11px] an:text-muted"><x-analytics::page-url :route="$click['route']" /></span>
                             @endif
                         </dt>
-                        <dd class="w-8 text-right text-[13px] font-semibold tabular-nums text-primary">{{ number_format($click['total'], 0, ',', ' ') }}</dd>
+                        <dd class="an:w-8 an:text-right an:text-[13px] an:font-semibold an:tabular-nums an:text-primary">{{ number_format($click['total'], 0, ',', ' ') }}</dd>
                     @endforeach
                 </dl>
             @else

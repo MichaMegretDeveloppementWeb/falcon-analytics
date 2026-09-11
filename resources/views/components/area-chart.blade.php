@@ -6,7 +6,7 @@
     'data2' => [],
     'label2' => '',
     'color2' => '#10b981',
-    'height' => 'h-64',
+    'height' => 'an:h-64',
 ])
 
 {{--
@@ -134,7 +134,7 @@
             this.$el._chart?.destroy();
         },
     }"
-    {{ $attributes->merge(['class' => 'relative '.$height]) }}
+    {{ $attributes->merge(['class' => 'an:relative '.$height]) }}
 >
     <canvas x-ref="canvas"></canvas>
 </div>

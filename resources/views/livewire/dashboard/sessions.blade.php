@@ -35,7 +35,7 @@
     }
 @endphp
 
-<x-analytics::root area="admin" class="space-y-6">
+<x-analytics::root area="admin" class="an:space-y-6">
 
     @include('analytics::livewire.dashboard.partials.tooltip-host')
 
@@ -50,16 +50,16 @@
     <livewire:analytics::admin.widgets.sessions-headline :period="$period" :subject="$subject" :key="'sessions-headline-'.$period.'-'.$subject" />
 
     {{-- Toolbar --}}
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div class="w-full sm:max-w-xs">
-            <x-ui::search-input wire:model.live.debounce.300ms="search" :placeholder="__('Rechercher un nom, une ville, un pays, un ID…')" class="w-full" />
+    <div class="an:flex an:flex-col an:gap-3 an:sm:flex-row an:sm:items-center">
+        <div class="an:w-full an:sm:max-w-xs">
+            <x-ui::search-input wire:model.live.debounce.300ms="search" :placeholder="__('Rechercher un nom, une ville, un pays, un ID…')" class="an:w-full" />
         </div>
-        <div class="flex items-center gap-2">
+        <div class="an:flex an:items-center an:gap-2">
             @if (count($deviceOptions) > 1)
-                <div class="w-40"><x-ui::select wire:model.live="device" :options="$deviceOptions" /></div>
+                <div class="an:w-40"><x-ui::select wire:model.live="device" :options="$deviceOptions" /></div>
             @endif
             @if (count($sourceOptions) > 1)
-                <div class="w-40"><x-ui::select wire:model.live="source" :options="$sourceOptions" /></div>
+                <div class="an:w-40"><x-ui::select wire:model.live="source" :options="$sourceOptions" /></div>
             @endif
         </div>
     </div>
@@ -92,60 +92,60 @@
                     <x-ui::table.row
                         wire:key="session-{{ $session->id }}"
                         onclick="if (!event.target.closest('a')) window.location='{{ $sessionUrl }}'"
-                        class="cursor-pointer">
+                        class="an:cursor-pointer">
                         <x-ui::table.cell :first="true" variant="primary">
-                            <div class="flex flex-col">
+                            <div class="an:flex an:flex-col">
                                 @php $attribution = $attributions[$session->id] ?? null; @endphp
                                 @if ($attribution)
                                     @php
                                         $subjectName = $subjectNames[$attribution->guard.':'.$attribution->id] ?? null;
                                         $subjectLabel = $subjectResolver->label($attribution->guard);
                                     @endphp
-                                    <a href="{{ $sessionUrl }}" class="cursor-pointer text-[13px] font-medium text-primary hover:underline">{{ $subjectName ?? $subjectLabel.' #'.$attribution->id }}</a>
-                                    <span class="text-[11px] text-muted">@if ($subjectName){{ $subjectLabel }} · @endif{{ substr($session->visitor?->uuid ?? '', 0, 8) }}@if ($attribution->viaVisitor) · {{ __('Non connecté') }}@endif</span>
+                                    <a href="{{ $sessionUrl }}" class="an:cursor-pointer an:text-[13px] an:font-medium an:text-primary an:hover:underline">{{ $subjectName ?? $subjectLabel.' #'.$attribution->id }}</a>
+                                    <span class="an:text-[11px] an:text-muted">@if ($subjectName){{ $subjectLabel }} · @endif{{ substr($session->visitor?->uuid ?? '', 0, 8) }}@if ($attribution->viaVisitor) · {{ __('Non connecté') }}@endif</span>
                                 @else
-                                    <a href="{{ $sessionUrl }}" class="cursor-pointer text-[13px] font-medium text-primary hover:underline">{{ __('Visiteur #:id', ['id' => $session->visitor_id]) }}</a>
-                                    <span class="text-[11px] text-muted">{{ substr($session->visitor?->uuid ?? '', 0, 8) }}</span>
+                                    <a href="{{ $sessionUrl }}" class="an:cursor-pointer an:text-[13px] an:font-medium an:text-primary an:hover:underline">{{ __('Visiteur #:id', ['id' => $session->visitor_id]) }}</a>
+                                    <span class="an:text-[11px] an:text-muted">{{ substr($session->visitor?->uuid ?? '', 0, 8) }}</span>
                                 @endif
                             </div>
                         </x-ui::table.cell>
-                        <x-ui::table.cell class="whitespace-nowrap">{{ $session->started_at->translatedFormat('d M, H:i') }}</x-ui::table.cell>
-                        <x-ui::table.cell class="whitespace-nowrap">{{ $duration }}</x-ui::table.cell>
-                        <x-ui::table.cell class="tabular-nums">{{ $session->pageview_count }}</x-ui::table.cell>
-                        <x-ui::table.cell class="tabular-nums text-secondary">{{ $session->events_count }}</x-ui::table.cell>
-                        <x-ui::table.cell class="tabular-nums font-medium {{ $session->conversions_count > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted' }}">{{ $session->conversions_count }}</x-ui::table.cell>
+                        <x-ui::table.cell class="an:whitespace-nowrap">{{ $session->started_at->translatedFormat('d M, H:i') }}</x-ui::table.cell>
+                        <x-ui::table.cell class="an:whitespace-nowrap">{{ $duration }}</x-ui::table.cell>
+                        <x-ui::table.cell class="an:tabular-nums">{{ $session->pageview_count }}</x-ui::table.cell>
+                        <x-ui::table.cell class="an:tabular-nums an:text-secondary">{{ $session->events_count }}</x-ui::table.cell>
+                        <x-ui::table.cell class="an:tabular-nums an:font-medium {{ $session->conversions_count > 0 ? 'an:text-emerald-600 an:dark:text-emerald-400' : 'an:text-muted' }}">{{ $session->conversions_count }}</x-ui::table.cell>
                         <x-ui::table.cell>
                             @if ($session->source)
                                 <x-ui::badge color="gray"><x-analytics::source :value="$session->source" /></x-ui::badge>
                             @else
-                                <span class="text-muted">{{ __('Directe') }}</span>
+                                <span class="an:text-muted">{{ __('Directe') }}</span>
                             @endif
                         </x-ui::table.cell>
                         {{-- Bounded cells: long values truncate with the full text on
                              hover, so the table never widens past its container. --}}
                         <x-ui::table.cell>
-                            <div class="max-w-56 truncate">
+                            <div class="an:max-w-56 an:truncate">
                                 @if ($session->landing_route || $session->landing_url)
                                     <x-analytics::page-url :route="$session->landing_route" :url="$session->landing_url" />
                                 @else
-                                    <span class="text-muted">·</span>
+                                    <span class="an:text-muted">·</span>
                                 @endif
                             </div>
                         </x-ui::table.cell>
                         <x-ui::table.cell>
                             @if ($session->device_type || $session->browser)
                                 @php $deviceLine = ($session->device_type ? DeviceLabel::for($session->device_type) : __('Inconnu')).($session->browser ? ' · '.$session->browser : ''); @endphp
-                                <div class="max-w-40 truncate" data-tooltip="{{ $deviceLine }}">{{ $deviceLine }}</div>
+                                <div class="an:max-w-40 an:truncate" data-tooltip="{{ $deviceLine }}">{{ $deviceLine }}</div>
                             @else
-                                <span class="text-muted">{{ __('Inconnu') }}</span>
+                                <span class="an:text-muted">{{ __('Inconnu') }}</span>
                             @endif
                         </x-ui::table.cell>
                         <x-ui::table.cell :last="true">
-                            <div class="max-w-44 truncate">
+                            <div class="an:max-w-44 an:truncate">
                                 @if ($session->country || $session->city)
                                     <x-analytics::country :code="$session->country" :city="$session->city" />
                                 @else
-                                    <span class="text-muted">{{ __('Inconnu') }}</span>
+                                    <span class="an:text-muted">{{ __('Inconnu') }}</span>
                                 @endif
                             </div>
                         </x-ui::table.cell>
@@ -155,7 +155,7 @@
         </x-ui::table>
 
         @if ($sessions->hasPages())
-            <div class="mt-6"><x-ui::pagination :paginator="$sessions" mode="livewire" /></div>
+            <div class="an:mt-6"><x-ui::pagination :paginator="$sessions" mode="livewire" /></div>
         @endif
     @endif
 

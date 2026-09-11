@@ -2,7 +2,7 @@
     'labels' => [],
     'values' => [],
     'color' => '#1684ea',
-    'height' => 'h-56',
+    'height' => 'an:h-56',
     'event' => 'analytics-realtime-tick',
     'channel' => 'pulse',
 ])
@@ -14,7 +14,7 @@
 --}}
 <div
     wire:ignore
-    class="{{ $height }} w-full"
+    class="{{ $height }} an:w-full"
     x-data="{
         observer: null,
         isDark: document.documentElement.classList.contains('dark'),

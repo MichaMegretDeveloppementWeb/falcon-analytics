@@ -27,6 +27,36 @@ abstract class TestCase extends Orchestra
         parent::setUp();
 
         $this->withoutVite();
+        $this->publishTheCompiledFiles();
+    }
+
+    private static bool $assetsPublished = false;
+
+    /**
+     * Publier les fichiers compilés, une fois par processus.
+     *
+     * **Le kit refuse de bâtir l'adresse d'un fichier que l'hôte n'a pas
+     * publié**, et il a raison · une copie absente ou périmée servirait la
+     * feuille du mois dernier sans un mot. L'application d'essai est un hôte
+     * comme un autre, et elle doit donc publier.
+     *
+     * Ça passe par la commande réelle plutôt que par une copie écrite ici ·
+     * une copie ne dirait rien de l'étiquette ni du dossier de destination, et
+     * c'est justement ce qu'on veut tenir.
+     *
+     * Avant, les fichiers du kit n'étaient là que parce qu'un `vendor:publish`
+     * lancé un jour à la main les y avait laissés. Un `composer install` les
+     * effaçait, et la suite tombait sur une erreur qui ne parlait pas d'elle.
+     */
+    private function publishTheCompiledFiles(): void
+    {
+        if (self::$assetsPublished) {
+            return;
+        }
+
+        $this->artisan('vendor:publish', ['--tag' => 'laravel-assets', '--force' => true])->run();
+
+        self::$assetsPublished = true;
     }
 
     /**

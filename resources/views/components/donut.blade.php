@@ -4,16 +4,16 @@
     'colors' => [],
     'total' => '',
     'caption' => null,
-    'size' => 'h-28 w-28',
+    'size' => 'an:h-28 an:w-28',
 ])
 
 @php
     $totalLength = mb_strlen((string) $total);
-    $centerSize = $totalLength >= 8 ? 'text-[11px]' : ($totalLength >= 6 ? 'text-[13px]' : 'text-base');
+    $centerSize = $totalLength >= 8 ? 'an:text-[11px]' : ($totalLength >= 6 ? 'an:text-[13px]' : 'an:text-base');
 @endphp
 
 <div
-    class="relative shrink-0 {{ $size }}"
+    class="an:relative an:shrink-0 {{ $size }}"
     x-data="{
         chart: null,
         observer: null,
@@ -77,11 +77,11 @@
 >
     {{-- Center content sits behind the canvas and shows through the doughnut hole,
          so tooltips (drawn on the canvas) render above it instead of being hidden. --}}
-    <canvas x-ref="canvas" class="relative z-10"></canvas>
-    <div class="pointer-events-none absolute inset-0 z-0 flex flex-col items-center justify-center px-2 text-center leading-tight">
-        <span class="{{ $centerSize }} font-semibold tracking-tight text-primary">{{ $total }}</span>
+    <canvas x-ref="canvas" class="an:relative an:z-10"></canvas>
+    <div class="an:pointer-events-none an:absolute an:inset-0 an:z-0 an:flex an:flex-col an:items-center an:justify-center an:px-2 an:text-center an:leading-tight">
+        <span class="{{ $centerSize }} an:font-semibold an:tracking-tight an:text-primary">{{ $total }}</span>
         @if ($caption)
-            <span class="text-[10px] uppercase tracking-wide text-muted">{{ $caption }}</span>
+            <span class="an:text-[10px] an:uppercase an:tracking-wide an:text-muted">{{ $caption }}</span>
         @endif
     </div>
 </div>

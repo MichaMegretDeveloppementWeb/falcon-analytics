@@ -7,7 +7,7 @@
     l'ecart exterieur d'un groupe n'excedait pas ses ecarts interieurs, et la page se lisait
     comme une seule longue liste. A 48 px, avec un filet, chaque bloc redevient un bloc.
 --}}
-<x-analytics::root area="admin" class="space-y-12">
+<x-analytics::root area="admin" class="an:space-y-12">
 
     @include('analytics::livewire.dashboard.partials.tooltip-host')
 
@@ -25,18 +25,18 @@
     <livewire:analytics::admin.widgets.trend-chart :period="$period" :subject="$subject" :key="'ov-trend-'.$period.'-'.$subject" />
 
     {{-- Deferred heavy sections : each loads independently after paint --}}
-    <div class="border-t border-base pt-8">
-        <x-ui::section-header :title="__('Audience')" :description="__('Visiteurs et appareils')" class="mb-4" />
+    <div class="an:border-t an:border-base an:pt-8">
+        <x-ui::section-header :title="__('Audience')" :description="__('Visiteurs et appareils')" class="an:mb-4" />
         <livewire:analytics::admin.widgets.overview-audience :period="$period" :subject="$subject" :key="'ov-audience-'.$period.'-'.$subject" />
     </div>
 
-    <div class="border-t border-base pt-8">
-        <x-ui::section-header :title="__('Acquisition')" :description="__('D\'où viennent les sessions')" class="mb-4" />
+    <div class="an:border-t an:border-base an:pt-8">
+        <x-ui::section-header :title="__('Acquisition')" :description="__('D\'où viennent les sessions')" class="an:mb-4" />
         <livewire:analytics::admin.widgets.overview-acquisition :period="$period" :subject="$subject" :key="'ov-acq-'.$period.'-'.$subject" />
     </div>
 
-    <div class="border-t border-base pt-8">
-        <x-ui::section-header :title="__('Contenu')" :description="__('Pages et clics')" class="mb-4" />
+    <div class="an:border-t an:border-base an:pt-8">
+        <x-ui::section-header :title="__('Contenu')" :description="__('Pages et clics')" class="an:mb-4" />
         <livewire:analytics::admin.widgets.overview-content :period="$period" :subject="$subject" :key="'ov-content-'.$period.'-'.$subject" />
     </div>
 

@@ -1,11 +1,11 @@
-<x-analytics::root area="admin" class="space-y-6">
+<x-analytics::root area="admin" class="an:space-y-6">
 
     <x-ui::page-header
         :title="__('Pubs')"
         :description="$total <= 1 ? __(':count pub', ['count' => $total]) : __(':count pubs', ['count' => number_format($total, 0, ',', ' ')])" />
 
-    <div class="w-full sm:max-w-xs">
-        <x-ui::search-input wire:model.live.debounce.300ms="search" :placeholder="__('Rechercher une pub ou campagne...')" class="w-full" />
+    <div class="an:w-full an:sm:max-w-xs">
+        <x-ui::search-input wire:model.live.debounce.300ms="search" :placeholder="__('Rechercher une pub ou campagne...')" class="an:w-full" />
     </div>
 
     @if ($ads->isEmpty())
@@ -30,29 +30,29 @@
                     <x-ui::table.row
                         wire:key="ad-{{ $ad->id }}"
                         onclick="if (!event.target.closest('a')) window.location='{{ $adUrl }}'"
-                        class="cursor-pointer">
+                        class="an:cursor-pointer">
                         <x-ui::table.cell :first="true" variant="primary">
-                            <a href="{{ $adUrl }}" class="cursor-pointer text-[13px] font-medium text-primary hover:underline">{{ $ad->name }}</a>
+                            <a href="{{ $adUrl }}" class="an:cursor-pointer an:text-[13px] an:font-medium an:text-primary an:hover:underline">{{ $ad->name }}</a>
                         </x-ui::table.cell>
                         <x-ui::table.cell>
-                            <a href="{{ $campaignUrl }}" class="cursor-pointer text-[13px] text-secondary hover:text-primary hover:underline">{{ $ad->campaign->name }}</a>
+                            <a href="{{ $campaignUrl }}" class="an:cursor-pointer an:text-[13px] an:text-secondary an:hover:text-primary an:hover:underline">{{ $ad->campaign->name }}</a>
                         </x-ui::table.cell>
                         <x-ui::table.cell>
-                            <div class="flex flex-wrap items-center gap-1.5">
+                            <div class="an:flex an:flex-wrap an:items-center an:gap-1.5">
                                 @foreach ($ad->match_conditions ?? [] as $condition)
                                     <x-analytics::condition-chip :param="$condition['param']" :value="$condition['value']" />
                                 @endforeach
                             </div>
                         </x-ui::table.cell>
                         <x-ui::table.cell :last="true">
-                            <div class="flex flex-wrap items-center gap-1.5">
+                            <div class="an:flex an:flex-wrap an:items-center an:gap-1.5">
                                 @forelse ($ad->objectives as $objective)
                                     <x-ui::badge :color="$objective->type->value === 'funnel' ? 'blue' : 'emerald'">
-                                        <x-ui::icon :name="$objective->type->value === 'funnel' ? 'funnel' : 'bolt'" class="h-3 w-3" />
+                                        <x-ui::icon :name="$objective->type->value === 'funnel' ? 'funnel' : 'bolt'" class="an:h-3 an:w-3" />
                                         {{ $objectiveLabels[$objective->type->value.':'.$objective->reference] ?? $objective->reference }}
                                     </x-ui::badge>
                                 @empty
-                                    <span class="text-[11px] text-muted">{{ __('aucun') }}</span>
+                                    <span class="an:text-[11px] an:text-muted">{{ __('aucun') }}</span>
                                 @endforelse
                             </div>
                         </x-ui::table.cell>
@@ -62,7 +62,7 @@
         </x-ui::table>
 
         @if ($ads->hasPages())
-            <div class="mt-6"><x-ui::pagination :paginator="$ads" mode="livewire" /></div>
+            <div class="an:mt-6"><x-ui::pagination :paginator="$ads" mode="livewire" /></div>
         @endif
     @endif
 

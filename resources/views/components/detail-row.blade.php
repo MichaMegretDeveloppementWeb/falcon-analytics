@@ -5,18 +5,18 @@
     'icon' => null,
 ])
 
-<div class="flex items-start justify-between gap-3">
-    <dt class="flex shrink-0 items-center gap-1.5 text-[12px] text-secondary">
+<div class="an:flex an:items-start an:justify-between an:gap-3">
+    <dt class="an:flex an:shrink-0 an:items-center an:gap-1.5 an:text-[12px] an:text-secondary">
         @if ($icon)
-            <x-ui::icon :name="$icon" class="h-3.5 w-3.5 shrink-0 text-muted" />
+            <x-ui::icon :name="$icon" class="an:h-3.5 an:w-3.5 an:shrink-0 an:text-muted" />
         @endif
         {{ $label }}
     </dt>
     <dd @class([
-        'min-w-0 truncate text-right',
-        'font-mono text-[12px]' => $mono,
-        'text-[13px]' => ! $mono,
-        'text-primary' => $slot->isNotEmpty() || filled($value),
-        'text-muted' => $slot->isEmpty() && ! filled($value),
+        'an:min-w-0 an:truncate an:text-right',
+        'an:font-mono an:text-[12px]' => $mono,
+        'an:text-[13px]' => ! $mono,
+        'an:text-primary' => $slot->isNotEmpty() || filled($value),
+        'an:text-muted' => $slot->isEmpty() && ! filled($value),
     ])>{{ $slot->isNotEmpty() ? $slot : (filled($value) ? $value : '·') }}</dd>
 </div>

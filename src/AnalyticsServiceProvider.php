@@ -16,6 +16,7 @@ use Falcon\Analytics\Console\SyncSearchConsoleCommand;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Support\GeoResolver;
+use Falcon\Ui\AssetRegistry;
 use Falcon\Ui\Config\CompletesDefaults;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Blade;
@@ -75,6 +76,12 @@ final class AnalyticsServiceProvider extends ServiceProvider
         // qu'on cesserait de charger serait du code mort qui a l'air vivant.
         $this->loadRoutesFrom(__DIR__.'/../routes/admin.php');
         $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+
+        // Ou sont les fichiers compiles du paquet. Le kit lit ce registre pour
+        // batir leur adresse, et pour comparer la copie publiee a la source ·
+        // une copie plus ancienne leve, plutot que de servir en silence la
+        // feuille du mois dernier.
+        $this->app->make(AssetRegistry::class)->register('analytics', __DIR__.'/../public');
 
         $this->registerPersistentMiddleware();
 
@@ -171,7 +178,33 @@ final class AnalyticsServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__.'/../resources/views' => resource_path('views/vendor/analytics'),
             ], 'analytics-views');
+
+            /*
+             * The compiled files, under two names. `laravel-assets` is the one
+             * a deployment forces in every release; `analytics-assets` is for
+             * taking these and nothing else.
+             *
+             * The package compiles and ships compiled files; the host publishes
+             * and serves them, with no Node and no build of its own.
+             */
+            $this->publishes([
+                __DIR__.'/../public' => public_path($this->publicDirectory().'/analytics'),
+            ], ['analytics-assets', 'laravel-assets']);
         }
+    }
+
+    /**
+     * Where the application keeps the suite's published files.
+     *
+     * The kit owns this setting, and the package reads the same one: two
+     * packages publishing into two different directories would leave the kit
+     * building an address for one of them that points at the other's.
+     */
+    private function publicDirectory(): string
+    {
+        $configured = config('ui.assets.path', 'vendor/falcon');
+
+        return is_string($configured) ? $configured : 'vendor/falcon';
     }
 
     /**

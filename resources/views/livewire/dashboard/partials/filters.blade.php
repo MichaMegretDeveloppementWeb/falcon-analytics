@@ -1,10 +1,10 @@
-<div class="flex flex-wrap items-center gap-2">
-    <div class="w-44">
+<div class="an:flex an:flex-wrap an:items-center an:gap-2">
+    <div class="an:w-44">
         <x-ui::select wire:model.live="period" :options="$periodOptions" />
     </div>
 
     @if (count($subjectOptions) > 1)
-        <div class="w-40">
+        <div class="an:w-40">
             <x-ui::select wire:model.live="subject" :options="$subjectOptions" />
         </div>
     @endif

@@ -17,7 +17,7 @@
 --}}
 <div
     wire:ignore
-    class="relative"
+    class="an:relative"
     x-data="{
         points: @js(array_values($points)),
         mode: 'window',
@@ -76,8 +76,8 @@
     x-on:analytics-realtime-mode.window="setMode($event.detail)"
     x-on:resize.window.debounce.250ms="apply()"
 >
-    <svg x-ref="svg" viewBox="0 0 1000 516" preserveAspectRatio="xMidYMid meet" class="w-full" role="img" aria-label="{{ __('Carte des connexions') }}">
-        <g class="fill-[#F5F5F5] stroke-[#DDDDDD] dark:fill-gray-800 dark:stroke-gray-700" stroke-width="1">
+    <svg x-ref="svg" viewBox="0 0 1000 516" preserveAspectRatio="xMidYMid meet" class="an:w-full" role="img" aria-label="{{ __('Carte des connexions') }}">
+        <g class="an:fill-[#F5F5F5] an:stroke-[#DDDDDD] an:dark:fill-gray-800 an:dark:stroke-gray-700" stroke-width="1">
             @include('analytics::livewire.dashboard.partials.world-map-path')
         </g>
         <g x-ref="markers"></g>
