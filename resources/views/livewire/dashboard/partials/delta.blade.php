@@ -22,7 +22,7 @@
         'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400' => $deltaGood,
         'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400' => ! $deltaGood,
     ])>
-        <x-ui.icon :name="$deltaUp ? 'arrow-up-right' : 'arrow-down-right'" class="h-3 w-3" stroke-width="2.5" />
+        <x-ui::icon :name="$deltaUp ? 'arrow-up-right' : 'arrow-down-right'" class="h-3 w-3" stroke-width="2.5" />
         {{ ($deltaPct > 0 ? '+' : '−').number_format(abs($deltaPct), 0, ',', ' ')."\u{00A0}%" }}
     </span>
 @endif

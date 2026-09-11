@@ -5,7 +5,7 @@
             $overallPct = $lastStep !== null ? (int) round($lastStep->conversionFromStart * 100) : 0;
             $entrants = number_format($report->entrants, 0, ',', ' ');
         @endphp
-        <x-ui.card wire:key="funnel-{{ $report->key }}" class="flex flex-col">
+        <x-ui::card wire:key="funnel-{{ $report->key }}" class="flex flex-col">
             {{-- Header: name, entrants → completion, weighted score. --}}
             <div class="mb-5 flex items-start justify-between gap-4">
                 <div class="min-w-0">
@@ -18,7 +18,7 @@
                         @endif
                     </p>
                 </div>
-                <x-ui.badge color="gray" class="shrink-0">{{ __('Score') }} {{ number_format($report->totalScore, 0, ',', ' ') }}</x-ui.badge>
+                <x-ui::badge color="gray" class="shrink-0">{{ __('Score') }} {{ number_format($report->totalScore, 0, ',', ' ') }}</x-ui::badge>
             </div>
 
             @if ($report->entrants === 0)
@@ -39,7 +39,7 @@
                         {{-- Loss between steps. --}}
                         @if ($previous !== null && $previous->visitors > 0 && $lost > 0)
                             <div class="flex items-center gap-1.5 pl-0.5 text-[11px] text-muted">
-                                <x-ui.icon name="arrow-trending-down" class="h-3.5 w-3.5" />
+                                <x-ui::icon name="arrow-trending-down" class="h-3.5 w-3.5" />
                                 <span>&minus;{{ $drop."\u{00A0}%" }}</span>
                                 <span class="text-muted/60">·</span>
                                 <span>{{ $lost <= 1 ? __(':count perdu', ['count' => $lost]) : __(':count perdus', ['count' => number_format($lost, 0, ',', ' ')]) }}</span>
@@ -89,10 +89,10 @@
                     @endforeach
                 </div>
             @endif
-        </x-ui.card>
+        </x-ui::card>
     @empty
         <div class="lg:col-span-2">
-            <x-ui.empty-state
+            <x-ui::empty-state
                 icon="funnel"
                 :title="__('Aucun tunnel')"
                 :description="__('Aucun tunnel n\'est déclaré dans app/Analytics/funnels.php.')" />

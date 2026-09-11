@@ -39,9 +39,9 @@
 
     @include('analytics::livewire.dashboard.partials.tooltip-host')
 
-    <x-ui.page-header :title="__('Sessions')" :description="$sessionsCount">
+    <x-ui::page-header :title="__('Sessions')" :description="$sessionsCount">
         @include('analytics::livewire.dashboard.partials.filters')
-    </x-ui.page-header>
+    </x-ui::page-header>
 
     {{-- La localite manquait sans qu'on sache pourquoi : base absente, tronquee, ou adresse privee. --}}
     <x-analytics::geo-notice />
@@ -52,48 +52,48 @@
     {{-- Toolbar --}}
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div class="w-full sm:max-w-xs">
-            <x-ui.search-input wire:model.live.debounce.300ms="search" :placeholder="__('Rechercher un nom, une ville, un pays, un ID…')" class="w-full" />
+            <x-ui::search-input wire:model.live.debounce.300ms="search" :placeholder="__('Rechercher un nom, une ville, un pays, un ID…')" class="w-full" />
         </div>
         <div class="flex items-center gap-2">
             @if (count($deviceOptions) > 1)
-                <div class="w-40"><x-ui.select wire:model.live="device" :options="$deviceOptions" /></div>
+                <div class="w-40"><x-ui::select wire:model.live="device" :options="$deviceOptions" /></div>
             @endif
             @if (count($sourceOptions) > 1)
-                <div class="w-40"><x-ui.select wire:model.live="source" :options="$sourceOptions" /></div>
+                <div class="w-40"><x-ui::select wire:model.live="source" :options="$sourceOptions" /></div>
             @endif
         </div>
     </div>
 
     @if ($sessions->isEmpty())
-        <x-ui.empty-state
+        <x-ui::empty-state
             icon="users"
             :title="__('Aucune session')"
             :description="__('Aucune session ne correspond aux filtres.')" />
     @else
-        <x-ui.table>
-            <x-ui.table.head>
-                <x-ui.table.header-cell :first="true">{{ __('Visiteur') }}</x-ui.table.header-cell>
-                <x-ui.table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'started_at', 'label' => __('Début')])</x-ui.table.header-cell>
-                <x-ui.table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'duration', 'label' => __('Durée')])</x-ui.table.header-cell>
-                <x-ui.table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'pageview_count', 'label' => __('Pages')])</x-ui.table.header-cell>
-                <x-ui.table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'events_count', 'label' => __('Événements')])</x-ui.table.header-cell>
-                <x-ui.table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'conversions_count', 'label' => __('Conv.')])</x-ui.table.header-cell>
-                <x-ui.table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'source', 'label' => __('Source')])</x-ui.table.header-cell>
-                <x-ui.table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'landing_route', 'label' => __('Page d\'entrée')])</x-ui.table.header-cell>
-                <x-ui.table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'device_type', 'label' => __('Appareil')])</x-ui.table.header-cell>
-                <x-ui.table.header-cell :last="true">@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'country', 'label' => __('Localité')])</x-ui.table.header-cell>
-            </x-ui.table.head>
-            <x-ui.table.body>
+        <x-ui::table>
+            <x-ui::table.head>
+                <x-ui::table.header-cell :first="true">{{ __('Visiteur') }}</x-ui::table.header-cell>
+                <x-ui::table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'started_at', 'label' => __('Début')])</x-ui::table.header-cell>
+                <x-ui::table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'duration', 'label' => __('Durée')])</x-ui::table.header-cell>
+                <x-ui::table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'pageview_count', 'label' => __('Pages')])</x-ui::table.header-cell>
+                <x-ui::table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'events_count', 'label' => __('Événements')])</x-ui::table.header-cell>
+                <x-ui::table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'conversions_count', 'label' => __('Conv.')])</x-ui::table.header-cell>
+                <x-ui::table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'source', 'label' => __('Source')])</x-ui::table.header-cell>
+                <x-ui::table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'landing_route', 'label' => __('Page d\'entrée')])</x-ui::table.header-cell>
+                <x-ui::table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'device_type', 'label' => __('Appareil')])</x-ui::table.header-cell>
+                <x-ui::table.header-cell :last="true">@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'country', 'label' => __('Localité')])</x-ui::table.header-cell>
+            </x-ui::table.head>
+            <x-ui::table.body>
                 @foreach ($sessions as $session)
                     @php
                         $duration = $formatSeconds((int) $session->started_at->diffInSeconds($session->last_activity_at));
                     @endphp
                     @php $sessionUrl = route('analytics.sessions.show', $session); @endphp
-                    <x-ui.table.row
+                    <x-ui::table.row
                         wire:key="session-{{ $session->id }}"
                         onclick="if (!event.target.closest('a')) window.location='{{ $sessionUrl }}'"
                         class="cursor-pointer">
-                        <x-ui.table.cell :first="true" variant="primary">
+                        <x-ui::table.cell :first="true" variant="primary">
                             <div class="flex flex-col">
                                 @php $attribution = $attributions[$session->id] ?? null; @endphp
                                 @if ($attribution)
@@ -108,22 +108,22 @@
                                     <span class="text-[11px] text-muted">{{ substr($session->visitor?->uuid ?? '', 0, 8) }}</span>
                                 @endif
                             </div>
-                        </x-ui.table.cell>
-                        <x-ui.table.cell class="whitespace-nowrap">{{ $session->started_at->translatedFormat('d M, H:i') }}</x-ui.table.cell>
-                        <x-ui.table.cell class="whitespace-nowrap">{{ $duration }}</x-ui.table.cell>
-                        <x-ui.table.cell class="tabular-nums">{{ $session->pageview_count }}</x-ui.table.cell>
-                        <x-ui.table.cell class="tabular-nums text-secondary">{{ $session->events_count }}</x-ui.table.cell>
-                        <x-ui.table.cell class="tabular-nums font-medium {{ $session->conversions_count > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted' }}">{{ $session->conversions_count }}</x-ui.table.cell>
-                        <x-ui.table.cell>
+                        </x-ui::table.cell>
+                        <x-ui::table.cell class="whitespace-nowrap">{{ $session->started_at->translatedFormat('d M, H:i') }}</x-ui::table.cell>
+                        <x-ui::table.cell class="whitespace-nowrap">{{ $duration }}</x-ui::table.cell>
+                        <x-ui::table.cell class="tabular-nums">{{ $session->pageview_count }}</x-ui::table.cell>
+                        <x-ui::table.cell class="tabular-nums text-secondary">{{ $session->events_count }}</x-ui::table.cell>
+                        <x-ui::table.cell class="tabular-nums font-medium {{ $session->conversions_count > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted' }}">{{ $session->conversions_count }}</x-ui::table.cell>
+                        <x-ui::table.cell>
                             @if ($session->source)
-                                <x-ui.badge color="gray"><x-analytics::source :value="$session->source" /></x-ui.badge>
+                                <x-ui::badge color="gray"><x-analytics::source :value="$session->source" /></x-ui::badge>
                             @else
                                 <span class="text-muted">{{ __('Directe') }}</span>
                             @endif
-                        </x-ui.table.cell>
+                        </x-ui::table.cell>
                         {{-- Bounded cells: long values truncate with the full text on
                              hover, so the table never widens past its container. --}}
-                        <x-ui.table.cell>
+                        <x-ui::table.cell>
                             <div class="max-w-56 truncate">
                                 @if ($session->landing_route || $session->landing_url)
                                     <x-analytics::page-url :route="$session->landing_route" :url="$session->landing_url" />
@@ -131,16 +131,16 @@
                                     <span class="text-muted">·</span>
                                 @endif
                             </div>
-                        </x-ui.table.cell>
-                        <x-ui.table.cell>
+                        </x-ui::table.cell>
+                        <x-ui::table.cell>
                             @if ($session->device_type || $session->browser)
                                 @php $deviceLine = ($session->device_type ? DeviceLabel::for($session->device_type) : __('Inconnu')).($session->browser ? ' · '.$session->browser : ''); @endphp
                                 <div class="max-w-40 truncate" data-tooltip="{{ $deviceLine }}">{{ $deviceLine }}</div>
                             @else
                                 <span class="text-muted">{{ __('Inconnu') }}</span>
                             @endif
-                        </x-ui.table.cell>
-                        <x-ui.table.cell :last="true">
+                        </x-ui::table.cell>
+                        <x-ui::table.cell :last="true">
                             <div class="max-w-44 truncate">
                                 @if ($session->country || $session->city)
                                     <x-analytics::country :code="$session->country" :city="$session->city" />
@@ -148,14 +148,14 @@
                                     <span class="text-muted">{{ __('Inconnu') }}</span>
                                 @endif
                             </div>
-                        </x-ui.table.cell>
-                    </x-ui.table.row>
+                        </x-ui::table.cell>
+                    </x-ui::table.row>
                 @endforeach
-            </x-ui.table.body>
-        </x-ui.table>
+            </x-ui::table.body>
+        </x-ui::table>
 
         @if ($sessions->hasPages())
-            <div class="mt-6"><x-ui.pagination :paginator="$sessions" mode="livewire" /></div>
+            <div class="mt-6"><x-ui::pagination :paginator="$sessions" mode="livewire" /></div>
         @endif
     @endif
 

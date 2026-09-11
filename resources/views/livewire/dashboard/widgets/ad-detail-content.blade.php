@@ -15,8 +15,8 @@
         </x-analytics::kpi-card>
     </div>
 
-    <x-ui.card>
-        <x-ui.section-header :title="__('Sessions et conversions au fil du temps')" class="mb-4" />
+    <x-ui::card>
+        <x-ui::section-header :title="__('Sessions et conversions au fil du temps')" class="mb-4" />
         @if (array_sum($trendData) > 0 || array_sum($conversionsTrend) > 0)
             <div wire:key="ad-trend-{{ $refId }}-{{ $period }}-{{ $subject }}">
                 <x-analytics::area-chart :labels="$trendLabels" :data="$trendData" :label="__('Sessions')" :data2="$conversionsTrend" :label2="__('Conversions')" height="h-56" />
@@ -24,7 +24,7 @@
         @else
             <div class="flex h-56 items-center justify-center rounded-lg bg-elevated text-[12px] text-muted">{{ __('Aucune session sur la période.') }}</div>
         @endif
-    </x-ui.card>
+    </x-ui::card>
 
     @include('analytics::livewire.dashboard.partials.marketing-conversions', ['showAd' => false])
 

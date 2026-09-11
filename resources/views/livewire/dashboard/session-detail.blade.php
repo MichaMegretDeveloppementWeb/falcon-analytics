@@ -97,7 +97,7 @@
 
     <div>
         <a href="{{ route($routeName.'.sessions') }}" class="inline-flex cursor-pointer items-center gap-x-1 text-[12px] font-medium text-secondary transition-colors hover:text-primary">
-            <x-ui.icon name="arrow-left" class="h-3.5 w-3.5" />
+            <x-ui::icon name="arrow-left" class="h-3.5 w-3.5" />
             {{ __('Retour aux sessions') }}
         </a>
     </div>
@@ -110,7 +110,7 @@
         <div class="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-sm text-secondary">
             <a href="{{ route($routeName.'.visitors.show', $session->visitor_id) }}" class="inline-flex cursor-pointer items-center gap-1 font-medium text-primary hover:underline" title="{{ __('Voir le profil du visiteur') }}">
                 {{ $visitorPrimary }}
-                <x-ui.icon name="arrow-top-right-on-square" class="h-3 w-3 text-muted" />
+                <x-ui::icon name="arrow-top-right-on-square" class="h-3 w-3 text-muted" />
             </a>
             @if ($visitorName && $visitorLabel)
                 <span class="text-muted">·</span>
@@ -118,11 +118,11 @@
             @endif
             @if ($subjectViaVisitor)
                 <span title="{{ __('Le visiteur ne s\'est pas connecté à son compte durant cette session ; il est identifié par ses autres sessions.') }}">
-                    <x-ui.badge color="gray">{{ __('Non connecté') }}</x-ui.badge>
+                    <x-ui::badge color="gray">{{ __('Non connecté') }}</x-ui::badge>
                 </span>
             @endif
             @if ($isReturning)
-                <x-ui.badge color="blue">{{ __('Récurrent') }}</x-ui.badge>
+                <x-ui::badge color="blue">{{ __('Récurrent') }}</x-ui::badge>
             @endif
             @if ($session->visitor?->uuid)
                 <span class="text-muted">·</span>
@@ -133,12 +133,12 @@
 
     {{-- Key figures --}}
     <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
-        <x-ui.stat-card :label="__('Durée')" :value="$duration" icon="clock" />
-        <x-ui.stat-card :label="__('Pages vues')" :value="(string) $session->pageview_count" icon="document-text" />
-        <x-ui.stat-card :label="__('Clics')" :value="(string) $clicksCount" icon="cursor-arrow-rays" />
-        <x-ui.stat-card :label="__('Événements')" :value="(string) $eventsCount" icon="bolt" />
-        <x-ui.stat-card :label="__('Conversions')" :value="(string) $conversionsCount" icon="check-circle" />
-        <x-ui.stat-card :label="__('Temps moy./page')" :value="$formatSeconds($avgPageSeconds)" icon="clock" />
+        <x-ui::stat-card :label="__('Durée')" :value="$duration" icon="clock" />
+        <x-ui::stat-card :label="__('Pages vues')" :value="(string) $session->pageview_count" icon="document-text" />
+        <x-ui::stat-card :label="__('Clics')" :value="(string) $clicksCount" icon="cursor-arrow-rays" />
+        <x-ui::stat-card :label="__('Événements')" :value="(string) $eventsCount" icon="bolt" />
+        <x-ui::stat-card :label="__('Conversions')" :value="(string) $conversionsCount" icon="check-circle" />
+        <x-ui::stat-card :label="__('Temps moy./page')" :value="$formatSeconds($avgPageSeconds)" icon="clock" />
     </div>
 
     {{-- Body: journey + details. Below lg the aside stacks, so we switch to tabs. --}}
@@ -162,11 +162,11 @@
 
         {{-- Journey --}}
         <div class="min-w-0 lg:col-span-2" x-show="desktop || tab === 'parcours'">
-            <x-ui.card>
-                <x-ui.section-header :title="__('Parcours')" :description="__('Ce que le visiteur a fait, dans l\'ordre')" class="mb-5" />
+            <x-ui::card>
+                <x-ui::section-header :title="__('Parcours')" :description="__('Ce que le visiteur a fait, dans l\'ordre')" class="mb-5" />
 
                 @if (empty($journey))
-                    <x-ui.empty-state icon="signal" :title="__('Aucun évènement')" :description="__('Cette session n\'a enregistré aucun évènement.')" />
+                    <x-ui::empty-state icon="signal" :title="__('Aucun évènement')" :description="__('Cette session n\'a enregistré aucun évènement.')" />
                 @else
                     <ol class="relative">
                         @foreach ($journey as $step)
@@ -181,16 +181,16 @@
                                     <span class="absolute bottom-0 left-4 top-8 w-px bg-base"></span>
                                 @endunless
                                 <span class="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-elevated ring-4 ring-surface">
-                                    <x-ui.icon :name="$isPageview ? 'document-text' : ($isConversionStep ? 'bolt' : 'cursor-arrow-rays')" @class(['h-4 w-4', 'text-emerald-500' => $isConversionStep, 'text-secondary' => ! $isConversionStep]) />
+                                    <x-ui::icon :name="$isPageview ? 'document-text' : ($isConversionStep ? 'bolt' : 'cursor-arrow-rays')" @class(['h-4 w-4', 'text-emerald-500' => $isConversionStep, 'text-secondary' => ! $isConversionStep]) />
                                 </span>
                                 <div class="min-w-0 flex-1 pt-1">
                                     <div class="flex items-baseline justify-between gap-2">
                                         <p @class(['flex min-w-0 items-center gap-2 text-[13px] font-medium', 'text-emerald-600 dark:text-emerald-400' => $isConversionStep, 'text-primary' => ! $isConversionStep])>
                                             <span class="min-w-0 truncate">@if ($isPageview)<x-analytics::page-url :route="$event->route" :url="$event->url" />@else{{ $eventLabel($event) }}@endif</span>
                                             @if ($isPageview && $loop->first)
-                                                <x-ui.badge color="gray">{{ __('Entrée') }}</x-ui.badge>
+                                                <x-ui::badge color="gray">{{ __('Entrée') }}</x-ui::badge>
                                             @elseif ($isPageview && $loop->last)
-                                                <x-ui.badge color="gray">{{ __('Sortie') }}</x-ui.badge>
+                                                <x-ui::badge color="gray">{{ __('Sortie') }}</x-ui::badge>
                                             @endif
                                         </p>
                                         <span class="shrink-0 text-[11px] tabular-nums text-muted">{{ $event->occurred_at->translatedFormat('H:i:s') }}</span>
@@ -210,7 +210,7 @@
                                             @foreach ($step['children'] as $child)
                                                 @php $isConversion = $child->type === EventType::Custom; @endphp
                                                 <div class="flex items-center gap-2">
-                                                    <x-ui.icon :name="$isConversion ? 'bolt' : 'cursor-arrow-rays'" @class(['h-3.5 w-3.5 shrink-0', 'text-emerald-500' => $isConversion, 'text-[#1684ea]' => ! $isConversion]) />
+                                                    <x-ui::icon :name="$isConversion ? 'bolt' : 'cursor-arrow-rays'" @class(['h-3.5 w-3.5 shrink-0', 'text-emerald-500' => $isConversion, 'text-[#1684ea]' => ! $isConversion]) />
                                                     @php $childLabel = $eventLabel($child); @endphp
                                                     <span @class(['min-w-0 truncate text-[12px]', 'font-medium text-emerald-600 dark:text-emerald-400' => $isConversion, 'text-secondary' => ! $isConversion]) data-tooltip="{{ $childLabel }}">{{ $childLabel }}</span>
                                                     <span class="ml-auto shrink-0 text-[11px] tabular-nums text-muted">{{ $child->occurred_at->translatedFormat('H:i:s') }}</span>
@@ -223,17 +223,17 @@
                         @endforeach
                     </ol>
                 @endif
-            </x-ui.card>
+            </x-ui::card>
         </div>
 
         {{-- Details --}}
         <div class="min-w-0 space-y-5" x-show="desktop || tab === 'infos'">
 
-            <x-ui.card>
-                <x-ui.section-header :title="__('Acquisition')" class="mb-3" />
+            <x-ui::card>
+                <x-ui::section-header :title="__('Acquisition')" class="mb-3" />
                 <div class="flex items-center gap-3 border-b border-subtle pb-3">
                     <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-elevated text-secondary">
-                        <x-ui.icon :name="$sourceIcon" class="h-4 w-4" />
+                        <x-ui::icon :name="$sourceIcon" class="h-4 w-4" />
                     </span>
                     <div class="min-w-0 flex-1">
                         <p class="truncate text-[13px] font-semibold text-primary">
@@ -255,10 +255,10 @@
                         <x-analytics::detail-row :label="$utmLabel" :value="$utmValue" icon="tag" />
                     @endforeach
                 </dl>
-            </x-ui.card>
+            </x-ui::card>
 
-            <x-ui.card>
-                <x-ui.section-header :title="__('Répartition du temps')" :description="__('Par page')" class="mb-4" />
+            <x-ui::card>
+                <x-ui::section-header :title="__('Répartition du temps')" :description="__('Par page')" class="mb-4" />
                 @if ($totalPageSeconds > 0)
                     <div class="flex items-center gap-5">
                         <div wire:key="donut-time-{{ $session->id }}">
@@ -283,27 +283,27 @@
                 @else
                     <p class="text-[12px] text-muted">{{ __('Temps par page indisponible.') }}</p>
                 @endif
-            </x-ui.card>
+            </x-ui::card>
 
-            <x-ui.card>
-                <x-ui.section-header :title="__('Localité')" class="mb-3" />
+            <x-ui::card>
+                <x-ui::section-header :title="__('Localité')" class="mb-3" />
                 <dl class="space-y-2.5">
                     <x-analytics::detail-row :label="__('Pays')" icon="flag">@if ($session->country)<x-analytics::country :code="$session->country" />@endif</x-analytics::detail-row>
                     <x-analytics::detail-row :label="__('Ville')" :value="$value($session->city)" icon="map-pin" />
                     <x-analytics::detail-row :label="__('IP')" :value="$value($session->ip)" icon="hashtag" mono />
                 </dl>
-            </x-ui.card>
+            </x-ui::card>
 
-            <x-ui.card>
-                <x-ui.section-header :title="__('Appareil')" class="mb-3">
-                    <x-ui.icon :name="$deviceIcon" class="h-4 w-4 text-muted" />
-                </x-ui.section-header>
+            <x-ui::card>
+                <x-ui::section-header :title="__('Appareil')" class="mb-3">
+                    <x-ui::icon :name="$deviceIcon" class="h-4 w-4 text-muted" />
+                </x-ui::section-header>
                 <dl class="space-y-2.5">
                     <x-analytics::detail-row :label="__('Type')" :value="$session->device_type ? DeviceLabel::for($session->device_type) : null" :icon="$deviceIcon" />
                     <x-analytics::detail-row :label="__('Navigateur')" :value="trim(($session->browser ?? '').' '.($session->browser_version ?? '')) ?: null" icon="globe-alt" />
                     <x-analytics::detail-row :label="__('Système')" :value="trim(($session->os ?? '').' '.($session->os_version ?? '')) ?: null" icon="cpu-chip" />
                 </dl>
-            </x-ui.card>
+            </x-ui::card>
 
         </div>
     </div>

@@ -8,7 +8,7 @@
 <div class="flex items-start justify-between gap-3">
     <dt class="flex shrink-0 items-center gap-1.5 text-[12px] text-secondary">
         @if ($icon)
-            <x-ui.icon :name="$icon" class="h-3.5 w-3.5 shrink-0 text-muted" />
+            <x-ui::icon :name="$icon" class="h-3.5 w-3.5 shrink-0 text-muted" />
         @endif
         {{ $label }}
     </dt>

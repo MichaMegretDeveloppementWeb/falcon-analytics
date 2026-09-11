@@ -44,6 +44,7 @@ use Falcon\Analytics\Livewire\Dashboard\Widgets\SessionsHeadline;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\TrendChart;
 use Falcon\Analytics\Livewire\Dashboard\Widgets\VisitorsHeadline;
 use Falcon\Analytics\Support\GeoResolver;
+use Falcon\Ui\Config\CompletesDefaults;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\View;
@@ -52,9 +53,15 @@ use Livewire\Livewire;
 
 final class AnalyticsServiceProvider extends ServiceProvider
 {
+    use CompletesDefaults;
+
     public function register(): void
     {
-        $this->mergeConfigFrom(__DIR__.'/../config/analytics.php', 'analytics');
+        // `completeConfigFrom` et non `mergeConfigFrom` · celui de Laravel ne
+        // complete que le premier niveau. Une copie publiee qui vieillit perd
+        // donc toute sous-cle ajoutee depuis, sans un mot. Le kit porte cette
+        // politique pour toute la suite ; on ne la recopie pas.
+        $this->completeConfigFrom(__DIR__.'/../config/analytics.php', 'analytics');
 
         $this->app->singleton(Analytics::class);
 

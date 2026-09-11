@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Console;
 
-use Falcon\Analytics\Support\AnalyticsAssets;
-use Falcon\UiKit\Installer\AssetEntry;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Database\Migrations\Migrator;
@@ -72,7 +70,6 @@ final class CheckCommand extends Command
         return [
             $this->checkMigrations(),
             $this->checkMasterSwitch($config),
-            $this->checkAssets(),
             $this->checkCollector(),
             $this->checkEndpoint($config),
             $this->checkModuleMiddleware($config),
@@ -142,67 +139,14 @@ final class CheckCommand extends Command
         ];
     }
 
-    /**
-     * The imports, in the entrypoints the host named. The paths come from
-     * `analytics.assets`, so a host that moves an entrypoint fixes the
-     * configuration and the diagnostic follows.
-     *
-     * A missing key is a fault and not an exemption: skipping it would report
-     * « Assets OK » while nothing is imported.
-     *
-     * @return array{0: string, 1: string, 2: string}
-     */
-    private function checkAssets(): array
-    {
-        $missing = [];
-
-        foreach (AnalyticsAssets::hostImports() as $key => [$kind, $vendorPath]) {
-            $configured = (string) config('analytics.assets.'.$key);
-
-            if ($configured === '') {
-                $missing[] = 'analytics.assets.'.$key.' n’est pas renseigné : relancez analytics:install';
-
-                continue;
-            }
-
-            $entry = $kind === 'css' ? AssetEntry::css($configured) : AssetEntry::js($configured);
-
-            if (! $entry->alreadyImports($vendorPath)) {
-                $missing[] = $entry->relativePath.' : '
-                    .($kind === 'css' ? "@import '" : "import '").$entry->importPath($vendorPath)."';";
-            }
-        }
-
-        if ($missing !== []) {
-            return [
-                'Assets',
-                'KO',
-                // No em dash: the console is read by a person.
-                'Import manquant. Ajoutez-le puis lancez npm run build · '.implode(' · ', $missing),
-            ];
-        }
-
-        // The collector has no business in the back office's script: finding it
-        // there skews every dashboard figure without breaking anything.
-        //
-        // Only when the two entrypoints are two files. The shipped
-        // configuration points both at the same `resources/js/app.js`, where
-        // the import asked for in one is necessarily in the other.
-        $adminJs = (string) config('analytics.assets.admin_js');
-        $webJs = (string) config('analytics.assets.web_js');
-        $collector = AnalyticsAssets::hostImports()['web_js'][1];
-
-        if ($adminJs !== '' && $adminJs !== $webJs && AssetEntry::js($adminJs)->alreadyImports($collector)) {
-            return [
-                'Assets',
-                'KO',
-                'Le collecteur est importé par '.$adminJs.', le script du back-office : '
-                .'les visites de l’administration sont comptées comme celles du public. Retirez cet import.',
-            ];
-        }
-
-        return ['Assets', 'OK', 'Les assets du paquet sont importés et compilés par l’application.'];
-    }
+    // Le controle des assets a ete retire ici, et il reviendra autrement.
+    //
+    // Il verifiait que l'hote avait bien importe les sources du paquet dans ses
+    // propres entrees, et que le collecteur n'etait pas tombe dans le script du
+    // back-office. Ce modele n'existe plus · le paquet compile et publie ses
+    // fichiers, et l'hote n'importe rien. Ce qu'il faudra verifier a la place —
+    // qu'une copie publiee correspond au fichier livre — appartient au
+    // sous-chantier de la compilation, qui les fera naitre.
 
     /**
      * The directive that lays the collector down, somewhere in the host's

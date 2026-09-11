@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Tests\Feature;
 
 use Falcon\Analytics\AnalyticsServiceProvider;
-use Falcon\Analytics\Support\AnalyticsAssets;
 use Falcon\Analytics\Tests\TestCase;
-use Falcon\UiKit\Installer\AssetEntry;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Artisan;
@@ -111,68 +109,39 @@ final class PackageInstallationTest extends TestCase
         $this->app->register(AnalyticsServiceProvider::class, force: true);
 
         try {
-            // Les trois chemins en options · sans eux la commande demande, et
-            // un essai sans entrée interactive n'a personne pour répondre.
-            $this->artisan('analytics:install', [
-                '--admin-css' => 'resources/css/admin.css',
-                '--admin-js' => 'resources/js/admin.js',
-                '--web-js' => 'resources/js/web.js',
-            ])->assertSuccessful();
+            // Aucune option · la commande ne demande plus rien. Elle publie,
+            // amorce l'environnement et migre, et c'est tout ce qu'elle touche.
+            $this->artisan('analytics:install')->assertSuccessful();
 
             $this->assertFileExists($base.DIRECTORY_SEPARATOR.'config'.DIRECTORY_SEPARATOR.'analytics.php');
             $this->assertStringContainsString('# --- Falcon Analytics', File::get($base.DIRECTORY_SEPARATOR.'.env'));
             $this->assertStringContainsString('ANALYTICS_ENABLED=true', File::get($base.DIRECTORY_SEPARATOR.'.env'));
             $this->assertStringContainsString('ANALYTICS_GSC_CLIENT_ID=', File::get($base.DIRECTORY_SEPARATOR.'.env.example'));
-
-            // Chaque import de la liste est écrit dans l'entrée qui porte sa
-            // clé. La liste plutôt que des chemins recopiés · un import ajouté
-            // à AnalyticsAssets est vérifié ici sans qu'on touche à cet essai,
-            // et un chemin qui y changerait ne pourrait pas diverger de ce
-            // qu'on assère.
-            foreach (AnalyticsAssets::hostImports() as $key => [$kind, $vendorPath]) {
-                $path = (string) config('analytics.assets.'.$key);
-                $entry = $kind === 'css' ? AssetEntry::css($path) : AssetEntry::js($path);
-
-                $this->assertTrue($entry->alreadyImports($vendorPath));
-            }
-
-            // Le collecteur ne va jamais dans le script du back-office · on ne
-            // mesure pas les visites de la personne qui administre.
-            $this->assertFalse(
-                AssetEntry::js('resources/js/admin.js')
-                    ->alreadyImports('vendor/falcon/analytics/resources/js/collector.js'),
-            );
-
-            // Et les réponses sont retenues, pour que rien ne soit à redemander.
-            $this->assertSame('resources/css/admin.css', config('analytics.assets.admin_css'));
-            $this->assertSame('resources/js/admin.js', config('analytics.assets.admin_js'));
-            $this->assertSame('resources/js/web.js', config('analytics.assets.web_js'));
         } finally {
             File::deleteDirectory($base);
         }
     }
 
     /**
-     * L'installateur ne demande que ce dont il se sert.
+     * L'installateur ne demande plus aucun chemin.
      *
-     * Un `--web-css` a existé jusqu'au 2026-09-07 · demandé, rangé en
-     * configuration, et lu par personne. Le paquet n'a aucun CSS public à
-     * importer, donc la question n'avait rien à écrire.
+     * Il en demandait trois, et les ecrivait dans les entrees de l'hote · ce
+     * modele a disparu avec la refonte de la suite. Le paquet compile et publie
+     * ses fichiers, donc il n'y a plus rien a importer ni rien a demander.
      *
-     * L'essai porte sur la définition de la commande plutôt que sur un appel ·
-     * une option retirée fait échouer un appel qui la passe, ce qui dit « cet
-     * essai est périmé » et non « cette option a bien disparu ».
+     * L'essai porte sur la definition de la commande plutot que sur un appel ·
+     * une option reintroduite se verrait ici, au lieu d'etre decouverte le jour
+     * ou quelqu'un se demande a quoi elle sert.
      */
-    public function test_it_asks_only_for_the_entries_it_writes_into(): void
+    public function test_it_asks_for_no_path_at_all(): void
     {
         $options = array_keys(Artisan::all()['analytics:install']->getDefinition()->getOptions());
 
-        $this->assertContains('admin-css', $options);
-        $this->assertContains('admin-js', $options);
-        $this->assertContains('web-js', $options);
+        $this->assertNotContains('admin-css', $options);
+        $this->assertNotContains('admin-js', $options);
+        $this->assertNotContains('web-js', $options);
         $this->assertNotContains('web-css', $options);
 
-        // Et la configuration publiée ne porte plus la clé.
-        $this->assertArrayNotHasKey('web_css', config('analytics.assets'));
+        $this->assertContains('force', $options, 'La seule option qui reste.');
     }
 }

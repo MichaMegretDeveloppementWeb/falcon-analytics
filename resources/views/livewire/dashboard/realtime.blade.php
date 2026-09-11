@@ -35,7 +35,7 @@
 
     @include('analytics::livewire.dashboard.partials.tooltip-host')
 
-    <x-ui.page-header
+    <x-ui::page-header
         :title="__('Temps réel')"
         :description="__('Activité des :count dernières minutes, actualisée toutes les :seconds secondes', ['count' => $windowMinutes, 'seconds' => $pollSeconds])" />
 
@@ -187,7 +187,7 @@
                 </div>
             </div>
 
-            <x-ui.card>
+            <x-ui::card>
                 <div class="mb-3 flex flex-wrap items-baseline justify-between gap-3">
                     <p class="text-[16px] font-bold {{ $ink }}">{{ __('Activité par minute') }}</p>
                     <div class="flex items-baseline gap-x-6">
@@ -197,7 +197,7 @@
                     </div>
                 </div>
                 <x-analytics::live-line :labels="array_keys($minuteSeries)" :values="array_values($minuteSeries)" channel="pulse" color="#116DFF" height="h-48" />
-            </x-ui.card>
+            </x-ui::card>
         </div>
 
         <div class="space-y-6 lg:col-span-1">
@@ -224,7 +224,7 @@
                             @endphp
                             <li wire:key="rt-session-{{ $session->id }}">
                                 <a href="{{ route($routeName.'.sessions.show', $session) }}" class="flex cursor-pointer items-center gap-3 px-5 py-3 transition-colors hover:bg-elevated/50">
-                                    <x-ui.icon :name="$deviceIcon($session->device_type)" class="h-5 w-5 shrink-0 {{ $inkSoft }}" />
+                                    <x-ui::icon :name="$deviceIcon($session->device_type)" class="h-5 w-5 shrink-0 {{ $inkSoft }}" />
                                     <span class="min-w-0 flex-1">
                                         <span class="flex items-center gap-x-1.5">
                                             <span class="truncate text-[14px] font-medium {{ $ink }}">{{ $who }}</span>
@@ -237,7 +237,7 @@
                                         </span>
                                     </span>
                                     <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#116DFF]/30 text-[#116DFF]">
-                                        <x-ui.icon name="chevron-right" class="h-4 w-4" />
+                                        <x-ui::icon name="chevron-right" class="h-4 w-4" />
                                     </span>
                                 </a>
                             </li>
@@ -276,7 +276,7 @@
                                 <a href="{{ $event->session_id !== null ? route($routeName.'.sessions.show', $event->session_id) : '#' }}"
                                    class="flex cursor-pointer items-start gap-3 px-5 py-3 transition-colors hover:bg-elevated/50">
                                     <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg {{ $isConversion ? 'bg-[#54CE91]/15' : 'bg-elevated' }}">
-                                        <x-ui.icon :name="$feedIcon($event)" class="h-3.5 w-3.5 {{ $isConversion ? 'text-[#22A96F]' : $inkSoft }}" />
+                                        <x-ui::icon :name="$feedIcon($event)" class="h-3.5 w-3.5 {{ $isConversion ? 'text-[#22A96F]' : $inkSoft }}" />
                                     </span>
                                     <span class="min-w-0 flex-1">
                                         <span class="block truncate text-[14px] font-medium {{ $isConversion ? 'text-[#22A96F]' : $ink }}">

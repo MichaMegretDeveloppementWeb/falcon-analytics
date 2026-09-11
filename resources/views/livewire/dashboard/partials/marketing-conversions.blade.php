@@ -6,26 +6,26 @@
 {{-- Sorted list of conversion elements (objectives): what converted, how many
      times, via which ad. A funnel objective expands into its step events. --}}
 <div>
-    <x-ui.section-header :title="__('Conversions')" :description="__('Ce qui a converti, combien de fois' . ($showAd ? ', et via quelle pub' : '') . ', du plus au moins converti.')" class="mb-4" />
+    <x-ui::section-header :title="__('Conversions')" :description="__('Ce qui a converti, combien de fois' . ($showAd ? ', et via quelle pub' : '') . ', du plus au moins converti.')" class="mb-4" />
 
     @if ($conversionElements === [])
-        <x-ui.empty-state icon="check-circle" :title="__('Aucun objectif défini')" :description="__('Définis des objectifs sur tes pubs pour mesurer les conversions ici.')" />
+        <x-ui::empty-state icon="check-circle" :title="__('Aucun objectif défini')" :description="__('Définis des objectifs sur tes pubs pour mesurer les conversions ici.')" />
     @else
-        <x-ui.card padding="false">
+        <x-ui::card padding="false">
             <div class="divide-y divide-subtle">
                 @foreach ($conversionElements as $i => $el)
                     <div wire:key="conv-{{ $i }}" @if ($el['steps']) x-data="{ open: false }" @endif class="px-5 py-3">
                         <div class="flex items-center gap-3">
                             @if ($el['steps'])
                                 <button type="button" x-on:click="open = ! open" class="flex h-4 w-4 shrink-0 cursor-pointer items-center justify-center" aria-label="{{ __('Détail du tunnel') }}">
-                                    <x-ui.icon name="chevron-right" class="h-4 w-4 text-muted transition-transform" x-bind:class="open && 'rotate-90'" />
+                                    <x-ui::icon name="chevron-right" class="h-4 w-4 text-muted transition-transform" x-bind:class="open && 'rotate-90'" />
                                 </button>
                             @else
                                 <span class="w-4 shrink-0"></span>
                             @endif
-                            <x-ui.icon :name="$el['type'] === 'funnel' ? 'funnel' : 'bolt'" class="h-4 w-4 shrink-0 {{ $el['type'] === 'funnel' ? 'text-blue-500' : 'text-emerald-500' }}" />
+                            <x-ui::icon :name="$el['type'] === 'funnel' ? 'funnel' : 'bolt'" class="h-4 w-4 shrink-0 {{ $el['type'] === 'funnel' ? 'text-blue-500' : 'text-emerald-500' }}" />
                             <span class="min-w-0 flex-1 truncate text-[13px] font-medium text-primary">{{ $el['label'] }}</span>
-                            <x-ui.badge :color="$el['type'] === 'funnel' ? 'blue' : 'emerald'">{{ $el['type'] === 'funnel' ? __('Tunnel') : __('Événement') }}</x-ui.badge>
+                            <x-ui::badge :color="$el['type'] === 'funnel' ? 'blue' : 'emerald'">{{ $el['type'] === 'funnel' ? __('Tunnel') : __('Événement') }}</x-ui::badge>
                             @if ($showAd)
                                 <a href="{{ route($routeName.'.ads.show', $el['adId']) }}" class="hidden w-32 shrink-0 cursor-pointer truncate text-right text-[12px] text-secondary hover:text-primary hover:underline sm:inline">{{ $el['adName'] }}</a>
                             @endif
@@ -49,6 +49,6 @@
                     </div>
                 @endforeach
             </div>
-        </x-ui.card>
+        </x-ui::card>
     @endif
 </div>

@@ -4,15 +4,15 @@
 
 <div class="border-t border-base pt-8">
     <div class="mb-4 flex items-end justify-between gap-4">
-        <x-ui.section-header :title="__('Événements & conversions')" />
+        <x-ui::section-header :title="__('Événements & conversions')" />
         <a href="{{ $eventsRoute }}" class="shrink-0 cursor-pointer whitespace-nowrap text-[12px] font-medium text-secondary transition-colors hover:text-primary">{{ __('Voir tout') }} <span aria-hidden="true">&rarr;</span></a>
     </div>
 
-    <x-ui.card>
+    <x-ui::card>
         <div class="grid grid-cols-1 divide-y divide-subtle lg:grid-cols-2 lg:divide-x lg:divide-y-0">
 
             <div class="pb-5 lg:pb-0 lg:pr-8">
-                <x-ui.section-header :title="__('Conversions')" class="mb-4" />
+                <x-ui::section-header :title="__('Conversions')" class="mb-4" />
                 @if ($topConversions !== [])
                     <p class="text-2xl font-semibold tracking-tight text-primary">{{ number_format($conversionsTotal, 0, ',', ' ') }}</p>
                     <p class="mb-4 text-[11px] uppercase tracking-wider text-muted">{{ __('sur la période') }}</p>
@@ -30,12 +30,12 @@
                         @endforeach
                     </dl>
                 @else
-                    <x-ui.empty-state icon="check-circle" :title="__('Aucune conversion')" :description="__('Aucune conversion sur la période.')" />
+                    <x-ui::empty-state icon="check-circle" :title="__('Aucune conversion')" :description="__('Aucune conversion sur la période.')" />
                 @endif
             </div>
 
             <div class="pt-5 lg:pl-8 lg:pt-0">
-                <x-ui.section-header :title="__('Top événements')" class="mb-4" />
+                <x-ui::section-header :title="__('Top événements')" class="mb-4" />
                 @if ($topEvents !== [])
                     <dl class="grid max-w-[22rem] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-5 gap-y-2.5">
                         @foreach ($topEvents as $item)
@@ -47,10 +47,10 @@
                         @endforeach
                     </dl>
                 @else
-                    <x-ui.empty-state icon="bolt" :title="__('Aucun événement')" :description="__('Aucun événement sur la période.')" />
+                    <x-ui::empty-state icon="bolt" :title="__('Aucun événement')" :description="__('Aucun événement sur la période.')" />
                 @endif
             </div>
 
         </div>
-    </x-ui.card>
+    </x-ui::card>
 </div>

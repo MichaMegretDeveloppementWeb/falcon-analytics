@@ -51,12 +51,12 @@
     </div>
 
     {{-- Engagement stats (same headline read as the KPIs) --}}
-    <x-ui.card>
-        <x-ui.section-header :title="__('Statistiques')" :description="__('Sur la période')" class="mb-4" />
+    <x-ui::card>
+        <x-ui::section-header :title="__('Statistiques')" :description="__('Sur la période')" class="mb-4" />
         <div class="grid grid-cols-1 gap-x-8 gap-y-2 sm:grid-cols-2">
             <div class="flex items-center gap-3 py-1">
                 <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-elevated">
-                    <x-ui.icon name="document-text" class="h-3.5 w-3.5 text-secondary" />
+                    <x-ui::icon name="document-text" class="h-3.5 w-3.5 text-secondary" />
                 </span>
                 <span class="text-[13px] text-secondary">{{ __('Pages vues') }}</span>
                 <span class="flex items-center gap-2">
@@ -66,7 +66,7 @@
             </div>
             <div class="flex items-center gap-3 py-1">
                 <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-elevated">
-                    <x-ui.icon name="document-duplicate" class="h-3.5 w-3.5 text-secondary" />
+                    <x-ui::icon name="document-duplicate" class="h-3.5 w-3.5 text-secondary" />
                 </span>
                 <span class="text-[13px] text-secondary">{{ __('Pages par session') }}</span>
                 <span class="flex items-center gap-2">
@@ -75,6 +75,6 @@
                 </span>
             </div>
         </div>
-    </x-ui.card>
+    </x-ui::card>
 
 </div>

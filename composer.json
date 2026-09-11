@@ -10,6 +10,13 @@
     ],
     "repositories": [
         {
+            "type": "path",
+            "url": "../falcon-ui-kit",
+            "options": {
+                "symlink": true
+            }
+        },
+        {
             "type": "vcs",
             "url": "https://github.com/MichaMegretDeveloppementWeb/falcon-ui-kit.git"
         }

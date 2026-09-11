@@ -39,7 +39,7 @@
         <p class="text-[12px] font-medium text-secondary sm:text-[13px]">{{ $label }}</p>
         @if ($icon)
             <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-elevated">
-                <x-ui.icon :name="$icon" class="h-4 w-4 text-muted" />
+                <x-ui::icon :name="$icon" class="h-4 w-4 text-muted" />
             </span>
         @endif
     </div>
@@ -51,7 +51,7 @@
                 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400' => $badge['good'],
                 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400' => ! $badge['good'],
             ])>
-                <x-ui.icon :name="$badge['up'] ? 'arrow-up-right' : 'arrow-down-right'" class="h-3 w-3" stroke-width="2.5" />
+                <x-ui::icon :name="$badge['up'] ? 'arrow-up-right' : 'arrow-down-right'" class="h-3 w-3" stroke-width="2.5" />
                 {{ $badge['text'] }}
             </span>
         @endif

@@ -1,26 +1,26 @@
 <div>
     <div class="mb-4 flex items-end justify-between gap-4">
-        <x-ui.section-header :title="__('Clics par recherches Google')" />
+        <x-ui::section-header :title="__('Clics par recherches Google')" />
         @if ($connected && $freshestDate !== null)
             <span class="shrink-0 whitespace-nowrap text-[11px] text-muted">{{ __('Dernières données Google : :date', ['date' => $freshestDate->isoFormat('D MMM')]) }}</span>
         @endif
     </div>
 
-    <x-ui.card>
+    <x-ui::card>
         @if (! $connected)
             <div class="flex flex-col items-center gap-3 py-6 text-center">
                 <span class="flex h-10 w-10 items-center justify-center rounded-lg bg-elevated">
-                    <x-ui.icon name="magnifying-glass" class="h-5 w-5 text-secondary" />
+                    <x-ui::icon name="magnifying-glass" class="h-5 w-5 text-secondary" />
                 </span>
                 <p class="max-w-md text-[12px] text-secondary">
                     {{ __('Connectez Google Search Console pour suivre les recherches qui mènent au site : clics, impressions et position.') }}
                 </p>
-                <x-ui.button variant="secondary" :href="$integrationsRoute">
+                <x-ui::button variant="secondary" :href="$integrationsRoute">
                     {{ $connectionStatus === \Falcon\Analytics\Models\SearchConsoleConnection::STATUS_ERROR ? __('Reconnecter Search Console') : __('Connecter Search Console') }}
-                </x-ui.button>
+                </x-ui::button>
             </div>
         @elseif ($queries === [])
-            <x-ui.empty-state
+            <x-ui::empty-state
                 icon="magnifying-glass"
                 :title="__('Aucune donnée sur la période')"
                 :description="__('Les données Google paraissent avec quelques jours de décalage.')" />
@@ -49,5 +49,5 @@
                 @endforeach
             </div>
         @endif
-    </x-ui.card>
+    </x-ui::card>
 </div>

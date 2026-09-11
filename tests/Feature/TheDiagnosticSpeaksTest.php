@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Tests\Feature;
 
-use Falcon\Analytics\Support\AnalyticsAssets;
 use Falcon\Analytics\Tests\TestCase;
-use Falcon\UiKit\Installer\AssetEntry;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
@@ -53,21 +51,15 @@ final class TheDiagnosticSpeaksTest extends TestCase
     }
 
     /**
-     * Ce que l'hote a a faire, et rien de plus · les deux imports la ou la
-     * configuration dit qu'ils sont, et la directive dans une vue.
+     * Ce que l'hote a a faire, et rien de plus · la directive dans une vue.
+     *
+     * Les deux imports que ce montage ecrivait ont disparu avec le modele qui
+     * les demandait · le paquet compile et publie ses fichiers, l'hote n'en
+     * importe aucun.
      */
     private function soundInstallation(): void
     {
-        File::ensureDirectoryExists(resource_path('css'));
-        File::ensureDirectoryExists(resource_path('js'));
         File::ensureDirectoryExists(resource_path('views/layouts'));
-
-        foreach (AnalyticsAssets::hostImports() as $key => [$kind, $vendorPath]) {
-            $path = (string) config('analytics.assets.'.$key);
-
-            ($kind === 'css' ? AssetEntry::css($path) : AssetEntry::js($path))->import($vendorPath);
-        }
-
         File::put(resource_path('views/layouts/web.blade.php'), '<body>@analyticsConfig</body>');
     }
 
@@ -131,46 +123,6 @@ final class TheDiagnosticSpeaksTest extends TestCase
      * deplacait une entree n'avait aucun moyen d'apprendre que l'import etait
      * reste derriere.
      */
-    public function test_it_says_which_import_is_missing_from_which_entry(): void
-    {
-        File::put(resource_path('css/app.css'), "@import 'tailwindcss';");
-        File::put(resource_path('js/app.js'), "import './bootstrap';");
-
-        $this->artisan('analytics:check')
-            ->expectsOutputToContain('npm run build')
-            ->assertFailed();
-    }
-
-    /** Une cle de configuration absente est un defaut, pas une dispense. */
-    public function test_it_says_when_an_assets_key_was_never_filled_in(): void
-    {
-        config(['analytics.assets.web_js' => '']);
-
-        $this->artisan('analytics:check')
-            ->expectsOutputToContain('analytics:install')
-            ->assertFailed();
-    }
-
-    /**
-     * On ne mesure pas les visites de la personne qui administre.
-     *
-     * Le collecteur importe par le script du back-office ne casse rien · il
-     * fausse chaque chiffre du tableau de bord, ce qui est pire, personne
-     * n'allant chercher une erreur.
-     */
-    public function test_it_says_when_the_collector_is_imported_by_the_back_office_script(): void
-    {
-        // Le meme fichier sert de script public et d'administration par
-        // defaut · on les separe pour pouvoir poser le defaut sur un seul.
-        config(['analytics.assets.admin_js' => 'resources/js/admin.js']);
-
-        AssetEntry::js('resources/js/admin.js')->import(AnalyticsAssets::hostImports()['web_js'][1]);
-
-        $this->artisan('analytics:check')
-            ->expectsOutputToContain('back-office')
-            ->assertFailed();
-    }
-
     public function test_it_says_when_a_module_is_mounted_without_any_middleware(): void
     {
         config(['analytics.dashboard.middleware' => []]);

@@ -7,12 +7,12 @@
     $devicePalette = ['#1684ea', '#7cb8f2', '#bcdcfa', '#d1d5db'];
 @endphp
 
-<x-ui.card>
+<x-ui::card>
     <div class="grid grid-cols-1 divide-y divide-subtle lg:grid-cols-2 lg:divide-x lg:divide-y-0">
 
         <div class="pb-5 lg:pb-0 lg:pr-8">
             <div class="mb-4 flex items-center justify-between gap-2">
-                <x-ui.section-header :title="__('Nouveaux vs récurrents')" />
+                <x-ui::section-header :title="__('Nouveaux vs récurrents')" />
                 <span class="flex items-center gap-1.5 text-[11px] text-muted">{{ __('Nouveaux') }} @include('analytics::livewire.dashboard.partials.delta', ['current' => $newVisitorRate->current, 'previous' => $newVisitorRate->previous])</span>
             </div>
             @if ($newTotal > 0)
@@ -46,12 +46,12 @@
                     </dl>
                 </div>
             @else
-                <x-ui.empty-state icon="users" :title="__('Aucun visiteur')" :description="__('Aucune session sur la période.')" />
+                <x-ui::empty-state icon="users" :title="__('Aucun visiteur')" :description="__('Aucune session sur la période.')" />
             @endif
         </div>
 
         <div class="pt-5 lg:pl-8 lg:pt-0">
-            <x-ui.section-header :title="__('Appareils')" class="mb-4" />
+            <x-ui::section-header :title="__('Appareils')" class="mb-4" />
             @if ($deviceTotal > 0)
                 <div class="flex items-center gap-6">
                     <div wire:key="donut-devices-{{ $period }}-{{ $subject }}">
@@ -73,9 +73,9 @@
                     </dl>
                 </div>
             @else
-                <x-ui.empty-state icon="device-phone-mobile" :title="__('Aucun appareil')" :description="__('Aucune session sur la période.')" />
+                <x-ui::empty-state icon="device-phone-mobile" :title="__('Aucun appareil')" :description="__('Aucune session sur la période.')" />
             @endif
         </div>
 
     </div>
-</x-ui.card>
+</x-ui::card>

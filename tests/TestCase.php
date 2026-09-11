@@ -11,7 +11,7 @@ use Falcon\Analytics\AnalyticsServiceProvider;
 use Falcon\Analytics\Tests\Fixtures\Models\TestAdmin;
 use Falcon\Analytics\Tests\Fixtures\Models\TestClient;
 use Falcon\Analytics\Tests\Fixtures\Models\TestLessor;
-use Falcon\UiKit\UiKitServiceProvider;
+use Falcon\Ui\UiServiceProvider;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -38,7 +38,7 @@ abstract class TestCase extends Orchestra
             BladeIconsServiceProvider::class,
             BladeHeroiconsServiceProvider::class,
             LivewireServiceProvider::class,
-            UiKitServiceProvider::class,
+            UiServiceProvider::class,
             AnalyticsServiceProvider::class,
         ];
     }

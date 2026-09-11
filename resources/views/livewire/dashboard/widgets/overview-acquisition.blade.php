@@ -6,11 +6,11 @@
     $sourcePalette = ['#1684ea', '#54a8f0', '#7cb8f2', '#a5cdf6', '#bcdcfa', '#d7e9fc'];
 @endphp
 
-<x-ui.card>
+<x-ui::card>
     <div class="grid grid-cols-1 divide-y divide-subtle lg:grid-cols-2 lg:divide-x lg:divide-y-0">
 
         <div class="pb-5 lg:pb-0 lg:pr-8">
-            <x-ui.section-header :title="__('Sources de trafic')" class="mb-4" />
+            <x-ui::section-header :title="__('Sources de trafic')" class="mb-4" />
             @if ($topSources !== [])
                 <div class="flex items-center gap-6">
                     <div wire:key="donut-sources-{{ $period }}-{{ $subject }}">
@@ -35,12 +35,12 @@
                     </dl>
                 </div>
             @else
-                <x-ui.empty-state icon="signal" :title="__('Aucune source')" :description="__('Aucune session sur la période.')" />
+                <x-ui::empty-state icon="signal" :title="__('Aucune source')" :description="__('Aucune session sur la période.')" />
             @endif
         </div>
 
         <div class="pt-5 lg:pl-8 lg:pt-0">
-            <x-ui.section-header :title="__('Localités')" class="mb-4" />
+            <x-ui::section-header :title="__('Localités')" class="mb-4" />
             @if ($topLocalities !== [])
                 {{--
                     Une figure d'entree, comme le beignet en donne une a son voisin. Sans elle
@@ -62,9 +62,9 @@
                     @endforeach
                 </dl>
             @else
-                <x-ui.empty-state icon="globe-alt" :title="__('Aucune localité')" :description="__('Géolocalisation indisponible.')" />
+                <x-ui::empty-state icon="globe-alt" :title="__('Aucune localité')" :description="__('Géolocalisation indisponible.')" />
             @endif
         </div>
 
     </div>
-</x-ui.card>
+</x-ui::card>
