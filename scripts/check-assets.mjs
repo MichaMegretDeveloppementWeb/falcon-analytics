@@ -45,6 +45,7 @@ function fail(message) {
     process.exit(1);
 }
 
+run(`vite build --outDir ${JSON.stringify(relative(root, rebuilt))} --emptyOutDir`);
 run(`tailwindcss -i resources/css/analytics.css -o ${JSON.stringify('.build-check/analytics.css')} --minify`);
 
 const before = contentsOf(shipped);

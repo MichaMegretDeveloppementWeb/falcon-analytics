@@ -98,11 +98,19 @@ final class AnalyticsServiceProvider extends ServiceProvider
         Blade::componentNamespace('Falcon\\Analytics\\View\\Components', 'analytics');
         Blade::anonymousComponentNamespace('analytics::components', 'analytics');
 
-        // The package's only directive, and it carries server data alone: the
-        // current route's name, and tracking cut while an excluded guard is
-        // authenticated. The collector's code is imported by the host in its
-        // public entrypoint and compiled by its build.
-        Blade::directive('analyticsConfig', fn (): string => '<?php echo \Falcon\Analytics\View\Collector::render(); ?>');
+        /*
+         * La seule directive du paquet · elle apporte le collecteur entier a
+         * une page publique de l'hote, sa configuration comprise.
+         *
+         * Elle s'appelait `@analyticsConfig` quand elle ne posait qu'un objet
+         * de configuration, le code venant de l'entree JavaScript de l'hote.
+         * Le paquet compile et livre desormais son script, donc la directive
+         * l'amene · le nom le dit.
+         *
+         * Elle rend une vue plutot que du HTML fabrique ici · la declaration
+         * d'assets doit passer par le composant du kit, pas par ses coulisses.
+         */
+        Blade::directive('analyticsCollector', fn (): string => "<?php echo view('analytics::collector')->render(); ?>");
 
         /*
          * Les ecrans et leurs blocs, par espace de noms.

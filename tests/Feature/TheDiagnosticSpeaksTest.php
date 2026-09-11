@@ -60,7 +60,7 @@ final class TheDiagnosticSpeaksTest extends TestCase
     private function soundInstallation(): void
     {
         File::ensureDirectoryExists(resource_path('views/layouts'));
-        File::put(resource_path('views/layouts/web.blade.php'), '<body>@analyticsConfig</body>');
+        File::put(resource_path('views/layouts/web.blade.php'), '<body>@analyticsCollector</body>');
     }
 
     public function test_it_registers_the_command(): void
@@ -85,7 +85,7 @@ final class TheDiagnosticSpeaksTest extends TestCase
         File::put(resource_path('views/layouts/web.blade.php'), '<body></body>');
 
         $this->artisan('analytics:check')
-            ->expectsOutputToContain('@analyticsConfig')
+            ->expectsOutputToContain('@analyticsCollector')
             ->assertFailed();
     }
 
@@ -96,7 +96,7 @@ final class TheDiagnosticSpeaksTest extends TestCase
 
         $vendorViews = base_path('vendor/quelqu-un/paquet/resources/views');
         File::ensureDirectoryExists($vendorViews);
-        File::put($vendorViews.'/shell.blade.php', '@analyticsConfig');
+        File::put($vendorViews.'/shell.blade.php', '@analyticsCollector');
 
         view()->addLocation($vendorViews);
 

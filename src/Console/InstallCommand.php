@@ -126,13 +126,13 @@ final class InstallCommand extends Command
         $this->newLine();
         $this->components->info('À faire');
         $this->components->bulletList([
-            'Poser @analyticsConfig dans le gabarit public que vous voulez mesurer',
+            'Poser @analyticsCollector dans le gabarit public que vous voulez mesurer',
             'Renseigner vos guards et votre cookie de consentement dans le bloc identity de config/analytics.php',
             'Exclure ce cookie du chiffrement (bootstrap/app.php, encryptCookies except) pour qu’il soit lisible',
             'Derrière un proxy, régler TrustProxies pour que la vraie IP du client soit utilisée',
         ]);
 
-        $this->components->warn('Sans @analyticsConfig, le collecteur est chargé mais ne mesure rien : il sort faute de configuration.');
+        $this->components->warn('Sans @analyticsCollector, aucune page n’est mesurée : le collecteur n’est même pas chargé.');
     }
 
     private function scaffoldEnvFile(string $path): void

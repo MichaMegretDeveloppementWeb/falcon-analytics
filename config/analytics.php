@@ -78,7 +78,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | The package resolves the subject, exclusions and consent from these
-    | declarative values, so a host only needs @analyticsConfig and these
+    | declarative values, so a host only needs @analyticsCollector and these
     | settings. For advanced logic, register closures on the Analytics manager
     | from a service provider (they take precedence):
     |

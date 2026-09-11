@@ -7,14 +7,20 @@ namespace Falcon\Analytics\Tests\Feature;
 use Falcon\Analytics\Facades\Analytics;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Route;
 
 /**
- * `@analyticsConfig` ne porte plus que des donnees du serveur.
+ * `@analyticsCollector` apporte le collecteur, et ce qu'il a besoin de savoir.
  *
- * Le code du collecteur est importe par l'hote dans son entree JavaScript
- * publique, et compile par son build. Ce qui reste ici ne peut pas l'etre · le
- * nom de la route change a chaque page, et le suivi se coupe quand
- * l'administratrice est connectee.
+ * Deux choses voyagent, et pas de la même façon · **le script** est compilé,
+ * livré par le paquet et publié par l'hôte, donc il est déclaré au kit qui le
+ * place ; **la configuration** ne peut pas être compilée — le nom de la route
+ * change à chaque page, et le suivi se coupe quand l'administratrice est
+ * connectée — donc elle est posée en ligne.
+ *
+ * La directive s'appelait `@analyticsConfig` du temps où le code du collecteur
+ * venait de l'entrée JavaScript de l'hôte. Le paquet le livre désormais, et le
+ * nom le dit.
  */
 final class CollectorDirectiveTest extends TestCase
 {
@@ -22,27 +28,58 @@ final class CollectorDirectiveTest extends TestCase
     {
         config(['analytics.enabled' => true, 'analytics.endpoint' => '__analytics']);
 
-        $html = Blade::render('@analyticsConfig');
+        $html = Blade::render('@analyticsCollector');
 
         $this->assertStringContainsString('window.__falconAnalytics', $html);
         $this->assertStringContainsString('__analytics', $html);
     }
 
-    public function test_it_no_longer_emits_a_script_tag(): void
+    /**
+     * **L'essai qui compte** · une page publique reçoit le collecteur, et rien
+     * d'autre.
+     *
+     * La balise est écrite par la vue, avec le constructeur d'adresses du kit ·
+     * versionnée, différée, à la place de la directive.
+     *
+     * La seconde moitié de l'essai est celle qui protège l'hôte. Déclarer le
+     * fichier au kit aurait été la voie normale, et elle a été essayée · son
+     * injection place bien la balise, mais elle pose du même coup **ses
+     * propres** balises, reset compris. Une page publique ordinaire s'est
+     * retrouvée avec soixante kilo-octets de feuille d'administration, un
+     * script et un conteneur de notifications. Le site de l'hôte en aurait été
+     * redessiné.
+     */
+    public function test_a_public_page_receives_the_collector_and_nothing_else(): void
     {
         config(['analytics.enabled' => true, 'analytics.endpoint' => '__analytics']);
 
-        // Le collecteur venait d'une balise `<script src>` servie par une route
-        // du paquet. Elle a ete retiree le 2026-09-06 : deux exemplaires du
-        // meme collecteur sur une page compteraient chaque visite deux fois.
-        $this->assertStringNotContainsString('<script src', Blade::render('@analyticsConfig'));
+        Route::get('/une-page-publique', fn (): string => Blade::render(
+            '<!DOCTYPE html><html><head><title>t</title></head><body><p>du contenu</p>@analyticsCollector</body></html>'
+        ));
+
+        $html = (string) $this->get('/une-page-publique')->assertSuccessful()->getContent();
+
+        $this->assertStringContainsString('window.__falconAnalytics', $html);
+        $this->assertMatchesRegularExpression(
+            '#<script src="[^"]*analytics/analytics\.js\?v=[^"]+" defer#',
+            $html,
+            'Le script doit arriver versionné et différé.',
+        );
+
+        foreach (['ui.css', 'ui-base.css', 'ui.js'] as $ofTheKit) {
+            $this->assertStringNotContainsString(
+                $ofTheKit,
+                $html,
+                "Une page publique ne doit rien recevoir du kit · {$ofTheKit} y est.",
+            );
+        }
     }
 
     public function test_it_renders_nothing_when_disabled(): void
     {
         config(['analytics.enabled' => false]);
 
-        $this->assertSame('', Blade::render('@analyticsConfig'));
+        $this->assertSame('', trim(Blade::render('@analyticsCollector')));
     }
 
     public function test_it_renders_nothing_for_an_excluded_context(): void
@@ -50,21 +87,25 @@ final class CollectorDirectiveTest extends TestCase
         config(['analytics.enabled' => true]);
         Analytics::excludeUsing(fn () => true);
 
-        $this->assertSame('', Blade::render('@analyticsConfig'));
+        $this->assertSame('', trim(Blade::render('@analyticsCollector')));
     }
 
     /**
-     * Ne rien emettre vaut suivi coupe.
+     * Suivi coupé · le fichier n'est même pas téléchargé.
      *
-     * Le collecteur est desormais dans le bundle de l'hote, donc toujours
-     * charge. C'est son premier test qui l'arrete · il lit
-     * `window.__falconAnalytics` et sort quand il est absent. L'hote n'a aucune
-     * condition a ecrire de son cote.
+     * C'était l'autre moitié de l'ancien modèle · le collecteur, importé par
+     * l'hôte, était toujours chargé, et c'est son premier test qui l'arrêtait.
+     * Maintenant qu'il vient du paquet, ne rien déclarer suffit · la page ne
+     * demande pas le fichier, et la garde du collecteur ne sert plus que de
+     * seconde ligne.
      */
-    public function test_it_leaves_the_collector_without_its_configuration_when_tracking_is_off(): void
+    public function test_it_asks_for_nothing_at_all_when_tracking_is_off(): void
     {
         config(['analytics.enabled' => false]);
 
-        $this->assertStringNotContainsString('__falconAnalytics', Blade::render('@analyticsConfig'));
+        $html = Blade::render('@analyticsCollector');
+
+        $this->assertStringNotContainsString('__falconAnalytics', $html);
+        $this->assertStringNotContainsString('analytics.js', $html);
     }
 }

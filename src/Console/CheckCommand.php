@@ -208,8 +208,8 @@ final class CheckCommand extends Command
             }
 
             foreach (File::allFiles($path) as $file) {
-                if (str_contains(File::get($file->getPathname()), '@analyticsConfig')) {
-                    return ['Collecteur', 'OK', 'La directive @analyticsConfig est posée dans vos vues.'];
+                if (str_contains(File::get($file->getPathname()), '@analyticsCollector')) {
+                    return ['Collecteur', 'OK', 'La directive @analyticsCollector est posée dans vos vues.'];
                 }
             }
         }
@@ -217,7 +217,7 @@ final class CheckCommand extends Command
         return [
             'Collecteur',
             'KO',
-            'Aucune vue ne porte @analyticsConfig : aucune visite n’est mesurée. '
+            'Aucune vue ne porte @analyticsCollector : aucune visite n’est mesurée. '
             .'Posez la directive dans le gabarit de votre site public, avant la fermeture de body.',
         ];
     }

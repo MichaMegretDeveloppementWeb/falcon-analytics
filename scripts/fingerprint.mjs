@@ -4,15 +4,10 @@
  * Ecrite a chaque compilation, relue par `AssetsAreUpToDateTest`. C'est ce qui
  * transforme « il faut penser a recompiler » en un essai qui echoue.
  *
- * Ce qui entre dedans : les feuilles de style, ET LES VUES. Les vues comptent
- * parce que le generateur d'utilitaires les lit · une classe ajoutee dans un
- * ecran change la feuille livree aussi surement qu'une regle ecrite a la main.
- *
- * **Ce qui n'y entre pas encore : `resources/js`.** Rien ne le compile
- * aujourd'hui · le collecteur est importe par l'hote dans sa propre entree, et
- * le paquet n'a aucun script d'administration. Le jour ou la chaine construit
- * un script, il rejoint cette liste — sinon l'empreinte dirait « a jour »
- * devant un script modifie.
+ * Ce qui entre dedans : le script, les feuilles de style, ET LES VUES. Les vues
+ * comptent parce que le generateur d'utilitaires les lit · une classe ajoutee
+ * dans un ecran change la feuille livree aussi surement qu'une regle ecrite a
+ * la main.
  *
  * Les fins de ligne sont normalisees avant hachage : sans cela l'empreinte
  * change entre un poste Windows et un poste Unix, et l'essai echouerait sur une
@@ -42,6 +37,7 @@ function filesUnder(directory, ...suffixes) {
 }
 
 const files = [
+    ...filesUnder(join('resources', 'js'), '.js'),
     ...filesUnder(join('resources', 'css'), '.css'),
     ...filesUnder(join('resources', 'views'), '.blade.php'),
 ]

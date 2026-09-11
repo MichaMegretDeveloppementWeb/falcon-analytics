@@ -53,9 +53,13 @@ abstract class TestCase extends Orchestra
      */
     private function publishTheCompiledFiles(): void
     {
+        // Un fichier livré qui manquerait à cette liste ne serait jamais
+        // publié · la copie existante suffirait à conclure. C'est arrivé le
+        // jour où le paquet a gagné son script.
         $expected = [
             public_path('vendor/falcon/ui/ui.css'),
             public_path('vendor/falcon/analytics/analytics.css'),
+            public_path('vendor/falcon/analytics/analytics.js'),
         ];
 
         foreach ($expected as $file) {

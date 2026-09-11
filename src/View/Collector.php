@@ -12,42 +12,40 @@ use Throwable;
 final class Collector
 {
     /**
-     * The markup emitted by @analyticsConfig: an inline config object, and
-     * nothing else.
+     * What `@analyticsCollector` needs to know, or null when nothing is to be
+     * measured on this page.
      *
-     * The collector's code lives in the host's public JavaScript entrypoint,
-     * which its build names, versions and serves. What stays here cannot be
-     * bundled: the route name changes on every page, and tracking is cut while
-     * an excluded guard is authenticated.
+     * **Null means tracking is cut**, and the view then declares nothing at all:
+     * no script is brought in, and the collector's own guard — it reads
+     * `window.__falconAnalytics` and leaves when the object is absent — is never
+     * even reached. The host writes no condition of its own.
      *
-     * Emitting nothing amounts to tracking cut: the collector reads
-     * `window.__falconAnalytics` and exits on its own when it is absent, so the
-     * host writes no condition of its own.
+     * Two of these values cannot be bundled, and that is why they travel inline
+     * rather than inside the compiled file: the current route's name changes on
+     * every page, and the cut applies per request.
      *
-     * Runs inline on every host page, so any failure degrades to an empty
-     * string rather than breaking the host.
+     * Runs on every host page, so any failure degrades to a page without
+     * measurement rather than to a broken page.
      */
-    public static function render(): string
+    public static function configuration(): ?string
     {
         try {
             // Suppressed when tracking is off or the current context is excluded
             // (e.g. an authenticated admin), so no collector runs on those pages.
             if (config('analytics.enabled') !== true || Analytics::isExcluded()) {
-                return '';
+                return null;
             }
 
-            $config = json_encode([
+            return json_encode([
                 'endpoint' => '/'.ltrim((string) config('analytics.endpoint'), '/'),
                 'route' => Route::currentRouteName(),
                 'heartbeat' => (int) config('analytics.session.heartbeat_seconds') * 1000,
                 'flush' => (int) config('analytics.session.flush_seconds') * 1000,
             ], JSON_THROW_ON_ERROR | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
-
-            return "<script>window.__falconAnalytics={$config};</script>";
         } catch (Throwable $e) {
             Log::channel(config('analytics.log_channel'))->warning('Collector.render_failed', ['exception' => $e->getMessage()]);
 
-            return '';
+            return null;
         }
     }
 }

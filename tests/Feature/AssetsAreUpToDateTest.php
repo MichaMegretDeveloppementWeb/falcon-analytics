@@ -36,7 +36,7 @@ final class AssetsAreUpToDateTest extends TestCase
 {
     public function test_the_shipped_files_exist(): void
     {
-        foreach (['analytics.css', 'sources.sha'] as $file) {
+        foreach (['analytics.css', 'analytics.js', 'sources.sha'] as $file) {
             $this->assertFileExists(
                 $this->publicPath($file),
                 $file.' est absent de public/. Lancez `npm run build`.',
@@ -174,7 +174,7 @@ final class AssetsAreUpToDateTest extends TestCase
     {
         $found = [];
 
-        foreach ([['resources/css', '.css'], ['resources/views', '.blade.php']] as [$directory, $suffix]) {
+        foreach ([['resources/js', '.js'], ['resources/css', '.css'], ['resources/views', '.blade.php']] as [$directory, $suffix]) {
             $iterator = new RecursiveIteratorIterator(
                 new RecursiveDirectoryIterator($this->packagePath($directory), FilesystemIterator::SKIP_DOTS)
             );
