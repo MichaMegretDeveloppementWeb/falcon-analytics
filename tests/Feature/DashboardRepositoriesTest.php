@@ -23,6 +23,8 @@ use Falcon\Analytics\Services\Dashboard\MarketingReportBuilder;
 use Falcon\Analytics\Services\SubjectResolver;
 use Falcon\Analytics\Tests\Fixtures\Models\TestClient;
 use Falcon\Analytics\Tests\TestCase;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -52,6 +54,39 @@ final class DashboardRepositoriesTest extends TestCase
         $this->sessions = new SessionListReadRepository;
         $this->visitors = new VisitorListReadRepository;
         $this->period = Period::ofDays(30);
+    }
+
+    /**
+     * Les lignes d'une page, par ce que le contrat de pagination promet.
+     *
+     * Les depots rendent l'interface, pas la classe concrete · elle offre
+     * `items()`, et ni `first()` ni `count()`. Passer par elle ici garde les
+     * essais honnetes sur ce que l'API publique promet reellement, plutot que
+     * sur ce que l'implementation d'aujourd'hui offre en plus.
+     *
+     * @template TModel of Model
+     *
+     * @param  LengthAwarePaginator<int, TModel>  $page
+     * @return list<TModel>
+     */
+    private function rows(LengthAwarePaginator $page): array
+    {
+        return array_values($page->items());
+    }
+
+    /**
+     * @template TModel of Model
+     *
+     * @param  LengthAwarePaginator<int, TModel>  $page
+     * @return TModel
+     */
+    private function firstRow(LengthAwarePaginator $page): Model
+    {
+        $rows = $this->rows($page);
+
+        $this->assertNotSame([], $rows, 'La page attendue est vide.');
+
+        return $rows[0];
     }
 
     private function makeVisitor(): Visitor
@@ -228,10 +263,13 @@ final class DashboardRepositoriesTest extends TestCase
             $this->period, null, null, null, null, app(SubjectResolver::class), conversionNames: ['Lead'],
         );
 
-        $row = $result->first();
+        $row = $this->firstRow($result);
 
-        $this->assertSame(2, (int) $row->events_count);
-        $this->assertSame(1, (int) $row->conversions_count);
+        // Par l'accesseur generique · ce sont des colonnes calculees par la
+        // requete, pas des attributs du modele, et elles n'existent que sur les
+        // lignes que ce depot rend.
+        $this->assertSame(2, (int) $row->getAttribute('events_count'));
+        $this->assertSame(1, (int) $row->getAttribute('conversions_count'));
     }
 
     public function test_it_sorts_the_session_list_by_the_event_count(): void
@@ -247,7 +285,7 @@ final class DashboardRepositoriesTest extends TestCase
             $this->period, null, null, null, null, app(SubjectResolver::class), 'events_count', 'desc', 20, ['Lead'],
         );
 
-        $this->assertSame($busy->id, $result->first()->id);
+        $this->assertSame($busy->id, $this->firstRow($result)->id);
     }
 
     public function test_it_ranks_the_top_localities(): void
@@ -329,10 +367,10 @@ final class DashboardRepositoriesTest extends TestCase
         $byDevice = $this->sessions->paginateSessions($this->period, null, null, 'mobile', null, $subjects);
 
         $this->assertSame(23, $all->total());
-        $this->assertSame(20, $all->count());
+        $this->assertCount(20, $this->rows($all));
         $this->assertSame(1, $byCity->total());
         $this->assertSame(1, $byDevice->total());
-        $this->assertSame('Geneva', $byDevice->first()->city);
+        $this->assertSame('Geneva', $this->firstRow($byDevice)->city);
     }
 
     public function test_it_sorts_sessions_by_a_whitelisted_column_and_direction(): void
@@ -345,8 +383,8 @@ final class DashboardRepositoriesTest extends TestCase
         $asc = $this->sessions->paginateSessions($this->period, null, null, null, null, $subjects, 'pageview_count', 'asc');
         $desc = $this->sessions->paginateSessions($this->period, null, null, null, null, $subjects, 'pageview_count', 'desc');
 
-        $this->assertSame(1, $asc->first()->pageview_count);
-        $this->assertSame(9, $desc->first()->pageview_count);
+        $this->assertSame(1, $this->firstRow($asc)->pageview_count);
+        $this->assertSame(9, $this->firstRow($desc)->pageview_count);
     }
 
     public function test_it_searches_sessions_by_visitor_name_resolved_from_the_guard_model(): void
@@ -360,7 +398,7 @@ final class DashboardRepositoriesTest extends TestCase
         $found = $this->sessions->paginateSessions($this->period, null, 'Marie', null, null, new SubjectResolver);
 
         $this->assertSame(1, $found->total());
-        $this->assertSame($marie->id, $found->first()->subject_id);
+        $this->assertSame($marie->id, $this->firstRow($found)->subject_id);
     }
 
     public function test_it_searches_anonymous_sessions_by_the_subject_stitched_on_their_visitor(): void
@@ -376,7 +414,7 @@ final class DashboardRepositoriesTest extends TestCase
         $found = $this->sessions->paginateSessions($this->period, null, 'Marie', null, null, new SubjectResolver);
 
         $this->assertSame(1, $found->total());
-        $this->assertSame($anonymous->id, $found->first()->id);
+        $this->assertSame($anonymous->id, $this->firstRow($found)->id);
     }
 
     public function test_it_searches_sessions_by_the_visitor_uuid_shown_as_the_id(): void
@@ -388,7 +426,7 @@ final class DashboardRepositoriesTest extends TestCase
         $found = $this->sessions->paginateSessions($this->period, null, 'vd-known', null, null, new SubjectResolver);
 
         $this->assertSame(1, $found->total());
-        $this->assertSame($visitor->id, $found->first()->visitor_id);
+        $this->assertSame($visitor->id, $this->firstRow($found)->visitor_id);
     }
 
     public function test_it_searches_sessions_by_country_name_resolving_the_stored_iso_code(): void
@@ -399,7 +437,7 @@ final class DashboardRepositoriesTest extends TestCase
         $found = $this->sessions->paginateSessions($this->period, null, 'France', null, null, new SubjectResolver);
 
         $this->assertSame(1, $found->total());
-        $this->assertSame('FR', $found->first()->country);
+        $this->assertSame('FR', $this->firstRow($found)->country);
     }
 
     public function test_it_paginates_the_all_time_visitor_directory_with_its_derived_columns(): void
@@ -418,12 +456,12 @@ final class DashboardRepositoriesTest extends TestCase
 
         $this->assertSame(1, $result->total());
 
-        $row = $result->first();
+        $row = $this->firstRow($result);
 
-        $this->assertSame($visitor->id, (int) $row->id);
-        $this->assertSame(3, (int) $row->session_count, 'de tout temps, celle de soixante jours comprise');
-        $this->assertSame('Paris', $row->last_city, 'la session la plus récente');
-        $this->assertSame('organic', $row->acquisition_source, 'la toute première session');
+        $this->assertSame($visitor->id, $row->id);
+        $this->assertSame(3, (int) $row->getAttribute('session_count'), 'de tout temps, celle de soixante jours comprise');
+        $this->assertSame('Paris', $row->getAttribute('last_city'), 'la session la plus récente');
+        $this->assertSame('organic', $row->getAttribute('acquisition_source'), 'la toute première session');
     }
 
     public function test_it_sorts_visitors_by_their_all_time_session_count(): void
@@ -435,8 +473,8 @@ final class DashboardRepositoriesTest extends TestCase
 
         $desc = $this->visitors->paginateVisitors(null, null, new SubjectResolver, 'session_count', 'desc');
 
-        $this->assertSame(2, (int) $desc->first()->session_count);
-        $this->assertSame($busy->id, (int) $desc->first()->id);
+        $this->assertSame(2, (int) $this->firstRow($desc)->getAttribute('session_count'));
+        $this->assertSame($busy->id, $this->firstRow($desc)->id);
     }
 
     public function test_it_counts_period_visitors_new_visitors_and_sessions_excluding_bots(): void
@@ -528,6 +566,6 @@ final class DashboardRepositoriesTest extends TestCase
 
         $this->assertSame(25, $page->total());
         $this->assertSame(20, $page->perPage());
-        $this->assertSame(20, $page->count());
+        $this->assertCount(20, $this->rows($page));
     }
 }

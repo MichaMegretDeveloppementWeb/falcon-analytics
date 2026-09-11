@@ -14,9 +14,24 @@ final class EngagementMetricsCalculatorTest extends TestCase
     /**
      * @return array<string, int|float>
      */
+    /**
+     * Les comptes bruts, dans la forme exacte que le calculateur attend.
+     *
+     * Ecrits un par un plutot que par `compact()` · la forme se lit alors dans
+     * le code, et l'outillage peut verifier qu'elle correspond a ce que la
+     * methode appelee declare.
+     *
+     * @return array{visitors: int, sessions: int, pageviews: int, avgSeconds: float, bounces: int}
+     */
     private function counts(int $visitors, int $sessions, int $pageviews, float $avgSeconds, int $bounces): array
     {
-        return compact('visitors', 'sessions', 'pageviews', 'avgSeconds', 'bounces');
+        return [
+            'visitors' => $visitors,
+            'sessions' => $sessions,
+            'pageviews' => $pageviews,
+            'avgSeconds' => $avgSeconds,
+            'bounces' => $bounces,
+        ];
     }
 
     public function test_it_computes_headline_deltas_and_ratios_from_raw_counts(): void

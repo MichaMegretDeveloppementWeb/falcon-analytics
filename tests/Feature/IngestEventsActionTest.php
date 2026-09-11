@@ -114,7 +114,10 @@ final class IngestEventsActionTest extends TestCase
 
         // La même adresse compte quand même dans la session neuve · le garde
         // anti-rechargement repart d'une dernière adresse nulle après un délai.
-        $this->assertSame(1, Session::orderByDesc('id')->first()->pageview_count);
+        $newest = Session::orderByDesc('id')->first();
+
+        $this->assertNotNull($newest);
+        $this->assertSame(1, $newest->pageview_count);
     }
 
     public function test_it_collapses_a_reload_of_the_same_page_within_a_session(): void

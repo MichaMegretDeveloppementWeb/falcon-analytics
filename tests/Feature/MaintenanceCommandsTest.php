@@ -78,12 +78,18 @@ final class MaintenanceCommandsTest extends TestCase
 
         // `ended_at` est posé à la dernière activité plus le délai (11:50 + 5
         // min), jamais à l'heure du balayage.
+        $freshIdle = $idle->fresh();
+        $freshActive = $active->fresh();
+
+        $this->assertNotNull($freshIdle);
+        $this->assertNotNull($freshActive);
+
         $this->assertSame(
             $now->subMinutes(10)->addMinutes(5)->toDateTimeString(),
-            $idle->fresh()->ended_at?->toDateTimeString(),
+            $freshIdle->ended_at?->toDateTimeString(),
         );
 
-        $this->assertNull($active->fresh()->ended_at);
+        $this->assertNull($freshActive->ended_at);
     }
 
     public function test_it_does_not_re_close_an_already_closed_session(): void
@@ -105,7 +111,10 @@ final class MaintenanceCommandsTest extends TestCase
 
         $this->artisan('analytics:sweep')->assertSuccessful();
 
-        $this->assertSame($closedAt->toDateTimeString(), $session->fresh()->ended_at?->toDateTimeString());
+        $fresh = $session->fresh();
+
+        $this->assertNotNull($fresh);
+        $this->assertSame($closedAt->toDateTimeString(), $fresh->ended_at?->toDateTimeString());
     }
 
     public function test_it_schedules_the_sweep_every_five_minutes_and_the_prune_daily(): void

@@ -152,10 +152,15 @@ final class RealtimeTest extends TestCase
 
         $feed = $this->repository->activityFeed($this->windowSince, null, 2);
 
+        $newest = $feed->first();
+        $oldest = $feed->last();
+
         $this->assertCount(2, $feed);
-        $this->assertSame('https://x.test/new', $feed->first()->url);
-        $this->assertSame('Contact', $feed->last()->target_text);
-        $this->assertTrue($feed->first()->relationLoaded('session'));
+        $this->assertNotNull($newest);
+        $this->assertNotNull($oldest);
+        $this->assertSame('https://x.test/new', $newest->url);
+        $this->assertSame('Contact', $oldest->target_text);
+        $this->assertTrue($newest->relationLoaded('session'));
     }
 
     public function test_it_bounds_and_orders_the_recent_sessions_most_recently_active_first(): void
@@ -167,10 +172,15 @@ final class RealtimeTest extends TestCase
 
         $sessions = $this->repository->recentSessions($this->windowSince, null, 2);
 
+        $newest = $sessions->first();
+        $oldest = $sessions->last();
+
         $this->assertCount(2, $sessions);
-        $this->assertSame('Fresh', $sessions->first()->city);
-        $this->assertSame('Mid', $sessions->last()->city);
-        $this->assertTrue($sessions->first()->relationLoaded('visitor'));
+        $this->assertNotNull($newest);
+        $this->assertNotNull($oldest);
+        $this->assertSame('Fresh', $newest->city);
+        $this->assertSame('Mid', $oldest->city);
+        $this->assertTrue($newest->relationLoaded('visitor'));
     }
 
     public function test_it_ranks_the_window_top_pages_sources_and_devices_bounded(): void
@@ -305,11 +315,17 @@ final class RealtimeTest extends TestCase
         $this->sessionRow(['city' => 'Geneva', 'country' => 'CH', 'latitude' => 46.2044, 'longitude' => 6.1432]);
         $this->sessionRow();
 
+        // `getDisplayRegion` rend `false` si l'extension intl ne connait pas la
+        // region · l'essai n'a alors rien a chercher dans la page.
+        $region = Locale::getDisplayRegion('-CH', app()->getLocale());
+
+        $this->assertNotFalse($region, 'la region CH doit avoir un libelle');
+
         $this->actingAs(TestAdmin::create([]), 'admin')
             ->get(route('analytics.realtime'))
             ->assertSuccessful()
             ->assertSeeText(__('Pays'))
-            ->assertSeeText(Locale::getDisplayRegion('-CH', app()->getLocale()))
+            ->assertSeeText($region)
             ->assertSeeText(__('dont 1 session non localisée'));
     }
 

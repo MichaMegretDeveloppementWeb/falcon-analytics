@@ -6,7 +6,6 @@ namespace Falcon\Analytics\Tests\Unit\Dashboard;
 
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\DTOs\Dashboard\Period;
-use Falcon\Analytics\DTOs\Dashboard\VisitorMetrics;
 use Falcon\Analytics\Services\Dashboard\VisitorMetricsCalculator;
 use PHPUnit\Framework\TestCase;
 
@@ -30,7 +29,6 @@ final class VisitorMetricsCalculatorTest extends TestCase
             period: $this->threeDayPeriod(),
         );
 
-        $this->assertInstanceOf(VisitorMetrics::class, $metrics);
         $this->assertSame(10.0, $metrics->visitors->delta->current);
         $this->assertSame(5.0, $metrics->visitors->delta->previous);
         $this->assertSame(4.0, $metrics->newVisitors->delta->current);

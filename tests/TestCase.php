@@ -145,17 +145,32 @@ abstract class TestCase extends Orchestra
     }
 
     /**
+     * Une variable d'environnement, ou le repli quand elle ne dit rien.
+     *
+     * `getenv` rend `false` quand la variable est absente et `''` quand elle est
+     * posee vide · sur un poste, les deux veulent dire « je n'ai rien choisi ».
+     * Le mot de passe fait exception et vaut bien la chaine vide, ce que le
+     * repli lui rend.
+     */
+    private static function fromEnvironment(string $name, string $fallback): string
+    {
+        $value = getenv($name);
+
+        return is_string($value) && $value !== '' ? $value : $fallback;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     protected static function connectionForTests(): array
     {
         return [
             'driver' => 'mysql',
-            'host' => getenv('ANALYTICS_TEST_MYSQL_HOST') ?: '127.0.0.1',
-            'port' => getenv('ANALYTICS_TEST_MYSQL_PORT') ?: '3306',
+            'host' => self::fromEnvironment('ANALYTICS_TEST_MYSQL_HOST', '127.0.0.1'),
+            'port' => self::fromEnvironment('ANALYTICS_TEST_MYSQL_PORT', '3306'),
             'database' => self::databaseForTests(),
-            'username' => getenv('ANALYTICS_TEST_MYSQL_USERNAME') ?: 'root',
-            'password' => getenv('ANALYTICS_TEST_MYSQL_PASSWORD') ?: '',
+            'username' => self::fromEnvironment('ANALYTICS_TEST_MYSQL_USERNAME', 'root'),
+            'password' => self::fromEnvironment('ANALYTICS_TEST_MYSQL_PASSWORD', ''),
             'charset' => 'utf8mb4',
             'collation' => 'utf8mb4_unicode_ci',
             'prefix' => '',

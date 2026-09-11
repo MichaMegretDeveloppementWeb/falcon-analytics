@@ -25,9 +25,16 @@ parameters:
 
     paths:
         - src
+        - tests
         - database
         - config
         - routes
+
+    # Des gabarits lus par `analytics:scan-events`, pas du code a analyser · ils
+    # nomment exprès des classes qui n'existent pas, pour prouver que le scanner
+    # trouve un evenement sans rien resoudre.
+    excludePaths:
+        - tests/Fixtures/scan
 
     # Un paquet a son propre dossier de config, que larastan ne devine pas :
     # sans ca, chaque `env()` de config/analytics.php passe pour un appel fait
@@ -51,3 +58,39 @@ parameters:
     # meurt en emportant le decompte avec lui.
     parallel:
         maximumNumberOfProcesses: 1
+
+    # ─── Les exceptions, et pourquoi elles existent ─────────────────────────
+    #
+    # Il n'y a pas de `phpstan-baseline.neon` dans ce paquet, et il ne doit pas
+    # y en avoir. Ce qui suit ne masque aucune dette du projet · ce sont des
+    # erreurs nees de la rencontre de deux outils qui ont chacun raison.
+    #
+    # Chacune est limitee a `tests`, et `reportUnmatchedIgnoredErrors` reste
+    # actif · le jour ou l'une cesse de s'apparier, l'analyse le dit au lieu de
+    # la garder par inertie. Ce sont les memes que celles du kit, aux memes
+    # conditions de retrait.
+    ignoreErrors:
+        # `$this->artisan()` est declare par Laravel comme rendant
+        # `PendingCommand|int` · la branche entiere ne survient que lorsqu'on
+        # lance la commande sans rien attendre d'elle, ce que ces essais ne font
+        # jamais puisqu'ils enchainent tous une assertion.
+        # Se retire le jour ou Laravel affinerait ce type de retour.
+        -
+            identifier: method.nonObject
+            message: '#^Cannot call method .+\(\) on Illuminate\\Testing\\PendingCommand\|int\.$#'
+            paths:
+                - tests
+
+        # `$this->app` est declare nullable par testbench parce qu'il l'est
+        # reellement hors du cycle de vie d'un essai · a l'interieur d'une
+        # methode d'essai, l'application est toujours amorcee.
+        # Se retire le jour ou testbench le declarerait non nul.
+        #
+        # La jumelle, sur l'acces par index, a ete retiree tout de suite · aucune
+        # erreur ne s'y appariait, et `reportUnmatchedIgnoredErrors` l'a dit au
+        # lieu de la laisser dormir. C'est exactement son role.
+        -
+            identifier: method.nonObject
+            message: '#^Cannot call method .+\(\) on Illuminate\\Foundation\\Application\|null\.$#'
+            paths:
+                - tests

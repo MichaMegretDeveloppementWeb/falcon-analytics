@@ -47,8 +47,12 @@ final class GeoipDownloadCommandTest extends TestCase
 
     public function test_it_downloads_extracts_and_installs_the_geolite2_city_database(): void
     {
+        $archive = file_get_contents(__DIR__.'/../Fixtures/geolite2-city.tar.gz');
+
+        $this->assertNotFalse($archive, 'le gabarit d archive doit etre lisible');
+
         Http::fake([
-            'download.maxmind.example/*' => Http::response(file_get_contents(__DIR__.'/../Fixtures/geolite2-city.tar.gz'), 200),
+            'download.maxmind.example/*' => Http::response($archive, 200),
         ]);
 
         $this->artisan('analytics:geoip:download')->assertSuccessful();

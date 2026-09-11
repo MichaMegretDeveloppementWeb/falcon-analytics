@@ -13,6 +13,9 @@ final class PropsEncoderTest extends TestCase
     {
         $json = (new PropsEncoder)->encode(['a' => 1, 'b' => 'x', 'c' => true, 'd' => ['nested'], 'e' => null]);
 
+        // `encode` rend null quand il ne reste rien a ecrire · ici il reste
+        // quelque chose, et le dire evite un decodage sur rien.
+        $this->assertNotNull($json);
         $this->assertSame(['a' => 1, 'b' => 'x', 'c' => true, 'e' => null], json_decode($json, true));
     }
 
@@ -20,6 +23,7 @@ final class PropsEncoderTest extends TestCase
     {
         $json = (new PropsEncoder)->encode(['ratio' => INF, 'other' => NAN, 'ok' => 1.5]);
 
+        $this->assertNotNull($json);
         $this->assertSame(['ok' => 1.5], json_decode($json, true));
     }
 
@@ -40,7 +44,10 @@ final class PropsEncoderTest extends TestCase
             $props["k{$i}"] = $i;
         }
 
-        $this->assertCount(30, json_decode((new PropsEncoder)->encode($props), true));
+        $json = (new PropsEncoder)->encode($props);
+
+        $this->assertNotNull($json);
+        $this->assertCount(30, json_decode($json, true));
     }
 
     public function test_it_truncates_oversized_keys_and_string_values(): void
@@ -50,6 +57,8 @@ final class PropsEncoderTest extends TestCase
             'text' => str_repeat('x', 2_000),
             'number' => 12345,
         ]);
+
+        $this->assertNotNull($json);
 
         $decoded = json_decode($json, true);
 
@@ -67,6 +76,9 @@ final class PropsEncoderTest extends TestCase
         }
 
         $json = (new PropsEncoder)->encode($props);
+
+        $this->assertNotNull($json);
+
         $decoded = json_decode($json, true);
 
         $this->assertLessThanOrEqual(8192, strlen($json));

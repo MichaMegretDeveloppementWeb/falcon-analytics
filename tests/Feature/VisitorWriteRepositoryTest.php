@@ -40,7 +40,10 @@ final class VisitorWriteRepositoryTest extends TestCase
 
         $this->assertSame($created->id, $again->id);
         $this->assertFalse($again->wasRecentlyCreated);
-        $this->assertSame('2026-07-01 11:00:00', $again->fresh()->last_seen_at->toDateTimeString());
+        $fresh = $again->fresh();
+
+        $this->assertNotNull($fresh);
+        $this->assertSame('2026-07-01 11:00:00', $fresh->last_seen_at->toDateTimeString());
     }
 
     public function test_it_resolves_an_anonymous_visitor_without_a_subject(): void
@@ -59,6 +62,7 @@ final class VisitorWriteRepositoryTest extends TestCase
 
         $fresh = $visitor->fresh();
 
+        $this->assertNotNull($fresh);
         $this->assertSame('2026-06-30 12:00:00', $fresh->last_seen_at->toDateTimeString());
         $this->assertSame('lessor', $fresh->subject_type);
         $this->assertSame(9, $fresh->subject_id);
@@ -72,6 +76,7 @@ final class VisitorWriteRepositoryTest extends TestCase
 
         $fresh = $visitor->fresh();
 
+        $this->assertNotNull($fresh);
         $this->assertSame('client', $fresh->subject_type);
         $this->assertSame(1, $fresh->subject_id);
     }
@@ -83,6 +88,9 @@ final class VisitorWriteRepositoryTest extends TestCase
         $this->repository->incrementSessionCount($visitor);
         $this->repository->incrementSessionCount($visitor);
 
-        $this->assertSame(2, $visitor->fresh()->session_count);
+        $fresh = $visitor->fresh();
+
+        $this->assertNotNull($fresh);
+        $this->assertSame(2, $fresh->session_count);
     }
 }

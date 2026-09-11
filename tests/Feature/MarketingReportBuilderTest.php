@@ -55,9 +55,17 @@ final class MarketingReportBuilderTest extends TestCase
         $builder = new MarketingReportBuilder;
 
         // Deux conditions l'emportent sur une.
-        $this->assertSame($cabrio->id, $builder->resolveAd(['src' => 'meta_ete', 'creative' => 'cabrio'])->id);
-        $this->assertSame($generic->id, $builder->resolveAd(['src' => 'meta_ete', 'creative' => 'other'])->id);
-        $this->assertSame($generic->id, $builder->resolveAd(['src' => 'meta_ete'])->id);
+        $twoConditions = $builder->resolveAd(['src' => 'meta_ete', 'creative' => 'cabrio']);
+        $otherCreative = $builder->resolveAd(['src' => 'meta_ete', 'creative' => 'other']);
+        $sourceOnly = $builder->resolveAd(['src' => 'meta_ete']);
+
+        $this->assertNotNull($twoConditions);
+        $this->assertNotNull($otherCreative);
+        $this->assertNotNull($sourceOnly);
+
+        $this->assertSame($cabrio->id, $twoConditions->id);
+        $this->assertSame($generic->id, $otherCreative->id);
+        $this->assertSame($generic->id, $sourceOnly->id);
     }
 
     public function test_it_returns_null_when_a_condition_is_unmet_and_resolves_the_campaign_independently(): void
@@ -70,7 +78,10 @@ final class MarketingReportBuilderTest extends TestCase
         $this->assertNull($builder->resolveAd(['src' => 'meta_hiver', 'creative' => 'cabrio']), 'src diffère');
         $this->assertNull($builder->resolveAd(['src' => 'meta_ete']), 'creative manque');
         $this->assertNull($builder->resolveAd([]));
-        $this->assertSame($ete->id, $builder->resolveCampaign(['src' => 'meta_ete'])->id);
+        $matched = $builder->resolveCampaign(['src' => 'meta_ete']);
+
+        $this->assertNotNull($matched);
+        $this->assertSame($ete->id, $matched->id);
         $this->assertNull($builder->resolveCampaign(['src' => 'meta_hiver']));
     }
 
@@ -167,7 +178,7 @@ final class MarketingReportBuilderTest extends TestCase
             null,
             $funnels,
             app(EventRegistry::class),
-            Ad::query()->with('objectives')->get()->all(),
+            array_values(Ad::query()->with('objectives')->get()->all()),
         );
 
         $this->assertCount(1, $elements);
@@ -202,7 +213,7 @@ final class MarketingReportBuilderTest extends TestCase
 
         $elements = (new MarketingReportBuilder)->conversionElements(
             Period::ofDays(30), null, app(FunnelRegistry::class), app(EventRegistry::class),
-            Ad::query()->with('objectives')->get()->all(),
+            array_values(Ad::query()->with('objectives')->get()->all()),
         );
 
         $eventQueries = Collection::make(DB::getQueryLog())
@@ -215,8 +226,16 @@ final class MarketingReportBuilderTest extends TestCase
 
         // Chaque publicité n'est créditée que de la conversion de son propre
         // visiteur, depuis une seule lecture groupée.
-        $this->assertSame(1, $byAd[$ad1->id]['conversions']);
-        $this->assertSame(1, $byAd[$ad2->id]['conversions']);
+        // Chaque publicite doit avoir son element · sans lui, la lecture d'une
+        // colonne echouerait sans dire laquelle des deux manque.
+        $firstAd = $byAd->get($ad1->id);
+        $secondAd = $byAd->get($ad2->id);
+
+        $this->assertNotNull($firstAd, 'aucun element pour la premiere publicite');
+        $this->assertNotNull($secondAd, 'aucun element pour la seconde publicite');
+
+        $this->assertSame(1, $firstAd['conversions']);
+        $this->assertSame(1, $secondAd['conversions']);
         $this->assertLessThanOrEqual(1, $eventQueries);
     }
 
@@ -239,7 +258,7 @@ final class MarketingReportBuilderTest extends TestCase
             null,
             app(FunnelRegistry::class),
             app(EventRegistry::class),
-            Ad::query()->with('objectives')->get()->all(),
+            array_values(Ad::query()->with('objectives')->get()->all()),
         );
 
         $this->assertCount(1, $elements);

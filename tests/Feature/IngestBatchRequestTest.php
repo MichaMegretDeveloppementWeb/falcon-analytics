@@ -114,10 +114,18 @@ final class IngestBatchRequestTest extends TestCase
             'events' => [['type' => 'pageview', 'ts' => 1, 'url' => 'https://vantadrive.ch/?token=secret&gclid=abc']],
         ])->toBatch();
 
-        $this->assertStringContainsString('token=redacted', $batch->events[0]->url);
-        $this->assertStringContainsString('gclid=abc', $batch->events[0]->url);
-        $this->assertStringNotContainsString('secret', $batch->events[0]->url);
-        $this->assertStringContainsString('token=redacted', $batch->referrer);
-        $this->assertStringContainsString('utm_source=meta', $batch->referrer);
+        // Les deux sont nullables · sans URL ni referent, il n'y aurait rien a
+        // expurger, et l'essai ne prouverait rien.
+        $url = $batch->events[0]->url;
+        $referrer = $batch->referrer;
+
+        $this->assertNotNull($url);
+        $this->assertNotNull($referrer);
+
+        $this->assertStringContainsString('token=redacted', $url);
+        $this->assertStringContainsString('gclid=abc', $url);
+        $this->assertStringNotContainsString('secret', $url);
+        $this->assertStringContainsString('token=redacted', $referrer);
+        $this->assertStringContainsString('utm_source=meta', $referrer);
     }
 }

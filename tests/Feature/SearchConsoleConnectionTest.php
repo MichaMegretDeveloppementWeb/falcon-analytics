@@ -163,8 +163,11 @@ final class SearchConsoleConnectionTest extends TestCase
         $this->withSession(['analytics.search_console.state' => 's'])
             ->get(route('analytics.integrations.search-console.callback', ['state' => 's', 'code' => 'c']));
 
+        $current = SearchConsoleConnection::current();
+
         $this->assertSame(1, SearchConsoleConnection::query()->count());
-        $this->assertSame('r2', SearchConsoleConnection::current()->refresh_token);
+        $this->assertNotNull($current);
+        $this->assertSame('r2', $current->refresh_token);
     }
 
     public function test_it_reuses_a_fresh_cached_access_token_without_calling_google(): void
@@ -210,6 +213,7 @@ final class SearchConsoleConnectionTest extends TestCase
         );
 
         $this->assertSame(SearchConsoleConnection::STATUS_ERROR, $connection->refresh()->status);
+        $this->assertNotNull($connection->last_error);
         $this->assertStringContainsString('invalid_grant', $connection->last_error);
     }
 
@@ -272,6 +276,7 @@ final class SearchConsoleConnectionTest extends TestCase
 
         $connection = SearchConsoleConnection::current();
 
+        $this->assertNotNull($connection);
         $this->assertSame(SearchConsoleConnection::STATUS_CONNECTED, $connection->status);
         $this->assertSame('sc-domain:example.com', $connection->property);
     }
@@ -289,10 +294,10 @@ final class SearchConsoleConnectionTest extends TestCase
 
         Livewire::test(IntegrationsPage::class)->call('selectProperty', 'sc-domain:forged.com');
 
-        $this->assertSame(
-            SearchConsoleConnection::STATUS_PENDING_PROPERTY,
-            SearchConsoleConnection::current()->status,
-        );
+        $current = SearchConsoleConnection::current();
+
+        $this->assertNotNull($current);
+        $this->assertSame(SearchConsoleConnection::STATUS_PENDING_PROPERTY, $current->status);
     }
 
     public function test_it_shows_the_connected_state_with_the_attached_property_and_the_manual_sync_button(): void

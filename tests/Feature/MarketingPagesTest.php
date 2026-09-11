@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Tests\Feature;
 
+use Falcon\Analytics\Events\EventRegistry;
+use Falcon\Analytics\Events\TrackedEvent;
 use Falcon\Analytics\Livewire\Dashboard\AdDetailPage;
 use Falcon\Analytics\Livewire\Dashboard\CampaignDetailPage;
 use Falcon\Analytics\Livewire\Dashboard\CampaignsPage;
@@ -144,6 +146,7 @@ final class MarketingPagesTest extends TestCase
 
         $fresh = $campaign->fresh();
 
+        $this->assertNotNull($fresh);
         $this->assertSame('Été 2027', $fresh->name);
         $this->assertSame([
             ['param' => 'src', 'value' => 'meta_ete'],
@@ -188,12 +191,22 @@ final class MarketingPagesTest extends TestCase
             ->assertHasNoErrors()
             ->assertSet('modal', '');
 
-        $this->assertSame('Cabriolet décapotable', $ad->fresh()->name);
+        $fresh = $ad->fresh();
+
+        $this->assertNotNull($fresh);
+        $this->assertSame('Cabriolet décapotable', $fresh->name);
         $this->assertTrue(AdObjective::where('ad_id', $ad->id)->where('reference', 'Lead')->exists());
     }
 
     public function test_it_excludes_already_selected_objectives_from_the_pickers(): void
     {
+        // Deux evenements declares, dont un sera choisi · sans le second, une
+        // liste vide passerait l'essai sans rien prouver.
+        $this->app->forgetInstance(EventRegistry::class);
+        $registry = app(EventRegistry::class);
+        $registry->register(new TrackedEvent('Lead', 'Demande de contact', 3.0));
+        $registry->register(new TrackedEvent('Devis', 'Demande de devis', 5.0));
+
         $campaign = $this->campaign('Été', null, 'meta_ete');
         $this->actingAs($this->admin, 'admin');
 
@@ -201,9 +214,17 @@ final class MarketingPagesTest extends TestCase
             ->call('newAd')
             ->call('addObjective', 'event', 'Lead', 'Lead', 3.0);
 
-        $offered = Collection::make($component->get('eventOptions'))->pluck('reference')->all();
+        // `viewData()` et non `get()` · les options sont une donnee de vue, pas
+        // une propriete du composant. Avec `get()`, cet essai lisait null,
+        // parcourait une collection vide, et passait sans rien verifier.
+        $options = $component->viewData('eventOptions');
 
-        $this->assertNotContains('Lead', $offered);
+        $this->assertIsArray($options);
+
+        $offered = Collection::make($options)->pluck('reference')->all();
+
+        $this->assertNotContains('Lead', $offered, 'l objectif deja choisi ne doit plus etre propose');
+        $this->assertContains('Devis', $offered, 'les autres restent proposes');
     }
 
     public function test_it_deletes_a_campaign_and_cascades_to_its_ads_and_objectives(): void

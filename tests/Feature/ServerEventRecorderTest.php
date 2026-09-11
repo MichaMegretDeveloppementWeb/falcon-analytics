@@ -67,10 +67,10 @@ final class ServerEventRecorderTest extends TestCase
     {
         // Appelé hors d'une requête HTTP : aucune session n'est disponible, la
         // résolution échoue, et l'appelant ne doit jamais voir d'exception.
-        $this->assertDoesntThrow(
-            fn () => app(ServerEventRecorder::class)->record('X', value: 1.0),
-            Throwable::class,
-        );
+        // Un seul argument · `assertDoesntThrow` ne prend que la fermeture, et
+        // elle attrape deja tout `Throwable`. Le second argument ne servait a
+        // rien, sinon a laisser croire qu'il choisissait ce qui est attrape.
+        $this->assertDoesntThrow(fn () => app(ServerEventRecorder::class)->record('X', value: 1.0));
 
         $this->assertSame(0, Event::count());
     }

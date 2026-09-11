@@ -141,6 +141,7 @@ final class SearchConsoleSyncTest extends TestCase
         $this->artisan('analytics:search-console:sync')->assertFailed();
 
         $this->assertSame(SearchConsoleConnection::STATUS_ERROR, $connection->refresh()->status);
+        $this->assertNotNull($connection->last_error);
         $this->assertStringContainsString('HTTP 429', $connection->last_error);
     }
 }

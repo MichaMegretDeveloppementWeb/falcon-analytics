@@ -42,7 +42,12 @@ final class ModelsTest extends TestCase
 
         $fresh = $session->fresh();
 
-        $this->assertInstanceOf(CarbonImmutable::class, $fresh->started_at);
+        $this->assertNotNull($fresh);
+
+        // Par l'accesseur generique, et non par la propriete · c'est la
+        // conversion qu'on verifie ici, et l'annotation du modele la promet
+        // deja. Passer par elle ferait une assertion qui ne peut plus echouer.
+        $this->assertInstanceOf(CarbonImmutable::class, $fresh->getAttribute('started_at'));
         $this->assertNull($fresh->ended_at);
         $this->assertFalse($fresh->is_bot);
         $this->assertSame(46.2044, $fresh->latitude);
@@ -65,9 +70,10 @@ final class ModelsTest extends TestCase
 
         $fresh = $event->fresh();
 
+        $this->assertNotNull($fresh);
         $this->assertSame(EventType::Click, $fresh->type);
         $this->assertSame(['listing_id' => 42], $fresh->props);
-        $this->assertInstanceOf(CarbonImmutable::class, $fresh->occurred_at);
+        $this->assertInstanceOf(CarbonImmutable::class, $fresh->getAttribute('occurred_at'));
         $this->assertSame(3.0, $fresh->value);
     }
 
@@ -83,11 +89,17 @@ final class ModelsTest extends TestCase
             'type' => EventType::Pageview,
         ]);
 
+        $firstSession = $visitor->sessions->first();
+        $firstEvent = $visitor->events->first();
+
+        $this->assertNotNull($firstSession);
+        $this->assertNotNull($firstEvent);
+
         $this->assertTrue($session->visitor->is($visitor));
-        $this->assertTrue($visitor->sessions->first()->is($session));
+        $this->assertTrue($firstSession->is($session));
         $this->assertTrue($event->session->is($session));
         $this->assertTrue($event->visitor->is($visitor));
-        $this->assertTrue($visitor->events->first()->is($event));
+        $this->assertTrue($firstEvent->is($event));
     }
 
     public function test_it_disables_timestamps_on_every_model(): void

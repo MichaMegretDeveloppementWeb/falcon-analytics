@@ -89,8 +89,13 @@ final class MarketingCaptureTest extends TestCase
 
         $sessions = Session::query()->orderBy('id')->get();
 
+        $first = $sessions->get(0);
+        $second = $sessions->get(1);
+
         $this->assertCount(2, $sessions);
-        $this->assertSame(['src' => 'meta_ete', 'creative' => 'cabrio'], $sessions[0]->mkt_params);
-        $this->assertSame(['src' => 'meta_ete', 'creative' => 'suv'], $sessions[1]->mkt_params);
+        $this->assertNotNull($first);
+        $this->assertNotNull($second);
+        $this->assertSame(['src' => 'meta_ete', 'creative' => 'cabrio'], $first->mkt_params);
+        $this->assertSame(['src' => 'meta_ete', 'creative' => 'suv'], $second->mkt_params);
     }
 }

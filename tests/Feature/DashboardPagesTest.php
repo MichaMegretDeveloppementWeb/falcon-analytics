@@ -445,9 +445,16 @@ final class DashboardPagesTest extends TestCase
 
         $this->actingAs($this->admin, 'admin');
 
-        Livewire::test(SessionsPage::class)
-            ->assertViewHas('sessions', fn ($paginator) => $paginator->total() === 2)
-            ->set('search', 'Genève')
-            ->assertViewHas('sessions', fn ($paginator) => $paginator->total() === 1);
+        // La chaine est coupee en trois · `assertViewHas` vient du greffon de
+        // Laravel, dont le type de retour ramene a sa propre classe de reponse,
+        // et `set()` n'y existe pas. A l'execution le composant se rend
+        // lui-meme, mais l'outillage ne peut pas le savoir.
+        $component = Livewire::test(SessionsPage::class);
+
+        $component->assertViewHas('sessions', fn ($paginator) => $paginator->total() === 2);
+
+        $component->set('search', 'Genève');
+
+        $component->assertViewHas('sessions', fn ($paginator) => $paginator->total() === 1);
     }
 }
