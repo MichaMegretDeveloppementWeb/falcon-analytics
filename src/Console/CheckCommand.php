@@ -82,18 +82,17 @@ final class CheckCommand extends Command
     }
 
     /**
-     * La feuille compilée, telle que l'application la sert.
+     * The compiled stylesheet, as the application serves it.
      *
-     * Le paquet compile et livre ; l'application publie une copie et sert
-     * celle-là. Entre les deux, la copie peut manquer — une installation qui
-     * n'a pas publié — ou dater d'avant la dernière mise à jour du paquet.
+     * The package compiles and ships; the application publishes a copy and
+     * serves that one. In between, the copy can be missing — an installation
+     * that never published — or older than the package's last update.
      *
-     * **Le kit tient déjà cette vérification**, et il lève au moment de bâtir
-     * l'adresse, avec la commande à lancer. Ce contrôle-ci ne la refait pas :
-     * il la déclenche, ici plutôt qu'à la première visite. C'est tout ce qu'il
-     * apporte, et ça suffit · une copie absente ne se voit sinon que le jour
-     * où quelqu'un ouvre un écran, ce qui peut être longtemps après le
-     * déploiement qui l'a oubliée.
+     * **The kit already holds this check**, and raises while building the
+     * address, naming the command to run. This one does not repeat it: it
+     * triggers it, here rather than on the first visit. That is all it brings,
+     * and it is enough — a missing copy otherwise only shows the day someone
+     * opens a screen, which can be long after the deployment that forgot it.
      *
      * @return array{0: string, 1: string, 2: string}
      */

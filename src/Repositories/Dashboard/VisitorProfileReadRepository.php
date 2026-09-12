@@ -29,9 +29,9 @@ final readonly class VisitorProfileReadRepository
             ->selectRaw("COUNT(*) as sessions, COALESCE(SUM(pageview_count), 0) as pageviews, COALESCE(SUM({$duration}), 0) as seconds")
             ->first();
 
-        // Une agregation sans `GROUP BY` rend toujours une ligne, meme sans
-        // aucune session · le repli a zero ne devrait jamais servir, et il ne
-        // coute rien de l'ecrire plutot que de le supposer.
+        // An aggregate without `GROUP BY` always returns one row, even with no
+        // session at all: the fallback to zero should never be needed, and
+        // writing it costs nothing over assuming it.
         return [
             'sessions' => (int) $totals?->getAttribute('sessions'),
             'pageviews' => (int) $totals?->getAttribute('pageviews'),
@@ -71,8 +71,8 @@ final readonly class VisitorProfileReadRepository
             ->orderByDesc('total')
             ->get()
             ->mapWithKeys(function (Session $row) use ($default): array {
-                // Une colonne vide ou nulle tombe dans le seau par defaut ·
-                // « direct » pour une source, l'inconnu pour un type d'appareil.
+                // An empty or null column falls into the default bucket:
+                // "direct" for a source, unknown for a device type.
                 $bucket = (string) $row->getAttribute('bucket');
 
                 return [($bucket === '' ? $default : $bucket) => (int) $row->getAttribute('total')];

@@ -67,7 +67,7 @@ final class SessionsPage extends DashboardComponent
                     }
                 }
 
-                // Un filtre vide vaut « pas de filtre ».
+                // An empty filter means "no filter".
                 $device = $this->device === '' ? null : $this->device;
                 $source = $this->source === '' ? null : $this->source;
 

@@ -53,7 +53,7 @@ final readonly class SourceResolver
      */
     private function queryParams(?string $url): array
     {
-        // Voir `LandingParamsResolver` · `null` sans requete, `false` si malforme.
+        // See `LandingParamsResolver`: `null` with no query, `false` if malformed.
         $query = $url === null ? null : parse_url($url, PHP_URL_QUERY);
         $query = is_string($query) ? $query : '';
         parse_str($query, $params);

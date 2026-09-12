@@ -14,10 +14,10 @@ final class DeviceLabel
 {
     public static function for(?string $type): string
     {
-        // Normalise une fois, et c'est cette valeur que le dernier cas emploie ·
-        // un type absent tombe alors sur le cas vide, et le defaut ne peut plus
-        // recevoir null. `Str::title` rend le meme libelle dans les deux cas,
-        // sa conversion passant deja par une mise en minuscules.
+        // Normalised once, and it is that value the last case uses: an absent
+        // type then falls on the empty case, and the default can no longer
+        // receive null. `Str::title` gives the same label either way, its
+        // conversion already going through a lowercasing.
         $normalised = $type !== null ? strtolower($type) : '';
 
         return match ($normalised) {

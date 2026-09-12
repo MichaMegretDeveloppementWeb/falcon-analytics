@@ -52,9 +52,9 @@ final readonly class SessionListReadRepository
             ->when($device !== null && $device !== '', fn (Builder $q): Builder => $q->where('device_type', $device))
             ->when($source !== null && $source !== '', fn (Builder $q): Builder => $q->where('source', $source))
             ->when($search !== null && $search !== '', function (Builder $query) use ($period, $subjectType, $search, $subjects): void {
-                // Le test de `when()` ne retrecit pas le type a l'interieur de
-                // la fermeture · on le refait une fois ici plutot qu'a chacun
-                // des quatre usages plus bas.
+                // The `when()` test does not narrow the type inside the
+                // closure, so it is done once here rather than at each of the
+                // four uses below.
                 $needle = (string) $search;
                 $term = '%'.$needle.'%';
                 $countryCodes = $this->matchingCountryCodes($period, $subjectType, $needle);

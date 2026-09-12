@@ -30,10 +30,10 @@ final class AnalyticsServiceProvider extends ServiceProvider
 
     public function register(): void
     {
-        // `completeConfigFrom` et non `mergeConfigFrom` · celui de Laravel ne
-        // complete que le premier niveau. Une copie publiee qui vieillit perd
-        // donc toute sous-cle ajoutee depuis, sans un mot. Le kit porte cette
-        // politique pour toute la suite ; on ne la recopie pas.
+        // `completeConfigFrom` rather than `mergeConfigFrom`: Laravel's only
+        // completes the first level. A published copy that ages therefore loses
+        // every sub-key added since, without a word. The kit carries this
+        // policy for the whole suite; it is not copied here.
         $this->completeConfigFrom(__DIR__.'/../config/analytics.php', 'analytics');
 
         $this->app->singleton(Analytics::class);
@@ -71,60 +71,60 @@ final class AnalyticsServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'analytics');
 
-        // Un fichier par espace · l'administration et ses ecrans, le public et
-        // son point d'ingestion. Les deux sont charges, toujours · un fichier
-        // qu'on cesserait de charger serait du code mort qui a l'air vivant.
+        // One file per area: the administration with its screens, the public
+        // side with its ingestion endpoint. Both are always loaded — a file we
+        // stopped loading would be dead code that looks alive.
         $this->loadRoutesFrom(__DIR__.'/../routes/admin.php');
         $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
 
-        // Ou sont les fichiers compiles du paquet. Le kit lit ce registre pour
-        // batir leur adresse, et pour comparer la copie publiee a la source ·
-        // une copie plus ancienne leve, plutot que de servir en silence la
-        // feuille du mois dernier.
+        // Where the package's compiled files are. The kit reads this registry
+        // to build their address, and to compare the published copy with the
+        // source: an older copy raises rather than quietly serving last
+        // month's stylesheet.
         $this->app->make(AssetRegistry::class)->register('analytics', __DIR__.'/../public');
 
         $this->registerPersistentMiddleware();
 
         /*
-         * Les composants, sous un seul prefixe et par deux mecanismes.
+         * The components, under a single prefix and through two mechanisms.
          *
-         * Laravel cherche d'abord une classe, et retombe sur la vue anonyme
-         * quand elle n'existe pas · `<x-analytics::page>` touche la classe,
-         * `<x-analytics::kpi-card>` la vue.
+         * Laravel looks for a class first, and falls back on the anonymous view
+         * when there is none: `<x-analytics::page>` reaches the class,
+         * `<x-analytics::kpi-card>` the view.
          *
-         * Page et racine sont des classes parce qu'elles ouvrent le contexte du
-         * kit avant leur slot · une vue ne peut rien faire avant d'etre rendue.
+         * Page and root are classes because they open the kit's context before
+         * their slot, and a view can do nothing before it is rendered.
          */
         Blade::componentNamespace('Falcon\\Analytics\\View\\Components', 'analytics');
         Blade::anonymousComponentNamespace('analytics::components', 'analytics');
 
         /*
-         * La seule directive du paquet · elle apporte le collecteur entier a
-         * une page publique de l'hote, sa configuration comprise.
+         * The package's only directive: it brings the whole collector to a
+         * public page of the host, its configuration included.
          *
-         * Elle s'appelait `@analyticsConfig` quand elle ne posait qu'un objet
-         * de configuration, le code venant de l'entree JavaScript de l'hote.
-         * Le paquet compile et livre desormais son script, donc la directive
-         * l'amene · le nom le dit.
+         * It was called `@analyticsConfig` back when it laid down nothing but a
+         * configuration object, the code coming from the host's JavaScript
+         * entry. The package now compiles and ships its script, so the
+         * directive brings it — and the name says so.
          *
-         * Elle rend une vue plutot que du HTML fabrique ici · la declaration
-         * d'assets doit passer par le composant du kit, pas par ses coulisses.
+         * It renders a view rather than HTML built here: an asset declaration
+         * has to go through the kit's component, not behind its back.
          */
         Blade::directive('analyticsCollector', fn (): string => "<?php echo view('analytics::collector')->render(); ?>");
 
         /*
-         * Les ecrans et leurs blocs, par espace de noms.
+         * The screens and their blocks, by namespace.
          *
-         * Trente lignes d'enregistrement manuel vivaient ici, une par classe.
-         * Un ecran ajoute sans sa ligne n'existait pas, et l'absence ne se
-         * voyait qu'a l'affichage.
+         * Thirty lines of manual registration used to live here, one per class.
+         * A screen added without its line did not exist, and the absence only
+         * showed on screen.
          *
-         * Le nom se deduit maintenant du chemin de la classe · celle qui porte
-         * la vue d'ensemble repond a `<livewire:analytics::admin.overview-page />`,
-         * et un bloc range sous `Widgets` a `admin.widgets.trend-chart`.
+         * The name is now derived from the class path: the one carrying the
+         * overview answers to `<livewire:analytics::admin.overview-page />`,
+         * and a block filed under `Widgets` to `admin.widgets.trend-chart`.
          *
-         * Livewire ne decouvre tout seul que `app/Livewire` · les classes d'un
-         * paquet vivent ailleurs, d'ou cette declaration.
+         * Livewire only discovers `app/Livewire` on its own; a package's
+         * classes live elsewhere, hence this declaration.
          */
         Livewire::addNamespace('analytics', classNamespace: 'Falcon\\Analytics\\Livewire');
 

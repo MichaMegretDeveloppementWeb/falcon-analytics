@@ -98,8 +98,8 @@ final class SearchConsoleAuth
     {
         $cached = $connection->access_token;
 
-        // `?->` rend null quand la date d'expiration manque · sans echeance
-        // connue, le jeton en cache ne peut pas etre declare encore valable.
+        // `?->` gives null when the expiry date is missing: with no known
+        // deadline, a cached token cannot be declared still valid.
         $stillValid = $connection->token_expires_at?->subSeconds(self::EXPIRY_MARGIN_SECONDS)->isFuture() === true;
 
         if ($cached !== null && $cached !== '' && $stillValid) {

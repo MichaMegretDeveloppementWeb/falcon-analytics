@@ -82,8 +82,8 @@ final class SubjectResolver
      */
     public function names(string $guard, array $ids): array
     {
-        // Un identifiant vaut 1 ou plus · zero ne designe personne, et le
-        // laisser passer ferait une requete sur une cle qui n'existe pas.
+        // An identifier is 1 or more: zero designates nobody, and letting it
+        // through would query a key that does not exist.
         $ids = array_values(array_unique(array_filter(
             $ids,
             static fn (int $id): bool => $id > 0,
@@ -197,10 +197,10 @@ final class SubjectResolver
      */
     private function join(object $row, array $columns): ?string
     {
-        // Les colonnes viennent de la configuration de l'hote, donc leur nom
-        // n'est connu qu'a l'execution. On lit la ligne comme un tableau plutot
-        // que par une propriete au nom variable · meme resultat, et l'outillage
-        // peut suivre ce qui se passe.
+        // The columns come from the host's configuration, so their names are
+        // only known at runtime. The row is read as an array rather than
+        // through a property with a variable name: same result, and the tooling
+        // can follow what happens.
         $values = (array) $row;
         $parts = [];
 

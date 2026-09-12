@@ -36,9 +36,9 @@ final class SessionJourneyBuilder
         $steps = [];
         $children = [];
 
-        // L'indice de l'etape en cours, tenu plutot que redemande · les deux
-        // listes grandissent ensemble, et la seconde branche n'est atteinte
-        // qu'apres au moins une poussee.
+        // The index of the current step, held rather than asked for again: the
+        // two lists grow together, and the second branch is only reached after
+        // at least one push.
         $current = -1;
 
         foreach ($events as $event) {

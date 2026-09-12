@@ -131,8 +131,8 @@ final readonly class VisitorListReadRepository
                     ->limit(1),
             ])
             ->when($search !== null && $search !== '', function (Builder $query) use ($search, $subjects): void {
-                // Voir `SessionListReadRepository` · le test de `when()` ne
-                // retrecit pas le type a l'interieur de la fermeture.
+                // See `SessionListReadRepository`: the `when()` test does not
+                // narrow the type inside the closure.
                 $needle = (string) $search;
                 $term = '%'.$needle.'%';
 

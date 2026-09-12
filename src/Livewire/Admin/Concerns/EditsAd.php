@@ -61,9 +61,9 @@ trait EditsAd
 
         $this->adId = $ad->id;
         $this->adName = $ad->name;
-        // Sans condition enregistree, le formulaire ouvre sur une ligne vide
-        // plutot que sur rien · la colonne est nullable, et un tableau vide dit
-        // la meme chose qu'un null.
+        // With no condition recorded, the form opens on an empty row rather
+        // than on nothing: the column is nullable, and an empty array says the
+        // same thing as a null.
         $conditions = $ad->match_conditions;
         $this->adConditions = $conditions === null || $conditions === []
             ? [['param' => '', 'value' => '']]

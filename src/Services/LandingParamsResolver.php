@@ -22,8 +22,8 @@ final readonly class LandingParamsResolver
      */
     public function resolve(?string $landingUrl): array
     {
-        // `parse_url` rend `null` quand l'URL n'a pas de partie requete, et
-        // `false` quand elle est malformee · les deux valent « rien a lire ».
+        // `parse_url` gives `null` when the URL has no query part, and `false`
+        // when it is malformed: both mean "nothing to read".
         $query = $landingUrl === null ? null : parse_url($landingUrl, PHP_URL_QUERY);
         $query = is_string($query) ? $query : '';
         parse_str($query, $params);

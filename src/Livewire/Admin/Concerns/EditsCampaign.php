@@ -51,7 +51,7 @@ trait EditsCampaign
         $this->campaignId = $campaign->id;
         $this->campaignName = $campaign->name;
         $this->campaignPlatform = (string) $campaign->platform;
-        // Voir `EditsAd` · une ligne vide plutot que rien du tout.
+        // See `EditsAd`: an empty row rather than nothing at all.
         $conditions = $campaign->match_conditions;
         $this->campaignConditions = $conditions === null || $conditions === []
             ? [['param' => '', 'value' => '']]
