@@ -108,6 +108,24 @@ final class TheDiagnosticSpeaksTest extends TestCase
             ->assertFailed();
     }
 
+    /**
+     * A rename done halfway, which is what a rename actually looks like.
+     *
+     * The sound layout is not the answer here: the other one still prints the
+     * old directive to whoever opens the page it carries. Reporting a sound
+     * installation because one file is right would hide exactly the state
+     * someone needs told about.
+     */
+    public function test_it_still_says_it_when_only_one_of_two_views_was_renamed(): void
+    {
+        File::put(resource_path('views/layouts/web.blade.php'), '<body>@analyticsCollector</body>');
+        File::put(resource_path('views/layouts/boutique.blade.php'), '<body>@analyticsConfig</body>');
+
+        $this->artisan('analytics:check')
+            ->expectsOutputToContain('layouts/boutique.blade.php')
+            ->assertFailed();
+    }
+
     /** La directive posee dans un `vendor/` n'est pas la notre. */
     public function test_it_does_not_accept_the_directive_found_in_a_package_view(): void
     {

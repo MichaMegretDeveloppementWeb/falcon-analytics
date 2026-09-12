@@ -204,12 +204,17 @@ final class CheckCommand extends Command
 
         // The name the directive carried until the collector became a compiled
         // file of its own. Worth naming separately, because Blade does not
-        // treat an unknown directive as an error: it copies it to the output
-        // as it stands. A host left on the old name therefore shows the raw
-        // text `@analyticsConfig` to its visitors, and the generic message
-        // below would send it looking for something that is right there.
+        // treat an unknown directive as an error: it copies it to the output as
+        // it stands. A host left on the old name therefore shows the raw text
+        // `@analyticsConfig` to its visitors, and the generic message below
+        // would send it looking for something that is right there.
         $staleDirective = null;
+        $found = false;
 
+        // Every file is read even once the directive is found, and that is the
+        // point: a host halfway through the rename has one layout on each name,
+        // and stopping at the first hit would report a sound installation while
+        // one of its pages prints the old directive to visitors.
         foreach (array_unique($paths) as $path) {
             if (! File::isDirectory($path)) {
                 continue;
@@ -218,9 +223,7 @@ final class CheckCommand extends Command
             foreach (File::allFiles($path) as $file) {
                 $contents = File::get($file->getPathname());
 
-                if (str_contains($contents, '@analyticsCollector')) {
-                    return ['Collecteur', 'OK', 'La directive @analyticsCollector est posée dans vos vues.'];
-                }
+                $found = $found || str_contains($contents, '@analyticsCollector');
 
                 if ($staleDirective === null && str_contains($contents, '@analyticsConfig')) {
                     // Slashes, on every platform: this path is read by a human
@@ -235,9 +238,13 @@ final class CheckCommand extends Command
                 'Collecteur',
                 'KO',
                 "La vue {$staleDirective} porte encore @analyticsConfig, qui n’existe plus. "
-                .'Blade recopie une directive inconnue telle quelle : ce texte s’affiche donc '
-                .'sur vos pages, et rien n’est mesuré. Renommez-la en @analyticsCollector.',
+                .'Blade recopie une directive inconnue telle quelle : ce texte s’affiche sur les '
+                .'pages concernées, et elles ne sont pas mesurées. Renommez-la en @analyticsCollector.',
             ];
+        }
+
+        if ($found) {
+            return ['Collecteur', 'OK', 'La directive @analyticsCollector est posée dans vos vues.'];
         }
 
         return [
