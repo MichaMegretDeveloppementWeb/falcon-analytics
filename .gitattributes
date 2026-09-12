@@ -22,6 +22,7 @@ public/*        -text -diff
 # chercher les couches et le thème du kit par un chemin relatif qui ne mène nulle
 # part une fois le paquet installé, et le script est déjà compilé à côté. Les
 # laisser, c'est laisser croire qu'on peut les employer.
+/.env.test.example  export-ignore
 /.github            export-ignore
 /.gitattributes     export-ignore
 /.gitignore         export-ignore
