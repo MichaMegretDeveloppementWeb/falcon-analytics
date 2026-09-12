@@ -1,21 +1,27 @@
 # Les fins de ligne viennent d'ici, jamais du poste.
 #
-# Sans ce fichier, git convertit les fins de ligne a la sortie sur Windows, et
-# `pint --test` echoue alors sur **tous** les fichiers d'un clone frais : le
-# preset laravel veut du LF. La chaine de validation etait donc rouge pour
+# Sans ce fichier, git convertit les fins de ligne à la sortie sur Windows, et
+# `pint --test` échoue alors sur **tous** les fichiers d'un clone frais : le
+# preset laravel veut du LF. La chaîne de validation était donc rouge pour
 # quiconque clone sous Windows, sans que rien ne soit en cause dans le code.
 *               text=auto eol=lf
 
 # Ce qui est produit par la compilation ne se normalise pas, et ne se montre pas
-# dans un diff : c'est du bruit, la source est ailleurs. Et le controle de
-# reproductibilite compare des octets · une normalisation le ferait echouer sur
-# un ecart que personne n'a demande.
+# dans un diff : c'est du bruit, la source est ailleurs. Et le contrôle de
+# reproductibilité compare des octets · une normalisation le ferait échouer sur
+# un écart que personne n'a demandé.
 public/*        -text -diff
 
-# Ce qui ne part pas dans l'archive distribuee. Une application qui installe le
-# paquet n'a besoin ni de sa chaine de compilation, ni de ses tests, ni de son
-# outillage d'analyse. Elle recoit `public/`, deja compile, et rien pour le
+# Ce qui ne part pas dans l'archive distribuée. Une application qui installe le
+# paquet n'a besoin ni de sa chaîne de compilation, ni de ses tests, ni de son
+# outillage d'analyse. Elle reçoit `public/`, déjà compilé, et rien pour le
 # refabriquer.
+#
+# `resources/css` et `resources/js` en font partie, et ce n'est pas qu'une
+# question de poids : livrés, ils ne peuvent pas servir. La feuille de styles va
+# chercher les couches et le thème du kit par un chemin relatif qui ne mène nulle
+# part une fois le paquet installé, et le script est déjà compilé à côté. Les
+# laisser, c'est laisser croire qu'on peut les employer.
 /.github            export-ignore
 /.gitattributes     export-ignore
 /.gitignore         export-ignore
@@ -27,6 +33,8 @@ public/*        -text -diff
 /phpstan.neon       export-ignore
 /phpunit.xml        export-ignore
 /pint.json          export-ignore
+/resources/css      export-ignore
+/resources/js       export-ignore
 /scripts            export-ignore
 /tests              export-ignore
 /vite.config.js     export-ignore
