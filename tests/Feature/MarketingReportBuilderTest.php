@@ -75,7 +75,7 @@ final class MarketingReportBuilderTest extends TestCase
 
         $builder = new MarketingReportBuilder;
 
-        $this->assertNull($builder->resolveAd(['src' => 'meta_hiver', 'creative' => 'cabrio']), 'src diffère');
+        $this->assertNull($builder->resolveAd(['src' => 'meta_hiver', 'creative' => 'cabrio']), 'src differs');
         $this->assertNull($builder->resolveAd(['src' => 'meta_ete']), 'creative manque');
         $this->assertNull($builder->resolveAd([]));
         $matched = $builder->resolveCampaign(['src' => 'meta_ete']);
@@ -231,8 +231,8 @@ final class MarketingReportBuilderTest extends TestCase
         $firstAd = $byAd->get($ad1->id);
         $secondAd = $byAd->get($ad2->id);
 
-        $this->assertNotNull($firstAd, 'aucun element pour la premiere publicite');
-        $this->assertNotNull($secondAd, 'aucun element pour la seconde publicite');
+        $this->assertNotNull($firstAd, 'no element for the first ad');
+        $this->assertNotNull($secondAd, 'no element for the second ad');
 
         $this->assertSame(1, $firstAd['conversions']);
         $this->assertSame(1, $secondAd['conversions']);

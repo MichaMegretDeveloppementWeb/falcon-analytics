@@ -24,7 +24,7 @@ final class TrendSeriesCalculatorTest extends TestCase
         $this->assertCount(3, $points);
         $this->assertSame(5, $points[0]->sessions);
         $this->assertSame(12, $points[0]->pageviews);
-        $this->assertSame(0, $points[1]->sessions, '06-02 est comblé à zéro.');
+        $this->assertSame(0, $points[1]->sessions, '06-02 is filled in at zero.');
         $this->assertSame(3, $points[2]->pageviews);
         $this->assertSame('2026-06-01', $points[0]->date->format('Y-m-d'));
     }

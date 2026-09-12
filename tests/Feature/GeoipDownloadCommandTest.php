@@ -49,7 +49,7 @@ final class GeoipDownloadCommandTest extends TestCase
     {
         $archive = file_get_contents(__DIR__.'/../Fixtures/geolite2-city.tar.gz');
 
-        $this->assertNotFalse($archive, 'le gabarit d archive doit etre lisible');
+        $this->assertNotFalse($archive, 'the archive fixture has to be readable');
 
         Http::fake([
             'download.maxmind.example/*' => Http::response($archive, 200),

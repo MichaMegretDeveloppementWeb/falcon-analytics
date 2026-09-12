@@ -319,7 +319,7 @@ final class RealtimeTest extends TestCase
         // know the region: the test then has nothing to look for in the page.
         $region = Locale::getDisplayRegion('-CH', app()->getLocale());
 
-        $this->assertNotFalse($region, 'la region CH doit avoir un libelle');
+        $this->assertNotFalse($region, 'the CH region has to have a label');
 
         $this->actingAs(TestAdmin::create([]), 'admin')
             ->get(route('analytics.admin.realtime'))

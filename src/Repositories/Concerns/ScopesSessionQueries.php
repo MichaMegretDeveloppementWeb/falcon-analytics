@@ -63,7 +63,7 @@ trait ScopesSessionQueries
     /**
      * Driver-aware SQL truncating a timestamp to a 'YYYY-MM-DD HH:MM' string so
      * per-minute buckets group identically on every database. The column is a
-     * trusted internal constant, never user input — voir {@see dayExpression()}.
+     * trusted internal constant, never user input — see {@see dayExpression()}.
      *
      * @param  literal-string  $column
      * @return literal-string
@@ -80,7 +80,7 @@ trait ScopesSessionQueries
 
     /**
      * Driver-aware SQL for the difference in seconds between two timestamp
-     * columns (both trusted internal constants) — voir {@see dayExpression()}.
+     * columns (both trusted internal constants) — see {@see dayExpression()}.
      *
      * @param  literal-string  $start
      * @param  literal-string  $end

@@ -89,7 +89,7 @@ final class VisitorIdentityMergeTest extends TestCase
         ]));
     }
 
-    // ── Fusion à l'identification ────────────────────────────────────────
+    // ── Merge on identification ──────────────────────────────────────────
 
     public function test_it_folds_a_newly_identified_browser_into_the_person_existing_profile(): void
     {
@@ -140,7 +140,7 @@ final class VisitorIdentityMergeTest extends TestCase
         $this->assertSame(['uuid-pc', 'uuid-phone'], $sessions->pluck('browser_key')->sort()->values()->all());
     }
 
-    // ── Navigateur partagé ───────────────────────────────────────────────
+    // ── A shared browser ─────────────────────────────────────────────────
 
     public function test_it_routes_a_login_on_a_shared_browser_to_the_person_own_profile(): void
     {
@@ -185,7 +185,7 @@ final class VisitorIdentityMergeTest extends TestCase
         $this->assertSame(0, $shared->refresh()->session_count);
     }
 
-    // ── Consolidation (migration) ────────────────────────────────────────
+    // ── Consolidation (a migration) ──────────────────────────────────────
 
     public function test_it_consolidates_pre_existing_duplicate_profiles_into_the_oldest_one(): void
     {
@@ -224,7 +224,7 @@ final class VisitorIdentityMergeTest extends TestCase
         $this->assertSame('2026-07-09 22:00:00', $merged->last_seen_at->toDateTimeString());
     }
 
-    // ── RGPD et navigation ───────────────────────────────────────────────
+    // ── GDPR and navigation ──────────────────────────────────────────────
 
     public function test_it_erases_the_merged_aliases_together_with_the_canonical_profile(): void
     {

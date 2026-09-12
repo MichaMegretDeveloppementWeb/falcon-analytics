@@ -36,13 +36,13 @@ final class SessionJourneyBuilderTest extends TestCase
 
         $journey = (new SessionJourneyBuilder)->build($events, $start, $end);
 
-        $this->assertCount(2, $journey, 'deux pages vues, donc deux etapes');
+        $this->assertCount(2, $journey, 'two pageviews, so two steps');
         $this->assertSame('home', $journey[0]['event']->route);
-        $this->assertCount(1, $journey[0]['children'], 'le clic se range sous home');
-        $this->assertSame(60, $journey[0]['seconds'], '12:00:00 vers 12:01:00');
+        $this->assertCount(1, $journey[0]['children'], 'the click files under home');
+        $this->assertSame(60, $journey[0]['seconds'], '12:00:00 to 12:01:00');
         $this->assertSame('catalog', $journey[1]['event']->route);
         $this->assertCount(0, $journey[1]['children']);
-        $this->assertSame(120, $journey[1]['seconds'], '12:01:00 vers la fin de la fenetre');
+        $this->assertSame(120, $journey[1]['seconds'], '12:01:00 to the end of the window');
     }
 
     public function test_it_sums_the_time_per_page_across_repeat_visits_most_first(): void

@@ -66,7 +66,7 @@ final class IngestEventsActionTest extends TestCase
         $this->assertSame($visitor->id, $session->visitor_id);
         $this->assertSame(1, $session->pageview_count);
         $this->assertSame(2, $session->event_count);
-        $this->assertSame('Firefox', $session->browser, 'device-detector tourne au démarrage de session');
+        $this->assertSame('Firefox', $session->browser, 'device-detector runs when a session starts');
 
         $this->assertSame(7, $session->subject_id);
 
@@ -138,7 +138,7 @@ final class IngestEventsActionTest extends TestCase
         $session = Session::firstOrFail();
 
         $this->assertSame(1, Session::count());
-        $this->assertSame(1, $session->pageview_count, 'un rechargement n’est pas une nouvelle vue');
+        $this->assertSame(1, $session->pageview_count, 'a reload is not a new pageview');
         $this->assertSame('https://vantadrive.ch/a', $session->last_pageview_url);
     }
 

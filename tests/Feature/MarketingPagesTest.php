@@ -223,8 +223,8 @@ final class MarketingPagesTest extends TestCase
 
         $offered = Collection::make($options)->pluck('reference')->all();
 
-        $this->assertNotContains('Lead', $offered, 'l objectif deja choisi ne doit plus etre propose');
-        $this->assertContains('Devis', $offered, 'les autres restent proposes');
+        $this->assertNotContains('Lead', $offered, 'the objective already picked must not be offered again');
+        $this->assertContains('Devis', $offered, 'the others stay on offer');
     }
 
     public function test_it_deletes_a_campaign_and_cascades_to_its_ads_and_objectives(): void

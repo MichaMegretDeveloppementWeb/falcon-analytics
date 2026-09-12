@@ -46,10 +46,10 @@
 
         <div class="an:space-y-6 an:lg:col-span-2">
 
-            {{-- Carte principale façon Wix : onglets-KPI, carte + pays, répartitions --}}
+            {{-- The main card, Wix style: KPI tabs, map + countries, breakdowns --}}
             <div class="an:rounded-xl an:border an:border-base an:bg-surface" x-data="{ tab: 'window' }">
 
-                {{-- Onglets --}}
+                {{-- Tabs --}}
                 <div class="an:flex an:items-stretch an:px-5 an:pt-1">
                     <button type="button"
                             @click="tab = 'window'; $dispatch('analytics-realtime-mode', { mode: 'window' })"
@@ -73,7 +73,7 @@
 
                 <div class="an:border-t an:border-subtle"></div>
 
-                {{-- Carte + Pays --}}
+                {{-- Map + countries --}}
                 <div class="an:grid an:grid-cols-1 an:md:grid-cols-5">
                     <div class="an:p-5 an:md:col-span-3">
                         <x-analytics::world-map :points="$map['points']" channel="map" />
@@ -112,7 +112,7 @@
 
                 <div class="an:border-t an:border-subtle"></div>
 
-                {{-- Source de trafic / Appareil : deux camemberts --}}
+                {{-- Traffic source / device: two donuts --}}
                 <div class="an:grid an:grid-cols-1 an:md:grid-cols-2 an:md:divide-x an:md:divide-[color:var(--color-gray-100)] an:dark:md:divide-gray-800">
                     <div class="an:p-5">
                         <p class="an:mb-3 an:text-[14px] an:font-medium {{ $inkMuted }}">{{ __('Source de trafic') }}</p>
@@ -168,7 +168,7 @@
 
                 <div class="an:border-t an:border-subtle"></div>
 
-                {{-- Pages vues : section dédiée pleine largeur, barres de proportion --}}
+                {{-- Pageviews: a full-width section of its own, proportion bars --}}
                 <div class="an:p-5">
                     <p class="an:mb-3 an:text-[14px] an:font-medium {{ $inkMuted }}">{{ __('Pages vues') }}</p>
                     @forelse ($topPages as $item)
@@ -206,7 +206,7 @@
 
         <div class="an:space-y-6 an:lg:col-span-1">
 
-            {{-- Visiteurs récents (24 dernières heures) --}}
+            {{-- Recent visitors (last 24 hours) --}}
             <div class="an:rounded-xl an:border an:border-base an:bg-surface">
                 <div class="an:px-5 an:py-4">
                     <p class="an:text-[16px] an:font-bold {{ $ink }}">{{ __('Visiteurs récents') }}</p>

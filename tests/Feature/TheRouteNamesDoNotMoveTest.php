@@ -56,7 +56,7 @@ final class TheRouteNamesDoNotMoveTest extends TestCase
     #[DataProvider('administrationScreens')]
     public function test_it_names_every_screen_after_the_area_it_belongs_to(string $name, string $address): void
     {
-        $this->assertTrue(Route::has($name), "La route {$name} n'est pas enregistrée.");
+        $this->assertTrue(Route::has($name), "The route {$name} is not registered.");
         $this->assertSame($address, route($name, absolute: false));
     }
 
@@ -152,6 +152,6 @@ final class TheRouteNamesDoNotMoveTest extends TestCase
             }
         }
 
-        $this->assertSame([], $strays, 'Ces routes ne nomment aucun espace.');
+        $this->assertSame([], $strays, 'These routes name no area.');
     }
 }

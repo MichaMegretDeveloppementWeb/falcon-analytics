@@ -42,8 +42,8 @@ final class GeoResolverTest extends TestCase
         $this->assertSame('85.4.12.66', $resolver->effectiveIp('127.0.0.1'));
         $this->assertSame('85.4.12.66', $resolver->effectiveIp('192.168.1.20'));
         $this->assertSame('85.4.12.66', $resolver->effectiveIp('10.0.0.5'));
-        $this->assertSame('85.4.12.66', $resolver->effectiveIp('169.254.7.8'), 'réservée, lien local');
-        $this->assertSame('84.253.10.20', $resolver->effectiveIp('84.253.10.20'), 'publique réelle : intacte');
+        $this->assertSame('85.4.12.66', $resolver->effectiveIp('169.254.7.8'), 'reserved, link-local');
+        $this->assertSame('84.253.10.20', $resolver->effectiveIp('84.253.10.20'), 'a real public one: untouched');
     }
 
     public function test_it_leaves_every_ip_untouched_without_a_development_ip(): void

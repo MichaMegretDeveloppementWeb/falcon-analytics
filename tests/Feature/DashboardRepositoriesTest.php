@@ -84,7 +84,7 @@ final class DashboardRepositoriesTest extends TestCase
     {
         $rows = $this->rows($page);
 
-        $this->assertNotSame([], $rows, 'La page attendue est vide.');
+        $this->assertNotSame([], $rows, 'The expected page is empty.');
 
         return $rows[0];
     }
@@ -459,9 +459,9 @@ final class DashboardRepositoriesTest extends TestCase
         $row = $this->firstRow($result);
 
         $this->assertSame($visitor->id, $row->id);
-        $this->assertSame(3, (int) $row->getAttribute('session_count'), 'de tout temps, celle de soixante jours comprise');
-        $this->assertSame('Paris', $row->getAttribute('last_city'), 'la session la plus récente');
-        $this->assertSame('organic', $row->getAttribute('acquisition_source'), 'la toute première session');
+        $this->assertSame(3, (int) $row->getAttribute('session_count'), 'all time, including the sixty-day-old one');
+        $this->assertSame('Paris', $row->getAttribute('last_city'), 'the most recent session');
+        $this->assertSame('organic', $row->getAttribute('acquisition_source'), 'the very first session');
     }
 
     public function test_it_sorts_visitors_by_their_all_time_session_count(): void
@@ -510,7 +510,7 @@ final class DashboardRepositoriesTest extends TestCase
         $rows = $this->visitors->visitorDailyRows($this->period, null);
 
         $this->assertSame(['sessions' => 1, 'visitors' => 1], $rows['active']['2026-06-10']);
-        $this->assertSame(1, $rows['new']['2026-06-10'], 'le visiteur robot est écarté des nouveaux');
+        $this->assertSame(1, $rows['new']['2026-06-10'], 'the bot visitor is kept out of the new ones');
     }
 
     public function test_it_fetches_the_visitors_screen_data_within_its_query_budget(): void
@@ -530,10 +530,10 @@ final class DashboardRepositoriesTest extends TestCase
         $queries = DB::getQueryLog();
         $signatures = array_map(fn (array $q): string => $q['query'].'|'.json_encode($q['bindings']), $queries);
 
-        // Plan figé : pagination (compte + sélection) + compteurs deux fois
-        // (totaux + nouveaux) + quotidien (actifs + nouveaux) = 8.
+        // Fixed plan: pagination (count + selection) + counters twice (totals +
+        // new) + daily (active + new) = 8.
         $this->assertCount(8, $queries);
-        $this->assertSame(array_values(array_unique($signatures)), $signatures, 'rien n’est lu deux fois');
+        $this->assertSame(array_values(array_unique($signatures)), $signatures, 'nothing is read twice');
     }
 
     public function test_it_aggregates_a_visitor_engagement_over_all_their_sessions_and_scopes_to_them(): void

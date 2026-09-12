@@ -52,7 +52,7 @@ final class SessionWriteRepositoryTest extends TestCase
 
         $session = $repository->start($visitor, $context, CarbonImmutable::parse('2026-06-30 09:00:00'), $visitor->uuid)->fresh();
 
-        $this->assertNotNull($session, 'La session vient d etre ecrite, elle doit se relire.');
+        $this->assertNotNull($session, 'The session was just written, it has to read back.');
         $this->assertSame($visitor->id, $session->visitor_id);
         $this->assertSame($visitor->uuid, $session->browser_key);
         $this->assertSame('2026-06-30 09:00:00', $session->started_at->toDateTimeString());

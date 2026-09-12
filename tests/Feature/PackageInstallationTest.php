@@ -164,6 +164,6 @@ final class PackageInstallationTest extends TestCase
         $this->assertNotContains('web-js', $options);
         $this->assertNotContains('web-css', $options);
 
-        $this->assertContains('force', $options, 'La seule option qui reste.');
+        $this->assertContains('force', $options, 'The only option left.');
     }
 }
