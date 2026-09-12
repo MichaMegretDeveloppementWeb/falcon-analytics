@@ -1,13 +1,12 @@
 /*
- * Recompiler a cote, et comparer a ce qui est commite.
+ * Rebuild beside, and compare with what is committed.
  *
- * L'empreinte des sources, elle, dit « une source a change depuis la derniere
- * compilation ». Elle ne dit rien d'une compilation qui ne rendrait pas deux
- * fois le meme fichier · un outil qui glisse une date, un ordre qui depend du
- * systeme de fichiers, une version d'outil differente. C'est ce que ce
- * controle attrape, et lui seul.
+ * The source fingerprint says "a source changed since the last build". It says
+ * nothing about a build that would not produce the same file twice: a tool
+ * slipping a date in, an order that depends on the filesystem, a different tool
+ * version. That is what this check catches, and only this one.
  *
- * Il tourne la ou node existe · en integration continue, pas dans la suite PHP.
+ * It runs where node exists: in continuous integration, not in the PHP suite.
  */
 
 import { execSync } from 'node:child_process';
@@ -20,12 +19,13 @@ const shipped = join(root, 'public');
 const rebuilt = join(root, '.build-check');
 
 /*
- * `sources.sha` reste dehors · il est ecrit par un script qui vise `public/`
- * en dur, et ce qu'il garantit est deja garanti ailleurs, par un essai PHP.
+ * `sources.sha` stays out: it is written by a script that targets `public/`
+ * outright, and what it guarantees is already guaranteed elsewhere, by a PHP
+ * test.
  */
 const ignored = new Set(['sources.sha']);
 
-/** Les fichiers d'un dossier, en chemins relatifs a barres obliques, tries. */
+/** A directory's files, as sorted relative paths with forward slashes. */
 function contentsOf(directory) {
     return readdirSync(directory, { recursive: true, withFileTypes: true })
         .filter((entry) => entry.isFile())
@@ -67,10 +67,10 @@ for (const name of after) {
     const rebuiltBytes = readFileSync(join(rebuilt, name));
 
     if (!shippedBytes.equals(rebuiltBytes)) {
-        fail(`Le fichier livre ne correspond plus a ses sources : ${name}`);
+        fail(`Le fichier livré ne correspond plus à ses sources : ${name}`);
     }
 }
 
 rmSync(rebuilt, { recursive: true, force: true });
 
-console.log(`\n  Reproductible · ${after.length} fichiers identiques a la recompilation.\n`);
+console.log(`\n  Reproductible · ${after.length} fichiers identiques à la recompilation.\n`);

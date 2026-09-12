@@ -1,17 +1,16 @@
 /*
- * L'empreinte des sources qui decident de ce que le paquet livre.
+ * A fingerprint of the sources that decide what the package ships.
  *
- * Ecrite a chaque compilation, relue par `AssetsAreUpToDateTest`. C'est ce qui
- * transforme « il faut penser a recompiler » en un essai qui echoue.
+ * Written on every build, read back by `AssetsAreUpToDateTest`. This is what
+ * turns "remember to rebuild" into a test that fails.
  *
- * Ce qui entre dedans : le script, les feuilles de style, ET LES VUES. Les vues
- * comptent parce que le generateur d'utilitaires les lit · une classe ajoutee
- * dans un ecran change la feuille livree aussi surement qu'une regle ecrite a
- * la main.
+ * What goes into it: the script, the stylesheets, AND THE VIEWS. The views
+ * count because the utility generator reads them — a class added to a screen
+ * changes the shipped stylesheet as surely as a hand-written rule does.
  *
- * Les fins de ligne sont normalisees avant hachage : sans cela l'empreinte
- * change entre un poste Windows et un poste Unix, et l'essai echouerait sur une
- * difference qui n'existe pas.
+ * Line endings are normalised before hashing: without that the fingerprint
+ * differs between a Windows machine and a Unix one, and the test would fail on
+ * a difference that does not exist.
  */
 
 import { createHash } from 'node:crypto';
@@ -20,16 +19,15 @@ import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /*
- * `fileURLToPath` et non `.pathname` · une URL est encodee, un chemin ne l'est
- * pas. Le paquet pose dans un dossier dont le nom porte une espace donnait un
- * `%20` litteral, et la compilation s'arretait sur un fichier introuvable.
+ * `fileURLToPath` rather than `.pathname`: a URL is encoded, a path is not.
+ * With the package sitting in a directory whose name carries a space, that gave
+ * a literal `%20` and the build stopped on a file it could not find.
  *
- * Elle enleve aussi la barre oblique qui precede la lettre de lecteur sous
- * Windows.
+ * It also strips the slash that precedes the drive letter under Windows.
  */
 const root = fileURLToPath(new URL('..', import.meta.url));
 
-/** Tous les fichiers d'un dossier dont le nom finit par un des suffixes donnes. */
+/** Every file under a directory whose name ends with one of the given suffixes. */
 function filesUnder(directory, ...suffixes) {
     return readdirSync(join(root, directory), { recursive: true, withFileTypes: true })
         .filter((entry) => entry.isFile() && suffixes.some((suffix) => entry.name.endsWith(suffix)))
@@ -41,8 +39,8 @@ const files = [
     ...filesUnder(join('resources', 'css'), '.css'),
     ...filesUnder(join('resources', 'views'), '.blade.php'),
 ]
-    // Trie sur le chemin relatif en barres obliques : l'ordre doit etre le meme
-    // quel que soit le systeme, sinon l'empreinte l'est aussi.
+    // Sorted on the relative path with forward slashes: the order has to be the
+    // same whatever the system, otherwise so is the fingerprint.
     .map((file) => [relative(root, file).split(sep).join('/'), file])
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
 
@@ -56,4 +54,4 @@ for (const [name, file] of files) {
 mkdirSync(join(root, 'public'), { recursive: true });
 writeFileSync(join(root, 'public', 'sources.sha'), `${hash.digest('hex')}\n`);
 
-console.log(`empreinte des sources ecrite · ${files.length} fichiers`);
+console.log(`empreinte des sources écrite · ${files.length} fichiers`);

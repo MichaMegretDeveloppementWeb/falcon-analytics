@@ -1,27 +1,26 @@
-# Les fins de ligne viennent d'ici, jamais du poste.
+# Line endings come from here, never from the machine.
 #
-# Sans ce fichier, git convertit les fins de ligne à la sortie sur Windows, et
-# `pint --test` échoue alors sur **tous** les fichiers d'un clone frais : le
-# preset laravel veut du LF. La chaîne de validation était donc rouge pour
-# quiconque clone sous Windows, sans que rien ne soit en cause dans le code.
+# Without this file, git converts them on checkout under Windows, and
+# `pint --test` then fails on **every** file of a fresh clone: the laravel
+# preset wants LF. The validation chain was red for anyone cloning under
+# Windows, with nothing wrong in the code.
 *               text=auto eol=lf
 
-# Ce qui est produit par la compilation ne se normalise pas, et ne se montre pas
-# dans un diff : c'est du bruit, la source est ailleurs. Et le contrôle de
-# reproductibilité compare des octets · une normalisation le ferait échouer sur
-# un écart que personne n'a demandé.
+# What the build produces is neither normalised nor shown in a diff: it is
+# noise, and the source is elsewhere. The reproducibility check compares bytes,
+# so a normalisation would fail it on a difference nobody asked for.
 public/*        -text -diff
 
-# Ce qui ne part pas dans l'archive distribuée. Une application qui installe le
-# paquet n'a besoin ni de sa chaîne de compilation, ni de ses tests, ni de son
-# outillage d'analyse. Elle reçoit `public/`, déjà compilé, et rien pour le
-# refabriquer.
+# What stays out of the distributed archive. An application installing the
+# package needs neither its build chain, nor its tests, nor its analysis
+# tooling. It receives `public/`, already compiled, and nothing to rebuild it
+# with.
 #
-# `resources/css` et `resources/js` en font partie, et ce n'est pas qu'une
-# question de poids : livrés, ils ne peuvent pas servir. La feuille de styles va
-# chercher les couches et le thème du kit par un chemin relatif qui ne mène nulle
-# part une fois le paquet installé, et le script est déjà compilé à côté. Les
-# laisser, c'est laisser croire qu'on peut les employer.
+# `resources/css` and `resources/js` belong here too, and not merely for
+# weight: shipped, they cannot serve. The stylesheet reaches for the kit's
+# layers and theme through a relative path that leads nowhere once the package
+# sits under a host's dependencies, and the script is already compiled next
+# door. Leaving them in says the opposite.
 /.env.test.example  export-ignore
 /.github            export-ignore
 /.gitattributes     export-ignore

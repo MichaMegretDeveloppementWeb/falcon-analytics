@@ -1,28 +1,27 @@
 import { defineConfig } from 'vite';
 
 /*
- * Le script que le paquet livre · le collecteur, et lui seul.
+ * The script the package ships: the collector, and nothing else.
  *
- * Tailwind ecrit la feuille dans le meme dossier, apres, depuis la ligne de
- * commande. Deux producteurs, un dossier, aucun ne touchant les fichiers de
- * l'autre — donc cette etape passe en premier, et c'est elle qui a le droit de
- * vider le dossier.
+ * Tailwind writes the stylesheet into the same directory afterwards, from the
+ * command line. Two producers, one directory, neither touching the other's
+ * files — so this step runs first and is the one allowed to empty it.
  */
 export default defineConfig({
-    // `public` est l'endroit ou le paquet met ce qu'il livre, et Vite lit ce nom
-    // comme « fichiers statiques a recopier ». Le dire evite qu'il recopie le
-    // dossier dans lui-meme.
+    // `public` is where the package puts what it ships, and Vite reads that
+    // name as "static files to copy verbatim". Saying so plainly avoids it
+    // copying the directory into itself.
     publicDir: false,
 
-    // Pas de `base` ici, contrairement au kit · il lui sert a faire chercher son
-    // morceau charge a la demande a cote du script qui l'appelle. Le format
-    // ci-dessous interdit tout decoupage, donc aucune adresse n'est ecrite dans
-    // le fichier produit, et il n'y a rien a resoudre.
+    // No `base` here, unlike the kit. It needs one to have its on-demand chunk
+    // fetched from beside the script that asks for it. The format below forbids
+    // any splitting, so no address is written into the produced file and there
+    // is nothing to resolve.
 
     build: {
         outDir: 'public',
 
-        // La seule etape qui vide le dossier, et il en faut une.
+        // The only step that clears the directory, and there has to be one.
         emptyOutDir: true,
 
         rollupOptions: {
@@ -32,14 +31,15 @@ export default defineConfig({
 
             output: {
                 /*
-                 * **Une fonction immediate, pas un module**, et ce n'est pas un
-                 * detail de gout · le kit emet une balise CLASSIQUE pour le
-                 * fichier d'un paquet, `<script src … defer>`. Un module y
-                 * serait charge comme un script ordinaire, et ses declarations
-                 * d'export leveraient dans le navigateur.
+                 * **An immediately invoked function, not a module**, and this
+                 * is not a matter of taste: the kit emits a CLASSIC tag for a
+                 * package's file, `<script src … defer>`. A module loaded that
+                 * way is treated as an ordinary script, and its export
+                 * declarations would throw in the browser.
                  *
-                 * La source n'importe rien et n'exporte rien · elle est deja
-                 * une fonction immediate. Ce format ne fait que la conserver.
+                 * The source imports nothing and exports nothing: it already is
+                 * an immediately invoked function. This format only keeps it
+                 * that way.
                  */
                 format: 'iife',
                 entryFileNames: '[name].js',
