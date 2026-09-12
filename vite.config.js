@@ -14,9 +14,10 @@ export default defineConfig({
     // dossier dans lui-meme.
     publicDir: false,
 
-    // Relatif, et il le faut · le paquet ne sait pas ou une application publiera
-    // ses fichiers.
-    base: './',
+    // Pas de `base` ici, contrairement au kit · il lui sert a faire chercher son
+    // morceau charge a la demande a cote du script qui l'appelle. Le format
+    // ci-dessous interdit tout decoupage, donc aucune adresse n'est ecrite dans
+    // le fichier produit, et il n'y a rien a resoudre.
 
     build: {
         outDir: 'public',

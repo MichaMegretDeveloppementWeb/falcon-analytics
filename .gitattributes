@@ -29,3 +29,4 @@ public/*        -text -diff
 /pint.json          export-ignore
 /scripts            export-ignore
 /tests              export-ignore
+/vite.config.js     export-ignore
