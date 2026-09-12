@@ -60,6 +60,35 @@ final class ScreenMountingTest extends TestCase
     }
 
     /**
+     * La feuille du kit accompagne celle du paquet, même sous un gabarit d'hôte
+     * qui ne connaît rien de la suite.
+     *
+     * **Elle n'est pas décorative, elle est nécessaire** · les utilitaires du
+     * paquet résolvent sept jetons du kit à l'exécution, `var(--ui-…)`, et ces
+     * valeurs vivent dans la feuille du kit. Servie seule, celle du paquet
+     * s'afficherait sans ses couleurs.
+     *
+     * Ce qui la fait venir n'est pas le gabarit — celui de la fixture est nu —
+     * mais le contenu de l'écran, qui dessine des composants du kit. C'est ce
+     * qui rend la séparation sûre · une feuille de paquet ne peut pas se
+     * retrouver sur une page sans celle du kit.
+     *
+     * Le jour où un écran n'emploierait plus aucun composant du kit, cet essai
+     * tombe — et il faudra alors décider, pas découvrir.
+     */
+    public function test_the_kit_sheet_travels_with_the_package_sheet(): void
+    {
+        $html = (string) $this->actingAs($this->admin(), 'admin')
+            ->get(route('analytics.admin.overview'))
+            ->assertOk()
+            ->getContent();
+
+        foreach (['ui.css', 'analytics.css'] as $sheet) {
+            $this->assertSame(1, substr_count($html, $sheet), "{$sheet} doit paraître une fois.");
+        }
+    }
+
+    /**
      * The reason the conversion was worth doing.
      *
      * The error state used to carry a layout of its own, so a failed read
