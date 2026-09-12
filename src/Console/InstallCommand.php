@@ -85,18 +85,17 @@ final class InstallCommand extends Command
         $this->components->task('Published config/analytics.php');
 
         /*
-         * The compiled sheet, forced on purpose: it is a generated file, so
-         * there is nothing of the application's to preserve, and a copy left
-         * behind is worse than none — the kit compares it to what the package
-         * ships and raises on the first screen rather than serving last
-         * month's.
+         * The compiled files, forced on purpose: they are generated, so there
+         * is nothing of the application's to preserve, and a copy left behind
+         * is worse than none — the kit compares it to what the package ships
+         * and raises on the first screen rather than serving last month's.
          *
-         * Its own tag rather than `laravel-assets`, which would republish
+         * Their own tag rather than `laravel-assets`, which would republish
          * every package of the suite. A deployment uses the wide one; an
          * install of this package uses this.
          */
         $this->callSilently('vendor:publish', ['--tag' => 'analytics-assets', '--force' => true]);
-        $this->components->task('Published the compiled stylesheet');
+        $this->components->task('Published the compiled stylesheet and collector');
 
         $this->scaffoldEnvFile(base_path('.env'));
         $this->scaffoldEnvFile(base_path('.env.example'));
