@@ -1,4 +1,5 @@
 @php
+    use Falcon\Analytics\Support\ChartPalette;
     use Falcon\Analytics\Support\DeviceLabel;
 
     $visitorPrimary = $subjectName
@@ -16,7 +17,7 @@
         return "{$seconds}\u{00A0}s";
     };
 
-    $palette = ['#1684ea', '#4b9bf0', '#7cb8f2', '#a5cdf7', '#bcdcfa', '#d1d5db'];
+    $palette = ChartPalette::SERIES;
     $deviceTotal = array_sum($devices);
     $sourceTotal = array_sum($sources);
 @endphp
@@ -68,7 +69,7 @@
                     <div class="an:flex-1 an:space-y-2.5">
                         @foreach ($devices as $device => $c)
                             <div class="an:flex an:items-center an:justify-between an:gap-2">
-                                <span class="an:flex an:items-center an:gap-2 an:text-[13px] an:text-secondary"><span class="an:h-2 an:w-2 an:rounded-full" style="background:{{ $palette[$loop->index] ?? '#d1d5db' }}"></span>{{ DeviceLabel::for($device) }}</span>
+                                <span class="an:flex an:items-center an:gap-2 an:text-[13px] an:text-secondary"><span class="an:h-2 an:w-2 an:rounded-full" style="background:var({{ $palette[$loop->index] ?? '--an-series-6' }})"></span>{{ DeviceLabel::for($device) }}</span>
                                 <span class="an:text-[13px]"><span class="an:font-semibold an:text-primary">{{ ((int) round($c / $deviceTotal * 100))."\u{00A0}%" }}</span> <span class="an:text-muted">{{ $c }}</span></span>
                             </div>
                         @endforeach
@@ -91,7 +92,7 @@
                                 <span><span class="an:font-semibold an:text-primary">{{ $pct."\u{00A0}%" }}</span> <span class="an:text-muted">{{ $c }}</span></span>
                             </div>
                             <div class="an:h-1 an:w-full an:overflow-hidden an:rounded-full an:bg-elevated">
-                                <div class="an:h-full an:rounded-full an:bg-[#1684ea]/70" style="width: {{ $pct }}%"></div>
+                                <div class="an:h-full an:rounded-full an:bg-series-1/70" style="width: {{ $pct }}%"></div>
                             </div>
                         </div>
                     @endforeach

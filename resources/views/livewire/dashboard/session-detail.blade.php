@@ -1,5 +1,6 @@
 @php
     use Falcon\Analytics\Enums\EventType;
+    use Falcon\Analytics\Support\ChartPalette;
     use Falcon\Analytics\Support\DeviceLabel;
 
     $value = fn ($raw) => filled($raw) ? $raw : null;
@@ -74,7 +75,7 @@
     ])->filter(fn ($v) => filled($v));
 
     // Time distribution donut (top pages + others).
-    $palette = ['#1684ea', '#4b9bf0', '#7cb8f2', '#a5cdf7', '#bcdcfa', '#d1d5db'];
+    $palette = ChartPalette::SERIES;
     $totalPageSeconds = array_sum($timePerPage);
     $segments = array_slice($timePerPage, 0, 5, true);
     $othersSeconds = array_sum(array_slice($timePerPage, 5, null, true));
@@ -200,7 +201,7 @@
                                     @if ($isPageview)
                                         <div class="an:mt-1.5 an:flex an:items-center an:gap-2">
                                             <div class="an:h-1 an:flex-1 an:overflow-hidden an:rounded-full an:bg-elevated">
-                                                <div class="an:h-full an:rounded-full an:bg-[#1684ea]" style="width: {{ $barPct }}%"></div>
+                                                <div class="an:h-full an:rounded-full an:bg-series-1" style="width: {{ $barPct }}%"></div>
                                             </div>
                                             <span class="an:w-14 an:shrink-0 an:text-right an:text-[11px] an:tabular-nums an:text-muted">{{ $formatSeconds($step['seconds']) }}</span>
                                         </div>
@@ -211,7 +212,7 @@
                                             @foreach ($step['children'] as $child)
                                                 @php $isConversion = $child->type === EventType::Custom; @endphp
                                                 <div class="an:flex an:items-center an:gap-2">
-                                                    <x-ui::icon :name="$isConversion ? 'bolt' : 'cursor-arrow-rays'" @class(['an:h-3.5 an:w-3.5 an:shrink-0', 'an:text-emerald-500' => $isConversion, 'an:text-[#1684ea]' => ! $isConversion]) />
+                                                    <x-ui::icon :name="$isConversion ? 'bolt' : 'cursor-arrow-rays'" @class(['an:h-3.5 an:w-3.5 an:shrink-0', 'an:text-emerald-500' => $isConversion, 'an:text-series-1' => ! $isConversion]) />
                                                     @php $childLabel = $eventLabel($child); @endphp
                                                     <span @class(['an:min-w-0 an:truncate an:text-[12px]', 'an:font-medium an:text-emerald-600 an:dark:text-emerald-400' => $isConversion, 'an:text-secondary' => ! $isConversion]) data-tooltip="{{ $childLabel }}">{{ $childLabel }}</span>
                                                     <span class="an:ml-auto an:shrink-0 an:text-[11px] an:tabular-nums an:text-muted">{{ $child->occurred_at->translatedFormat('H:i:s') }}</span>
@@ -274,7 +275,7 @@
                         <div class="an:min-w-0 an:flex-1 an:space-y-2">
                             @foreach ($segments as $pageLabel => $pageSeconds)
                                 <div class="an:flex an:items-center an:gap-2">
-                                    <span class="an:h-2 an:w-2 an:shrink-0 an:rounded-full" style="background: {{ $palette[$loop->index] ?? '#d1d5db' }}"></span>
+                                    <span class="an:h-2 an:w-2 an:shrink-0 an:rounded-full" style="background: var({{ $palette[$loop->index] ?? '--an-series-6' }})"></span>
                                     <span class="an:min-w-0 an:flex-1 an:truncate an:text-[12px] an:text-secondary">{{ $pageLabel }}</span>
                                     <span class="an:shrink-0 an:text-[12px] an:font-medium an:text-primary">{{ $formatSeconds($pageSeconds) }}</span>
                                 </div>

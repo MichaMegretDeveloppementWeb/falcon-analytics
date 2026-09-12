@@ -1,6 +1,6 @@
 @props([
     'values' => [],
-    'color' => '#1684ea',
+    'color' => '--an-series-1',
     'height' => 'an:h-8',
 ])
 
@@ -12,7 +12,11 @@
                  that pages without a chart never download. --}}
             await window.falconCharts();
 
-            const color = @js($color);
+            {{-- `color` is a token NAME · a canvas resolves no `var()`, so the
+                 page is asked what it currently holds. A sparkline draws no
+                 axis and no tooltip, so it has nothing else to ask for, and no
+                 theme observer: it is redrawn whole by its parent. --}}
+            const color = window.falconToken(@js($color));
             {{-- Chart kept on the DOM node, not in Alpine's reactive state (see area-chart). --}}
             this.$el._chart = new window.Chart(this.$refs.canvas, {
                 type: 'line',

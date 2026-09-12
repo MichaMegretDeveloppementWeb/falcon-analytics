@@ -23,7 +23,7 @@
                             </span>
                         </div>
                         <div class="an:mt-1.5 an:h-1 an:overflow-hidden an:rounded-full an:bg-elevated">
-                            <div class="an:h-full an:rounded-full an:bg-[#1684ea]/70" style="width: {{ $pct }}%"></div>
+                            <div class="an:h-full an:rounded-full an:bg-series-1/70" style="width: {{ $pct }}%"></div>
                         </div>
                     </div>
                 @empty

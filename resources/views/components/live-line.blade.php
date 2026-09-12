@@ -1,7 +1,7 @@
 @props([
     'labels' => [],
     'values' => [],
-    'color' => '#1684ea',
+    'color' => '--an-series-1',
     'height' => 'an:h-56',
     'event' => 'analytics-realtime-tick',
     'channel' => 'pulse',
@@ -17,15 +17,15 @@
     class="{{ $height }} an:w-full"
     x-data="{
         observer: null,
-        isDark: document.documentElement.classList.contains('dark'),
-        muted() { return this.isDark ? '#6b7280' : '#9ca3af'; },
-        grid() { return this.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(17,24,39,0.06)'; },
         async init() {
             {{-- Chart.js loads on demand: the kit ships it as a separate file
                  that pages without a chart never download. --}}
             await window.falconCharts();
 
-            const color = @js($color);
+            {{-- `color` is a token NAME · a canvas resolves no `var()`, so the
+                 page is asked what it currently holds. Ticks, grid and tooltip
+                 are not named at all: the kit's defaults carry them. --}}
+            const color = window.falconToken(@js($color));
             {{-- Chart kept on the DOM node, not in Alpine's reactive state (see area-chart). --}}
             this.$el._chart = new window.Chart(this.$refs.canvas, {
                 type: 'line',
@@ -40,7 +40,7 @@
                         pointRadius: 0,
                         pointHoverRadius: 4,
                         pointHoverBackgroundColor: color,
-                        pointHoverBorderColor: this.isDark ? '#111827' : '#ffffff',
+                        pointHoverBorderColor: window.falconToken('--ui-bg-surface'),
                         pointHoverBorderWidth: 2,
                         fill: true,
                         backgroundColor: (c) => {
@@ -59,42 +59,40 @@
                     interaction: { mode: 'index', intersect: false },
                     plugins: {
                         legend: { display: false },
-                        tooltip: {
-                            backgroundColor: this.isDark ? '#1f2937' : '#ffffff',
-                            titleColor: this.isDark ? '#f3f4f6' : '#111827',
-                            bodyColor: this.isDark ? '#d1d5db' : '#374151',
-                            borderColor: this.isDark ? '#374151' : '#e5e7eb',
-                            borderWidth: 1,
-                            padding: 8,
-                            cornerRadius: 6,
-                            displayColors: false,
-                            bodyFont: { size: 12 },
-                        },
+                        tooltip: { padding: 8, cornerRadius: 6, displayColors: false, bodyFont: { size: 12 } },
                     },
                     scales: {
                         x: {
                             grid: { display: false },
                             border: { display: false },
-                            ticks: { color: this.muted(), maxTicksLimit: 6, maxRotation: 0, font: { size: 11 } },
+                            ticks: { maxTicksLimit: 6, maxRotation: 0, font: { size: 11 } },
                         },
                         y: {
                             beginAtZero: true,
-                            grid: { color: this.grid() },
                             border: { display: false },
-                            ticks: { color: this.muted(), precision: 0, maxTicksLimit: 4, font: { size: 11 } },
+                            ticks: { precision: 0, maxTicksLimit: 4, font: { size: 11 } },
                         },
                     },
                 },
             });
 
+            {{-- A drawn chart holds its resolved values, so a theme switch has
+                 to be read again and written back. --}}
             this.observer = new MutationObserver(() => {
-                const dark = document.documentElement.classList.contains('dark');
-                if (dark === this.isDark || !this.$el._chart) return;
-                this.isDark = dark;
-                this.$el._chart.options.scales.x.ticks.color = this.muted();
-                this.$el._chart.options.scales.y.ticks.color = this.muted();
-                this.$el._chart.options.scales.y.grid.color = this.grid();
-                this.$el._chart.update('none');
+                if (!this.$el._chart) return;
+                const c = window.falconChartColors();
+                const chart = this.$el._chart;
+                chart.options.scales.x.ticks.color = c.tick;
+                chart.options.scales.y.ticks.color = c.tick;
+                chart.options.scales.y.grid.color = c.grid;
+                chart.data.datasets[0].pointHoverBorderColor = window.falconToken('--ui-bg-surface');
+                Object.assign(chart.options.plugins.tooltip, {
+                    backgroundColor: c.tooltipBg,
+                    titleColor: c.tooltipTitle,
+                    bodyColor: c.tooltipBody,
+                    borderColor: c.tooltipBorder,
+                });
+                chart.update('none');
             });
             this.observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
         },

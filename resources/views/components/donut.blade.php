@@ -17,21 +17,25 @@
     x-data="{
         chart: null,
         observer: null,
-        isDark: document.documentElement.classList.contains('dark'),
-        surface() { return this.isDark ? '#111827' : '#ffffff'; },
+        {{-- `colors` arrives as token NAMES, never as values · a canvas resolves
+             no `var()`, so the page is asked what each name currently holds. --}}
+        slices() { return @js(array_values($colors)).map(window.falconToken); },
         async init() {
             {{-- Chart.js loads on demand: the kit ships it as a separate file
                  that pages without a chart never download. --}}
             await window.falconCharts();
 
+            {{-- Nothing about the tooltip is named here. `charts.js` reads the
+                 kit's tokens and sets them as Chart.js's defaults, so it comes
+                 out looking like the rest of the suite on its own. --}}
             this.chart = new window.Chart(this.$refs.canvas, {
                 type: 'doughnut',
                 data: {
                     labels: @js(array_values($labels)),
                     datasets: [{
                         data: @js(array_values($values)),
-                        backgroundColor: @js(array_values($colors)),
-                        borderColor: this.surface(),
+                        backgroundColor: this.slices(),
+                        borderColor: window.falconToken('--ui-bg-surface'),
                         borderWidth: 2,
                         hoverOffset: 3,
                     }],
@@ -42,29 +46,24 @@
                     cutout: '72%',
                     plugins: {
                         legend: { display: false },
-                        tooltip: {
-                            backgroundColor: this.isDark ? '#1f2937' : '#ffffff',
-                            titleColor: this.isDark ? '#f3f4f6' : '#111827',
-                            bodyColor: this.isDark ? '#d1d5db' : '#374151',
-                            borderColor: this.isDark ? '#374151' : '#e5e7eb',
-                            borderWidth: 1,
-                            padding: 8,
-                            cornerRadius: 6,
-                            bodyFont: { size: 12 },
-                        },
+                        tooltip: { padding: 8, cornerRadius: 6, bodyFont: { size: 12 } },
                     },
                 },
             });
 
+            {{-- A drawn chart holds its resolved values, so a theme switch has
+                 to be read again and written back. --}}
             this.observer = new MutationObserver(() => {
-                const dark = document.documentElement.classList.contains('dark');
-                if (dark === this.isDark || !this.chart) return;
-                this.isDark = dark;
-                this.chart.data.datasets[0].borderColor = this.surface();
-                this.chart.options.plugins.tooltip.backgroundColor = dark ? '#1f2937' : '#ffffff';
-                this.chart.options.plugins.tooltip.titleColor = dark ? '#f3f4f6' : '#111827';
-                this.chart.options.plugins.tooltip.bodyColor = dark ? '#d1d5db' : '#374151';
-                this.chart.options.plugins.tooltip.borderColor = dark ? '#374151' : '#e5e7eb';
+                if (!this.chart) return;
+                const c = window.falconChartColors();
+                this.chart.data.datasets[0].backgroundColor = this.slices();
+                this.chart.data.datasets[0].borderColor = window.falconToken('--ui-bg-surface');
+                Object.assign(this.chart.options.plugins.tooltip, {
+                    backgroundColor: c.tooltipBg,
+                    titleColor: c.tooltipTitle,
+                    bodyColor: c.tooltipBody,
+                    borderColor: c.tooltipBorder,
+                });
                 this.chart.update('none');
             });
             this.observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });

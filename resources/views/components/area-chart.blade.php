@@ -2,10 +2,10 @@
     'labels' => [],
     'data' => [],
     'label' => '',
-    'color' => '#1684ea',
+    'color' => '--an-series-1',
     'data2' => [],
     'label2' => '',
-    'color2' => '#10b981',
+    'color2' => '--an-conversion',
     'height' => 'an:h-64',
 ])
 
@@ -18,16 +18,16 @@
 <div
     x-data="{
         observer: null,
-        isDark: document.documentElement.classList.contains('dark'),
-        muted() { return this.isDark ? '#6b7280' : '#9ca3af'; },
-        grid() { return this.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(17,24,39,0.06)'; },
         async init() {
             {{-- Chart.js loads on demand: the kit ships it as a separate file
                  that pages without a chart never download. --}}
             await window.falconCharts();
 
-            const color = @js($color);
-            const color2 = @js($color2);
+            {{-- Both colours are token NAMES · a canvas resolves no `var()`, so
+                 the page is asked what they currently hold. Ticks, grid and
+                 tooltip are not named at all: the kit's defaults carry them. --}}
+            const color = window.falconToken(@js($color));
+            const color2 = window.falconToken(@js($color2));
             const data2 = @js(array_values($data2));
             const hasSecond = data2.length > 0;
             {{-- The Chart instance lives on the DOM node, not in Alpine's reactive
@@ -43,7 +43,7 @@
                 pointRadius: 0,
                 pointHoverRadius: 4,
                 pointHoverBackgroundColor: color,
-                pointHoverBorderColor: this.isDark ? '#111827' : '#ffffff',
+                pointHoverBorderColor: window.falconToken('--ui-bg-surface'),
                 pointHoverBorderWidth: 2,
                 fill: true,
                 yAxisID: 'y',
@@ -67,20 +67,21 @@
                     pointRadius: 0,
                     pointHoverRadius: 4,
                     pointHoverBackgroundColor: color2,
-                    pointHoverBorderColor: this.isDark ? '#111827' : '#ffffff',
+                    pointHoverBorderColor: window.falconToken('--ui-bg-surface'),
                     pointHoverBorderWidth: 2,
                     fill: false,
                     yAxisID: 'y2',
                 });
             }
-            // No font family is named here or below: the kit sets the page's
-            // as Chart.js's default, and naming one would freeze it.
+            // No font and no colour are named here or below: the kit reads the
+            // page's and sets them as Chart.js's defaults, and naming one would
+            // freeze it against a host's theme.
             const scales = {
-                x: { border: { display: false }, grid: { display: false }, ticks: { maxTicksLimit: 8, maxRotation: 0, autoSkip: true, font: { size: 11 }, color: this.muted() } },
-                y: { beginAtZero: true, border: { display: false }, grid: { color: this.grid(), drawTicks: false }, ticks: { maxTicksLimit: 5, padding: 8, precision: 0, font: { size: 11 }, color: this.muted() } },
+                x: { border: { display: false }, grid: { display: false }, ticks: { maxTicksLimit: 8, maxRotation: 0, autoSkip: true, font: { size: 11 } } },
+                y: { beginAtZero: true, border: { display: false }, grid: { drawTicks: false }, ticks: { maxTicksLimit: 5, padding: 8, precision: 0, font: { size: 11 } } },
             };
             if (hasSecond) {
-                scales.y2 = { position: 'right', beginAtZero: true, border: { display: false }, grid: { display: false }, ticks: { maxTicksLimit: 5, padding: 8, precision: 0, font: { size: 11 }, color: this.muted() } };
+                scales.y2 = { position: 'right', beginAtZero: true, border: { display: false }, grid: { display: false }, ticks: { maxTicksLimit: 5, padding: 8, precision: 0, font: { size: 11 } } };
             }
             this.$el._chart = new window.Chart(this.$refs.canvas, {
                 type: 'line',
@@ -92,16 +93,10 @@
                     interaction: { mode: 'index', intersect: false },
                     plugins: {
                         legend: hasSecond
-                            ? { display: true, position: 'top', align: 'end', labels: { boxWidth: 8, boxHeight: 8, usePointStyle: true, pointStyle: 'circle', font: { size: 11 }, color: this.muted() } }
+                            ? { display: true, position: 'top', align: 'end', labels: { boxWidth: 8, boxHeight: 8, usePointStyle: true, pointStyle: 'circle', font: { size: 11 } } }
                             : { display: false },
                         tooltip: {
-                            backgroundColor: this.isDark ? '#1f2937' : '#ffffff',
-                            titleColor: this.isDark ? '#f3f4f6' : '#111827',
-                            bodyColor: this.isDark ? '#d1d5db' : '#374151',
-                            borderColor: this.isDark ? '#374151' : '#e5e7eb',
-                            borderWidth: 1,
                             padding: 10,
-                            cornerRadius: 8,
                             displayColors: hasSecond,
                             titleFont: { size: 12, weight: '600' },
                             bodyFont: { size: 12 },
@@ -111,20 +106,26 @@
                 },
             });
 
+            {{-- A drawn chart holds its resolved values, so a theme switch has
+                 to be read again and written back. --}}
             this.observer = new MutationObserver(() => {
-                const dark = document.documentElement.classList.contains('dark');
-                if (dark === this.isDark || !this.$el._chart) return;
-                this.isDark = dark;
+                if (!this.$el._chart) return;
+                const c = window.falconChartColors();
                 const o = this.$el._chart.options;
-                o.scales.x.ticks.color = this.muted();
-                o.scales.y.ticks.color = this.muted();
-                o.scales.y.grid.color = this.grid();
-                if (o.scales.y2) o.scales.y2.ticks.color = this.muted();
-                if (o.plugins.legend.labels) o.plugins.legend.labels.color = this.muted();
-                o.plugins.tooltip.backgroundColor = dark ? '#1f2937' : '#ffffff';
-                o.plugins.tooltip.titleColor = dark ? '#f3f4f6' : '#111827';
-                o.plugins.tooltip.bodyColor = dark ? '#d1d5db' : '#374151';
-                o.plugins.tooltip.borderColor = dark ? '#374151' : '#e5e7eb';
+                o.scales.x.ticks.color = c.tick;
+                o.scales.y.ticks.color = c.tick;
+                o.scales.y.grid.color = c.grid;
+                if (o.scales.y2) o.scales.y2.ticks.color = c.tick;
+                if (o.plugins.legend.labels) o.plugins.legend.labels.color = c.tick;
+                Object.assign(o.plugins.tooltip, {
+                    backgroundColor: c.tooltipBg,
+                    titleColor: c.tooltipTitle,
+                    bodyColor: c.tooltipBody,
+                    borderColor: c.tooltipBorder,
+                });
+                for (const dataset of this.$el._chart.data.datasets) {
+                    dataset.pointHoverBorderColor = window.falconToken('--ui-bg-surface');
+                }
                 this.$el._chart.update('none');
             });
             this.observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });

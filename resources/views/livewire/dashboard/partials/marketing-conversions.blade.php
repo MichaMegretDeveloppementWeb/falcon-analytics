@@ -38,7 +38,7 @@
                                     <div class="an:flex an:items-center an:gap-3">
                                         <span class="an:w-44 an:shrink-0 an:truncate an:text-[12px] an:text-secondary">{{ $si + 1 }}. {{ $step['label'] }}</span>
                                         <div class="an:relative an:h-1.5 an:flex-1 an:overflow-hidden an:rounded-full an:bg-elevated">
-                                            <div class="an:absolute an:inset-y-0 an:left-0 an:rounded-full an:bg-[#1684ea]/70" style="width: {{ max((int) round($step['count'] / $maxStep * 100), 2) }}%"></div>
+                                            <div class="an:absolute an:inset-y-0 an:left-0 an:rounded-full an:bg-series-1/70" style="width: {{ max((int) round($step['count'] / $maxStep * 100), 2) }}%"></div>
                                         </div>
                                         <span class="an:w-10 an:shrink-0 an:text-right an:text-[12px] an:font-medium an:text-secondary an:tabular-nums">{{ number_format($step['count'], 0, ',', ' ') }}</span>
                                     </div>

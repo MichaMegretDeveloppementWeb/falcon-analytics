@@ -4,10 +4,12 @@
 
     $subjectResolver = app(\Falcon\Analytics\Services\SubjectResolver::class);
 
-    // Reference palette (Wix): ink #000624, accent #116DFF, online #54CE91.
-    $ink = 'an:text-[#000624] an:dark:text-gray-100';
-    $inkMuted = 'an:text-[#000624]/40 an:dark:text-gray-500';
-    $inkSoft = 'an:text-[#44485F] an:dark:text-gray-400';
+    // The board's ink, in three weights. Tokens rather than literals, and no
+    // dark variant beside them: a token already carries both values, so the
+    // `an:dark:text-…` classes that used to sit here are gone.
+    $ink = 'an:text-ink';
+    $inkMuted = 'an:text-ink/40';
+    $inkSoft = 'an:text-ink-soft';
 
     $deviceIcon = fn (?string $type): string => match (strtolower((string) $type)) {
         'mobile' => 'device-phone-mobile',
@@ -55,18 +57,18 @@
                             @click="tab = 'window'; $dispatch('analytics-realtime-mode', { mode: 'window' })"
                             class="an:flex-1 an:cursor-pointer an:border-b-[3px] an:pb-3 an:pr-4 an:pt-3 an:text-left an:transition-colors an:sm:pr-6"
                             {{-- `window` is a tab name, not a class; the other two are. --}}
-                            :class="tab === 'window' ? 'an:border-[#116DFF]' : 'an:border-transparent'">
+                            :class="tab === 'window' ? 'an:border-accent' : 'an:border-transparent'">
                         <span class="an:block an:text-[14px] an:font-medium {{ $ink }}">{{ __('Visiteurs (:count dernières minutes)', ['count' => $windowMinutes]) }}</span>
                         <span class="an:mt-0.5 an:block an:text-[21px] an:font-bold an:leading-6 {{ $ink }}">{{ number_format($window['visitors'], 0, ',', ' ') }}</span>
                     </button>
                     <button type="button"
                             @click="tab = 'online'; $dispatch('analytics-realtime-mode', { mode: 'online' })"
                             class="an:flex-1 an:cursor-pointer an:border-b-[3px] an:pb-3 an:pt-3 an:text-left an:transition-colors"
-                            :class="tab === 'online' ? 'an:border-[#116DFF]' : 'an:border-transparent'">
+                            :class="tab === 'online' ? 'an:border-accent' : 'an:border-transparent'">
                         <span class="an:block an:text-[14px] an:font-medium {{ $ink }}">{{ __('Visiteurs en ligne') }}</span>
                         <span class="an:mt-0.5 an:flex an:items-center an:gap-x-2 an:text-[21px] an:font-bold an:leading-6 {{ $ink }}">
                             {{ number_format($onlineCount, 0, ',', ' ') }}
-                            <span class="an:h-2.5 an:w-2.5 an:rounded-full an:bg-[#54CE91] an:ring-4 an:ring-[#54CE91]/20"></span>
+                            <span class="an:h-2.5 an:w-2.5 an:rounded-full an:bg-online an:ring-4 an:ring-online/20"></span>
                         </span>
                     </button>
                 </div>
@@ -177,12 +179,12 @@
                             <div class="an:flex an:items-center an:gap-3">
                                 <span class="an:min-w-0 an:flex-1 an:truncate an:text-[14px] {{ $ink }} an:sm:w-56 an:sm:flex-none"><x-analytics::page-url :url="$item['url']" /></span>
                                 <div class="an:relative an:hidden an:h-1.5 an:flex-1 an:overflow-hidden an:rounded-full an:bg-elevated an:sm:block">
-                                    <div class="an:absolute an:inset-y-0 an:left-0 an:rounded-full an:bg-[#116DFF]/70" style="width: {{ $pct }}%"></div>
+                                    <div class="an:absolute an:inset-y-0 an:left-0 an:rounded-full an:bg-accent/70" style="width: {{ $pct }}%"></div>
                                 </div>
                                 <span class="an:w-10 an:shrink-0 an:text-right an:text-[13px] an:font-medium {{ $ink }}">{{ number_format($item['total'], 0, ',', ' ') }}</span>
                             </div>
                             <div class="an:relative an:mt-1.5 an:h-1.5 an:w-full an:overflow-hidden an:rounded-full an:bg-elevated an:sm:hidden">
-                                <div class="an:absolute an:inset-y-0 an:left-0 an:rounded-full an:bg-[#116DFF]/70" style="width: {{ $pct }}%"></div>
+                                <div class="an:absolute an:inset-y-0 an:left-0 an:rounded-full an:bg-accent/70" style="width: {{ $pct }}%"></div>
                             </div>
                         </div>
                     @empty
@@ -200,7 +202,7 @@
                         <span class="an:text-[11px] {{ $inkMuted }}">{{ __('pic :count/min', ['count' => number_format($peakMinute, 0, ',', ' ')]) }}</span>
                     </div>
                 </div>
-                <x-analytics::live-line :labels="array_keys($minuteSeries)" :values="array_values($minuteSeries)" channel="pulse" color="#116DFF" height="an:h-48" />
+                <x-analytics::live-line :labels="array_keys($minuteSeries)" :values="array_values($minuteSeries)" channel="pulse" color="--an-accent" height="an:h-48" />
             </x-ui::card>
         </div>
 
@@ -233,14 +235,14 @@
                                         <span class="an:flex an:items-center an:gap-x-1.5">
                                             <span class="an:truncate an:text-[14px] an:font-medium {{ $ink }}">{{ $who }}</span>
                                             @if ($isOnline)
-                                                <span class="an:h-1.5 an:w-1.5 an:shrink-0 an:rounded-full an:bg-[#54CE91]"></span>
+                                                <span class="an:h-1.5 an:w-1.5 an:shrink-0 an:rounded-full an:bg-online"></span>
                                             @endif
                                         </span>
                                         <span class="an:block an:truncate an:text-[12px] {{ $inkMuted }}">
                                             {{ $listTime($session->last_activity_at) }}@if ($session->city) · {{ $session->city }}@endif
                                         </span>
                                     </span>
-                                    <span class="an:flex an:h-8 an:w-8 an:shrink-0 an:items-center an:justify-center an:rounded-full an:border an:border-[#116DFF]/30 an:text-[#116DFF]">
+                                    <span class="an:flex an:h-8 an:w-8 an:shrink-0 an:items-center an:justify-center an:rounded-full an:border an:border-accent/30 an:text-accent">
                                         <x-ui::icon name="chevron-right" class="an:h-4 an:w-4" />
                                     </span>
                                 </a>
@@ -279,11 +281,11 @@
                             <li wire:key="rt-feed-{{ $event->id }}">
                                 <a href="{{ $event->session_id !== null ? route('analytics.admin.sessions.show', $event->session_id) : '#' }}"
                                    class="an:flex an:cursor-pointer an:items-start an:gap-3 an:px-5 an:py-3 an:transition-colors an:hover:bg-elevated/50">
-                                    <span class="an:mt-0.5 an:flex an:h-7 an:w-7 an:shrink-0 an:items-center an:justify-center an:rounded-lg {{ $isConversion ? 'an:bg-[#54CE91]/15' : 'an:bg-elevated' }}">
-                                        <x-ui::icon :name="$feedIcon($event)" class="an:h-3.5 an:w-3.5 {{ $isConversion ? 'an:text-[#22A96F]' : $inkSoft }}" />
+                                    <span class="an:mt-0.5 an:flex an:h-7 an:w-7 an:shrink-0 an:items-center an:justify-center an:rounded-lg {{ $isConversion ? 'an:bg-online/15' : 'an:bg-elevated' }}">
+                                        <x-ui::icon :name="$feedIcon($event)" class="an:h-3.5 an:w-3.5 {{ $isConversion ? 'an:text-online-strong' : $inkSoft }}" />
                                     </span>
                                     <span class="an:min-w-0 an:flex-1">
-                                        <span class="an:block an:truncate an:text-[14px] an:font-medium {{ $isConversion ? 'an:text-[#22A96F]' : $ink }}">
+                                        <span class="an:block an:truncate an:text-[14px] an:font-medium {{ $isConversion ? 'an:text-online-strong' : $ink }}">
                                             {{ $action }}@if ($event->type === EventType::Pageview && filled($event->url)) · <x-analytics::page-url :url="$event->url" />@endif
                                         </span>
                                         <span class="an:block an:truncate an:text-[12px] {{ $inkMuted }}">{{ $who }} · {{ $listTime($event->occurred_at) }}</span>

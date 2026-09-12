@@ -11,6 +11,7 @@ use Falcon\Analytics\Livewire\Admin\Concerns\ResolvesSubjectNames;
 use Falcon\Analytics\Repositories\Dashboard\RealtimeReadRepository;
 use Falcon\Analytics\Services\Dashboard\SessionSubjectAttributor;
 use Falcon\Analytics\Services\SubjectResolver;
+use Falcon\Analytics\Support\ChartPalette;
 use Falcon\Analytics\Support\DeviceLabel;
 use Falcon\Analytics\Support\SourceLabel;
 use Illuminate\Contracts\View\View;
@@ -31,7 +32,9 @@ final class RealtimePage extends Component
     use RecoversFromReadFailure;
     use ResolvesSubjectNames;
 
-    private const PALETTE = ['#116DFF', '#54CE91', '#8AB5FF', '#C9DBFF', '#DDE1E6', '#EFF1F5'];
+    // The ramp's names, never its colours: the values live in the package's
+    // theme, in both modes, and the chart asks the page what each name holds.
+    // See {@see ChartPalette}.
 
     /** Bound of the "Pays" list next to the map. */
     private const MAX_COUNTRY_ROWS = 8;
@@ -166,8 +169,8 @@ final class RealtimePage extends Component
     }
 
     /**
-     * Doughnut-ready series from a breakdown: display labels, values, one
-     * palette colour per slice, the session sum and the category count.
+     * Doughnut-ready series from a breakdown: display labels, values, one ramp
+     * token per slice, the session sum and the category count.
      *
      * @param  list<array{label: string, total: int}>  $breakdown
      * @param  callable(string): string  $labelFor
@@ -177,12 +180,11 @@ final class RealtimePage extends Component
     {
         $labels = [];
         $values = [];
-        $colors = [];
+        $colors = ChartPalette::steps(count($breakdown), ChartPalette::LIVE);
 
-        foreach ($breakdown as $index => $row) {
+        foreach ($breakdown as $row) {
             $labels[] = $labelFor($row['label']);
             $values[] = $row['total'];
-            $colors[] = self::PALETTE[$index] ?? '#d1d5db';
         }
 
         return [

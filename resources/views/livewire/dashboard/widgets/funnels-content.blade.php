@@ -61,7 +61,7 @@
                                 </div>
                             </div>
                             <div class="an:mt-1.5 an:h-2 an:w-full an:overflow-hidden an:rounded-full an:bg-elevated">
-                                <div class="an:h-full an:rounded-full an:bg-[#1684ea]" style="width: {{ max($pct, 2) }}%"></div>
+                                <div class="an:h-full an:rounded-full an:bg-series-1" style="width: {{ max($pct, 2) }}%"></div>
                             </div>
                             {{-- Parallel branches: which way in visitors actually took. --}}
                             @if ($step->branches !== [])

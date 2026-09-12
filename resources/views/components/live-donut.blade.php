@@ -20,22 +20,26 @@
     x-data="{
         observer: null,
         total: @js((string) $total),
-        isDark: document.documentElement.classList.contains('dark'),
-        surface() { return this.isDark ? '#111827' : '#ffffff'; },
+        {{-- Token NAMES in, values out · a canvas resolves no `var()`, so the
+             page is asked what each name currently holds. Used both at first
+             draw and on every live refresh, the names travelling with the
+             payload just as they came from the view. --}}
+        resolve(names) { return (names ?? []).map(window.falconToken); },
         async init() {
             {{-- Chart.js loads on demand: the kit ships it as a separate file
                  that pages without a chart never download. --}}
             await window.falconCharts();
 
-            {{-- Chart kept on the DOM node, not in Alpine's reactive state (see area-chart). --}}
+            {{-- Chart kept on the DOM node, not in Alpine's reactive state (see area-chart).
+                 Nothing about the tooltip is named: the kit's defaults carry it. --}}
             this.$el._chart = new window.Chart(this.$refs.canvas, {
                 type: 'doughnut',
                 data: {
                     labels: @js(array_values($labels)),
                     datasets: [{
                         data: @js(array_values($values)),
-                        backgroundColor: @js(array_values($colors)),
-                        borderColor: this.surface(),
+                        backgroundColor: this.resolve(@js(array_values($colors))),
+                        borderColor: window.falconToken('--ui-bg-surface'),
                         borderWidth: 2,
                         hoverOffset: 3,
                     }],
@@ -46,40 +50,42 @@
                     cutout: '72%',
                     plugins: {
                         legend: { display: false },
-                        tooltip: {
-                            backgroundColor: this.isDark ? '#1f2937' : '#ffffff',
-                            titleColor: this.isDark ? '#f3f4f6' : '#111827',
-                            bodyColor: this.isDark ? '#d1d5db' : '#374151',
-                            borderColor: this.isDark ? '#374151' : '#e5e7eb',
-                            borderWidth: 1,
-                            padding: 8,
-                            cornerRadius: 6,
-                            bodyFont: { size: 12 },
-                        },
+                        tooltip: { padding: 8, cornerRadius: 6, bodyFont: { size: 12 } },
                     },
                 },
             });
 
+            {{-- A drawn chart holds its resolved values, so a theme switch has
+                 to be read again and written back. --}}
             this.observer = new MutationObserver(() => {
-                const dark = document.documentElement.classList.contains('dark');
-                if (dark === this.isDark || !this.$el._chart) return;
-                this.isDark = dark;
-                this.$el._chart.data.datasets[0].borderColor = this.surface();
-                this.$el._chart.options.plugins.tooltip.backgroundColor = dark ? '#1f2937' : '#ffffff';
-                this.$el._chart.options.plugins.tooltip.titleColor = dark ? '#f3f4f6' : '#111827';
-                this.$el._chart.options.plugins.tooltip.bodyColor = dark ? '#d1d5db' : '#374151';
-                this.$el._chart.options.plugins.tooltip.borderColor = dark ? '#374151' : '#e5e7eb';
+                if (!this.$el._chart) return;
+                const c = window.falconChartColors();
+                const dataset = this.$el._chart.data.datasets[0];
+                dataset.backgroundColor = this.resolve(this.$el._names);
+                dataset.borderColor = window.falconToken('--ui-bg-surface');
+                Object.assign(this.$el._chart.options.plugins.tooltip, {
+                    backgroundColor: c.tooltipBg,
+                    titleColor: c.tooltipTitle,
+                    bodyColor: c.tooltipBody,
+                    borderColor: c.tooltipBorder,
+                });
                 this.$el._chart.update('none');
             });
             this.observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+            {{-- The names the last payload brought, kept beside the chart so a
+                 theme switch can resolve them again. On the DOM node and not in
+                 Alpine's state, for the same reason the chart is. --}}
+            this.$el._names = @js(array_values($colors));
         },
         refresh(detail) {
             const payload = (Array.isArray(detail) ? detail[0] : detail)?.[@js($channel)];
             if (!payload || !this.$el._chart) return;
             this.total = payload.total;
+            this.$el._names = payload.colors;
             this.$el._chart.data.labels = payload.labels;
             this.$el._chart.data.datasets[0].data = payload.values;
-            this.$el._chart.data.datasets[0].backgroundColor = payload.colors;
+            this.$el._chart.data.datasets[0].backgroundColor = this.resolve(payload.colors);
             this.$el._chart.update('none');
         },
         destroy() {

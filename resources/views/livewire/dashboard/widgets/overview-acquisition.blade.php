@@ -1,9 +1,10 @@
 @php
+    use Falcon\Analytics\Support\ChartPalette;
     use Falcon\Analytics\Support\SourceLabel;
 
     $sourcesTotal = array_sum(array_column($topSources, 'total'));
     $localitiesTotal = array_sum(array_column($topLocalities, 'total'));
-    $sourcePalette = ['#1684ea', '#54a8f0', '#7cb8f2', '#a5cdf6', '#bcdcfa', '#d7e9fc'];
+    $sourcePalette = ChartPalette::SERIES;
 @endphp
 
 {{-- The root wraps the card rather than replacing it: the card is a component
@@ -28,7 +29,7 @@
                     <dl class="an:grid an:min-w-0 an:max-w-[19rem] an:flex-1 an:grid-cols-[minmax(0,1fr)_auto] an:items-center an:gap-x-5 an:gap-y-2.5">
                         @foreach ($topSources as $item)
                             <dt class="an:flex an:min-w-0 an:items-center an:gap-2 an:text-[13px] an:text-secondary">
-                                <span class="an:h-2 an:w-2 an:shrink-0 an:rounded-full" style="background:{{ $sourcePalette[$loop->index] ?? '#d1d5db' }}"></span>
+                                <span class="an:h-2 an:w-2 an:shrink-0 an:rounded-full" style="background:var({{ $sourcePalette[$loop->index] ?? '--an-series-6' }})"></span>
                                 <span class="an:truncate"><x-analytics::source :value="$item['label']" /></span>
                             </dt>
                             <dd class="an:flex an:shrink-0 an:items-center an:gap-2">

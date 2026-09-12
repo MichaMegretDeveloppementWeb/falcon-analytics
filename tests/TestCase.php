@@ -31,7 +31,7 @@ abstract class TestCase extends Orchestra
     }
 
     /**
-     * Publish the compiled files, when they are missing.
+     * Publish the compiled files whenever the copy is not the shipped one.
      *
      * **The kit refuses to build the address of a file the host has not
      * published**, and it is right to: an absent or stale copy would serve last
@@ -42,32 +42,43 @@ abstract class TestCase extends Orchestra
      * would say nothing about the tag or the destination directory, and those
      * are precisely what we want held.
      *
-     * **The condition is on the files, not on a process flag.** It therefore
-     * recovers on its own if something removes the copy along the way; a flag
+     * **Missing was not enough, and that cost a whole afternoon.** The
+     * condition used to be "the file is not there", so a `npm run build` left
+     * the bench holding the previous stylesheet and the suite failed on the
+     * kit's staleness guard — in the middle of tests about something else
+     * entirely. Comparing the bytes is what the guard itself compares, so the
+     * bench now republishes for exactly the reasons the kit raises.
+     *
+     * **The condition is on the files, not on a process flag**, so it recovers
+     * on its own if something removes or replaces a copy along the way. A flag
      * would leave every following test without a stylesheet, and their failure
      * would not speak of it.
      *
-     * Before, the kit's files were only there because a `vendor:publish` run by
-     * hand one day had left them. A `composer install` wiped them, and the
-     * suite fell over an error that said nothing about itself.
+     * Before any of this, the kit's files were only there because a
+     * `vendor:publish` run by hand one day had left them. A `composer install`
+     * wiped them, and the suite fell over an error that said nothing about
+     * itself.
      */
     private function publishTheCompiledFiles(): void
     {
         // A shipped file missing from this list would never be published: the
-        // existing copy would be enough to conclude. It happened the day the
-        // package gained its script.
-        $expected = [
-            public_path('vendor/falcon/ui/ui.css'),
-            public_path('vendor/falcon/analytics/analytics.css'),
-            public_path('vendor/falcon/analytics/analytics.js'),
+        // others being in order would be enough to conclude. It happened the
+        // day the package gained its script.
+        $shipped = [
+            public_path('vendor/falcon/ui/ui.css') => dirname(__DIR__).'/vendor/falcon/ui-kit/public/ui.css',
+            public_path('vendor/falcon/analytics/analytics.css') => dirname(__DIR__).'/public/analytics.css',
+            public_path('vendor/falcon/analytics/analytics.js') => dirname(__DIR__).'/public/analytics.js',
         ];
 
-        foreach ($expected as $file) {
-            if (! is_file($file)) {
-                $this->artisan('vendor:publish', ['--tag' => 'laravel-assets', '--force' => true])->run();
-
-                return;
+        foreach ($shipped as $published => $source) {
+            if (is_file($published) && is_file($source) && filesize($published) === filesize($source)
+                && md5_file($published) === md5_file($source)) {
+                continue;
             }
+
+            $this->artisan('vendor:publish', ['--tag' => 'laravel-assets', '--force' => true])->run();
+
+            return;
         }
     }
 

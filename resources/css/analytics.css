@@ -24,6 +24,11 @@
    installer hands to hosts. */
 @import '../../vendor/falcon/ui-kit/resources/css/theme.css' layer(theme) prefix(an);
 
+/* And the package's own tokens · only what the kit has no opinion about. Their
+   values live there, in both themes, and their mapping beside them, so a view
+   writes `an:bg-accent` and a host redefines the value without a build. */
+@import './theme.css' prefix(an);
+
 /* Neither typeface nor reset: the kit carries those for the whole suite.
    Declaring a typeface would repaint every paragraph of the page, and two
    resets on one page fight each other. */
