@@ -140,6 +140,24 @@ final class SubjectResolver
     }
 
     /**
+     * Where a guard's names are read from, for whoever needs to check it.
+     *
+     * The diagnostic asks this to say whether the columns a host named exist.
+     * It goes through the same derivation the reads use rather than repeating
+     * it: a second copy of this logic would answer differently the day one of
+     * them changes, and the diagnostic would then approve an installation that
+     * does not work.
+     *
+     * @return array{0: string, 1: string}|null
+     */
+    public function sourceFor(string $guard): ?array
+    {
+        $config = config("analytics.identity.subjects.{$guard}");
+
+        return $this->source($guard, is_array($config) ? $config : []);
+    }
+
+    /**
      * The table and key for a guard, from an explicit config override or derived
      * from the guard's auth provider model.
      *

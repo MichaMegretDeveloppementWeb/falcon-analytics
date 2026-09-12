@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Console;
 
+use Falcon\Analytics\Services\SubjectResolver;
 use Falcon\Ui\Assets;
 use Falcon\Ui\Exceptions\UiException;
 use Illuminate\Console\Command;
@@ -12,6 +13,7 @@ use Illuminate\Database\Migrations\Migrator;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
 use Illuminate\View\Compilers\ComponentTagCompiler;
 use Illuminate\View\FileViewFinder;
@@ -77,6 +79,8 @@ final class CheckCommand extends Command
             $this->checkModuleMiddleware($config),
             $this->checkAreaLayout($config),
             $this->checkPublishedAssets(),
+            $this->checkIdentity($config),
+            $this->checkProxy(),
             $this->checkGeoip($config),
         ];
     }
@@ -361,6 +365,145 @@ final class CheckCommand extends Command
         return [
             'analytics.admin' => 'Tableau de bord',
             'analytics.admin.marketing' => 'Marketing',
+        ];
+    }
+
+    /**
+     * The identity block, which is the one thing a host still fills by hand.
+     *
+     * **A guard named here that does not exist is dropped in silence.** The
+     * subject resolution filters the configured names against `auth.guards`,
+     * which is the right behaviour at runtime — a typo must not break a page —
+     * and the worst possible behaviour for whoever set it: every visitor stays
+     * anonymous, no screen is empty, and nothing says why.
+     *
+     * The named columns are checked the same way. They are read from the
+     * guard's own table, and a column that is not there yields no name: the
+     * screens then show « Client #12 » forever.
+     *
+     * @return array{0: string, 1: string, 2: string}
+     */
+    private function checkIdentity(Config $config): array
+    {
+        $declared = array_keys((array) $config->get('auth.guards', []));
+
+        $unknown = [];
+
+        foreach (['subject_guards', 'exclude_guards'] as $key) {
+            foreach ((array) $config->get("analytics.identity.{$key}", []) as $guard) {
+                if (is_string($guard) && ! in_array($guard, $declared, true)) {
+                    $unknown[] = "{$guard} ({$key})";
+                }
+            }
+        }
+
+        if ($unknown !== []) {
+            return [
+                'Identité',
+                'KO',
+                'Ces guards sont nommés mais n’existent pas dans auth.guards : '.implode(', ', $unknown).'. '
+                .'Ils sont ignorés en silence, donc personne n’est identifié ni exclu par eux.',
+            ];
+        }
+
+        $missing = $this->columnsThatDoNotExist($config);
+
+        if ($missing !== []) {
+            return [
+                'Identité',
+                'KO',
+                'Ces colonnes de nom sont introuvables : '.implode(', ', $missing).'. '
+                .'Les écrans afficheront le libellé suivi de l’identifiant, sans jamais le nom.',
+            ];
+        }
+
+        $subjects = (array) $config->get('analytics.identity.subject_guards', []);
+
+        if ($subjects === []) {
+            return ['Identité', 'OK', 'Aucun sujet suivi : les visiteurs restent anonymes, ce qui est un choix valable.'];
+        }
+
+        return ['Identité', 'OK', 'Guards et colonnes de nom vérifiés : '.implode(', ', array_map('strval', $subjects)).'.'];
+    }
+
+    /**
+     * The name columns a host declared that its own table does not carry.
+     *
+     * The table comes from the resolver rather than from a second derivation
+     * here: it reads an explicit override, or the guard's auth provider model.
+     * A guard whose source cannot be resolved at all is not a fault — a host
+     * may want the label alone.
+     *
+     * @return list<string>
+     */
+    private function columnsThatDoNotExist(Config $config): array
+    {
+        $resolver = app(SubjectResolver::class);
+        $missing = [];
+
+        foreach ((array) $config->get('analytics.identity.subjects', []) as $guard => $settings) {
+            if (! is_string($guard) || ! is_array($settings)) {
+                continue;
+            }
+
+            $source = $resolver->sourceFor($guard);
+
+            if ($source === null) {
+                continue;
+            }
+
+            [$table] = $source;
+
+            foreach ([...(array) ($settings['name'] ?? []), ...(array) ($settings['fallback'] ?? [])] as $column) {
+                if (! is_string($column)) {
+                    continue;
+                }
+
+                try {
+                    $exists = Schema::hasColumn($table, $column);
+                } catch (Throwable) {
+                    // No reachable table is another point's business, not this
+                    // one's: the migrations check speaks first.
+                    return [];
+                }
+
+                if (! $exists) {
+                    $missing[] = "{$table}.{$column}";
+                }
+            }
+        }
+
+        return $missing;
+    }
+
+    /**
+     * Trusted proxies, the last thing asked of a host, and the one that makes
+     * a dashboard lie rather than stay empty.
+     *
+     * Behind a reverse proxy without that setting, every visit carries the
+     * proxy's address: one visitor, one country, one city, for the whole site.
+     * The numbers stay plausible, which is what makes it expensive to find.
+     *
+     * It cannot be settled from the console — no request is in flight, and the
+     * setting only shows when a forwarded header arrives. So this point says
+     * what to look at rather than pretending to a verdict, and stays out of the
+     * blocking count.
+     *
+     * @return array{0: string, 1: string, 2: string}
+     */
+    private function checkProxy(): array
+    {
+        $trusted = config('trustedproxy.proxies') ?? config('app.trusted_proxies');
+
+        if ($trusted !== null && $trusted !== [] && $trusted !== '') {
+            return ['Proxy', 'OK', 'Des proxies de confiance sont déclarés : la vraie adresse du visiteur est lue.'];
+        }
+
+        return [
+            'Proxy',
+            'À voir',
+            'Aucun proxy de confiance déclaré. Derrière un reverse proxy, toutes les visites porteront '
+            .'son adresse · un seul visiteur, un seul pays. Sans proxy, il n’y a rien à faire.',
         ];
     }
 

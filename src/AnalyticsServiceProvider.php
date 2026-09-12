@@ -19,6 +19,7 @@ use Falcon\Analytics\Support\GeoResolver;
 use Falcon\Ui\AssetRegistry;
 use Falcon\Ui\Config\CompletesDefaults;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -84,6 +85,7 @@ final class AnalyticsServiceProvider extends ServiceProvider
         $this->app->make(AssetRegistry::class)->register('analytics', __DIR__.'/../public');
 
         $this->registerPersistentMiddleware();
+        $this->exemptTheConsentCookie();
 
         /*
          * The components, under a single prefix and through two mechanisms.
@@ -232,6 +234,30 @@ final class AnalyticsServiceProvider extends ServiceProvider
         $value = config($key);
 
         return is_string($value) && $value !== '' ? $value : $fallback;
+    }
+
+    /**
+     * The consent cookie, exempted from encryption by the package itself.
+     *
+     * A consent banner writes that cookie in JavaScript, so in clear. Read back
+     * through `EncryptCookies` it decrypts to `null`, consent is never seen, and
+     * **every visitor stays session-scoped without a word** — the exact symptom
+     * of having forgotten the exemption.
+     *
+     * This used to be a line the host had to add to `bootstrap/app.php`, and it
+     * was the most silent of the four things asked of it. The kit already does
+     * the same for its own three cookies; a package can do it for its own.
+     *
+     * Nothing happens while no cookie is named: with no consent cookie, the
+     * package never promotes a visitor anyway.
+     */
+    private function exemptTheConsentCookie(): void
+    {
+        $cookie = config('analytics.identity.consent_cookie');
+
+        if (is_string($cookie) && $cookie !== '' && class_exists(EncryptCookies::class)) {
+            EncryptCookies::except([$cookie]);
+        }
     }
 
     /**

@@ -127,7 +127,6 @@ final class InstallCommand extends Command
         $this->components->bulletList([
             'Poser @analyticsCollector dans le gabarit public que vous voulez mesurer',
             'Renseigner vos guards et votre cookie de consentement dans le bloc identity de config/analytics.php',
-            'Exclure ce cookie du chiffrement (bootstrap/app.php, encryptCookies except) pour qu’il soit lisible',
             'Derrière un proxy, régler TrustProxies pour que la vraie IP du client soit utilisée',
         ]);
 

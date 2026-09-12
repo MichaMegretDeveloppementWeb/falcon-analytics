@@ -210,6 +210,81 @@ final class TheDiagnosticSpeaksTest extends TestCase
     }
 
     /**
+     * The identity block is the one thing a host still fills by hand, and a
+     * typo in it is the quietest failure of the whole installation.
+     *
+     * The subject resolution filters the configured guards against
+     * `auth.guards`, which is right at runtime — a typo must not break a page.
+     * The cost is that every visitor then stays anonymous, no screen is empty,
+     * and nothing says why.
+     */
+    public function test_it_says_when_a_named_guard_does_not_exist(): void
+    {
+        config(['analytics.identity.subject_guards' => ['client', 'cliennt']]);
+
+        $this->artisan('analytics:check')
+            ->expectsOutputToContain('cliennt')
+            ->assertFailed();
+    }
+
+    /** An excluded guard that does not exist excludes nobody, just as quietly. */
+    public function test_it_says_when_an_excluded_guard_does_not_exist(): void
+    {
+        config(['analytics.identity.exclude_guards' => ['admin', 'staf']]);
+
+        $this->artisan('analytics:check')
+            ->expectsOutputToContain('staf')
+            ->assertFailed();
+    }
+
+    /**
+     * A name column the guard's own table does not carry.
+     *
+     * The screens then show the label and the id — « Client #12 » — for as long
+     * as nobody looks. The table is asked of the resolver, so the diagnostic
+     * and the reads cannot come to disagree.
+     */
+    public function test_it_says_when_a_name_column_does_not_exist(): void
+    {
+        config(['analytics.identity.subjects.client' => [
+            'label' => 'Client',
+            'name' => ['first_name', 'nom_de_famille'],
+        ]]);
+
+        $this->artisan('analytics:check')
+            ->expectsOutputToContain('nom_de_famille')
+            ->assertFailed();
+    }
+
+    /** Tracking nobody is a valid choice, and it is not reported as a fault. */
+    public function test_it_accepts_an_installation_that_tracks_no_subject(): void
+    {
+        config([
+            'analytics.identity.subject_guards' => [],
+            'analytics.identity.subjects' => [],
+        ]);
+
+        $this->artisan('analytics:check')->assertSuccessful();
+    }
+
+    /**
+     * Trusted proxies cannot be settled from a console, and the point says so
+     * rather than pretending to a verdict · it never blocks.
+     *
+     * Behind a reverse proxy without that setting, every visit carries the
+     * proxy's address: one visitor, one country, for the whole site. The
+     * numbers stay plausible, which is what makes it expensive to find.
+     */
+    public function test_it_points_at_the_proxy_setting_without_blocking_on_it(): void
+    {
+        config(['trustedproxy.proxies' => null, 'app.trusted_proxies' => null]);
+
+        $this->artisan('analytics:check')
+            ->expectsOutputToContain('proxy')
+            ->assertSuccessful();
+    }
+
+    /**
      * Geolocation is only a defect if it was asked for.
      *
      * With no key the feature is off and its absence is normal; a key set
