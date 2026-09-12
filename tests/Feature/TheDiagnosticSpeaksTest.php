@@ -89,6 +89,25 @@ final class TheDiagnosticSpeaksTest extends TestCase
             ->assertFailed();
     }
 
+    /**
+     * The case every existing installation lands in, and the one where a
+     * generic answer would be least useful.
+     *
+     * Blade does not reject an unknown directive: it copies it to the output
+     * as it stands, which was measured rather than assumed. So a host left on
+     * the old name does not merely stop measuring — it prints the raw text
+     * `@analyticsConfig` on its public pages. The diagnostic has to name the
+     * view, or the reader goes looking for something that is already there.
+     */
+    public function test_it_names_the_view_left_on_the_former_directive(): void
+    {
+        File::put(resource_path('views/layouts/web.blade.php'), '<body>@analyticsConfig</body>');
+
+        $this->artisan('analytics:check')
+            ->expectsOutputToContain('layouts/web.blade.php')
+            ->assertFailed();
+    }
+
     /** La directive posee dans un `vendor/` n'est pas la notre. */
     public function test_it_does_not_accept_the_directive_found_in_a_package_view(): void
     {

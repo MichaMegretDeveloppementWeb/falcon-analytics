@@ -202,16 +202,42 @@ final class CheckCommand extends Command
             }
         }
 
+        // The name the directive carried until the collector became a compiled
+        // file of its own. Worth naming separately, because Blade does not
+        // treat an unknown directive as an error: it copies it to the output
+        // as it stands. A host left on the old name therefore shows the raw
+        // text `@analyticsConfig` to its visitors, and the generic message
+        // below would send it looking for something that is right there.
+        $staleDirective = null;
+
         foreach (array_unique($paths) as $path) {
             if (! File::isDirectory($path)) {
                 continue;
             }
 
             foreach (File::allFiles($path) as $file) {
-                if (str_contains(File::get($file->getPathname()), '@analyticsCollector')) {
+                $contents = File::get($file->getPathname());
+
+                if (str_contains($contents, '@analyticsCollector')) {
                     return ['Collecteur', 'OK', 'La directive @analyticsCollector est posée dans vos vues.'];
                 }
+
+                if ($staleDirective === null && str_contains($contents, '@analyticsConfig')) {
+                    // Slashes, on every platform: this path is read by a human
+                    // and quoted in the documentation, not handed to the disk.
+                    $staleDirective = str_replace('\\', '/', $file->getRelativePathname());
+                }
             }
+        }
+
+        if ($staleDirective !== null) {
+            return [
+                'Collecteur',
+                'KO',
+                "La vue {$staleDirective} porte encore @analyticsConfig, qui n’existe plus. "
+                .'Blade recopie une directive inconnue telle quelle : ce texte s’affiche donc '
+                .'sur vos pages, et rien n’est mesuré. Renommez-la en @analyticsCollector.',
+            ];
         }
 
         return [
