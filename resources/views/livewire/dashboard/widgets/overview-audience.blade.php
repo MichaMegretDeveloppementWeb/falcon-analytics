@@ -7,9 +7,9 @@
     $devicePalette = ['#1684ea', '#7cb8f2', '#bcdcfa', '#d1d5db'];
 @endphp
 
-{{-- La racine enveloppe la carte plutot que de la remplacer · la carte est un
-     composant du kit, et c'est justement elle qui doit etre dessinee dans le
-     contexte du paquet. --}}
+{{-- The root wraps the card rather than replacing it: the card is a component
+     of the kit, and it is precisely the one that has to be drawn inside the
+     package's context. --}}
 <x-analytics::root area="admin">
 <x-ui::card>
     <div class="an:grid an:grid-cols-1 an:divide-y an:divide-subtle an:lg:grid-cols-2 an:lg:divide-x an:lg:divide-y-0">

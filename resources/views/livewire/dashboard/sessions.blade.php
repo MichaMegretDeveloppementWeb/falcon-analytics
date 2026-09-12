@@ -43,7 +43,7 @@
         @include('analytics::livewire.dashboard.partials.filters')
     </x-ui::page-header>
 
-    {{-- La localite manquait sans qu'on sache pourquoi : base absente, tronquee, ou adresse privee. --}}
+    {{-- The locality went missing with no way to tell why: absent database, truncated one, or private address. --}}
     <x-analytics::geo-notice />
 
     {{-- Engagement stats (deferred) --}}

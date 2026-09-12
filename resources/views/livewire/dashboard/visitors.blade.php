@@ -15,7 +15,7 @@
             : __(':count visiteurs', ['count' => $visitorsTotal]);
     @endphp
 
-    {{-- Le filtre de rôle s'applique à toute la page ; la période, uniquement au bloc Activité. --}}
+    {{-- The role filter applies to the whole page; the period, only to the Activity block. --}}
     <x-ui::page-header :title="__('Visiteurs')" :description="$visitorsCount">
         @if (count($subjectOptions) > 1)
             <div class="an:w-40">
@@ -24,7 +24,7 @@
         @endif
     </x-ui::page-header>
 
-    {{-- La localité manquait sans qu'on sache pourquoi : base absente, tronquée, ou adresse privée. --}}
+    {{-- The locality went missing with no way to tell why: absent database, truncated one, or private address. --}}
     <x-analytics::geo-notice />
 
     {{-- The KPIs are scoped to the period; the list below is all time. --}}

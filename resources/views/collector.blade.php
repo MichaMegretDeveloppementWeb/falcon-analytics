@@ -1,19 +1,18 @@
 {{--
-    Ce que `@analyticsCollector` pose sur une page publique · le collecteur, et
-    ce qu'il a besoin de savoir.
+    What `@analyticsCollector` lays on a public page: the collector, and what it
+    needs to know.
 
-    **Rien quand la mesure est coupee**, ou quand le contexte est exclu · pas
-    meme le telechargement du fichier. C'est la meilleure facon de ne pas
-    mesurer.
+    **Nothing at all when tracking is cut**, or when the context is excluded —
+    not even the file's download. That is the best way not to measure.
 
-    **Le fichier est declare au kit**, comme tout fichier d'un paquet. Le kit
-    bat son adresse versionnee, la pousse dans sa pile reservee, et la pose
-    avant `</body>` quand le gabarit de l'hote ne rend aucune directive · ce qui
-    est le cas d'une page publique ordinaire.
+    **The file is declared to the kit**, like any file of a package. The kit
+    builds its versioned address, pushes it into its reserved stack, and lays it
+    before `</body>` when the host's layout renders no directive, which is the
+    case of an ordinary public page.
 
-    L'ordre ne se joue pas · la balise porte `defer`, donc le collecteur
-    s'execute apres l'analyse du document, et la configuration ci-dessous est
-    lue avant lui quelle que soit la place de la directive dans le gabarit.
+    Order does not come into it: the tag carries `defer`, so the collector runs
+    after the document is parsed, and the configuration below is read before it
+    whatever place the directive holds in the layout.
 --}}
 @php
     $analyticsConfiguration = \Falcon\Analytics\View\Collector::configuration();

@@ -1,13 +1,12 @@
 {{--
-    La coquille du paquet · celle qui repond quand l'hote ne nomme aucun gabarit.
+    The package's own shell: the one that answers when the host names no layout.
 
-    Elle n'ecrit plus de document. Ce qu'elle confie au gabarit du kit est
-    exactement la part qu'on rate sans qu'une erreur paraisse · la tete, les deux
-    emplacements d'assets, la classe du theme sur `<html>`, et le conteneur des
-    notifications — oublier celui-la ne casse rien, aucune notification ne
-    s'affiche, jamais.
+    It no longer writes a document. What it hands to the kit's layout is exactly
+    the part one gets wrong without any error showing: the head, the two asset
+    slots, the theme class on `<html>`, and the notification container —
+    forgetting that last one breaks nothing, no notification ever appears.
 
-    Ce qu'elle garde est ce qui lui appartient · sa navigation, et son titre.
+    What it keeps is what belongs to it: its navigation, and its title.
 --}}
 @props(['title' => null])
 
@@ -58,8 +57,8 @@
                     {{ __('Tunnels') }}
                 </x-ui::sidebar.link>
 
-                {{-- Les intégrations n'ont rien à montrer tant qu'aucune
-                     identification Google n'est configurée. --}}
+                {{-- Integrations have nothing to show until Google credentials
+                     are configured. --}}
                 @if (trim((string) config('analytics.search_console.client_id')) !== '')
                     <x-ui::sidebar.link
                         :href="route('analytics.admin.integrations')"
@@ -96,7 +95,7 @@
     </x-slot:sidebar>
 
     <x-slot:head>
-        {{-- Surface d'administration privée · on la tient hors des moteurs. --}}
+        {{-- A private administration surface: kept out of search engines. --}}
         <meta name="robots" content="noindex, nofollow">
 
         @livewireStyles

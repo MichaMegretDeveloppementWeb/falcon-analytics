@@ -2,9 +2,9 @@
     $maxPages = max(array_column($topPages, 'total') ?: [0]);
 @endphp
 
-{{-- La racine enveloppe la carte plutot que de la remplacer · la carte est un
-     composant du kit, et c'est justement elle qui doit etre dessinee dans le
-     contexte du paquet. --}}
+{{-- The root wraps the card rather than replacing it: the card is a component
+     of the kit, and it is precisely the one that has to be drawn inside the
+     package's context. --}}
 <x-analytics::root area="admin">
 <x-ui::card>
     <div class="an:grid an:grid-cols-1 an:divide-y an:divide-subtle an:lg:grid-cols-2 an:lg:divide-x an:lg:divide-y-0">
@@ -35,8 +35,8 @@
         <div class="an:pt-5 an:lg:pl-8 an:lg:pt-0">
             <x-ui::section-header :title="__('Clics principaux')" class="an:mb-4" />
             @if ($topClicks !== [])
-                {{-- Le libelle porte deja deux lignes : la colonne du nombre le suit d'assez
-                     pres, sans le tronquer davantage. --}}
+                {{-- The label already runs to two lines: the count column follows it
+                     closely enough, without truncating it further. --}}
                 <dl class="an:grid an:max-w-[26rem] an:grid-cols-[minmax(0,1fr)_auto] an:items-center an:gap-x-5 an:gap-y-3">
                     @foreach ($topClicks as $click)
                         <dt class="an:min-w-0">

@@ -30,9 +30,9 @@
     $listTime = fn ($moment) => $moment->isToday() ? $moment->format('H:i') : $moment->translatedFormat('j M, H:i');
 @endphp
 
-{{-- La racine enveloppe plutot que de remplacer · l'intervalle est dans le NOM
-     de la directive, et une balise de composant n'accepte pas d'interpolation
-     dans un nom d'attribut. --}}
+{{-- The root wraps rather than replaces: the interval sits in the directive's
+     NAME, and a component tag accepts no interpolation inside an attribute
+     name. --}}
 <x-analytics::root area="admin">
 <div class="an:space-y-6" wire:poll.{{ $pollSeconds }}s.visible>
 
@@ -54,7 +54,7 @@
                     <button type="button"
                             @click="tab = 'window'; $dispatch('analytics-realtime-mode', { mode: 'window' })"
                             class="an:flex-1 an:cursor-pointer an:border-b-[3px] an:pb-3 an:pr-4 an:pt-3 an:text-left an:transition-colors an:sm:pr-6"
-                            {{-- `window` est un nom d'onglet, pas une classe · les deux autres en sont. --}}
+                            {{-- `window` is a tab name, not a class; the other two are. --}}
                             :class="tab === 'window' ? 'an:border-[#116DFF]' : 'an:border-transparent'">
                         <span class="an:block an:text-[14px] an:font-medium {{ $ink }}">{{ __('Visiteurs (:count dernières minutes)', ['count' => $windowMinutes]) }}</span>
                         <span class="an:mt-0.5 an:block an:text-[21px] an:font-bold an:leading-6 {{ $ink }}">{{ number_format($window['visitors'], 0, ',', ' ') }}</span>
@@ -250,7 +250,7 @@
                 @endif
             </div>
 
-            {{-- Activité en direct (24 dernières heures) : le type d'événement en vedette --}}
+            {{-- Live activity (last 24 hours): the featured event type --}}
             <div class="an:rounded-xl an:border an:border-base an:bg-surface">
                 <div class="an:px-5 an:py-4">
                     <p class="an:text-[16px] an:font-bold {{ $ink }}">{{ __('Activité en direct') }}</p>

@@ -154,8 +154,8 @@
         {{-- Mobile-only tabs --}}
         <div class="an:lg:hidden">
             <div class="an:flex an:gap-1 an:rounded-lg an:bg-elevated an:p-1">
-                {{-- `infos` et `parcours` sont des noms d'onglets, pas des classes · ce qui
-                     suit le point d'interrogation en est. --}}
+                {{-- `infos` and `parcours` are tab names, not classes; what follows the
+                     question mark is. --}}
                 <button type="button" @click="tab = 'infos'" :class="tab === 'infos' ? 'an:bg-surface an:text-primary' : 'an:text-secondary an:hover:text-primary'" class="an:flex-1 an:cursor-pointer an:rounded-lg an:px-3 an:py-1.5 an:text-[13px] an:font-medium an:transition-colors">{{ __('Infos') }}</button>
                 <button type="button" @click="tab = 'parcours'" :class="tab === 'parcours' ? 'an:bg-surface an:text-primary' : 'an:text-secondary an:hover:text-primary'" class="an:flex-1 an:cursor-pointer an:rounded-lg an:px-3 an:py-1.5 an:text-[13px] an:font-medium an:transition-colors">{{ __('Parcours') }}</button>
             </div>

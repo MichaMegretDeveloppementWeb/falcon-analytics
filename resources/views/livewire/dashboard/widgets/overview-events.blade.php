@@ -17,8 +17,8 @@
                     <p class="an:text-2xl an:font-semibold an:tracking-tight an:text-primary">{{ number_format($conversionsTotal, 0, ',', ' ') }}</p>
                     <p class="an:mb-4 an:text-[11px] an:uppercase an:tracking-wider an:text-muted">{{ __('sur la période') }}</p>
 
-                    {{-- La part passe en infobulle : deux nombres de taille voisine cote a cote,
-                         sans separateur, obligeaient a decider lequel on lit. --}}
+                    {{-- The share moves into a tooltip: two numbers of similar size side by
+                         side, with no separator, forced a decision on which one to read. --}}
                     <dl class="an:grid an:max-w-[22rem] an:grid-cols-[minmax(0,1fr)_auto] an:items-center an:gap-x-5 an:gap-y-2.5">
                         @foreach ($topConversions as $item)
                             <dt class="an:flex an:min-w-0 an:items-center an:gap-2.5">

@@ -1,17 +1,16 @@
 {{--
-    Ce dont le paquet a besoin sur une page, declare en une ligne.
+    What the package needs on a page, declared in one line.
 
-    La page et la racine l'appellent · une page qui ouvrira un bloc apres un
-    clic peut aussi l'appeler elle-meme pour precharger, et la declaration est
-    dedupliquee.
+    The page and the root call it; a page that will open a block after a click
+    can call it itself to preload, the declaration being deduplicated.
 
-    **Le paquet nomme son nom et ses fichiers, rien d'autre** · ni nom de pile,
-    ni cle de configuration, ni identifiant de deduplication. Le kit les tient,
-    et il ecrit dans deux endroits · la pile reservee que rendent
-    `@falconStyles` et `@falconScripts`, et l'etat de la requete, parce que le
-    cadre vide ses piles des que la vue de plus haut niveau a fini.
+    **The package names itself and its files, nothing else**: no stack name, no
+    configuration key, no deduplication identifier. The kit holds those, and it
+    writes in two places — the reserved stack that `@falconStyles` and
+    `@falconScripts` render, and the request's state, because the framework
+    empties its stacks as soon as the topmost view has finished.
 
-    Un seul fichier ici · le paquet n'a aucun script d'administration. Ses
-    graphiques sont de l'Alpine ecrit dans les vues, et Chart.js vient du kit.
+    One file only here: the package has no administration script. Its charts are
+    Alpine written in the views, and Chart.js comes from the kit.
 --}}
 <x-ui::assets package="analytics" :files="['analytics.css']" />
