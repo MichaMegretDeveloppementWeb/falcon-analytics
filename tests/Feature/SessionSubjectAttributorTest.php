@@ -44,11 +44,11 @@ final class SessionSubjectAttributorTest extends TestCase
     }
 
     /**
-     * Une session en base.
+     * A session in the database.
      *
-     * `sessionRow` et non `session` · le banc HTTP de Laravel declare
-     * `session()` en public, et la redefinir en prive est une erreur fatale au
-     * chargement, pas un essai qui tombe.
+     * `sessionRow` and not `session`: Laravel's HTTP bench declares `session()`
+     * public, and redefining it private is a fatal error at load time, not a
+     * test that fails.
      *
      * @param  array<string, mixed>  $attributes
      */
@@ -63,7 +63,7 @@ final class SessionSubjectAttributorTest extends TestCase
         ], $attributes));
     }
 
-    // ── Le service ───────────────────────────────────────────────────────
+    // ── The service ──────────────────────────────────────────────────────
 
     public function test_it_keeps_the_session_own_subject_when_it_was_authenticated(): void
     {
@@ -123,7 +123,7 @@ final class SessionSubjectAttributorTest extends TestCase
         $this->assertSame([], $this->attributor->attribute([$anonymous->load('visitor')]));
     }
 
-    // ── Les écrans ───────────────────────────────────────────────────────
+    // ── The screens ──────────────────────────────────────────────────────
 
     public function test_it_shows_the_stitched_name_with_the_not_connected_hint_in_the_session_list(): void
     {

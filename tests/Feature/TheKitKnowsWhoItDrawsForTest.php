@@ -12,19 +12,18 @@ use Illuminate\Support\Facades\File;
 use Livewire\Livewire;
 
 /**
- * Le kit dessine pour quelqu'un, et ce quelqu'un doit être nommé.
+ * The kit draws for someone, and that someone has to be named.
  *
- * Un bouton du kit posé sur un écran d'analytics porte `data-ui-scope` et
- * `data-ui-area`. C'est ce que la feuille de style du paquet vise, et c'est
- * aussi ce qui permet au kit d'aller chercher un habillage propre au paquet
- * plutôt que sa propre vue. Rien de tout cela ne se déduit de l'URL ni d'un
- * compositeur : le kit lit une pile, pendant le rendu, et cette pile n'existe
- * que si une balise l'a ouverte.
+ * A kit button laid on an analytics screen carries `data-ui-scope` and
+ * `data-ui-area`. That is what the package's stylesheet targets, and also what
+ * lets the kit reach for a skin belonging to the package rather than its own
+ * view. None of it is derived from the URL or from a composer: the kit reads a
+ * stack, during the render, and that stack only exists if a tag opened it.
  *
- * **Le deuxième essai est celui qui justifie la racine.** Une vue réactive est
- * recalculée seule après un clic, sans la page qui l'avait dessinée. Un
- * contexte posé par la seule page serait là à l'ouverture et absent au clic
- * suivant : l'apparence changerait après interaction, sans erreur nulle part.
+ * **The second test is the one that justifies the root.** A reactive view is
+ * recomputed on its own after a click, without the page that drew it. A context
+ * laid by the page alone would be there on opening and gone on the next click:
+ * the appearance would change after an interaction, with no error anywhere.
  */
 final class TheKitKnowsWhoItDrawsForTest extends TestCase
 {
@@ -41,11 +40,11 @@ final class TheKitKnowsWhoItDrawsForTest extends TestCase
     }
 
     /**
-     * La mise à jour réactive, sans la page.
+     * The reactive update, without the page.
      *
-     * `Livewire::test` rend le composant pour lui-même, exactement comme une
-     * réponse à un clic : si le contexte ne venait que de la page, cette sortie
-     * serait nue.
+     * `Livewire::test` renders the component for itself, exactly like a
+     * response to a click: if the context came from the page alone, this output
+     * would be bare.
      */
     public function test_a_recomputed_fragment_keeps_the_context(): void
     {
@@ -60,17 +59,17 @@ final class TheKitKnowsWhoItDrawsForTest extends TestCase
     }
 
     /**
-     * L'écran sert la feuille du paquet, et une seule fois.
+     * The screen serves the package's stylesheet, and once only.
      *
-     * La page la déclare, et chacune des racines qu'elle contient la déclare
-     * aussi — parce qu'un bloc réactif peut être dessiné ailleurs que dans un
-     * écran du paquet. Sur une page complète, ces déclarations se comptent par
-     * dizaines et **doivent produire une seule balise** · c'est le kit qui
-     * déduplique, sur un identifiant que le paquet ne connaît même pas.
+     * The page declares it, and every root it contains declares it too —
+     * because a reactive block can be drawn somewhere other than a screen of
+     * the package. On a whole page those declarations come by the dozen and
+     * **have to produce one single tag**: it is the kit that deduplicates, on
+     * an identifier the package does not even know.
      *
-     * L'ordre compte aussi · celle du kit d'abord, celle du paquet ensuite.
-     * C'est ce que le contrat des couches suppose, et une feuille lue dans le
-     * mauvais ordre ouvre des couches vides qui renversent la priorité.
+     * The order matters too: the kit's first, the package's after. That is what
+     * the layer contract assumes, and a stylesheet read in the wrong order
+     * opens empty layers that invert the priority.
      */
     public function test_a_screen_serves_the_package_sheet_exactly_once(): void
     {
@@ -81,22 +80,22 @@ final class TheKitKnowsWhoItDrawsForTest extends TestCase
         $this->assertSame(
             1,
             substr_count($html, 'analytics/analytics.css'),
-            'La feuille du paquet doit paraître une fois et une seule.',
+            "The package's stylesheet must appear once and once only.",
         );
 
         $this->assertLessThan(
             strpos($html, 'analytics/analytics.css'),
             strpos($html, 'ui/ui.css'),
-            'La feuille du kit se lit avant celle du paquet.',
+            "The kit's stylesheet is read before the package's.",
         );
     }
 
     /**
-     * Aucune vue réactive n'a été oubliée.
+     * No reactive view has been forgotten.
      *
-     * La liste n'est pas écrite ici : elle se relève dans les composants
-     * eux-mêmes, donc une vue ajoutée demain entre d'elle-même dans le contrôle.
-     * Ce que l'essai ci-dessus prouve d'une vue, celui-ci l'étend à toutes.
+     * The list is not written here: it is read off the components themselves,
+     * so a view added tomorrow enters the check on its own. What the test above
+     * proves of one view, this one extends to all of them.
      */
     public function test_every_view_a_component_returns_carries_a_root(): void
     {
@@ -107,20 +106,20 @@ final class TheKitKnowsWhoItDrawsForTest extends TestCase
                 .str_replace('.', '/', substr($view, strlen('analytics::')))
                 .'.blade.php';
 
-            $this->assertFileExists($path, "Le composant rend {$view}, qui n'existe pas.");
+            $this->assertFileExists($path, "The component renders {$view}, which does not exist.");
 
             if (! str_contains(File::get($path), '<x-analytics::root')) {
                 $without[] = $view;
             }
         }
 
-        $this->assertNotSame([], self::viewsReturnedByComponents(), 'Aucune vue relevée : le relevé est cassé.');
-        $this->assertSame([], $without, 'Ces vues seront dessinées hors contexte après une interaction.');
+        $this->assertNotSame([], self::viewsReturnedByComponents(), 'No view collected: the collection is broken.');
+        $this->assertSame([], $without, 'These views will be drawn out of context after an interaction.');
     }
 
     /**
-     * Les vues qu'un composant réactif peut rendre · écrans, blocs, gabarits
-     * d'attente et vues d'erreur confondus.
+     * The views a reactive component can render: screens, blocks, waiting
+     * templates and error views alike.
      *
      * @return list<string>
      */

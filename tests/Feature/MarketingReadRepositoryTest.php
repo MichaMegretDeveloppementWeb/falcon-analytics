@@ -18,7 +18,7 @@ final class MarketingReadRepositoryTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** Des sessions taguees, ecrites en lot pour sauter les casts du modele. */
+    /** Tagged sessions, written in bulk to skip the model's casts. */
     private function rawTaggedSessions(int $count): void
     {
         $visitor = Visitor::create(['uuid' => (string) Str::uuid(), 'first_seen_at' => now(), 'last_seen_at' => now()]);

@@ -15,11 +15,11 @@ final class EngagementMetricsCalculatorTest extends TestCase
      * @return array<string, int|float>
      */
     /**
-     * Les comptes bruts, dans la forme exacte que le calculateur attend.
+     * The raw counts, in the exact shape the calculator expects.
      *
-     * Ecrits un par un plutot que par `compact()` · la forme se lit alors dans
-     * le code, et l'outillage peut verifier qu'elle correspond a ce que la
-     * methode appelee declare.
+     * Written one by one rather than through `compact()`: the shape then reads
+     * in the code, and the tooling can check it matches what the called method
+     * declares.
      *
      * @return array{visitors: int, sessions: int, pageviews: int, avgSeconds: float, bounces: int}
      */

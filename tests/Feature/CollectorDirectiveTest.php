@@ -12,17 +12,17 @@ use Illuminate\Support\Facades\Route;
 use RuntimeException;
 
 /**
- * `@analyticsCollector` apporte le collecteur, et ce qu'il a besoin de savoir.
+ * `@analyticsCollector` brings the collector, and what it needs to know.
  *
- * Deux choses voyagent, et pas de la même façon · **le script** est compilé,
- * livré par le paquet et publié par l'hôte, donc il est déclaré au kit qui le
- * place ; **la configuration** ne peut pas être compilée — le nom de la route
- * change à chaque page, et le suivi se coupe quand l'administratrice est
- * connectée — donc elle est posée en ligne.
+ * Two things travel, and not the same way: **the script** is compiled, shipped
+ * by the package and published by the host, so it is declared to the kit which
+ * places it; **the configuration** cannot be compiled — the route's name
+ * changes on every page, and tracking is cut while an administrator is signed
+ * in — so it is laid inline.
  *
- * La directive s'appelait `@analyticsConfig` du temps où le code du collecteur
- * venait de l'entrée JavaScript de l'hôte. Le paquet le livre désormais, et le
- * nom le dit.
+ * The directive was called `@analyticsConfig` back when the collector's code
+ * came from the host's JavaScript entry. The package ships it now, and the name
+ * says so.
  */
 final class CollectorDirectiveTest extends TestCase
 {
@@ -37,19 +37,19 @@ final class CollectorDirectiveTest extends TestCase
     }
 
     /**
-     * **L'essai qui compte** · une page publique reçoit le collecteur, et rien
-     * d'autre.
+     * **The test that counts**: a public page receives the collector, and
+     * nothing else.
      *
-     * La vue déclare le fichier au kit, qui bâtit son adresse versionnée et la
-     * pose avant la fermeture du corps · le gabarit ci-dessous ne rend aucune
-     * directive de pile, exactement comme la page publique d'un site ordinaire.
+     * The view declares the file to the kit, which builds its versioned address
+     * and lays it before the body closes: the layout below renders no stack
+     * directive, exactly like the public page of an ordinary site.
      *
-     * La seconde moitié de l'essai est celle qui protège l'hôte, et elle garde
-     * une correction du kit datée du 2026-09-12. Son injection posait alors
-     * **ses propres** balises dès qu'un paquet avait déclaré quoi que ce soit ·
-     * une page publique se retrouvait avec le reset du kit, soixante
-     * kilo-octets de feuille d'administration, un script et un conteneur de
-     * notifications. Le site de l'hôte en sortait redessiné.
+     * The second half of the test is the one that protects the host, and it
+     * holds a correction of the kit dated 2026-09-12. Its injection laid **its
+     * own** tags as soon as a package had declared anything at all: a public
+     * page ended up with the kit's reset, sixty kilobytes of administration
+     * stylesheet, a script and a notification container. The host's site came
+     * out redrawn.
      */
     public function test_a_public_page_receives_the_collector_and_nothing_else(): void
     {
@@ -65,14 +65,14 @@ final class CollectorDirectiveTest extends TestCase
         $this->assertMatchesRegularExpression(
             '#<script src="[^"]*analytics/analytics\.js\?v=[^"]+" defer#',
             $html,
-            'Le script doit arriver versionné et différé.',
+            'The script has to arrive versioned and deferred.',
         );
 
         foreach (['ui.css', 'ui-base.css', 'ui.js'] as $ofTheKit) {
             $this->assertStringNotContainsString(
                 $ofTheKit,
                 $html,
-                "Une page publique ne doit rien recevoir du kit · {$ofTheKit} y est.",
+                "A public page must receive nothing from the kit: {$ofTheKit} is there.",
             );
         }
     }
@@ -112,13 +112,13 @@ final class CollectorDirectiveTest extends TestCase
     }
 
     /**
-     * Suivi coupé · le fichier n'est même pas téléchargé.
+     * Tracking cut: the file is not even downloaded.
      *
-     * C'était l'autre moitié de l'ancien modèle · le collecteur, importé par
-     * l'hôte, était toujours chargé, et c'est son premier test qui l'arrêtait.
-     * Maintenant qu'il vient du paquet, ne rien déclarer suffit · la page ne
-     * demande pas le fichier, et la garde du collecteur ne sert plus que de
-     * seconde ligne.
+     * This was the other half of the old model: the collector, imported by the
+     * host, was always loaded, and it was its own first test that stopped it.
+     * Now that it comes from the package, declaring nothing is enough — the
+     * page does not ask for the file, and the collector's guard is only a
+     * second line of defence.
      */
     public function test_it_asks_for_nothing_at_all_when_tracking_is_off(): void
     {

@@ -54,7 +54,7 @@ final class FunnelRegistryTest extends TestCase
 
         $registry = app(FunnelRegistry::class);
 
-        // Le fichier déclare un tunnel puis lève : la résolution ne doit pas casser.
+        // The file declares a funnel then throws: resolution must not break.
         $this->assertCount(1, $registry->all());
         $this->assertNotNull($registry->get('before'));
     }

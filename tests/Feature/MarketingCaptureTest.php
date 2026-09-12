@@ -42,18 +42,18 @@ final class MarketingCaptureTest extends TestCase
     }
 
     /**
-     * L'ordre des cles d'un objet JSON ne porte aucun sens, et MySQL le change.
+     * The key order of a JSON object carries no meaning, and MySQL changes it.
      *
-     * Il normalise a l'ecriture, triant par longueur de cle puis
-     * alphabetiquement · `?utm_source=meta&src=meta_ete` ressort `src` avant
-     * `utm_source`. SQLite gardait le texte tel quel, et l'assertion s'appuyait
-     * sans le savoir sur cette particularite d'un moteur qui n'est pas celui de
-     * production.
+     * It normalises on write, sorting by key length then alphabetically:
+     * `?utm_source=meta&src=meta_ete` comes back with `src` before
+     * `utm_source`. SQLite kept the text as it stood, and the assertion was
+     * unknowingly relying on that peculiarity of an engine that is not the
+     * production one.
      *
-     * On trie les deux cotes plutot que de canonicaliser ·
-     * `assertEqualsCanonicalizing` passe par `sort()`, qui jette les cles, et
-     * un essai qui ne compare plus que les valeurs accepterait `src` a la place
-     * de `creative`.
+     * Both sides are sorted rather than canonicalised:
+     * `assertEqualsCanonicalizing` goes through `sort()`, which throws the keys
+     * away, and a test comparing only values would accept `src` in place of
+     * `creative`.
      *
      * @param  array<string, string>  $expected
      */

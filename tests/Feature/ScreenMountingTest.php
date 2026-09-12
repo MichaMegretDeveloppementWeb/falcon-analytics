@@ -60,21 +60,21 @@ final class ScreenMountingTest extends TestCase
     }
 
     /**
-     * La feuille du kit accompagne celle du paquet, même sous un gabarit d'hôte
-     * qui ne connaît rien de la suite.
+     * The kit's stylesheet travels with the package's, even under a host layout
+     * that knows nothing of the suite.
      *
-     * **Elle n'est pas décorative, elle est nécessaire** · les utilitaires du
-     * paquet résolvent sept jetons du kit à l'exécution, `var(--ui-…)`, et ces
-     * valeurs vivent dans la feuille du kit. Servie seule, celle du paquet
-     * s'afficherait sans ses couleurs.
+     * **It is not decorative, it is necessary**: the package's utilities
+     * resolve seven kit tokens at runtime, `var(--ui-…)`, and those values live
+     * in the kit's stylesheet. Served on its own, the package's would display
+     * without its colours.
      *
-     * Ce qui la fait venir n'est pas le gabarit — celui de la fixture est nu —
-     * mais le contenu de l'écran, qui dessine des composants du kit. C'est ce
-     * qui rend la séparation sûre · une feuille de paquet ne peut pas se
-     * retrouver sur une page sans celle du kit.
+     * What brings it in is not the layout — the fixture's is bare — but the
+     * screen's content, which draws kit components. That is what makes the
+     * separation safe: a package's stylesheet cannot end up on a page without
+     * the kit's.
      *
-     * Le jour où un écran n'emploierait plus aucun composant du kit, cet essai
-     * tombe — et il faudra alors décider, pas découvrir.
+     * The day a screen uses no kit component at all, this test falls — and it
+     * will then be a decision, not a discovery.
      */
     public function test_the_kit_sheet_travels_with_the_package_sheet(): void
     {
@@ -84,7 +84,7 @@ final class ScreenMountingTest extends TestCase
             ->getContent();
 
         foreach (['ui.css', 'analytics.css'] as $sheet) {
-            $this->assertSame(1, substr_count($html, $sheet), "{$sheet} doit paraître une fois.");
+            $this->assertSame(1, substr_count($html, $sheet), "{$sheet} has to appear once.");
         }
     }
 
@@ -136,17 +136,17 @@ final class ScreenMountingTest extends TestCase
     }
 
     /**
-     * Le titre traverse deux composants, et il doit en sortir entier.
+     * The title crosses two components, and it has to come out whole.
      *
-     * **Blade échappe les attributs d'un composant de classe au moment où il les
-     * pose**, parce qu'un attribut finit dans une balise. Un titre passé de
-     * cette façon arrivait au gabarit déjà échappé et ressortait de `{{ }}`
-     * échappé une seconde fois · `Vue d&amp;#039;ensemble` dans l'onglet du
-     * navigateur, pendant que le reste de la page allait bien.
+     * **Blade escapes a class component's attributes at the moment it lays them
+     * down**, because an attribute ends up inside a tag. A title passed that
+     * way reached the layout already escaped and came out of `{{ }}` escaped a
+     * second time: `Vue d&amp;#039;ensemble` in the browser tab, while the rest
+     * of the page was fine.
      *
-     * Il voyage donc par le constructeur de la page, où c'est une donnée. Les
-     * deux essais ci-dessus ne l'auraient jamais vu · aucun de leurs titres ne
-     * porte d'apostrophe.
+     * It therefore travels through the page's constructor, where it is data.
+     * The two tests above would never have seen it: none of their titles
+     * carries an apostrophe.
      */
     public function test_it_escapes_the_title_once_and_not_twice(): void
     {

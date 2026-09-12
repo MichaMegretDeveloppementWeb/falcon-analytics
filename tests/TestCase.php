@@ -31,31 +31,31 @@ abstract class TestCase extends Orchestra
     }
 
     /**
-     * Publier les fichiers compilés, quand ils manquent.
+     * Publish the compiled files, when they are missing.
      *
-     * **Le kit refuse de bâtir l'adresse d'un fichier que l'hôte n'a pas
-     * publié**, et il a raison · une copie absente ou périmée servirait la
-     * feuille du mois dernier sans un mot. L'application d'essai est un hôte
-     * comme un autre, et elle doit donc publier.
+     * **The kit refuses to build the address of a file the host has not
+     * published**, and it is right to: an absent or stale copy would serve last
+     * month's stylesheet without a word. The test application is a host like
+     * any other, so it has to publish.
      *
-     * Ça passe par la commande réelle plutôt que par une copie écrite ici ·
-     * une copie ne dirait rien de l'étiquette ni du dossier de destination, et
-     * c'est justement ce qu'on veut tenir.
+     * It goes through the real command rather than a copy written here: a copy
+     * would say nothing about the tag or the destination directory, and those
+     * are precisely what we want held.
      *
-     * **La condition porte sur les fichiers, pas sur un drapeau de processus.**
-     * Elle se rattrape donc toute seule si quelque chose retire la copie en
-     * cours de route ; un drapeau, lui, laisserait tous les essais suivants
-     * sans feuille, et leur échec ne parlerait pas de lui.
+     * **The condition is on the files, not on a process flag.** It therefore
+     * recovers on its own if something removes the copy along the way; a flag
+     * would leave every following test without a stylesheet, and their failure
+     * would not speak of it.
      *
-     * Avant, les fichiers du kit n'étaient là que parce qu'un `vendor:publish`
-     * lancé un jour à la main les y avait laissés. Un `composer install` les
-     * effaçait, et la suite tombait sur une erreur qui ne parlait pas d'elle.
+     * Before, the kit's files were only there because a `vendor:publish` run by
+     * hand one day had left them. A `composer install` wiped them, and the
+     * suite fell over an error that said nothing about itself.
      */
     private function publishTheCompiledFiles(): void
     {
-        // Un fichier livré qui manquerait à cette liste ne serait jamais
-        // publié · la copie existante suffirait à conclure. C'est arrivé le
-        // jour où le paquet a gagné son script.
+        // A shipped file missing from this list would never be published: the
+        // existing copy would be enough to conclude. It happened the day the
+        // package gained its script.
         $expected = [
             public_path('vendor/falcon/ui/ui.css'),
             public_path('vendor/falcon/analytics/analytics.css'),
@@ -187,12 +187,11 @@ abstract class TestCase extends Orchestra
     }
 
     /**
-     * Une variable d'environnement, ou le repli quand elle ne dit rien.
+     * An environment variable, or the fallback when it says nothing.
      *
-     * `getenv` rend `false` quand la variable est absente et `''` quand elle est
-     * posee vide · sur un poste, les deux veulent dire « je n'ai rien choisi ».
-     * Le mot de passe fait exception et vaut bien la chaine vide, ce que le
-     * repli lui rend.
+     * `getenv` returns `false` when the variable is absent and `''` when it is
+     * set empty: on a machine, both mean "I chose nothing". The password is the
+     * exception and is genuinely the empty string, which the fallback gives it.
      */
     private static function fromEnvironment(string $name, string $fallback): string
     {
@@ -218,9 +217,9 @@ abstract class TestCase extends Orchestra
             'prefix' => '',
             'strict' => true,
 
-            // InnoDB, dit à voix haute · une installation MySQL locale réglée
-            // sur MyISAM refuse les index composites que ce paquet pose sur ses
-            // événements, et l'erreur sort au milieu d'une migration.
+            // InnoDB, said out loud: a local MySQL installation set to MyISAM
+            // refuses the composite indexes this package lays on its events,
+            // and the error comes out in the middle of a migration.
             'engine' => 'InnoDB',
         ];
     }
@@ -228,14 +227,14 @@ abstract class TestCase extends Orchestra
     protected function defineEnvironment($app): void
     {
         tap($app['config'], function ($config): void {
-            // MySQL, et rien d'autre. SQLite en mémoire tenait la suite en
-            // vingt secondes et ne prouvait rien de ce que le schéma promet.
+            // MySQL, and nothing else. SQLite in memory held the suite in
+            // twenty seconds and proved nothing of what the schema promises.
             //
-            // **Ce paquet en dépend plus que la plupart** · ses écrans sont des
-            // agrégations, donc du GROUP BY, des fonctions de date et des index
-            // composites, et c'est exactement là que les deux moteurs cessent
-            // d'être d'accord. Une suite verte sur l'un ne disait rien de
-            // l'autre, et la différence sortait en production.
+            // **This package depends on that more than most**: its screens are
+            // aggregations, so GROUP BY, date functions and composite indexes,
+            // which is exactly where the two engines stop agreeing. A suite
+            // green on one said nothing about the other, and the difference
+            // came out in production.
             $config->set('database.connections.mysql_testing', self::connectionForTests());
             $config->set('database.default', 'mysql_testing');
 
@@ -259,52 +258,51 @@ abstract class TestCase extends Orchestra
     }
 
     /**
-     * Rend une table illisible, le temps d'une lecture.
+     * Makes a table unreadable, for the length of one read.
      *
-     * Plusieurs écrans promettent de se dégrader plutôt que de rendre une 500
-     * quand une lecture échoue, et c'est une promesse qui ne se vérifie qu'en
-     * cassant vraiment quelque chose.
+     * Several screens promise to degrade rather than return a 500 when a read
+     * fails, and that is a promise only verifiable by genuinely breaking
+     * something.
      *
-     * **Un renommage, et non un `Schema::drop()`.** MySQL refuse de supprimer
-     * une table qu'une clé étrangère référence, là où SQLite laissait faire :
-     * la suppression échouait, et l'essai tombait sur son propre outil. Le
-     * renommage passe, les contraintes suivent, et les requêtes sur l'ancien
-     * nom échouent exactement comme on le veut.
+     * **A rename, and not a `Schema::drop()`.** MySQL refuses to drop a table a
+     * foreign key references, where SQLite allowed it: the drop failed, and the
+     * test fell over its own tooling. The rename goes through, the constraints
+     * follow, and queries on the old name fail exactly as wanted.
      *
-     * **Remise en place dans tous les cas.** Une instruction DDL valide la
-     * transaction que `RefreshDatabase` tenait ouverte : sans le `finally`, la
-     * table resterait absente pour tout le reste de la suite, et des dizaines
-     * d'essais tomberaient pour une raison qui n'est pas la leur.
+     * **Put back whatever happens.** A DDL statement commits the transaction
+     * `RefreshDatabase` was holding open: without the `finally`, the table
+     * would stay absent for the whole rest of the suite, and dozens of tests
+     * would fail for a reason that is not theirs.
      */
     protected function withoutTable(string $table, callable $read): void
     {
-        Schema::rename($table, $table.'_absente');
+        Schema::rename($table, $table.'_absent');
 
         try {
             $read();
         } finally {
-            Schema::rename($table.'_absente', $table);
+            Schema::rename($table.'_absent', $table);
         }
     }
 
     /**
-     * Fait échouer toute requête, sans toucher au schéma.
+     * Makes every query fail, without touching the schema.
      *
-     * Pour ce que {@see self::withoutTable()} ne peut pas couvrir : un code qui
-     * écrit **dans une transaction**. Une instruction DDL valide implicitement
-     * la transaction que `RefreshDatabase` tient ouverte, donc elle emporte les
-     * points de reprise avec elle, et le code sous test échoue sur
-     * « SAVEPOINT trans2 does not exist » au lieu d'échouer sur son écriture.
-     * Ce n'est plus la même chose qu'on mesure.
+     * For what {@see self::withoutTable()} cannot cover: code that writes
+     * **inside a transaction**. A DDL statement implicitly commits the
+     * transaction `RefreshDatabase` holds open, so it takes the savepoints with
+     * it, and the code under test fails on "SAVEPOINT trans2 does not exist"
+     * instead of failing on its write. That is no longer the same thing being
+     * measured.
      *
-     * Décaler le préfixe de tables sur la connexion **vivante** ne reconnecte
-     * rien : la transaction reste ouverte, ses points de reprise aussi, et
-     * chaque requête vise une table qui n'existe pas. C'est une vraie erreur de
-     * base, au bon moment, et il n'y a rien à remettre en place qu'un préfixe.
+     * Shifting the table prefix on the **live** connection reconnects nothing:
+     * the transaction stays open, so do its savepoints, and every query aims at
+     * a table that does not exist. It is a real database error, at the right
+     * moment, and there is nothing to put back but a prefix.
      */
     protected function withoutDatabase(callable $write): void
     {
-        DB::connection()->setTablePrefix('absente_');
+        DB::connection()->setTablePrefix('absent_');
 
         try {
             $write();

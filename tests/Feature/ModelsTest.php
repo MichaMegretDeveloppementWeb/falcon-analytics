@@ -44,9 +44,9 @@ final class ModelsTest extends TestCase
 
         $this->assertNotNull($fresh);
 
-        // Par l'accesseur generique, et non par la propriete · c'est la
-        // conversion qu'on verifie ici, et l'annotation du modele la promet
-        // deja. Passer par elle ferait une assertion qui ne peut plus echouer.
+        // Through the generic accessor, not the property: what is checked here
+        // is the cast, and the model's annotation already promises it. Going
+        // through the property would make an assertion that can no longer fail.
         $this->assertInstanceOf(CarbonImmutable::class, $fresh->getAttribute('started_at'));
         $this->assertNull($fresh->ended_at);
         $this->assertFalse($fresh->is_bot);

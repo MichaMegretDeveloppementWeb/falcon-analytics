@@ -69,7 +69,7 @@ final class IngestBatchRequestTest extends TestCase
 
         $batch = $this->ingestRequest([
             'sent_at' => 10_000_000,
-            // Un écart de 10 000 000 ms, borné à 3 600 000 ms, soit une heure.
+            // A gap of 10,000,000 ms, capped at 3,600,000 ms, so one hour.
             'events' => [['type' => 'pageview', 'ts' => 0]],
         ])->toBatch();
 
@@ -114,8 +114,8 @@ final class IngestBatchRequestTest extends TestCase
             'events' => [['type' => 'pageview', 'ts' => 1, 'url' => 'https://vantadrive.ch/?token=secret&gclid=abc']],
         ])->toBatch();
 
-        // Les deux sont nullables · sans URL ni referent, il n'y aurait rien a
-        // expurger, et l'essai ne prouverait rien.
+        // Both are nullable: with no URL and no referrer there would be nothing
+        // to redact, and the test would prove nothing.
         $url = $batch->events[0]->url;
         $referrer = $batch->referrer;
 

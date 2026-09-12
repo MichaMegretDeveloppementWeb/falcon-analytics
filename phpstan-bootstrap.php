@@ -5,20 +5,19 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\View;
 
 /*
- * Ce que le fournisseur declare a Laravel, declare a l'analyseur.
+ * What the provider declares to Laravel, declared to the analyser.
  *
- * larastan verifie qu'un `view('...')` designe une vue qui existe, et il le fait
- * en appelant reellement `view()->exists()`. Dans un paquet, le prefixe
- * `analytics::` n'est enregistre qu'au demarrage du fournisseur, que l'analyse
- * ne joue pas.
+ * larastan checks that a `view('...')` names a view that exists, and it does so
+ * by actually calling `view()->exists()`. In a package, the `analytics::` prefix
+ * is only registered when the provider boots, which the analysis does not run.
  *
- * L'enregistrement est le meme qu'en AnalyticsServiceProvider::boot(). Sans lui,
- * le controle est inapplicable a un paquet et il faudrait le taire, ce qui
- * reviendrait a ne plus verifier les vues du tout.
+ * The registration is the same as in AnalyticsServiceProvider::boot(). Without
+ * it the check is inapplicable to a package and would have to be silenced,
+ * which would amount to no longer checking the views at all.
  */
 try {
     View::addNamespace('analytics', __DIR__.'/resources/views');
 } catch (Throwable) {
-    // L'analyse peut tourner sans conteneur amorce. Le controle des vues sera
-    // alors inoperant, ce qui est son etat d'avant : rien de pire.
+    // The analysis can run without a booted container. The view check is then
+    // inoperative, which is the state it was in before: nothing worse.
 }

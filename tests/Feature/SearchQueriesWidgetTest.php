@@ -28,7 +28,7 @@ final class SearchQueriesWidgetTest extends TestCase
         $this->admin = TestAdmin::create([]);
         $this->travelTo(CarbonImmutable::parse('2026-07-20 12:00:00'));
 
-        // Rendre le contenu réel du widget différé plutôt que son gabarit d'attente.
+        // Render the deferred widget's real content rather than its placeholder.
         Livewire::withoutLazyLoading();
     }
 

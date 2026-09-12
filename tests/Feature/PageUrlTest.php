@@ -25,7 +25,7 @@ final class PageUrlTest extends TestCase
 
     public function test_it_falls_back_to_the_route_uri_pattern_when_no_url_is_stored(): void
     {
-        // La route « catalog » est enregistrée par le banc du paquet.
+        // The "catalog" route is registered by the package's bench.
         $this->assertSame('/catalog', PageUrl::resolve('catalog', null));
     }
 

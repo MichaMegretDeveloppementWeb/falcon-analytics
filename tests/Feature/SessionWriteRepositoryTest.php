@@ -82,8 +82,8 @@ final class SessionWriteRepositoryTest extends TestCase
         $repository->recordActivity($session, CarbonImmutable::parse('2026-06-30 09:05:00'), pageviewDelta: 2, eventDelta: 5, lastPageviewUrl: 'https://x.test/a');
         $repository->recordActivity($session, CarbonImmutable::parse('2026-06-30 09:08:00'), pageviewDelta: 1, eventDelta: 3, lastPageviewUrl: 'https://x.test/b');
 
-        // Un lot plus ancien arrivé après coup ne doit pas faire reculer
-        // l'horodatage, tout en comptant.
+        // An older batch arriving afterwards must not push the timestamp back,
+        // while still counting.
         $repository->recordActivity($session, CarbonImmutable::parse('2026-06-30 09:02:00'), pageviewDelta: 1, eventDelta: 1, lastPageviewUrl: 'https://x.test/b');
 
         $fresh = $session->fresh();

@@ -10,21 +10,20 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 
 /**
- * `analytics:check` · ce qu'un hote apprend de son installation.
+ * `analytics:check` · what a host learns about its installation.
  *
- * Le paquet echoue en silence, et c'est ce qui rend ce diagnostic utile. Un
- * collecteur jamais rendu, un interrupteur laisse a false, une route qui repond
- * ailleurs : chacun laisse des ecrans qui fonctionnent devant un tableau de
- * bord vide, et un tableau de bord vide ne dit pas la difference entre
- * « personne n'est venu » et « rien n'a ete mesure ».
+ * The package fails silently, and that is what makes this diagnostic useful. A
+ * collector never rendered, a switch left at false, a route answering
+ * elsewhere: each leaves working screens in front of an empty dashboard, and an
+ * empty dashboard does not say the difference between "nobody came" and
+ * "nothing was measured".
  *
- * Chaque essai coupe **un** point et verifie que la commande le nomme · une
- * commande qui echoue pour une raison qu'elle n'annonce pas ne vaut pas mieux
- * que le silence.
+ * Each test cuts **one** point and checks that the command names it: a command
+ * that fails for a reason it does not announce is no better than silence.
  *
- * Une seule attente de sous-chaine par appel · Mockery donne un ecrit a la
- * premiere attente qui l'accepte, et deux sous-chaines de la meme ligne en
- * laisseraient une sans appel.
+ * One substring expectation per call: Mockery hands a write to the first
+ * expectation that accepts it, and two substrings from the same line would
+ * leave one of them uncalled.
  */
 final class TheDiagnosticSpeaksTest extends TestCase
 {
@@ -34,8 +33,8 @@ final class TheDiagnosticSpeaksTest extends TestCase
     {
         parent::setUp();
 
-        // Une installation saine, pour que chaque essai echoue pour la raison
-        // dont il parle et non a cause d'un autre point reste ouvert.
+        // A sound installation, so each test fails for the reason it speaks of
+        // and not because of another point left open.
         $this->soundInstallation();
     }
 
@@ -51,11 +50,11 @@ final class TheDiagnosticSpeaksTest extends TestCase
     }
 
     /**
-     * Ce que l'hote a a faire, et rien de plus · la directive dans une vue.
+     * What the host has to do, and nothing more: the directive in a view.
      *
-     * Les deux imports que ce montage ecrivait ont disparu avec le modele qui
-     * les demandait · le paquet compile et publie ses fichiers, l'hote n'en
-     * importe aucun.
+     * The two imports this setup used to write went with the model that asked
+     * for them: the package compiles and publishes its files, and the host
+     * imports none of them.
      */
     private function soundInstallation(): void
     {
@@ -76,9 +75,9 @@ final class TheDiagnosticSpeaksTest extends TestCase
     }
 
     /**
-     * **Le point qui manque le plus souvent**, et le seul dont le symptome soit
-     * rigoureusement invisible · les ecrans fonctionnent, les routes repondent,
-     * les tables existent, et pas une visite n'arrive.
+     * **The point that is missing most often**, and the only one whose symptom
+     * is strictly invisible: the screens work, the routes answer, the tables
+     * exist, and not a single visit arrives.
      */
     public function test_it_says_when_no_view_carries_the_collector_directive(): void
     {
@@ -126,7 +125,7 @@ final class TheDiagnosticSpeaksTest extends TestCase
             ->assertFailed();
     }
 
-    /** La directive posee dans un `vendor/` n'est pas la notre. */
+    /** The directive laid inside a `vendor/` is not ours. */
     public function test_it_does_not_accept_the_directive_found_in_a_package_view(): void
     {
         File::put(resource_path('views/layouts/web.blade.php'), '<body></body>');
@@ -154,17 +153,17 @@ final class TheDiagnosticSpeaksTest extends TestCase
     }
 
     /**
-     * La copie servie, et non le fichier livré.
+     * The copy being served, and not the shipped file.
      *
-     * Le paquet compile et livre ; l'application publie une copie. Un
-     * déploiement qui met le paquet à jour sans republier laisse la feuille du
-     * mois dernier en place, et **rien ne le dit tant que personne n'ouvre un
-     * écran** · le kit lève alors, mais ça peut venir longtemps après.
+     * The package compiles and ships; the application publishes a copy. A
+     * deployment that updates the package without republishing leaves last
+     * month's stylesheet in place, and **nothing says so until somebody opens a
+     * screen** — the kit raises then, but that can come long afterwards.
      *
-     * **On déplace le dossier attendu plutôt que d'effacer la copie.** Les
-     * essais tournent en parallèle et partagent un même dossier public · en
-     * retirer les fichiers faisait tomber, au hasard, un autre essai en train
-     * de dessiner un écran. Un réglage ne sort pas du processus.
+     * **The expected directory is moved rather than the copy deleted.** The
+     * tests run in parallel and share one public directory: removing the files
+     * from it brought down, at random, another test in the middle of drawing a
+     * screen. A configuration setting does not leave the process.
      */
     public function test_it_says_when_the_compiled_sheet_was_never_published(): void
     {
@@ -193,7 +192,7 @@ final class TheDiagnosticSpeaksTest extends TestCase
             ->assertFailed();
     }
 
-    /** Un gabarit non nomme monte la coquille du paquet · ce n'est pas un defaut. */
+    /** An unnamed layout mounts the package's own shell: that is not a defect. */
     public function test_it_accepts_screens_that_use_the_package_shell(): void
     {
         config(['analytics.admin.layout' => null]);
@@ -211,11 +210,11 @@ final class TheDiagnosticSpeaksTest extends TestCase
     }
 
     /**
-     * La geolocalisation n'est un defaut que si on l'a demandee.
+     * Geolocation is only a defect if it was asked for.
      *
-     * Sans cle, la fonctionnalite est eteinte et son absence est normale · une
-     * cle posee sans base telechargee laisse une colonne « pays » vide que rien
-     * n'explique.
+     * With no key the feature is off and its absence is normal; a key set
+     * without a downloaded database leaves a "country" column empty that
+     * nothing explains.
      */
     public function test_it_stays_quiet_about_geolocation_until_a_licence_key_is_set(): void
     {

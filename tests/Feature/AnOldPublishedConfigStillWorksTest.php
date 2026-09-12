@@ -8,31 +8,31 @@ use Falcon\Analytics\Tests\TestCase;
 use Falcon\Ui\Config\Defaults;
 
 /**
- * Un hôte qui tient une copie publiée d'avant les espaces.
+ * A host holding a published copy from before the areas.
  *
- * Publier la configuration est un geste courant, et une copie publiée ne se
- * met pas à jour toute seule. Celle de notre propre hôte date d'avant le
- * sous-chantier des espaces · elle porte `dashboard`, `marketing` et `assets`
- * au premier niveau, et ne connaît ni `admin` ni `web`.
+ * Publishing the configuration is a common move, and a published copy does not
+ * update itself. Our own host's dates from before the areas sub-chantier: it
+ * carries `dashboard`, `marketing` and `assets` at the top level, and knows
+ * neither `admin` nor `web`.
  *
- * **Le paquet doit continuer de marcher dans cet état**, sans quoi une mise à
- * jour casserait les écrans de quiconque a publié sa configuration un jour.
- * C'est exactement ce que `completeConfigFrom` achète, et cet essai vérifie
- * que le fichier du paquet en tire bien ce qu'il faut.
+ * **The package has to keep working in that state**, otherwise an update would
+ * break the screens of anyone who published their configuration one day. That
+ * is exactly what `completeConfigFrom` buys, and this test checks that the
+ * package's file does draw what it needs from it.
  *
- * Ce qui est vérifié ici n'est pas le mécanisme du kit — il a ses propres
- * essais — mais **notre fichier passé dedans** · une clé qu'on aurait rangée
- * au mauvais endroit ne se verrait pas autrement.
+ * What is checked here is not the kit's mechanism — that has its own tests —
+ * but **our file put through it**: a key filed in the wrong place would not
+ * show any other way.
  *
- * L'application est montée, sans la base · le fichier du paquet appelle
- * `storage_path()` pour la base de géolocalisation, et ça ne se lit pas hors
- * d'une application.
+ * The application is booted, without the database: the package's file calls
+ * `storage_path()` for the geolocation database, and that cannot be read
+ * outside an application.
  */
 final class AnOldPublishedConfigStillWorksTest extends TestCase
 {
     /**
-     * La forme qu'avait la configuration avant les espaces, réduite à ce qui
-     * compte · c'est la copie que notre hôte tient aujourd'hui.
+     * The shape the configuration had before the areas, cut down to what
+     * matters: this is the copy our host holds today.
      *
      * @return array<string, mixed>
      */
@@ -77,14 +77,14 @@ final class AnOldPublishedConfigStillWorksTest extends TestCase
         $this->assertSame('admin/analytics', $completed['admin']['route_prefix']);
         $this->assertSame('admin/marketing', $completed['admin']['marketing']['route_prefix']);
         $this->assertIsArray($completed['web']['middleware']);
-        $this->assertNotSame([], $completed['web']['middleware'], "L'ingestion doit garder une pile de session.");
+        $this->assertNotSame([], $completed['web']['middleware'], 'Ingestion has to keep a session stack.');
     }
 
     /**
-     * Ce que l'hôte avait choisi ne doit pas être écrasé par la complétion.
+     * What the host had chosen must not be overwritten by the completion.
      *
-     * C'est l'autre moitié du contrat · compléter ce qui manque, sans jamais
-     * reprendre la main sur ce qui est écrit.
+     * This is the other half of the contract: complete what is missing, without
+     * ever taking back control of what is written.
      */
     public function test_it_leaves_what_the_host_had_chosen_alone(): void
     {
@@ -95,8 +95,8 @@ final class AnOldPublishedConfigStillWorksTest extends TestCase
     }
 
     /**
-     * Les blocs périmés survivent, et c'est sans conséquence · plus rien ne les
-     * lit. Le dire ici évite qu'on s'en inquiète en les voyant.
+     * The stale blocks survive, and that is harmless: nothing reads them any
+     * more. Saying so here saves worrying about them on sight.
      */
     public function test_the_stale_blocks_survive_harmlessly(): void
     {

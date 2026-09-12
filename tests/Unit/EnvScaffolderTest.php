@@ -10,11 +10,11 @@ use PHPUnit\Framework\TestCase;
 final class EnvScaffolderTest extends TestCase
 {
     /**
-     * Les groupes que l'installateur passerait au greffon.
+     * The groups the installer would pass to the scaffolder.
      *
-     * `envGroups` et non `groups` · PHPUnit declare `groups()` final sur son
-     * `TestCase`, et la redefinir est une erreur fatale au chargement, pas un
-     * essai qui tombe.
+     * `envGroups` and not `groups`: PHPUnit declares `groups()` final on its
+     * `TestCase`, and redefining it is a fatal error at load time, not a test
+     * that fails.
      *
      * @return list<array{comment: list<string>, entries: array<string, string>}>
      */

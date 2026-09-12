@@ -71,10 +71,10 @@ final class PackageInstallationTest extends TestCase
 
     public function test_it_registers_the_configured_module_middleware_as_livewire_persistent(): void
     {
-        // Le banc monte le tableau de bord derrière ['web', 'auth:admin'] et le
-        // module marketing garde son ['web', 'auth'] par défaut ; les deux
-        // doivent rejouer sur /livewire/update, alors que « web » reste dehors,
-        // Livewire l'exécutant toujours.
+        // The bench mounts the dashboard behind ['web', 'auth:admin'] and the
+        // marketing module keeps its default ['web', 'auth']; both have to
+        // replay on /livewire/update, while "web" stays out, Livewire always
+        // running it.
         $persistent = Livewire::getPersistentMiddleware();
 
         $this->assertContains('auth:admin', $persistent);
@@ -104,33 +104,34 @@ final class PackageInstallationTest extends TestCase
         File::put($base.DIRECTORY_SEPARATOR.'.env.example', "APP_NAME=Host\n");
 
         $this->app->setBasePath($base);
-        // On rejoue le fournisseur pour que la cible de publication suive la
-        // nouvelle racine.
+        // The provider is registered again so the publication target follows
+        // the new root.
         $this->app->register(AnalyticsServiceProvider::class, force: true);
 
         try {
-            // Aucune option · la commande ne demande plus rien. Elle publie,
-            // amorce l'environnement et migre, et c'est tout ce qu'elle touche.
+            // No options: the command asks for nothing any more. It publishes,
+            // scaffolds the environment and migrates, and that is all it
+            // touches.
             $this->artisan('analytics:install')->assertSuccessful();
 
             $this->assertFileExists($base.DIRECTORY_SEPARATOR.'config'.DIRECTORY_SEPARATOR.'analytics.php');
 
             /*
-             * Les fichiers compiles, sans quoi le premier ecran leve · le kit
-             * refuse de batir l'adresse d'un fichier que l'hote n'a pas publie.
-             * L'installateur du kit publie les siens ; personne d'autre ne
-             * publie les notres.
+             * The compiled files, without which the first screen raises: the
+             * kit refuses to build the address of a file the host has not
+             * published. The kit's installer publishes its own; nobody else
+             * publishes ours.
              *
-             * Les deux sont nommes · un fichier livre qui manquerait a cette
-             * liste ne serait jamais reclame, et son absence se verrait a la
-             * premiere visite plutot qu'ici.
+             * Both are named: a shipped file missing from this list would never
+             * be claimed, and its absence would show on the first visit rather
+             * than here.
              */
             foreach (['analytics.css', 'analytics.js'] as $shipped) {
                 $this->assertFileExists(
                     $base.DIRECTORY_SEPARATOR.'public'.DIRECTORY_SEPARATOR.'vendor'
                     .DIRECTORY_SEPARATOR.'falcon'.DIRECTORY_SEPARATOR.'analytics'
                     .DIRECTORY_SEPARATOR.$shipped,
-                    "Une installation fraiche doit publier {$shipped}.",
+                    "A fresh installation has to publish {$shipped}.",
                 );
             }
 
@@ -143,15 +144,16 @@ final class PackageInstallationTest extends TestCase
     }
 
     /**
-     * L'installateur ne demande plus aucun chemin.
+     * The installer asks for no path at all any more.
      *
-     * Il en demandait trois, et les ecrivait dans les entrees de l'hote · ce
-     * modele a disparu avec la refonte de la suite. Le paquet compile et publie
-     * ses fichiers, donc il n'y a plus rien a importer ni rien a demander.
+     * It used to ask for three, and wrote them into the host's entries: that
+     * model went with the rebuild of the suite. The package compiles and
+     * publishes its files, so there is nothing left to import and nothing to
+     * ask for.
      *
-     * L'essai porte sur la definition de la commande plutot que sur un appel ·
-     * une option reintroduite se verrait ici, au lieu d'etre decouverte le jour
-     * ou quelqu'un se demande a quoi elle sert.
+     * The test is on the command's definition rather than on a call: an option
+     * reintroduced would show here, instead of being discovered the day
+     * somebody wonders what it is for.
      */
     public function test_it_asks_for_no_path_at_all(): void
     {

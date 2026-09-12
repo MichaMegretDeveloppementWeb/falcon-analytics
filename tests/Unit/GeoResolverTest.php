@@ -55,10 +55,10 @@ final class GeoResolverTest extends TestCase
     }
 
     /**
-     * `locate()` se dégrade en localisation vide quelle qu'en soit la cause, ce
-     * qui est juste pour une requête et inutile pour qui lit l'écran : une base
-     * absente et un 127.0.0.1 montraient tous deux une colonne blanche, et rien
-     * ne disait laquelle corriger.
+     * `locate()` degrades to an empty location whatever the cause, which is
+     * right for a request and useless for whoever reads the screen: an absent
+     * database and a 127.0.0.1 both showed a blank column, and nothing said
+     * which one to fix.
      */
     public function test_it_names_the_reason_an_address_does_not_resolve(): void
     {
@@ -76,7 +76,7 @@ final class GeoResolverTest extends TestCase
         @unlink($path);
     }
 
-    /** Une adresse de développement ne remplace que les privées, donc elle ne peut pas masquer une vraie panne. */
+    /** A development address only replaces private ones, so it cannot mask a real failure. */
     public function test_it_keeps_a_public_address_out_of_the_development_substitution_when_checking(): void
     {
         $resolver = new GeoResolver(null, '85.4.12.66');

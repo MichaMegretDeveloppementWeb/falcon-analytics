@@ -4,7 +4,7 @@
 
     $subjectResolver = app(\Falcon\Analytics\Services\SubjectResolver::class);
 
-    // Palette de reference (Wix) : encre #000624, accent #116DFF, en ligne #54CE91.
+    // Reference palette (Wix): ink #000624, accent #116DFF, online #54CE91.
     $ink = 'an:text-[#000624] an:dark:text-gray-100';
     $inkMuted = 'an:text-[#000624]/40 an:dark:text-gray-500';
     $inkSoft = 'an:text-[#44485F] an:dark:text-gray-400';

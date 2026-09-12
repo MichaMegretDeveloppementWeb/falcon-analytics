@@ -11,26 +11,25 @@ use RecursiveIteratorIterator;
 use SplFileInfo;
 
 /**
- * Ce que le paquet livre correspond-il aux sources qui le produisent ?
+ * Does what the package ships match the sources that produce it?
  *
- * Le paquet compile et livre du compilé · une feuille. Une application la
- * publie et la sert sans jamais la refabriquer, donc un fichier périmé lui
- * donne des écrans mal dessinés sans le moindre message.
+ * The package compiles and ships compiled files: a stylesheet and a script. An
+ * application publishes and serves them without ever rebuilding them, so a
+ * stale file gives it badly drawn screens without a single message.
  *
- * Le défaut est facile à commettre · on modifie une vue, on le voit marcher en
- * local parce qu'on vient de compiler, et on pousse sans rejouer la
- * compilation.
+ * The mistake is easy to make: you change a view, you see it work locally
+ * because you have just compiled, and you push without replaying the build.
  *
- * **Les vues comptent autant que le CSS.** Le générateur d'utilitaires les lit ·
- * une classe ajoutée dans un écran change la feuille livrée aussi sûrement
- * qu'une règle écrite à la main.
+ * **The views count as much as the CSS.** The utility generator reads them: a
+ * class added to a screen changes the shipped stylesheet as surely as a
+ * hand-written rule does.
  *
- * L'empreinte est écrite par `scripts/fingerprint.mjs`, appelé par
- * `npm run build`. Ce que cet essai ne peut pas dire, c'est si la compilation
- * rend deux fois le même fichier · ça demande node, et c'est le rôle de
+ * The fingerprint is written by `scripts/fingerprint.mjs`, called by
+ * `npm run build`. What this test cannot say is whether the build produces the
+ * same file twice: that needs node, and it is the job of
  * `npm run check-assets`.
  *
- * Pas de base de données ici · il lit des fichiers, et rien d'autre.
+ * No database here: it reads files, and nothing else.
  */
 final class AssetsAreUpToDateTest extends TestCase
 {
@@ -39,23 +38,23 @@ final class AssetsAreUpToDateTest extends TestCase
         foreach (['analytics.css', 'analytics.js', 'sources.sha'] as $file) {
             $this->assertFileExists(
                 $this->publicPath($file),
-                $file.' est absent de public/. Lancez `npm run build`.',
+                $file.' is missing from public/. Run `npm run build`.',
             );
         }
     }
 
     /**
-     * Les huit couches, toutes présentes et dans cet ordre.
+     * The eight layers, all present and in this order.
      *
-     * C'est le contrat qui permet à la feuille du kit, à celle du paquet et à
-     * celle de l'application de cohabiter · la première déclaration rencontrée
-     * fixe l'ordre pour tout le document, et une feuille chargée plus tard ne
-     * peut pas réordonner ce qui est déjà déclaré.
+     * This is the contract that lets the kit's stylesheet, the package's and
+     * the application's live together: the first declaration encountered fixes
+     * the order for the whole document, and a stylesheet loaded later cannot
+     * reorder what is already declared.
      *
-     * Le compilateur a le droit de découper la déclaration — il pose les
-     * couches qu'il remplit puis nomme le reste — et d'en ajouter des siennes,
-     * une couche `properties` en tête. Elle ne réordonne rien : on lit donc
-     * l'ordre RELATIF des huit, qui est le contrat, et non la liste brute.
+     * The compiler is allowed to split the declaration — it lays down the
+     * layers it fills, then names the rest — and to add its own, a `properties`
+     * layer at the head. It reorders nothing, so what is read here is the
+     * RELATIVE order of the eight, which is the contract, and not the raw list.
      */
     public function test_the_eight_layers_are_declared_in_the_agreed_order(): void
     {
@@ -67,16 +66,16 @@ final class AssetsAreUpToDateTest extends TestCase
         $this->assertSame(
             $contract,
             array_values(array_intersect($this->layersDeclaredIn('analytics.css'), $contract)),
-            "L'ordre des couches de analytics.css n'est plus celui de la suite.",
+            "The layer order of analytics.css is no longer the suite's.",
         );
     }
 
     /**
-     * La feuille porte vraiment les utilitaires du paquet.
+     * The stylesheet really carries the package's utilities.
      *
-     * Une feuille qui ne contiendrait que la ligne des couches passerait les
-     * deux essais ci-dessus sans rien dessiner · c'est exactement l'état où le
-     * paquet se trouvait avant que ses vues portent leur préfixe.
+     * A stylesheet holding nothing but the layer line would pass both tests
+     * above while drawing nothing — which is exactly the state the package was
+     * in before its views carried their prefix.
      */
     public function test_the_sheet_carries_prefixed_utilities(): void
     {
@@ -85,36 +84,35 @@ final class AssetsAreUpToDateTest extends TestCase
         $this->assertGreaterThan(
             200,
             substr_count($css, '.an\:'),
-            'La feuille ne porte presque aucune règle préfixée · le scan des vues a-t-il trouvé quelque chose ?',
+            'The stylesheet carries almost no prefixed rule: did the view scan find anything?',
         );
 
         $this->assertStringNotContainsString(
             'box-sizing',
             $css,
-            'Le reset appartient au kit · deux resets sur une page se battent.',
+            'The reset belongs to the kit: two resets on one page fight each other.',
         );
     }
 
     /**
-     * Une source a-t-elle changé depuis la dernière compilation ?
+     * Has a source changed since the last build?
      *
-     * C'est ce qui transforme « il faut penser à recompiler » en un essai qui
-     * échoue.
+     * This is what turns "remember to rebuild" into a test that fails.
      */
     public function test_the_fingerprint_matches_the_sources(): void
     {
         $this->assertSame(
             $this->fingerprintOfSources(),
             trim((string) file_get_contents($this->publicPath('sources.sha'))),
-            'Une source a changé depuis la dernière compilation. Lancez `npm run build`, puis commitez `public/`.',
+            'A source changed since the last build. Run `npm run build`, then commit `public/`.',
         );
     }
 
     /**
-     * Les couches dans l'ordre où le document les établit.
+     * The layers in the order the document establishes them.
      *
-     * Une couche compte à sa première apparition, qu'elle soit ouverte avec du
-     * contenu ou seulement nommée dans une liste.
+     * A layer counts on its first appearance, whether it is opened with content
+     * or only named in a list.
      *
      * @return list<string>
      */
@@ -142,10 +140,10 @@ final class AssetsAreUpToDateTest extends TestCase
     }
 
     /**
-     * Le même calcul que `scripts/fingerprint.mjs`, et il doit le rester.
+     * The same calculation as `scripts/fingerprint.mjs`, and it has to stay so.
      *
-     * Les fins de ligne sont normalisées, sans quoi l'empreinte différerait
-     * entre un poste Windows et un poste Unix pour un contenu identique.
+     * Line endings are normalised, otherwise the fingerprint would differ
+     * between a Windows machine and a Unix one for identical content.
      */
     private function fingerprintOfSources(): string
     {

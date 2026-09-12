@@ -1,25 +1,24 @@
-# Aucun `includes:` ici, et c'est voulu · `phpstan/extension-installer` monte
-# seul les extensions des paquets installes — larastan, celle de Carbon, et les
-# regles strictes. Un `includes:` ecrit a la main ferait doublon, et il faudrait
-# le tenir a jour a chaque extension ajoutee.
+# No `includes:` here, and that is deliberate: `phpstan/extension-installer`
+# mounts the installed packages' extensions on its own — larastan, Carbon's, and
+# the strict rules. An `includes:` written by hand would duplicate that, and
+# would have to be kept up to date with every extension added.
 
 parameters:
-    # Le niveau 8 · le palier qui refuse qu'une valeur potentiellement nulle
-    # circule sans etre verifiee. Le meme que le kit.
+    # Level 8: the step that refuses to let a possibly null value travel without
+    # being checked. The same as the kit's.
     level: 8
 
-    # Les regles strictes sont actives, sauf une.
+    # The strict rules are on, except one.
     #
-    # `dynamicCallOnStaticMethod` interdit d'appeler une methode statique sur
-    # une instance. Eloquent modelise son constructeur de requetes ainsi : un
-    # `$query->whereIn(...)` ou un `$query->count()` y passe pour un appel
-    # statique. Mesure sur ce paquet · 153 erreurs, toutes de cette forme, et
-    # aucune n'est un defaut. Le kit ne les rencontre pas · il n'a pas de
-    # modeles.
+    # `dynamicCallOnStaticMethod` forbids calling a static method on an
+    # instance. Eloquent models its query builder that way: a
+    # `$query->whereIn(...)` or a `$query->count()` passes for a static call
+    # there. Measured on this package: 153 errors, all of that shape, and none
+    # of them a defect. The kit does not meet them — it has no models.
     #
-    # Les vingt autres regles restent, et elles ont deja rendu 88 signalements
-    # reels. Cette regle-la se rallumera le jour ou l'outillage saura distinguer
-    # le transfert d'Eloquent d'un vrai appel statique sur instance.
+    # The other twenty rules stay, and they have already returned 88 real
+    # reports. That one will come back on the day the tooling can tell
+    # Eloquent's forwarding from a genuine static call on an instance.
     strictRules:
         dynamicCallOnStaticMethod: false
 
@@ -30,15 +29,15 @@ parameters:
         - config
         - routes
 
-    # Des gabarits lus par `analytics:scan-events`, pas du code a analyser · ils
-    # nomment exprès des classes qui n'existent pas, pour prouver que le scanner
-    # trouve un evenement sans rien resoudre.
+    # Templates read by `analytics:scan-events`, not code to analyse: they name
+    # classes that do not exist on purpose, to prove the scanner finds an event
+    # without resolving anything.
     excludePaths:
         - tests/Fixtures/scan
 
-    # Un paquet a son propre dossier de config, que larastan ne devine pas :
-    # sans ca, chaque `env()` de config/analytics.php passe pour un appel fait
-    # hors config, qui rendrait null une fois la config mise en cache.
+    # A package has its own config directory, which larastan does not guess:
+    # without this, every `env()` in config/analytics.php passes for a call made
+    # outside config, which would return null once the config is cached.
     configDirectories:
         - config
 
@@ -53,42 +52,42 @@ parameters:
 
     parseModelCastsMethod: true
 
-    # Un seul processus : larastan tente de resoudre le conteneur d'une
-    # application Laravel, qu'un paquet n'a pas, et le travailleur parallele
-    # meurt en emportant le decompte avec lui.
+    # One single process: larastan tries to resolve the container of a Laravel
+    # application, which a package does not have, and the parallel worker dies
+    # taking the count with it.
     parallel:
         maximumNumberOfProcesses: 1
 
-    # ─── Les exceptions, et pourquoi elles existent ─────────────────────────
+    # ─── The exceptions, and why they exist ─────────────────────────────────
     #
-    # Il n'y a pas de `phpstan-baseline.neon` dans ce paquet, et il ne doit pas
-    # y en avoir. Ce qui suit ne masque aucune dette du projet · ce sont des
-    # erreurs nees de la rencontre de deux outils qui ont chacun raison.
+    # There is no `phpstan-baseline.neon` in this package, and there must not
+    # be. What follows hides no debt of the project: these are errors born of
+    # two tools meeting, each of which is right.
     #
-    # Chacune est limitee a `tests`, et `reportUnmatchedIgnoredErrors` reste
-    # actif · le jour ou l'une cesse de s'apparier, l'analyse le dit au lieu de
-    # la garder par inertie. Ce sont les memes que celles du kit, aux memes
-    # conditions de retrait.
+    # Each is limited to `tests`, and `reportUnmatchedIgnoredErrors` stays on:
+    # the day one stops matching, the analysis says so instead of keeping it out
+    # of inertia. These are the same as the kit's, under the same conditions for
+    # removal.
     ignoreErrors:
-        # `$this->artisan()` est declare par Laravel comme rendant
-        # `PendingCommand|int` · la branche entiere ne survient que lorsqu'on
-        # lance la commande sans rien attendre d'elle, ce que ces essais ne font
-        # jamais puisqu'ils enchainent tous une assertion.
-        # Se retire le jour ou Laravel affinerait ce type de retour.
+        # `$this->artisan()` is declared by Laravel as returning
+        # `PendingCommand|int`: the int branch only happens when the command is
+        # run without expecting anything of it, which these tests never do since
+        # they all chain an assertion.
+        # Removed the day Laravel narrows that return type.
         -
             identifier: method.nonObject
             message: '#^Cannot call method .+\(\) on Illuminate\\Testing\\PendingCommand\|int\.$#'
             paths:
                 - tests
 
-        # `$this->app` est declare nullable par testbench parce qu'il l'est
-        # reellement hors du cycle de vie d'un essai · a l'interieur d'une
-        # methode d'essai, l'application est toujours amorcee.
-        # Se retire le jour ou testbench le declarerait non nul.
+        # `$this->app` is declared nullable by testbench because it really is
+        # outside a test's life cycle: inside a test method, the application is
+        # always booted.
+        # Removed the day testbench declares it non-null.
         #
-        # La jumelle, sur l'acces par index, a ete retiree tout de suite · aucune
-        # erreur ne s'y appariait, et `reportUnmatchedIgnoredErrors` l'a dit au
-        # lieu de la laisser dormir. C'est exactement son role.
+        # Its twin, on offset access, was removed straight away: no error
+        # matched it, and `reportUnmatchedIgnoredErrors` said so instead of
+        # letting it sleep. That is exactly its job.
         -
             identifier: method.nonObject
             message: '#^Cannot call method .+\(\) on Illuminate\\Foundation\\Application\|null\.$#'

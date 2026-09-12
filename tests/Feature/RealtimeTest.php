@@ -87,7 +87,7 @@ final class RealtimeTest extends TestCase
         ], $attributes));
     }
 
-    // ── Le dépôt ─────────────────────────────────────────────────────────
+    // ── The repository ───────────────────────────────────────────────────
 
     public function test_it_counts_distinct_online_visitors_ignoring_stale_and_bots(): void
     {
@@ -252,7 +252,7 @@ final class RealtimeTest extends TestCase
         $this->assertSame(1, $this->repository->unlocatedCount($this->windowSince));
     }
 
-    // ── L'écran ──────────────────────────────────────────────────────────
+    // ── The screen ───────────────────────────────────────────────────────
 
     public function test_it_renders_the_realtime_page_for_an_admin_with_the_configured_poll(): void
     {
@@ -315,8 +315,8 @@ final class RealtimeTest extends TestCase
         $this->sessionRow(['city' => 'Geneva', 'country' => 'CH', 'latitude' => 46.2044, 'longitude' => 6.1432]);
         $this->sessionRow();
 
-        // `getDisplayRegion` rend `false` si l'extension intl ne connait pas la
-        // region · l'essai n'a alors rien a chercher dans la page.
+        // `getDisplayRegion` returns `false` if the intl extension does not
+        // know the region: the test then has nothing to look for in the page.
         $region = Locale::getDisplayRegion('-CH', app()->getLocale());
 
         $this->assertNotFalse($region, 'la region CH doit avoir un libelle');
@@ -329,7 +329,7 @@ final class RealtimeTest extends TestCase
             ->assertSeeText(__('dont 1 session non localisée'));
     }
 
-    // ── Le budget ────────────────────────────────────────────────────────
+    // ── The budget ───────────────────────────────────────────────────────
 
     public function test_it_renders_the_realtime_tick_within_its_query_budget(): void
     {
@@ -351,11 +351,11 @@ final class RealtimeTest extends TestCase
             ->filter(fn (array $q): bool => str_contains($q['query'], 'falcon_analytics_'))
             ->map(fn (array $q): string => $q['query'].'|'.json_encode($q['bindings']));
 
-        // Plan figé : en ligne + fenêtre (sessions, pages vues) + seaux par
-        // minute + sessions récentes (+ visiteurs) + flux (événements +
-        // sessions + visiteurs) + levée d'ambiguïté de l'attributeur + top
-        // pages/sources/appareils + points de carte + non localisées = 16.
-        // Aucune lecture en double dans un tic.
+        // Fixed plan: online + window (sessions, pageviews) + per-minute
+        // buckets + recent sessions (+ visitors) + feed (events + sessions +
+        // visitors) + the attributor's disambiguation + top
+        // pages/sources/devices + map points + unlocated = 16.
+        // No duplicate read within one tick.
         $this->assertSame(0, $signatures->count() - $signatures->unique()->count());
         $this->assertLessThanOrEqual(16, $signatures->count());
     }

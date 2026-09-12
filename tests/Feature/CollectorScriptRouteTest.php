@@ -7,17 +7,16 @@ namespace Falcon\Analytics\Tests\Feature;
 use Falcon\Analytics\Tests\TestCase;
 
 /**
- * Le collecteur ne passe pas par PHP.
+ * The collector does not go through PHP.
  *
- * Il l'a fait · une route le servait, avec un an de cache et une empreinte dans
- * l'adresse. Elle a été retirée le 2026-09-06. L'hôte l'a ensuite importé dans
- * son entrée JavaScript, et depuis le 2026-09-12 le paquet le compile et le
- * livre lui-même · `public/analytics.js`, publié dans le dossier public de
- * l'hôte et servi par le serveur web.
+ * It did once: a route served it, with a year of cache and a fingerprint in the
+ * address. That route was removed on 2026-09-06. The host then imported it into
+ * its JavaScript entry, and since 2026-09-12 the package compiles and ships it
+ * itself — `public/analytics.js`, published into the host's public directory
+ * and served by the web server.
  *
- * Cet essai garde la route retirée · si elle revenait, deux exemplaires du même
- * collecteur pourraient se retrouver sur une page et compter chaque visite deux
- * fois.
+ * This test holds the removed route out: if it came back, two copies of the
+ * same collector could end up on one page and count every visit twice.
  */
 final class CollectorScriptRouteTest extends TestCase
 {
@@ -27,12 +26,12 @@ final class CollectorScriptRouteTest extends TestCase
     }
 
     /**
-     * La source reste autonome · aucun `import`, aucune dépendance npm.
+     * The source stays self-contained: no `import`, no npm dependency.
      *
-     * Ce n'est plus l'hôte qui l'importe, mais la compilation en dépend quand
-     * même · le kit émet une balise **classique** pour le fichier d'un paquet,
-     * et un module y lèverait dans le navigateur. Une dépendance introduite ici
-     * ferait sortir un module du compilateur.
+     * It is no longer the host that imports it, but the build depends on it all
+     * the same: the kit emits a **classic** tag for a package's file, and a
+     * module would throw there in the browser. A dependency introduced here
+     * would make the compiler emit a module.
      */
     public function test_the_source_stays_self_contained(): void
     {
@@ -45,20 +44,20 @@ final class CollectorScriptRouteTest extends TestCase
         $this->assertStringContainsString('sendBeacon', $source);
         $this->assertStringContainsString('__falconAnalytics', $source);
 
-        // Le repli sur `fetch` avale son rejet · un endpoint injoignable ne
-        // doit jamais faire remonter une promesse non geree dans la console de
-        // l'hote.
+        // The fallback on `fetch` swallows its rejection: an unreachable
+        // endpoint must never surface an unhandled promise in the console of
+        // the host's visitor.
         $this->assertStringContainsString('.catch(', $source);
 
         $this->assertSame(0, preg_match('/^\s*(import|export)\s/m', $source));
     }
 
     /**
-     * Et le fichier livré en sort bien en fonction immédiate.
+     * And the shipped file does come out as an immediately invoked function.
      *
-     * C'est la contrepartie de l'essai ci-dessus, du côté du compilé · une
-     * configuration de build changée pour produire un module ne se verrait
-     * autrement qu'à l'exécution, dans une console d'hôte.
+     * This is the counterpart of the test above, on the compiled side: a build
+     * configuration changed to produce a module would otherwise only show at
+     * runtime, in a host's console.
      */
     public function test_the_shipped_collector_is_a_classic_script(): void
     {

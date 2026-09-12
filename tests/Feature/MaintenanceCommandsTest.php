@@ -76,8 +76,8 @@ final class MaintenanceCommandsTest extends TestCase
 
         $this->artisan('analytics:sweep')->assertSuccessful();
 
-        // `ended_at` est posé à la dernière activité plus le délai (11:50 + 5
-        // min), jamais à l'heure du balayage.
+        // `ended_at` is set to the last activity plus the timeout (11:50 + 5
+        // min), never to the time of the sweep.
         $freshIdle = $idle->fresh();
         $freshActive = $active->fresh();
 

@@ -6,8 +6,8 @@ use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Session\Middleware\StartSession;
 
-// Une variable d'environnement laissee vide vaut une variable absente · elle se
-// lit `''`, et ce n'est pas un chemin de base de donnees.
+// An environment variable left empty counts as an absent one: it reads back as
+// `''`, and that is not a path to a database.
 $geoipDatabase = env('ANALYTICS_GEOIP_DATABASE');
 
 return [

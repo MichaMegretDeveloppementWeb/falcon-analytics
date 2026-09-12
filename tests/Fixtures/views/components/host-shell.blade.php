@@ -18,8 +18,8 @@
     <title>{{ $title ?? 'sans titre' }}</title>
 </head>
 <body>
-    {{-- Sans apostrophe, délibérément · `assertSee` échappe ce qu'on lui donne,
-         et un gabarit rend son HTML brut. Les deux ne se rencontreraient pas. --}}
+    {{-- No apostrophe, deliberately: `assertSee` escapes what it is given, and
+         a template renders its HTML raw. The two would never meet. --}}
     <p>chrome fourni par le gabarit</p>
     {{ $slot }}
 </body>

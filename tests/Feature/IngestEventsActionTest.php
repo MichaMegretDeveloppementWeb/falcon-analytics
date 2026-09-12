@@ -70,9 +70,9 @@ final class IngestEventsActionTest extends TestCase
 
         $this->assertSame(7, $session->subject_id);
 
-        // Les instants reconstruits tombent une seconde environ avant le
-        // `started_at` posé par le serveur ; `last_activity_at` est ramené en
-        // avant pour ne jamais précéder le début.
+        // The reconstructed instants fall about a second before the
+        // `started_at` set by the server; `last_activity_at` is pulled forward
+        // so it never precedes the start.
         $this->assertSame('2026-07-01 10:00:00', $session->last_activity_at->toDateTimeString());
 
         $this->assertSame(2, Event::count());
@@ -112,8 +112,8 @@ final class IngestEventsActionTest extends TestCase
         $this->assertSame(2, Session::count());
         $this->assertSame(2, Visitor::firstOrFail()->session_count);
 
-        // La même adresse compte quand même dans la session neuve · le garde
-        // anti-rechargement repart d'une dernière adresse nulle après un délai.
+        // The same address still counts in the fresh session: the reload guard
+        // starts again from a null last address after a timeout.
         $newest = Session::orderByDesc('id')->first();
 
         $this->assertNotNull($newest);

@@ -42,10 +42,10 @@ final class FunnelEvaluatorTest extends TestCase
     }
 
     /**
-     * Un visiteur dont les evenements arrivent dans l'ordre donne.
+     * A visitor whose events arrive in the given order.
      *
-     * Une chaine est un evenement personnalise, apparie par son nom ;
-     * `['route' => x]` est une page vue, appariee par sa route.
+     * A string is a custom event, matched by its name; `['route' => x]` is a
+     * pageview, matched by its route.
      *
      * @param  list<string|array{route: string}>  $events
      */
@@ -70,8 +70,8 @@ final class FunnelEvaluatorTest extends TestCase
             $attributes = [
                 'session_id' => $session->id,
                 'visitor_id' => $visitor->id,
-                // Dans le passe, les evenements precedant toujours « maintenant »,
-                // et ranges par leur rang.
+                // In the past, the events always preceding "now", and filed by
+                // their rank.
                 'occurred_at' => now()->subMinutes(10)->addSeconds($order),
             ];
 
@@ -162,14 +162,13 @@ final class FunnelEvaluatorTest extends TestCase
         $this->assertSame(0, $reportLater->steps[0]->visitors);
     }
 
-    // ── Branches parallèles ──────────────────────────────────────────────
+    // ── Parallel branches ────────────────────────────────────────────────
     //
-    // Un jalon est souvent joignable par plus d'un chemin : un formulaire
-    // ouvert depuis l'une ou l'autre de deux pages, une inscription menée par
-    // l'un ou l'autre de deux parcours. Posées en étapes consécutives, elles
-    // se liraient « passé par l'une, PUIS par l'autre » et rendraient des
-    // zéros. Les branches se tiennent à la même profondeur, et le rapport dit
-    // par où les visiteurs sont entrés.
+    // A milestone is often reachable by more than one path: a form opened from
+    // either of two pages, a sign-up led by either of two journeys. Laid as
+    // consecutive steps, they would read "went through one, THEN through the
+    // other" and return zeros. Branches stand at the same depth, and the report
+    // says where the visitors came in.
 
     public function test_it_advances_a_branched_step_whichever_branch_the_visitor_takes(): void
     {
@@ -211,9 +210,8 @@ final class FunnelEvaluatorTest extends TestCase
     }
 
     /**
-     * Une branche que personne n'a prise doit paraitre quand meme · un zero est
-     * une lecture, et une ligne qui disparait ressemble a un defaut plutot qu'a
-     * une absence.
+     * A branch nobody took has to appear all the same: a zero is a reading, and
+     * a row that disappears looks like a defect rather than an absence.
      */
     public function test_it_keeps_an_untaken_branch_in_the_report_at_zero(): void
     {

@@ -57,12 +57,12 @@ final class DashboardRepositoriesTest extends TestCase
     }
 
     /**
-     * Les lignes d'une page, par ce que le contrat de pagination promet.
+     * A page's rows, through what the pagination contract promises.
      *
-     * Les depots rendent l'interface, pas la classe concrete · elle offre
-     * `items()`, et ni `first()` ni `count()`. Passer par elle ici garde les
-     * essais honnetes sur ce que l'API publique promet reellement, plutot que
-     * sur ce que l'implementation d'aujourd'hui offre en plus.
+     * The repositories return the interface, not the concrete class: it offers
+     * `items()`, and neither `first()` nor `count()`. Going through it here
+     * keeps the tests honest about what the public API actually promises,
+     * rather than about what today's implementation offers on top.
      *
      * @template TModel of Model
      *
@@ -217,8 +217,8 @@ final class DashboardRepositoriesTest extends TestCase
     {
         Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
 
-        // Deux sessions classées organiques qui correspondent en fait à la
-        // campagne, plus une qui n'y correspond pas.
+        // Two sessions classified organic that actually match the campaign,
+        // plus one that does not.
         $this->makeSession(['source' => 'organic', 'mkt_params' => ['src' => 'meta_ete']]);
         $this->makeSession(['source' => 'organic', 'mkt_params' => ['src' => 'meta_ete']]);
         $this->makeSession(['source' => 'organic']);
@@ -265,9 +265,9 @@ final class DashboardRepositoriesTest extends TestCase
 
         $row = $this->firstRow($result);
 
-        // Par l'accesseur generique · ce sont des colonnes calculees par la
-        // requete, pas des attributs du modele, et elles n'existent que sur les
-        // lignes que ce depot rend.
+        // Through the generic accessor: these are columns computed by the
+        // query, not attributes of the model, and they only exist on the rows
+        // this repository returns.
         $this->assertSame(2, (int) $row->getAttribute('events_count'));
         $this->assertSame(1, (int) $row->getAttribute('conversions_count'));
     }
@@ -312,7 +312,7 @@ final class DashboardRepositoriesTest extends TestCase
         $this->makeEvent($bot, EventType::Pageview, ['route' => 'home', 'url' => 'https://x.test/']);
 
         $this->assertSame([
-            // La même adresse s'agrège.
+            // The same address aggregates.
             ['label' => 'https://x.test/listings/25', 'total' => 2, 'previous' => 0],
             ['label' => 'https://x.test/catalog', 'total' => 1, 'previous' => 0],
         ], $this->overview->topPages($this->period, null));
@@ -543,7 +543,7 @@ final class DashboardRepositoriesTest extends TestCase
         $this->makeSession(['device_type' => 'mobile', 'source' => 'google', 'pageview_count' => 2], $visitor);
         $this->makeSession(['device_type' => 'desktop', 'source' => null, 'pageview_count' => 1], $visitor);
 
-        // La session d'un autre visiteur ne doit jamais fuir dans l'agrégat.
+        // Another visitor's session must never leak into the aggregate.
         $this->makeSession(['device_type' => 'tablet', 'source' => 'social', 'pageview_count' => 9]);
 
         $engagement = app(VisitorProfileReadRepository::class)->engagement($visitor->id);

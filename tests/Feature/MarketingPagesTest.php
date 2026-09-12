@@ -200,8 +200,8 @@ final class MarketingPagesTest extends TestCase
 
     public function test_it_excludes_already_selected_objectives_from_the_pickers(): void
     {
-        // Deux evenements declares, dont un sera choisi · sans le second, une
-        // liste vide passerait l'essai sans rien prouver.
+        // Two declared events, one of which will be picked: without the second,
+        // an empty list would pass the test while proving nothing.
         $this->app->forgetInstance(EventRegistry::class);
         $registry = app(EventRegistry::class);
         $registry->register(new TrackedEvent('Lead', 'Demande de contact', 3.0));
@@ -214,9 +214,9 @@ final class MarketingPagesTest extends TestCase
             ->call('newAd')
             ->call('addObjective', 'event', 'Lead', 'Lead', 3.0);
 
-        // `viewData()` et non `get()` · les options sont une donnee de vue, pas
-        // une propriete du composant. Avec `get()`, cet essai lisait null,
-        // parcourait une collection vide, et passait sans rien verifier.
+        // `viewData()` and not `get()`: the options are view data, not a
+        // property of the component. With `get()` this test read null, walked
+        // an empty collection, and passed without checking anything.
         $options = $component->viewData('eventOptions');
 
         $this->assertIsArray($options);

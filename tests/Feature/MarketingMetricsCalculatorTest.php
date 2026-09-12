@@ -30,8 +30,8 @@ final class MarketingMetricsCalculatorTest extends TestCase
             ['2026-06-15' => 2],
         );
 
-        // Une entrée par jour, la dernière étant aujourd'hui avec ses données
-        // et son taux dérivé (2/10).
+        // One entry per day, the last being today with its data and its
+        // derived rate (2/10).
         $this->assertCount(count($trend['sessions']), $trend['labels']);
         $this->assertSame(10, end($trend['sessions']));
         $this->assertSame(2, end($trend['conversions']));

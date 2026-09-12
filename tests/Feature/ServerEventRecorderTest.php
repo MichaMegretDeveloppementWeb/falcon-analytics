@@ -65,11 +65,11 @@ final class ServerEventRecorderTest extends TestCase
 
     public function test_it_never_throws_to_the_caller_even_without_a_usable_request_context(): void
     {
-        // Appelé hors d'une requête HTTP : aucune session n'est disponible, la
-        // résolution échoue, et l'appelant ne doit jamais voir d'exception.
-        // Un seul argument · `assertDoesntThrow` ne prend que la fermeture, et
-        // elle attrape deja tout `Throwable`. Le second argument ne servait a
-        // rien, sinon a laisser croire qu'il choisissait ce qui est attrape.
+        // Called outside an HTTP request: no session is available, resolution
+        // fails, and the caller must never see an exception.
+        // One argument only: `assertDoesntThrow` takes just the closure, and it
+        // already catches every `Throwable`. The second argument served no
+        // purpose but to suggest it chose what gets caught.
         $this->assertDoesntThrow(fn () => app(ServerEventRecorder::class)->record('X', value: 1.0));
 
         $this->assertSame(0, Event::count());

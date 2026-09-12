@@ -54,7 +54,7 @@ final class MarketingReportBuilderTest extends TestCase
 
         $builder = new MarketingReportBuilder;
 
-        // Deux conditions l'emportent sur une.
+        // Two conditions beat one.
         $twoConditions = $builder->resolveAd(['src' => 'meta_ete', 'creative' => 'cabrio']);
         $otherCreative = $builder->resolveAd(['src' => 'meta_ete', 'creative' => 'other']);
         $sourceOnly = $builder->resolveAd(['src' => 'meta_ete']);
@@ -110,8 +110,8 @@ final class MarketingReportBuilderTest extends TestCase
         $builder = new MarketingReportBuilder;
         $period = Period::ofDays(30);
 
-        // Seules les sessions rattachées à une campagne comptent comme trafic
-        // publicitaire · la session src=other est écartée.
+        // Only sessions attached to a campaign count as paid traffic: the
+        // src=other session is set aside.
         $this->assertSame(['sessions' => 3, 'visitors' => 2], $builder->headline($period, null));
 
         $performance = $builder->performance($period, null);
@@ -132,7 +132,7 @@ final class MarketingReportBuilderTest extends TestCase
         $session = $this->taggedSession(['src' => 'meta_ete'], $converter);
         Event::create(['session_id' => $session->id, 'visitor_id' => $converter->id, 'type' => 'custom', 'name' => 'Lead', 'occurred_at' => now()]);
 
-        // Un second visiteur venu par la publicité, qui n'a jamais déclenché l'événement.
+        // A second visitor who came through the ad and never fired the event.
         $this->taggedSession(['src' => 'meta_ete']);
 
         $result = (new MarketingReportBuilder)->conversions(Period::ofDays(30), null, app(FunnelRegistry::class));
@@ -153,15 +153,15 @@ final class MarketingReportBuilderTest extends TestCase
         $ad = Ad::create(['campaign_id' => $ete->id, 'name' => 'Cabrio', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
         AdObjective::create(['ad_id' => $ad->id, 'type' => 'funnel', 'reference' => 'sample']);
 
-        // Un visiteur rattaché à la publicité, qui parcourt le tunnel dans
-        // l'ordre · page vue home, puis sample.action.
+        // A visitor attached to the ad, who walks the funnel in order:
+        // pageview home, then sample.action.
         $converter = $this->newVisitor();
         $session = $this->taggedSession(['src' => 'meta_ete'], $converter);
         Event::create(['session_id' => $session->id, 'visitor_id' => $converter->id, 'type' => 'pageview', 'route' => 'home', 'occurred_at' => now()->subMinutes(2)]);
         Event::create(['session_id' => $session->id, 'visitor_id' => $converter->id, 'type' => 'custom', 'name' => 'sample.action', 'occurred_at' => now()->subMinute()]);
 
-        // Un autre visiteur venu par la publicité, qui n'atteint que la
-        // première étape · pas de conversion.
+        // Another visitor who came through the ad and only reaches the first
+        // step: no conversion.
         $halfway = $this->newVisitor();
         $halfSession = $this->taggedSession(['src' => 'meta_ete'], $halfway);
         Event::create(['session_id' => $halfSession->id, 'visitor_id' => $halfway->id, 'type' => 'pageview', 'route' => 'home', 'occurred_at' => now()->subMinutes(2)]);
@@ -224,10 +224,10 @@ final class MarketingReportBuilderTest extends TestCase
 
         $byAd = Collection::make($elements)->keyBy('adId');
 
-        // Chaque publicité n'est créditée que de la conversion de son propre
-        // visiteur, depuis une seule lecture groupée.
-        // Chaque publicite doit avoir son element · sans lui, la lecture d'une
-        // colonne echouerait sans dire laquelle des deux manque.
+        // Each ad is credited only with its own visitor's conversion, from one
+        // single grouped read.
+        // Each ad has to have its element: without it, reading a column would
+        // fail without saying which of the two is missing.
         $firstAd = $byAd->get($ad1->id);
         $secondAd = $byAd->get($ad2->id);
 

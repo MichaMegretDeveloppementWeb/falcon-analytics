@@ -10,42 +10,42 @@ use RecursiveIteratorIterator;
 use SplFileInfo;
 
 /**
- * Aucune classe du paquet ne sort sans son préfixe.
+ * No class of the package goes out without its prefix.
  *
- * C'est ce qui permet à la feuille du paquet de partager une page avec celle
- * du kit et celle de l'hôte sans que l'une annule l'autre · deux noms
- * différents ne se battent pas. Une même règle simple et sa variante
- * responsive ont la même spécificité au-delà du point de rupture, et c'est
- * alors la feuille chargée en second qui gagne, en silence.
+ * That is what lets the package's stylesheet share a page with the kit's and
+ * the host's without either cancelling the other: two different names do not
+ * fight. The same plain rule and its responsive variant have the same
+ * specificity beyond the breakpoint, and it is then the stylesheet loaded
+ * second that wins, silently.
  *
- * **Une classe oubliée n'est pas générée du tout** · le générateur ne connaît
- * que les noms préfixés, donc l'élément se dessine sans style et rien ne le
- * dit. C'est la panne que cet essai refuse.
+ * **A forgotten class is not generated at all**: the generator only knows the
+ * prefixed names, so the element draws unstyled and nothing says so. That is
+ * the breakage this test refuses.
  *
- * Il vaut surtout pour plus tard · il attrape l'écran qu'on ajoutera dans six
- * mois en recopiant du Tailwind ordinaire.
+ * It is mostly for later: it catches the screen someone adds in six months by
+ * copying ordinary Tailwind.
  *
- * Il ne lit pas les commentaires · un `bg-white` cité dans une explication n'a
- * jamais rien dessiné.
+ * It does not read comments: a `bg-white` quoted in an explanation never drew
+ * anything.
  *
- * Pas de base de données ici, donc pas de `TestCase` du paquet · il lit des
- * fichiers, et rien d'autre.
+ * No database here, hence no `TestCase` of the package: it reads files, and
+ * nothing else.
  */
 final class EveryClassCarriesThePrefixTest extends TestCase
 {
     /**
-     * Des formes qui n'appartiennent qu'à Tailwind, et qui ne peuvent donc pas
-     * être autre chose qu'une classe oubliée.
+     * Shapes that belong to Tailwind alone, and so cannot be anything other
+     * than a forgotten class.
      *
-     * Les variantes d'abord · leur forme est sans ambiguïté.
+     * The variants first: their shape is unambiguous.
      *
-     * **Ce qui manque ici ne sera pas attrapé**, et c'est le seul défaut de
-     * cette approche. La liste couvre donc tout ce que les vues emploient,
-     * relevé sur elles, et pas seulement les familles les plus courantes.
+     * **What is missing here will not be caught**, and that is the one defect
+     * of this approach. The list therefore covers everything the views use,
+     * read off them, and not only the commonest families.
      *
-     * Une famille en est volontairement absente · `cursor-`, parce que le kit
-     * a une icône nommée `cursor-arrow-rays` et qu'aucune règle de forme ne
-     * distingue un nom d'icône d'une classe.
+     * One family is deliberately absent: `cursor-`, because the kit has an icon
+     * named `cursor-arrow-rays` and no shape rule tells an icon name from a
+     * class.
      *
      * @var list<string>
      */
@@ -83,18 +83,18 @@ final class EveryClassCarriesThePrefixTest extends TestCase
         $this->assertSame(
             [],
             array_values(array_unique($found)),
-            "Ces classes n'ont pas leur préfixe. Elles ne seront pas générées, et l'élément\n"
-            .'se dessinera sans style, sans la moindre erreur. Écrivez-les `an:…`.',
+            "These classes have no prefix. They will not be generated, and the element\n"
+            .'will draw unstyled, without the slightest error. Write them `an:…`.',
         );
     }
 
     /**
-     * Des noms qui portent la forme d'un utilitaire sans en être un.
+     * Names that carry the shape of a utility without being one.
      *
-     * Ce sont des attributs de présentation SVG, écrits sur un `<path>` ou
-     * passés à un composant du kit · `stroke-width="2.5"`. Les préfixer les
-     * casserait, et les ignorer ne cache rien · une vraie classe de la même
-     * famille s'écrit `fill-gray-800`, jamais `fill-opacity`.
+     * These are SVG presentation attributes, written on a `<path>` or passed to
+     * a kit component: `stroke-width="2.5"`. Prefixing them would break them,
+     * and ignoring them hides nothing — a real class of the same family is
+     * written `fill-gray-800`, never `fill-opacity`.
      *
      * @var list<string>
      */
@@ -105,7 +105,7 @@ final class EveryClassCarriesThePrefixTest extends TestCase
 
     private function looksLikeAForgottenClass(string $token): bool
     {
-        // Déjà préfixée, ou une classe crochet écrite à la main.
+        // Already prefixed, or a hook class written by hand.
         if (str_starts_with($token, 'an:') || str_starts_with($token, 'an-')) {
             return false;
         }
@@ -123,7 +123,7 @@ final class EveryClassCarriesThePrefixTest extends TestCase
         return false;
     }
 
-    /** Un commentaire n'a jamais rien dessiné · il sort du champ. */
+    /** A comment never drew anything, so it leaves the field. */
     private function withoutComments(string $source): string
     {
         foreach (['/\{\{--.*?--\}\}/s', '/<!--.*?-->/s', '/\/\*.*?\*\//s', '/(^|\s)\/\/[^\n]*/m'] as $shape) {
