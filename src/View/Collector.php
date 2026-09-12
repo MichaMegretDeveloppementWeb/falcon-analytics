@@ -43,7 +43,7 @@ final class Collector
                 'flush' => (int) config('analytics.session.flush_seconds') * 1000,
             ], JSON_THROW_ON_ERROR | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
         } catch (Throwable $e) {
-            Log::channel(config('analytics.log_channel'))->warning('Collector.render_failed', ['exception' => $e->getMessage()]);
+            Log::channel(config('analytics.log_channel'))->warning('Collector.configuration_failed', ['exception' => $e->getMessage()]);
 
             return null;
         }

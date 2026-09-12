@@ -7,7 +7,9 @@ namespace Falcon\Analytics\Tests\Feature;
 use Falcon\Analytics\Facades\Analytics;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
+use RuntimeException;
 
 /**
  * `@analyticsCollector` apporte le collecteur, et ce qu'il a besoin de savoir.
@@ -86,6 +88,25 @@ final class CollectorDirectiveTest extends TestCase
     {
         config(['analytics.enabled' => true]);
         Analytics::excludeUsing(fn () => true);
+
+        $this->assertSame('', trim(Blade::render('@analyticsCollector')));
+    }
+
+    /**
+     * The promise the catch makes, and nothing proved it until now.
+     *
+     * This runs on every public page of the host, so a failure here has to cost
+     * the measurement and nothing else. The closure below is the host's own —
+     * the one place where someone else's code runs inside this call — and it is
+     * the honest way to make the thing throw.
+     */
+    public function test_it_leaves_the_page_whole_when_something_throws(): void
+    {
+        config(['analytics.enabled' => true]);
+        Analytics::excludeUsing(fn () => throw new RuntimeException('le contexte ne se lit pas'));
+
+        Log::shouldReceive('channel')->andReturnSelf();
+        Log::shouldReceive('warning')->once();
 
         $this->assertSame('', trim(Blade::render('@analyticsCollector')));
     }
