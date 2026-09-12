@@ -74,7 +74,7 @@ final class InstallCommand extends Command
 
     public function handle(): int
     {
-        $this->components->info('Installing Falcon Analytics.');
+        $this->components->info('Installation de Falcon Analytics.');
 
         $this->installTheKit();
 
@@ -82,7 +82,7 @@ final class InstallCommand extends Command
             '--tag' => 'analytics-config',
             '--force' => (bool) $this->option('force'),
         ]);
-        $this->components->task('Published config/analytics.php');
+        $this->components->task('config/analytics.php publié');
 
         /*
          * The compiled files, forced on purpose: they are generated, so there
@@ -95,13 +95,13 @@ final class InstallCommand extends Command
          * install of this package uses this.
          */
         $this->callSilently('vendor:publish', ['--tag' => 'analytics-assets', '--force' => true]);
-        $this->components->task('Published the compiled stylesheet and collector');
+        $this->components->task('Feuille de styles et collecteur compilés publiés');
 
         $this->scaffoldEnvFile(base_path('.env'));
         $this->scaffoldEnvFile(base_path('.env.example'));
 
         if ($this->call('migrate') !== self::SUCCESS) {
-            $this->components->error('The migrations failed; fix the database and re-run analytics:install.');
+            $this->components->error('Les migrations ont échoué ; corrigez la base et relancez analytics:install.');
 
             return self::FAILURE;
         }
@@ -148,11 +148,11 @@ final class InstallCommand extends Command
         }
 
         if (file_put_contents($path, rtrim($contents, "\n")."\n".$block) === false) {
-            $this->components->warn('Could not write '.basename($path).'; append the analytics variables manually.');
+            $this->components->warn('Écriture de '.basename($path).' impossible ; ajoutez les variables de l’analytique à la main.');
 
             return;
         }
 
-        $this->components->task('Added analytics variables to '.basename($path));
+        $this->components->task('Variables de l’analytique ajoutées à '.basename($path));
     }
 }

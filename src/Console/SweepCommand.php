@@ -24,7 +24,7 @@ final class SweepCommand extends Command
             $closed = $sessions->closeIdleSessions(CarbonImmutable::now()->subMinutes($timeout), $timeout);
         } catch (Throwable $e) {
             Log::channel(config('analytics.log_channel'))->error('Analytics sweep failed.', ['exception' => $e]);
-            $this->components->error('The sweep failed; see the analytics log channel.');
+            $this->components->error('La clôture a échoué ; voyez le canal de journal de l’analytique.');
 
             return self::FAILURE;
         }

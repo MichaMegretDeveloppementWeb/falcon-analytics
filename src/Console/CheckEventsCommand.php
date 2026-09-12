@@ -36,16 +36,16 @@ final class CheckEventsCommand extends Command
         }
 
         if ($undeclared === []) {
-            $this->components->info('Every funnel step event is declared.');
+            $this->components->info('Chaque événement d’étape de tunnel est déclaré.');
 
             return self::SUCCESS;
         }
 
         foreach ($undeclared as [$funnelKey, $event]) {
-            $this->components->warn("Funnel [{$funnelKey}] references undeclared event [{$event}].");
+            $this->components->warn("Le tunnel [{$funnelKey}] renvoie à l’événement non déclaré [{$event}].");
         }
 
-        $this->components->info('Declare these events in the events file (or via analytics:events:scan --fix).');
+        $this->components->info('Déclarez ces événements dans le fichier des événements, ou lancez analytics:events:scan --fix.');
 
         return self::FAILURE;
     }

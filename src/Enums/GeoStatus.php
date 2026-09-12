@@ -11,8 +11,9 @@ namespace Falcon\Analytics\Enums;
  * for a request and the wrong one for whoever reads the screen: a missing database and a private
  * address both showed the same blank column, and nothing said which to fix.
  *
- * Two audiences, two sets of wording: the dashboard speaks the interface language, the console
- * stays in English like every other command in this package.
+ * One set of wording, for the screen and for the console alike. There used to be two, the console
+ * keeping English while the dashboard spoke the interface language; both now speak the same
+ * language, so a second set would only be something to keep in sync.
  */
 enum GeoStatus: string
 {
@@ -60,27 +61,5 @@ enum GeoStatus: string
         };
 
         return is_string($hint) ? $hint : null;
-    }
-
-    /** The same states, for the console. */
-    public function consoleLabel(): string
-    {
-        return match ($this) {
-            self::Ready => 'located',
-            self::NoDatabase => 'no GeoIP database',
-            self::UnreadableDatabase => 'GeoIP database unreadable',
-            self::PrivateAddress => 'private address',
-            self::NotInDatabase => 'address not in the database',
-        };
-    }
-
-    public function consoleHint(): ?string
-    {
-        return match ($this) {
-            self::NoDatabase => 'Run analytics:geoip:download.',
-            self::UnreadableDatabase => 'Run analytics:geoip:download again to replace the file.',
-            self::PrivateAddress => 'Set ANALYTICS_GEOIP_DEV_IP to a public address to see localities in local development.',
-            self::Ready, self::NotInDatabase => null,
-        };
     }
 }

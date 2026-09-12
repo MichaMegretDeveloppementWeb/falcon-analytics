@@ -26,17 +26,17 @@ final class SyncSearchConsoleCommand extends Command
         $connection = SearchConsoleConnection::current();
 
         if ($connection === null || ! $connection->isConnected()) {
-            $this->components->info('No attached Search Console connection; nothing to sync.');
+            $this->components->info('Aucune connexion Search Console rattachée : rien à synchroniser.');
 
             return self::SUCCESS;
         }
 
-        $this->components->info("Syncing {$connection->property}.");
+        $this->components->info("Synchronisation de {$connection->property}.");
 
         try {
             $count = $synchronizer->sync($connection);
         } catch (Throwable $e) {
-            $this->components->error('Sync failed: '.$e->getMessage());
+            $this->components->error('La synchronisation a échoué : '.$e->getMessage());
 
             return self::FAILURE;
         }

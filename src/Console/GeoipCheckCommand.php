@@ -33,15 +33,15 @@ final class GeoipCheckCommand extends Command
         $given = $this->argument('ip');
         $ip = is_string($given) && $given !== '' ? $given : self::PROBE;
 
-        $this->components->twoColumnDetail('Database', is_file($path)
+        $this->components->twoColumnDetail('Base', is_file($path)
             ? $path.' ('.$this->humanSize((int) filesize($path)).', '.date('Y-m-d', (int) filemtime($path)).')'
-            : $path.' (missing)');
+            : $path.' (absente)');
 
-        $this->components->twoColumnDetail('Development address', $devIp === '' ? 'not set' : $devIp);
-        $this->components->twoColumnDetail('Licence key', trim((string) config('analytics.geoip.license_key')) === '' ? 'not set' : 'set');
+        $this->components->twoColumnDetail('Adresse de développement', $devIp === '' ? 'non renseignée' : $devIp);
+        $this->components->twoColumnDetail('Clé de licence', trim((string) config('analytics.geoip.license_key')) === '' ? 'non renseignée' : 'renseignée');
 
         $status = $resolver->status($ip);
-        $this->components->twoColumnDetail('Resolving '.$ip, $status->consoleLabel());
+        $this->components->twoColumnDetail('Résolution de '.$ip, $status->label());
 
         if ($status === GeoStatus::Ready) {
             $location = $resolver->locate($ip);
@@ -51,16 +51,16 @@ final class GeoipCheckCommand extends Command
                 static fn (?string $part): bool => $part !== null && $part !== '',
             );
 
-            $this->components->twoColumnDetail('Locality', $parts === [] ? 'none' : implode(', ', $parts));
+            $this->components->twoColumnDetail('Localité', $parts === [] ? 'aucune' : implode(', ', $parts));
 
             $this->newLine();
-            $this->components->info('Geolocation is working.');
+            $this->components->info('La géolocalisation fonctionne.');
 
             return self::SUCCESS;
         }
 
         $this->newLine();
-        $this->components->warn(ucfirst($status->consoleLabel()).'. '.($status->consoleHint() ?? ''));
+        $this->components->warn($status->label().'. '.($status->hint() ?? ''));
 
         return self::FAILURE;
     }

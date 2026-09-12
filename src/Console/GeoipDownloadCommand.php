@@ -26,7 +26,7 @@ final class GeoipDownloadCommand extends Command
         $target = (string) config('analytics.geoip.database_path');
 
         if ($key === '') {
-            $this->components->error('Set ANALYTICS_GEOIP_LICENSE_KEY in your .env. Get a free key at https://www.maxmind.com/en/geolite2/signup');
+            $this->components->error('Renseignez ANALYTICS_GEOIP_LICENSE_KEY dans votre .env. Une clé gratuite s’obtient sur https://www.maxmind.com/en/geolite2/signup');
 
             return self::FAILURE;
         }
@@ -56,14 +56,14 @@ final class GeoipDownloadCommand extends Command
                 'exception' => $e,
             ]);
 
-            $this->components->error('Download failed: '.$e->getMessage());
+            $this->components->error('Le téléchargement a échoué : '.$e->getMessage());
 
             return self::FAILURE;
         } finally {
             $this->cleanup($archive, $extractDir);
         }
 
-        $this->components->info("Database ready at {$target}");
+        $this->components->info("Base prête dans {$target}");
 
         return self::SUCCESS;
     }

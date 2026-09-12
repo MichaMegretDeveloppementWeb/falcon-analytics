@@ -8,10 +8,10 @@ use Falcon\Analytics\Enums\GeoStatus;
 use Falcon\Analytics\Tests\TestCase;
 
 /**
- * La geolocalisation se degrade en localisation vide quoi qu'il arrive · pas de
- * base, une base tronquee, une adresse privee. Les trois montraient la meme
- * colonne blanche, et le seul moyen de les distinguer etait de lire la source.
- * Cette commande dit laquelle.
+ * Geolocation degrades to an empty location whatever goes wrong: no database, a
+ * truncated one, a private address. All three showed the same blank column, and
+ * the only way to tell them apart was to read the source. This command says
+ * which one it is.
  */
 final class GeoipCheckCommandTest extends TestCase
 {
@@ -20,7 +20,7 @@ final class GeoipCheckCommandTest extends TestCase
         config(['analytics.geoip.database_path' => '/does/not/exist.mmdb']);
 
         $this->artisan('analytics:geoip:check')
-            ->expectsOutputToContain('no GeoIP database')
+            ->expectsOutputToContain('Aucune base de géolocalisation')
             ->assertFailed();
     }
 
@@ -36,13 +36,13 @@ final class GeoipCheckCommandTest extends TestCase
         config(['analytics.geoip.database_path' => $path]);
 
         $this->artisan('analytics:geoip:check')
-            ->expectsOutputToContain('unreadable')
+            ->expectsOutputToContain('illisible')
             ->assertFailed();
 
         @unlink($path);
     }
 
-    /** Chaque etat porte de quoi le lire, et seuls ceux qui appellent une action portent un conseil. */
+    /** Every state carries something to read, and only those calling for an action carry advice. */
     public function test_it_says_what_to_do_about_the_states_that_can_be_fixed(): void
     {
         $this->assertNotNull(GeoStatus::NoDatabase->hint());

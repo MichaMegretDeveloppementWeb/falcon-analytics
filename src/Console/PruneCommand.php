@@ -21,7 +21,7 @@ final class PruneCommand extends Command
         $days = (int) config('analytics.retention_days');
 
         if ($days <= 0) {
-            $this->components->warn('Retention is disabled (analytics.retention_days <= 0); nothing pruned.');
+            $this->components->warn('La rétention est désactivée (analytics.retention_days <= 0) : rien n’a été supprimé.');
 
             return self::SUCCESS;
         }
@@ -30,12 +30,12 @@ final class PruneCommand extends Command
             $deleted = $events->pruneOlderThan(CarbonImmutable::now()->subDays($days));
         } catch (Throwable $e) {
             Log::channel(config('analytics.log_channel'))->error('Analytics prune failed.', ['exception' => $e]);
-            $this->components->error('The prune failed; see the analytics log channel.');
+            $this->components->error('La suppression a échoué ; voyez le canal de journal de l’analytique.');
 
             return self::FAILURE;
         }
 
-        $this->components->info("Pruned {$deleted} event(s) older than {$days} days.");
+        $this->components->info("{$deleted} événement(s) de plus de {$days} jours supprimé(s).");
 
         return self::SUCCESS;
     }

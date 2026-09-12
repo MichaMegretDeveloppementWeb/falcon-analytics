@@ -29,18 +29,18 @@ final class ScanEventsCommand extends Command
         $usedNotDeclared = array_values(array_diff($used, $declared));
         $declaredNotUsed = array_values(array_diff($declared, $used));
 
-        $this->components->info(sprintf('%d event(s) declared, %d found in the code.', count($declared), count($used)));
+        $this->components->info(sprintf('%d événement(s) déclaré(s), %d trouvé(s) dans le code.', count($declared), count($used)));
 
         foreach ($usedNotDeclared as $name) {
-            $this->components->warn("Used in the code but not declared: {$name}");
+            $this->components->warn("Employé dans le code mais non déclaré : {$name}");
         }
 
         foreach ($declaredNotUsed as $name) {
-            $this->components->warn("Declared but not found in the code (runtime-computed name, or unused?): {$name}");
+            $this->components->warn("Déclaré mais introuvable dans le code (nom calculé à l’exécution, ou inemployé ?) : {$name}");
         }
 
         if ($usedNotDeclared === []) {
-            $this->components->info('Every event used in the code is declared.');
+            $this->components->info('Chaque événement employé dans le code est déclaré.');
 
             return self::SUCCESS;
         }
@@ -49,7 +49,7 @@ final class ScanEventsCommand extends Command
             return $this->appendMissing($usedNotDeclared);
         }
 
-        $this->components->info('Run again with --fix to append the undeclared events to the events file.');
+        $this->components->info('Relancez avec --fix pour ajouter les événements non déclarés au fichier des événements.');
 
         return self::FAILURE;
     }
@@ -99,7 +99,7 @@ final class ScanEventsCommand extends Command
             : base_path('app/Analytics/events.php');
 
         if (! is_file($path)) {
-            $this->components->error('Events file not found; create app/Analytics/events.php first.');
+            $this->components->error('Fichier des événements introuvable ; créez d’abord app/Analytics/events.php.');
 
             return self::FAILURE;
         }
@@ -111,12 +111,12 @@ final class ScanEventsCommand extends Command
         }
 
         if (file_put_contents($path, $lines, FILE_APPEND) === false) {
-            $this->components->error('Could not write the events file; check its permissions.');
+            $this->components->error('Écriture du fichier des événements impossible ; vérifiez ses permissions.');
 
             return self::FAILURE;
         }
 
-        $this->components->info(sprintf('Appended %d event(s) to the events file. Review their labels.', count($names)));
+        $this->components->info(sprintf('%d événement(s) ajouté(s) au fichier des événements. Relisez leurs libellés.', count($names)));
 
         return self::SUCCESS;
     }
