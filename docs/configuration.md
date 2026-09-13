@@ -146,8 +146,20 @@ Le nom d'un sujet est **lu au moment de l'affichage et jamais stocké**.
 
 | Clé | Type | Défaut | Ce qu'elle fait |
 |---|---|---|---|
-| `admin.marketing.route_prefix` | chemin | `'admin/marketing'` | L'adresse des écrans marketing, qu'un hôte peut monter ailleurs — ou pas du tout. |
+| `admin.marketing.route_prefix` | chemin | `'admin/marketing'` | L'adresse des écrans marketing, qu'un hôte peut monter ailleurs que les autres. |
 | `admin.marketing.middleware` | liste | `['web', 'auth']` | Ce qui protège les écrans marketing, indépendamment des autres. |
+
+> **Une liste vide monte les écrans sans aucune protection**, elle ne les retire
+> pas · ni session, ni authentification, donc **joignables publiquement**. Il n'y
+> a pas de réglage pour ne pas monter les écrans · pour les mettre hors
+> d'atteinte, désignez un garde que personne n'a, ou bloquez le préfixe en amont.
+>
+> Le paquet inscrit un avertissement dans son journal au moment du montage, et
+> `analytics:check` le rapporte comme **bloquant**. Les deux arrivent après coup.
+
+> **La pile doit être complète**, session comprise · les routes du paquet sont
+> déclarées hors de vos groupes, donc elles n'héritent d'aucun de vos
+> middlewares. C'est pourquoi le défaut porte `web` et pas seulement `auth`.
 
 > **Les noms de routes ne sont pas réglables, et c'est délibéré.** Ils sont
 > fixes — `analytics.admin.overview`, `analytics.admin.marketing.campaigns`… —
@@ -190,6 +202,23 @@ groupes de routes · elles n'héritent de rien.
 > C'est la lecture prudente d'une valeur qu'on ne peut pas deviner, mais c'est
 > l'inverse de ce qu'on attend en l'écrivant · pour ne rien garder, il n'y a pas
 > de réglage, et c'est volontaire.
+
+**Cette valeur plafonne ce que trois écrans peuvent montrer**, et c'est la
+conséquence qu'on ne voit pas venir · ils lisent les événements bruts ·
+
+| | Ce qui arrive au-delà de la rétention |
+|---|---|
+| **les tunnels** | ne rapportent rien · les étapes se lisent sur les événements |
+| **les événements** | même chose · l'écran ne remonte pas plus loin |
+| **le détail d'une session** | la session **reste listée**, avec ses chiffres, mais **son parcours est vide** · les pages et les clics qui le composaient ont été effacés |
+
+Les autres écrans ne sont pas concernés · fréquentation, visiteurs, sources,
+marketing et Search Console lisent des données que la purge ne touche pas.
+
+> **Une période de 90 jours sur une rétention de 90 jours est une coïncidence**,
+> et elle se voit · le bord de la fenêtre se dégarnit à mesure que la purge
+> avance. Gardez la rétention au-dessus de la plus longue période que vous
+> comptez lire.
 
 | Clé | Type | Défaut | Ce qu'elle fait |
 |---|---|---|---|

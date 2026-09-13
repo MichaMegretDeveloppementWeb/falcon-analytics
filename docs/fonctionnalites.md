@@ -190,6 +190,10 @@ Les statistiques d'engagement de la période, et la liste paginée et filtrable 
 Ses informations principales et **son parcours chronologique** · les pages
 visitées, les clics rangés sous la page où ils ont eu lieu, et le temps passé.
 
+> **Au-delà de la rétention, le parcours est vide** · la session reste listée
+> avec ses chiffres, mais les événements qui la détaillaient ont été effacés.
+> Voir [`retention_days`](configuration.md#la-durée-de-vie-des-données).
+
 ### Événements
 
 | | |
@@ -232,9 +236,19 @@ la carte dit ce qui manque** et la connexion refuse.
 
 ## Les écrans marketing
 
-Ils prennent `admin.marketing.route_prefix` et
-`admin.marketing.middleware` · un hôte peut les monter ailleurs, derrière un
-autre garde, ou pas du tout.
+Ils prennent `admin.marketing.route_prefix` et `admin.marketing.middleware` · un
+hôte peut les monter ailleurs et derrière un autre garde que les écrans
+d'analytique.
+
+> **Ils sont montés, et il n'y a pas de réglage pour ne pas les monter** — pas
+> plus que pour les autres écrans. Ce qui se règle, c'est **l'adresse** et **ce
+> qui la protège**. Pour les mettre hors d'atteinte, désignez un garde que
+> personne n'a, ou bloquez le préfixe en amont.
+>
+> **Ne videz pas la liste de middlewares pour ça.** Une liste vide ne retire pas
+> les écrans · elle les monte **sans aucune protection**, donc publiquement. Le
+> paquet inscrit un avertissement dans son journal et `analytics:check` la
+> signale comme bloquante, mais le mal serait déjà fait.
 
 ### Synthèse marketing
 
@@ -414,6 +428,18 @@ ce qui précède, déclarez-le avec `data-track-event`. Sur un `<form>`,
 | `data-track-label="…"` | un libellé humain · sinon le texte détecté |
 | `data-track-ignore` | exclut l'élément et son sous-arbre |
 
+**Ces attributs se lisent en remontant depuis l'élément cliqué**, et c'est ce
+qui les rend praticables · vous taguez le bouton, pas le `<span>` qu'il
+contient, et pas chaque cellule d'une ligne.
+
+- pour le **nom**, la **valeur** et la **zone**, le premier rencontré en
+  remontant gagne · le plus proche du clic ;
+- les **propriétés** s'accumulent tout le long de la remontée, et là encore la
+  plus proche gagne en cas de doublon · une ligne de tableau peut donc porter
+  `data-track-prop-listing-id` pour tous les boutons qu'elle contient ;
+- `data-track-ignore` **arrête tout** dès qu'il est rencontré · le clic n'est
+  pas enregistré du tout.
+
 ---
 
 ## Les événements nommés et les conversions
@@ -579,6 +605,20 @@ vont dans `search_console.*` · voir [configuration.md](configuration.md).
 Console » part vers Google, revient sur la route de rappel, puis demande quelle
 propriété rattacher. La synchronisation est ensuite quotidienne, et
 `analytics:search-console:sync` la déclenche à la main.
+
+**Ce que fait la synchronisation**, et qui surprend si on ne l'a pas lu ·
+
+- **le premier passage remonte seize mois** · c'est tout ce que l'interface de
+  Google sert, et le paquet le prend en une fois. Vos courbes de recherche
+  naissent donc pleines, avant même la pose du collecteur ;
+- **chaque passage relit les trois derniers jours** · Google réécrit ces
+  journées à mesure que ses chiffres se consolident, donc un chiffre d'hier
+  peut bouger aujourd'hui. Ce n'est pas une erreur de comptage ;
+- **un échec marque la connexion**, et l'écran des intégrations le montre · la
+  cause part dans le canal de journal du paquet.
+
+**Ces données ne sont pas soumises à la rétention** · elles vivent dans leur
+propre table et `analytics:prune` n'y touche pas.
 
 **Tant que les identifiants sont vides, la fonction ne se propose pas** · le lien
 disparaît de la barre latérale, l'écran dit ce qui manque si on s'y rend quand
