@@ -3,9 +3,9 @@
 @endphp
 
 {{--
-    Les sections etaient separees de 32 px alors que les lignes d'une carte tiennent dans 28 :
-    l'ecart exterieur d'un groupe n'excedait pas ses ecarts interieurs, et la page se lisait
-    comme une seule longue liste. A 48 px, avec un filet, chaque bloc redevient un bloc.
+    Sections were 32 px apart while the rows inside a card sit within 28: a group's outer gap
+    did not exceed its inner ones, and the page read as one long list. At 48 px, with a rule,
+    each block becomes a block again.
 --}}
 <x-analytics::root area="admin" class="an:space-y-12">
 

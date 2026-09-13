@@ -38,16 +38,15 @@
                             :caption="__('visiteurs')" />
                     </div>
                     {{--
-                        Une grille, pas un etirement. La valeur se posait au bord de la carte,
-                        a l'autre bout d'un vide que rien ne traversait : le libelle et son
-                        nombre etaient les deux choses les plus eloignees de la ligne. La
-                        colonne des nombres commence maintenant apres le plus long libelle,
-                        assez pres pour qu'on lise la paire d'un coup, et alignee d'une ligne
-                        a l'autre pour qu'on puisse encore comparer.
+                        A grid, not a stretch. The value sat at the card's edge, at the far
+                        end of a gap nothing crossed: the label and its number were the two
+                        things furthest apart on the row. The column of numbers now starts
+                        after the longest label, close enough to read the pair at a glance,
+                        and aligned from one row to the next so they can still be compared.
 
-                        Un seul nombre aussi : la part se lit sur le beignet, qui est la pour
-                        cela, et deux nombres de taille voisine cote a cote obligeaient a
-                        decider lequel on lit.
+                        One number too: the share is read off the doughnut, which is there for
+                        that, and two numbers of similar size side by side forced a decision
+                        about which one to read.
                     --}}
                     <dl class="an:grid an:min-w-0 an:max-w-[15rem] an:flex-1 an:grid-cols-[minmax(0,1fr)_auto] an:items-center an:gap-x-6 an:gap-y-2.5">
                         <dt class="an:flex an:items-center an:gap-2 an:text-[13px] an:text-secondary"><span class="an:h-2 an:w-2 an:shrink-0 an:rounded-full" style="background:var(--an-series-1)"></span>{{ __('Nouveaux') }}</dt>

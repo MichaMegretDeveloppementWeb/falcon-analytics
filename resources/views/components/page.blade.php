@@ -1,12 +1,12 @@
 {{--
-    Ce qui enveloppe un ecran · son gabarit, et rien de plus.
+    What wraps a screen · its layout, and nothing more.
 
-    Le slot est calcule avant cette vue, donc avant l'en-tete du gabarit. C'est
-    ce qui fait qu'une declaration d'assets executee pendant le rendu de l'ecran
-    se trouve dans la pile quand le gabarit rencontre `@falconStyles`.
+    The slot is computed before this view, so before the layout's head. That is
+    what puts an asset declaration made while the screen was rendering into the
+    stack by the time the layout meets `@falconStyles`.
 
-    `$layout` et `$title` viennent de la classe · le gabarit de l'hote quand il
-    en nomme un, celui du paquet sinon.
+    `$layout` and `$title` come from the class · the host's layout when it names
+    one, the package's otherwise.
 --}}
 <x-analytics::assets />
 
