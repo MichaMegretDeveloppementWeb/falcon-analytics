@@ -63,18 +63,34 @@ final readonly class SessionWriteRepository
      * Every value is bound and never interpolated, so the statement stays
      * literal end to end; the table name comes from `Session::TABLE`.
      */
-    public function recordActivity(Session $session, CarbonImmutable $lastActivityAt, int $pageviewDelta, int $eventDelta, ?string $lastPageviewUrl): void
-    {
+    public function recordActivity(
+        Session $session,
+        CarbonImmutable $lastActivityAt,
+        int $pageviewDelta,
+        int $clickDelta,
+        int $eventDelta,
+        ?string $lastPageviewUrl,
+    ): void {
         $stamp = $lastActivityAt->toDateTimeString();
 
         DB::update(
             'UPDATE '.Session::TABLE.' SET '
             .'pageview_count = pageview_count + ?, '
+
+            /*
+             * Counted here and nowhere else, because counting rows stops
+             * working: past the retention a session's clicks are erased, and
+             * "this visitor clicked three times" is exactly what stays worth
+             * knowing about it. A counter kept as it happens survives the
+             * rows it counted.
+             */
+            .'click_count = click_count + ?, '
+
             .'event_count = event_count + ?, '
             .'last_pageview_url = ?, '
             .'last_activity_at = CASE WHEN last_activity_at < ? THEN ? ELSE last_activity_at END '
             .'WHERE id = ?',
-            [$pageviewDelta, $eventDelta, $lastPageviewUrl, $stamp, $stamp, $session->getKey()],
+            [$pageviewDelta, $clickDelta, $eventDelta, $lastPageviewUrl, $stamp, $stamp, $session->getKey()],
         );
     }
 

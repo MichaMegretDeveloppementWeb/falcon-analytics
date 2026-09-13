@@ -7,6 +7,8 @@ namespace Falcon\Analytics\Repositories\Dashboard;
 use Falcon\Analytics\DTOs\Dashboard\Period;
 use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Models\Campaign;
+use Falcon\Analytics\Models\DailyArchive;
+use Falcon\Analytics\Models\DailyCount;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Repositories\Concerns\ScopesSessionQueries;
 use Falcon\Analytics\Services\Dashboard\MarketingReportBuilder;
@@ -186,10 +188,99 @@ final readonly class OverviewReadRepository
      */
     public function topPages(Period $period, ?string $subjectType, int $limit = 6): array
     {
-        $current = $this->rankedEventCounts(EventType::Pageview, 'url', $period, $subjectType);
-        $previous = $this->rankedEventCounts(EventType::Pageview, 'url', $period->previous(), $subjectType);
+        $current = $this->pageCounts($period, $subjectType);
+        $previous = $this->pageCounts($period->previous(), $subjectType);
 
         return $this->mergeRanked($current, $previous, $limit);
+    }
+
+    /**
+     * Page views by address, from wherever they are still readable.
+     *
+     * **The two halves never overlap and never leave a gap.** Up to the last
+     * day the purge has emptied, the figures come from that day's summary;
+     * after it, from the rows themselves. The line is asked of the archive
+     * table rather than worked out from the retention, because the two part
+     * company as soon as a scheduler stops or a retention is shortened — and a
+     * line in the wrong place would either double a figure or drop one, with
+     * nothing to say which.
+     *
+     * A day whose detail is gone still holds its NAMED rows, which the summary
+     * counted too. That is the whole reason the split has to be strict.
+     *
+     * @return Collection<string, int>
+     */
+    private function pageCounts(Period $period, ?string $subjectType): Collection
+    {
+        return $this->joinHalves(
+            fn (Period $window): Collection => $this->rankedEventCounts(EventType::Pageview, 'url', $window, $subjectType),
+            fn (Period $window): Collection => $this->summarisedCounts($window, $subjectType, DailyCount::KIND_PAGE)
+                ->mapWithKeys(fn (array $row): array => [$row['label'] => $row['total']]),
+            $period,
+        );
+    }
+
+    /**
+     * The reading of one measure over a period, taken from the summaries for
+     * the days that no longer hold their detail and from the detail for the
+     * rest, then added up.
+     *
+     * Adding is exact here and only here · these are plain counts, so a day
+     * plus a day makes two days. Nothing that counts DISTINCT visitors could
+     * be split this way, and nothing that does is summarised.
+     *
+     * @param  callable(Period): Collection<string, int>  $fromDetail
+     * @param  callable(Period): Collection<string, int>  $fromSummary
+     * @return Collection<string, int>
+     */
+    private function joinHalves(callable $fromDetail, callable $fromSummary, Period $period): Collection
+    {
+        $lastErased = DailyArchive::lastPrunedDay();
+
+        // Nothing has ever been erased, so the rows answer for everything.
+        if ($lastErased === null || $lastErased->lessThan($period->from)) {
+            return $fromDetail($period);
+        }
+
+        $boundary = $lastErased->endOfDay();
+
+        // The whole window is behind the line: the summaries answer for it all.
+        if ($boundary->greaterThanOrEqualTo($period->to)) {
+            return $fromSummary($period);
+        }
+
+        $summarised = $fromSummary(new Period($period->from, $boundary, $period->days));
+        $detailed = $fromDetail(new Period($boundary->addSecond(), $period->to, $period->days));
+
+        foreach ($detailed as $label => $total) {
+            $summarised[$label] = ($summarised[$label] ?? 0) + $total;
+        }
+
+        return $summarised;
+    }
+
+    /**
+     * A measure read off the daily summaries, added across the window.
+     *
+     * @return Collection<int, array{label: string, route: string|null, total: int}>
+     */
+    private function summarisedCounts(Period $period, ?string $subjectType, string $kind): Collection
+    {
+        /** @var Collection<int, array{label: string, route: string|null, total: int}> $rows */
+        $rows = DailyCount::query()
+            ->where('kind', $kind)
+            ->whereBetween('day', [$period->from->toDateString(), $period->to->toDateString()])
+            ->when($subjectType !== null, fn (Builder $query): Builder => $query->where('subject_type', $subjectType))
+            ->selectRaw('label, route, SUM(total) as total')
+            ->groupBy('label', 'route')
+            ->get()
+            ->map(fn (DailyCount $row): array => [
+                'label' => $row->label,
+                'route' => $row->route,
+                'total' => (int) $row->getAttribute('total'),
+            ]);
+
+        return $rows;
     }
 
     /**
@@ -200,6 +291,37 @@ final readonly class OverviewReadRepository
      */
     public function topClicks(Period $period, ?string $subjectType, int $limit = 6): array
     {
+        /*
+         * A click is ranked by its label AND the page it sits on, so the two
+         * travel together through the joining · a key that dropped the route
+         * would merge two different buttons that happen to read the same, and
+         * the reading would change the day the purge crossed them.
+         */
+        $counts = $this->joinHalves(
+            fn (Period $window): Collection => $this->detailedClickCounts($window, $subjectType),
+            fn (Period $window): Collection => $this->summarisedCounts($window, $subjectType, DailyCount::KIND_CLICK)
+                ->mapWithKeys(fn (array $row): array => [self::clickKey($row['label'], $row['route']) => $row['total']]),
+            $period,
+        );
+
+        return array_values($counts
+            ->sortDesc()
+            ->take($limit)
+            ->map(function (int $total, string $key): array {
+                [$label, $route] = self::splitClickKey($key);
+
+                return ['label' => $label, 'route' => $route, 'total' => $total];
+            })
+            ->all());
+    }
+
+    /**
+     * Clicks of the window, straight from the rows.
+     *
+     * @return Collection<string, int>
+     */
+    private function detailedClickCounts(Period $period, ?string $subjectType): Collection
+    {
         // Prefer the visible button text (human-readable) over the technical event name.
         $label = "COALESCE(NULLIF(target_text, ''), NULLIF(name, ''))";
 
@@ -209,20 +331,39 @@ final readonly class OverviewReadRepository
         $clicks = $this->eventScope(EventType::Click, $period, $subjectType)
             ->selectRaw("{$label} as label, route");
 
-        return array_values(DB::query()
+        /** @var Collection<string, int> $counts */
+        $counts = DB::query()
             ->fromSub($clicks, 'clicks')
             ->whereNotNull('label')
             ->selectRaw('label, route, COUNT(*) as total')
             ->groupBy('label', 'route')
-            ->orderByDesc('total')
-            ->limit($limit)
             ->get()
-            ->map(fn (object $row): array => [
-                'label' => (string) $row->label,
-                'route' => $row->route !== null ? (string) $row->route : null,
-                'total' => (int) $row->total,
-            ])
-            ->all());
+            ->mapWithKeys(fn (object $row): array => [
+                self::clickKey((string) $row->label, $row->route !== null ? (string) $row->route : null) => (int) $row->total,
+            ]);
+
+        return $counts;
+    }
+
+    /**
+     * A click's identity, as one string.
+     *
+     * **The separator is a line feed**, which neither a button's visible text
+     * nor a route name can hold · a character either of them could carry would
+     * let two different clicks collide on one key, silently.
+     */
+    private static function clickKey(string $label, ?string $route): string
+    {
+        return $label."\n".($route ?? '');
+    }
+
+    /** @return array{0: string, 1: string|null} */
+    private static function splitClickKey(string $key): array
+    {
+        $parts = explode("\n", $key, 2);
+        $route = $parts[1] ?? '';
+
+        return [$parts[0], $route === '' ? null : $route];
     }
 
     /**

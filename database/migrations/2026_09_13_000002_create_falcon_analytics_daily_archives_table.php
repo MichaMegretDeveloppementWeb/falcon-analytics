@@ -27,6 +27,24 @@ return new class extends Migration
             $table->id();
             $table->date('day')->unique('fa_daily_archives_day_unique');
             $table->timestamp('archived_at');
+
+            /*
+             * When the day's anonymous detail was erased, and null while it is
+             * still there.
+             *
+             * **This is what the reading splits on**, and it has to be recorded
+             * rather than deduced. A day whose detail is gone must be read from
+             * its summary; a day that still has its detail must be read from
+             * the detail — reading both would count a kept named click twice,
+             * since the summary counted it too.
+             *
+             * Deducing the boundary from the retention would be wrong the
+             * moment the two disagree: a scheduler that stopped for a month
+             * leaves days that are past the retention and still intact, and a
+             * retention shortened yesterday moves a line that erasing has not
+             * crossed yet.
+             */
+            $table->timestamp('pruned_at')->nullable();
         });
     }
 

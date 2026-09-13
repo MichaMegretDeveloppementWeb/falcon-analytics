@@ -76,6 +76,7 @@ final readonly class IngestEventsAction
             $lastPageviewUrl = $session->last_pageview_url;
             $kept = [];
             $pageviews = 0;
+            $clicks = 0;
 
             foreach ($storable as $event) {
                 if ($event->type === EventType::Pageview) {
@@ -84,6 +85,10 @@ final readonly class IngestEventsAction
                     }
                     $lastPageviewUrl = $event->url;
                     $pageviews++;
+                }
+
+                if ($event->type === EventType::Click) {
+                    $clicks++;
                 }
 
                 $kept[] = $event;
@@ -95,6 +100,7 @@ final readonly class IngestEventsAction
                 $session,
                 $this->lastActivity($batch->events),
                 $pageviews,
+                $clicks,
                 count($kept),
                 $lastPageviewUrl,
             );

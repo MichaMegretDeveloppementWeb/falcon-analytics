@@ -6,6 +6,7 @@ namespace Falcon\Analytics\Console;
 
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\Funnels\FunnelRegistry;
+use Falcon\Analytics\Models\DailyArchive;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Repositories\EventWriteRepository;
 use Falcon\Analytics\Services\DailyCountArchiver;
@@ -95,6 +96,25 @@ final class PruneCommand extends Command
             }
 
             $deleted = $events->pruneAnonymousOlderThan($cutoff, $this->routesFunnelsNeed($funnels));
+
+            /*
+             * The days whose detail has just gone, said out loud.
+             *
+             * **This is what the reading splits on.** Up to here the two blocks
+             * that count anonymous rows read the summaries; after it they read
+             * the rows. Marking the days rather than letting the reading work
+             * the line out from the retention is what keeps the two from
+             * parting company — a retention shortened yesterday moves a line
+             * that erasing has not crossed yet, and a scheduler that stopped
+             * for a month leaves days past the retention still intact.
+             *
+             * Every day marked here was summarised first: the guard above
+             * refuses otherwise, and the archiving only ever moves forward.
+             */
+            DailyArchive::query()
+                ->where('day', '<', $cutoff->toDateString())
+                ->whereNull('pruned_at')
+                ->update(['pruned_at' => CarbonImmutable::now()->toDateTimeString()]);
         } catch (Throwable $e) {
             Log::channel(config('analytics.log_channel'))->error('Analytics prune failed.', ['exception' => $e]);
             $this->components->error('L’effacement a échoué ; voyez le canal de journal de l’analytique.');

@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $id
  * @property CarbonImmutable $day
  * @property CarbonImmutable $archived_at
+ * @property CarbonImmutable|null $pruned_at
  */
 final class DailyArchive extends Model
 {
@@ -30,7 +31,22 @@ final class DailyArchive extends Model
     protected $dateFormat = 'Y-m-d';
 
     /** @var list<string> */
-    protected $fillable = ['day', 'archived_at'];
+    protected $fillable = ['day', 'archived_at', 'pruned_at'];
+
+    /**
+     * The last day whose detail has been erased, or null while none has.
+     *
+     * **The reading splits here** · up to and including this day the figures
+     * come from the summaries, after it from the rows themselves. Asked of the
+     * table rather than worked out from the retention, because the two part
+     * company as soon as a scheduler stops or a retention is shortened.
+     */
+    public static function lastPrunedDay(): ?CarbonImmutable
+    {
+        $day = self::query()->whereNotNull('pruned_at')->max('day');
+
+        return is_string($day) && $day !== '' ? CarbonImmutable::parse($day)->startOfDay() : null;
+    }
 
     /** @return array<string, string> */
     protected function casts(): array
@@ -38,6 +54,7 @@ final class DailyArchive extends Model
         return [
             'day' => 'immutable_date',
             'archived_at' => 'immutable_datetime',
+            'pruned_at' => 'immutable_datetime',
         ];
     }
 }

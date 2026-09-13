@@ -79,17 +79,22 @@ final class SessionWriteRepositoryTest extends TestCase
         $visitor = $this->visitorRow();
         $session = $repository->start($visitor, new IngestionContext, CarbonImmutable::parse('2026-06-30 09:00:00'), $visitor->uuid);
 
-        $repository->recordActivity($session, CarbonImmutable::parse('2026-06-30 09:05:00'), pageviewDelta: 2, eventDelta: 5, lastPageviewUrl: 'https://x.test/a');
-        $repository->recordActivity($session, CarbonImmutable::parse('2026-06-30 09:08:00'), pageviewDelta: 1, eventDelta: 3, lastPageviewUrl: 'https://x.test/b');
+        $repository->recordActivity($session, CarbonImmutable::parse('2026-06-30 09:05:00'), pageviewDelta: 2, clickDelta: 1, eventDelta: 5, lastPageviewUrl: 'https://x.test/a');
+        $repository->recordActivity($session, CarbonImmutable::parse('2026-06-30 09:08:00'), pageviewDelta: 1, clickDelta: 2, eventDelta: 3, lastPageviewUrl: 'https://x.test/b');
 
         // An older batch arriving afterwards must not push the timestamp back,
         // while still counting.
-        $repository->recordActivity($session, CarbonImmutable::parse('2026-06-30 09:02:00'), pageviewDelta: 1, eventDelta: 1, lastPageviewUrl: 'https://x.test/b');
+        $repository->recordActivity($session, CarbonImmutable::parse('2026-06-30 09:02:00'), pageviewDelta: 1, clickDelta: 1, eventDelta: 1, lastPageviewUrl: 'https://x.test/b');
 
         $fresh = $session->fresh();
 
         $this->assertNotNull($fresh);
         $this->assertSame(4, $fresh->pageview_count);
+
+        // Counted as it happens, because past the retention there are no click
+        // rows left to count and this is all the session can still say.
+        $this->assertSame(4, $fresh->click_count);
+
         $this->assertSame(9, $fresh->event_count);
         $this->assertSame('https://x.test/b', $fresh->last_pageview_url);
         $this->assertSame('2026-06-30 09:08:00', $fresh->last_activity_at->toDateTimeString());
