@@ -10,12 +10,16 @@ use Falcon\Ui\Rendering\RenderContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 /**
- * The package stands up, end to end, in one render.
+ * The package stands up, end to end.
  *
  * **This file is the suite's common one**, named by the socle and kept in every
  * Falcon package. Its mechanism does not change from one package to the next ·
  * a real page, the kit's stylesheet and the package's on it, the marker saying
  * who drew it, and the render stack back where it started.
+ *
+ * **Two tests and not one** · what the page carries and what it leaves behind
+ * fail for unrelated reasons, and a single test would say « the baseline is
+ * down » without saying which of the two.
  *
  * **It leans on no other test, and that is the point.** Everything else here
  * proves a finer thing — that the sheet appears once and not twice, that the
