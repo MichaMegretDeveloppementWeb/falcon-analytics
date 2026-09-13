@@ -36,7 +36,7 @@ final class GeoipDownloadCommand extends Command
         $archive = dirname($target).'/'.$edition.'-download.tar.gz';
         $extractDir = dirname($target).'/'.$edition.'-extract';
 
-        $this->components->info("Downloading MaxMind {$edition}.");
+        $this->components->info("Téléchargement de la base MaxMind {$edition}.");
         $this->ensureDirectory(dirname($target));
 
         try {

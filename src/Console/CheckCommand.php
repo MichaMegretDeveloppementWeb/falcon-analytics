@@ -256,7 +256,8 @@ final class CheckCommand extends Command
             'Collecteur',
             'KO',
             'Aucune vue ne porte @analyticsCollector : aucune visite n’est mesurée. '
-            .'Posez la directive dans le gabarit de votre site public, avant la fermeture de body.',
+            .'Posez la directive dans le gabarit de votre site public, à l’endroit qui vous arrange : '
+            .'le script est différé, donc sa place dans la page ne change rien.',
         ];
     }
 
@@ -487,9 +488,16 @@ final class CheckCommand extends Command
      * `exclude_ips` matching either everybody or nobody. The numbers stay
      * plausible, which is what makes it expensive to find.
      *
-     * **Visitor counts are not affected**, and saying they were sent the reader
-     * looking for a bug in the wrong place · a visitor is a cookie or a session
-     * id, never an address. See `VisitorIdentityResolver`.
+     * **And the rate limit becomes one bucket for the whole site**, which is
+     * the consequence that actually loses data rather than merely distorting
+     * it. Laravel keys a guest's throttle on `domain|ip`, so every visitor
+     * shares the 120 a minute and beyond that the beacons are refused — for
+     * everyone at once, and silently, since a beacon's answer is not read.
+     *
+     * **Visitor counts are not affected by the address itself**, and saying
+     * they were sent the reader looking for a bug in the wrong place · a
+     * visitor is a cookie or a session id, never an address. See
+     * `VisitorIdentityResolver`.
      *
      * It cannot be settled from the console — no request is in flight, and the
      * setting only shows when a forwarded header arrives. So this point says
@@ -510,8 +518,9 @@ final class CheckCommand extends Command
             'Proxy',
             'À voir',
             'Aucun proxy de confiance déclaré. Derrière un reverse proxy, toutes les visites porteront '
-            .'son adresse · un seul pays, une seule ville, et exclude_ips qui exclut tout le monde ou '
-            .'personne. Sans proxy, il n’y a rien à faire.',
+            .'son adresse · un seul pays, une seule ville, exclude_ips qui exclut tout le monde ou '
+            .'personne, et surtout une limite de débit partagée par tout le site, qui refuse les envois '
+            .'au-delà du seuil sans que rien ne le signale. Sans proxy, il n’y a rien à faire.',
         ];
     }
 

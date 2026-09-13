@@ -87,6 +87,22 @@ autre garde.
 
 ---
 
+## Un écran qui n'arrive pas à lire ne tombe pas
+
+Les écrans se composent de blocs qui **chargent chacun pour leur compte** ·
+l'en-tête et les filtres paraissent tout de suite, le reste arrive quand il est
+prêt. Une lecture lente n'en retient donc pas une autre.
+
+Et **si une lecture échoue**, le bloc concerné affiche un état d'erreur compact
+à sa place · le reste de l'écran continue de fonctionner, votre habillage reste
+debout, et il n'y a pas d'erreur 500.
+
+> **Ce n'est pas la panne qui est cachée, c'est la page qui est sauvée.** La
+> cause part dans le canal de journal du paquet, `log_channel` · c'est là qu'on
+> regarde, et c'est la raison de lui donner un canal à lui.
+
+---
+
 ## Les écrans d'analytique
 
 ### Vue d'ensemble

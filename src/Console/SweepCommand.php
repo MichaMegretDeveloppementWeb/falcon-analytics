@@ -30,7 +30,7 @@ final class SweepCommand extends Command
             return self::FAILURE;
         }
 
-        $this->components->info("Closed {$closed} idle session(s).");
+        $this->components->info("{$closed} session(s) close(s) après {$timeout} minute(s) d’inactivité.");
 
         return self::SUCCESS;
     }

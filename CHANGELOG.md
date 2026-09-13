@@ -88,4 +88,4 @@ comportement par défaut, pas une option à activer. Les données restent dans
 votre base ; aucun tiers, aucun service externe, aucun démon.
 
 Les événements bruts s'effacent au bout de quatre-vingt-dix jours par défaut ;
-les agrégats restent.
+les sessions et les profils de visiteur restent indéfiniment.

@@ -43,7 +43,7 @@ final class SyncSearchConsoleCommand extends Command
             return self::FAILURE;
         }
 
-        $this->components->info($count.' rows upserted.');
+        $this->components->info($count.' ligne(s) de requêtes enregistrée(s).');
 
         return self::SUCCESS;
     }

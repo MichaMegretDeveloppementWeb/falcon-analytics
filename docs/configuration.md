@@ -56,7 +56,19 @@ s'appliquent. Publiez le jour où vous voulez en changer une.
 
 | Clé | Type | Défaut | Ce qu'elle fait |
 |---|---|---|---|
-| `log_channel` | chaîne ou `null` | `null` | Le canal où le paquet écrit ses propres erreurs — réception, téléchargement. **Sans valeur**, il écrit dans le canal par défaut de votre application. |
+| `log_channel` | chaîne ou `null` | `null` | Le canal où le paquet écrit ses propres erreurs. **Sans valeur**, il écrit dans le canal par défaut de votre application. |
+
+> **C'est le seul endroit où ce paquet se plaint**, et ça vaut d'être su · il est
+> écrit pour ne jamais casser la page de quelqu'un, donc **tout ce qui rate rate
+> en silence** · une réception refusée, un fichier de tunnels mal formé, un
+> téléchargement échoué, un bloc d'écran qui n'a pas pu lire ses données, une
+> synchronisation Google interrompue.
+>
+> Lui donner un canal à lui — un fichier séparé, par exemple — est le geste qui
+> rend ces pannes visibles sans les noyer dans le journal de l'application.
+> **Devant un chiffre qui ne ressemble à rien, c'est là qu'on regarde**, et
+> `analytics:check` n'y supplée pas · il voit la configuration, pas ce qui s'est
+> passé cette nuit.
 
 ---
 
@@ -78,8 +90,18 @@ qui ne les emploient pas.
 | Clé | Type | Défaut | Ce qu'elle fait |
 |---|---|---|---|
 | `endpoint` | chemin | `'__analytics'` | L'adresse où le collecteur envoie ses lots. Le **nom** de la route ne bouge pas, lui · `analytics.web.ingest`. |
-| `throttle` | `requêtes,minutes` | `'120,1'` | La limite de débit posée sur ce point. |
+| `throttle` | `requêtes,minutes` | `'120,1'` | La limite de débit posée sur ce point. **Comptée par adresse IP**, comme toute limite de Laravel pour un visiteur non connecté. |
 | `exclude_ips` | liste d'IP ou de CIDR | `[]` | Les adresses entièrement exclues du suivi — personnel interne, sondes de supervision. **Vide veut dire « personne »**, et c'est une réponse. |
+
+> **La limite par IP et les proxies de confiance se tiennent par la main.** Tant
+> que Laravel ne connaît pas vos proxies, **toutes vos visites portent une seule
+> adresse** · elles partagent donc un seul compteur, et au-delà du seuil les
+> envois sont refusés **pour tout le site à la fois**. Rien ne le signale — une
+> balise d'envoi ne lit pas la réponse — et le tableau de bord se contente de
+> plafonner.
+>
+> C'est la plus coûteuse des conséquences d'un proxy non déclaré, avant même la
+> géolocalisation. Réglez les proxies ; ne montez pas le seuil pour compenser.
 
 > **Pas de jeton CSRF sur ce point, et il ne peut pas y en avoir** · une balise
 > d'envoi n'en porte pas. Le contrôle d'origine et la limite de débit tiennent
@@ -141,7 +163,16 @@ Le nom d'un sujet est **lu au moment de l'affichage et jamais stocké**.
 
 | Clé | Type | Défaut | Ce qu'elle fait |
 |---|---|---|---|
-| `web.middleware` | liste | `EncryptCookies`, `AddQueuedCookiesToResponse`, `StartSession` | La pile posée devant le point de collecte. |
+| `web.middleware` | liste | `EncryptCookies`, `AddQueuedCookiesToResponse`, `StartSession` | La pile posée devant le point de collecte. **Elle doit être complète** · la route du paquet est déclarée hors de vos groupes, donc elle n'hérite de rien. |
+
+> **Ne retirez pas la session de cette liste.** Sans consentement — le cas par
+> défaut — l'identifiant du visiteur vit dans la session, donc sans
+> `StartSession` chaque envoi du collecteur répond en erreur. La page du
+> visiteur n'en souffre pas, une balise d'envoi ne lisant pas la réponse · vous
+> ne le verrez que dans vos journaux d'erreurs, et vos écrans resteront vides.
+>
+> Le contrôle d'origine et la limite de débit, eux, sont ajoutés **après** cette
+> liste · la vider vous prive de la session, pas d'eux.
 
 **Elle doit être complète.** Les routes du paquet sont enregistrées hors de vos
 groupes de routes · elles n'héritent de rien.
@@ -152,7 +183,13 @@ groupes de routes · elles n'héritent de rien.
 
 | Clé | Type | Défaut | Ce qu'elle fait |
 |---|---|---|---|
-| `retention_days` | entier (jours) | `90` | Au-delà, les événements bruts sont effacés par `analytics:prune`. **Les agrégats sont gardés indéfiniment.** |
+| `retention_days` | entier (jours) | `90` | Au-delà, les événements bruts sont effacés par `analytics:prune`. **Les sessions et les profils de visiteur sont gardés indéfiniment** · seul le détail événement par événement disparaît. |
+
+> **`0` ou un nombre négatif coupe la purge**, il ne l'accélère pas · rien n'est
+> jamais effacé, et la commande le dit en clair plutôt que de vider la table.
+> C'est la lecture prudente d'une valeur qu'on ne peut pas deviner, mais c'est
+> l'inverse de ce qu'on attend en l'écrivant · pour ne rien garder, il n'y a pas
+> de réglage, et c'est volontaire.
 
 | Clé | Type | Défaut | Ce qu'elle fait |
 |---|---|---|---|

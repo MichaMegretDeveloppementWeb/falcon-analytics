@@ -124,9 +124,17 @@ Le paquet ne reconnaît le consentement qu'à la valeur exacte `"1"`.
 Réglez les proxies de confiance de Laravel pour que la véritable adresse du
 client parvienne au paquet. **C'est le réglage qui fait mentir un tableau de bord
 plutôt que de le laisser vide**, et c'est ce qui le rend cher à trouver · sans
-lui, toutes les visites portent l'adresse du proxy, donc **un seul pays et une
-seule ville pour tout le site**, et `exclude_ips` qui exclut tout le monde ou
-personne.
+lui, toutes les visites portent l'adresse du proxy ·
+
+- **un seul pays et une seule ville** pour tout le site ;
+- `exclude_ips` qui exclut **tout le monde ou personne** ;
+- et surtout **une seule limite de débit partagée** · le seuil est compté par
+  adresse, donc au-delà de 120 envois par minute **pour l'ensemble du site**, les
+  suivants sont refusés. Rien ne le signale, une balise d'envoi ne lisant pas la
+  réponse · le tableau de bord plafonne, simplement.
+
+C'est ce dernier point qui fait vraiment perdre des mesures, et il arrive bien
+avant qu'on s'inquiète de la géolocalisation.
 
 Les comptages de visiteurs, eux, ne bougent pas · un visiteur est un cookie ou
 une session, jamais une adresse.

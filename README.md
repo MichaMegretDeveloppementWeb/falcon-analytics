@@ -121,7 +121,9 @@ marquer comme conversions et de les enchaîner en tunnels. Le détail est dans
 - **Un seul domaine.** Un visiteur qui passe d'un site à l'autre est deux
   visiteurs · il n'y a pas de suivi inter-domaines, et il n'y en aura pas.
 - **Les événements bruts s'effacent** au bout de 90 jours par défaut. Les
-  agrégats, eux, restent · mais un événement de l'an dernier ne se rejoue pas.
+  sessions et les profils de visiteur, eux, **restent indéfiniment** · vos
+  courbes de fréquentation ne se creusent pas, mais le détail d'une session de
+  l'an dernier ne se rejoue pas.
 - **Les robots sont enregistrés, puis écartés de tous les écrans.** Ce qui passe
   pour un navigateur inconnu, en revanche, compte comme une visite ordinaire.
 - **La géolocalisation demande une clé MaxMind**, gratuite mais à demander, et
@@ -132,9 +134,14 @@ marquer comme conversions et de les enchaîner en tunnels. Le détail est dans
 - **L'attribution publicitaire se fait au rapport**, sur les paramètres d'URL
   capturés à l'arrivée. Une campagne créée après coup retrouve ses sessions ·
   une session sans paramètre reconnaissable ne s'attribue à personne.
-- **Sans `@analyticsCollector`, rien n'est mesuré**, et rien ne le signale
-  ailleurs que dans `analytics:check`. C'est la première chose à vérifier
-  devant un tableau de bord vide.
+- **Sans `@analyticsCollector`, aucune page vue et aucun clic ne sont mesurés**,
+  et rien ne le signale ailleurs que dans `analytics:check`. C'est la première
+  chose à vérifier devant un tableau de bord vide. Les événements que vous
+  émettez depuis le serveur avec `Analytics::record()`, eux, n'en dépendent pas.
+- **Derrière un proxy, déclarez vos proxies de confiance.** Sans ça toutes les
+  visites portent la même adresse, donc un seul pays — et surtout **une seule
+  limite de débit pour tout le site**, qui finit par refuser les envois sans que
+  rien ne le dise.
 
 ---
 
