@@ -7,6 +7,7 @@ namespace Falcon\Analytics\Tests\Feature;
 use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use ReflectionClass;
 use SplFileInfo;
 
 /**
@@ -88,12 +89,12 @@ final class TheSurfaceIsDeclaredTest extends TestCase
     {
         $silent = [];
 
-        foreach ($this->classes() as $name => $source) {
+        foreach ($this->classes() as $name => $saysInternal) {
             if (in_array($name, self::PUBLIC_SURFACE, true)) {
                 continue;
             }
 
-            if (! str_contains($source, '@internal')) {
+            if (! $saysInternal) {
                 $silent[] = $name;
             }
         }
@@ -111,8 +112,8 @@ final class TheSurfaceIsDeclaredTest extends TestCase
     {
         $contradictory = [];
 
-        foreach ($this->classes() as $name => $source) {
-            if (in_array($name, self::PUBLIC_SURFACE, true) && str_contains($source, '@internal')) {
+        foreach ($this->classes() as $name => $saysInternal) {
+            if (in_array($name, self::PUBLIC_SURFACE, true) && $saysInternal) {
                 $contradictory[] = $name;
             }
         }
@@ -136,9 +137,19 @@ final class TheSurfaceIsDeclaredTest extends TestCase
     }
 
     /**
-     * Every class of `src/`, by its name under the package's namespace.
+     * Every class of `src/`, and whether **the class itself** says it is
+     * internal.
      *
-     * @return array<string, string>
+     * **Asked of PHP, not searched for in the text.** A first version read the
+     * file and looked for the word anywhere in it · an `@internal` sitting in a
+     * method's comment would have satisfied it while the class said nothing,
+     * and a tag a tool never reads is a tag that does not exist. `getDocComment`
+     * hands back the block PHP attaches to the class, and nothing else.
+     *
+     * A class the autoloader cannot find under the name its path spells fails
+     * here too, which is the PSR-4 break one otherwise meets at runtime.
+     *
+     * @return array<string, bool>
      */
     private function classes(): array
     {
@@ -165,7 +176,17 @@ final class TheSurfaceIsDeclaredTest extends TestCase
                 str_replace('\\', '/', $file->getPathname()),
             );
 
-            $classes[$name] = (string) file_get_contents($file->getPathname());
+            $full = 'Falcon\\Analytics\\'.$name;
+
+            $this->assertTrue(
+                class_exists($full) || interface_exists($full) || trait_exists($full) || enum_exists($full),
+                "{$name} is not loadable under the name its path spells: PSR-4 is broken here.",
+            );
+
+            $classes[$name] = str_contains(
+                (string) (new ReflectionClass($full))->getDocComment(),
+                '@internal',
+            );
         }
 
         return $classes;
