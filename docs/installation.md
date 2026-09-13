@@ -11,8 +11,8 @@ Une commande, puis trois choses à écrire vous-même. Comptez un quart d'heure.
 | **PHP** | 8.5 ou plus |
 | **Laravel** | 13 |
 | **Livewire** | 4.2 ou plus · dépendance partagée, jamais embarquée |
-| **Une base** | MySQL, MariaDB ou PostgreSQL · le paquet crée huit tables préfixées `falcon_analytics_` |
-| **L'ordonnanceur** | `schedule:run` déclenché chaque minute · sans lui, les sessions ne se ferment pas et les vieux événements ne s'effacent jamais |
+| **Une base** | MySQL, MariaDB ou PostgreSQL · le paquet crée dix tables préfixées `falcon_analytics_`, dont huit portent vos mesures |
+| **L'ordonnanceur** | `schedule:run` déclenché chaque minute · sans lui, les sessions ne se ferment pas et les jours clos ne sont plus résumés. **Rien n'est perdu pour autant** · voir plus bas |
 | **Node** | **non** · le paquet livre ses fichiers déjà compilés |
 
 `falcon/ui-kit` vient avec, et vous n'avez pas à l'installer séparément.
@@ -302,6 +302,19 @@ Et assurez-vous que l'ordonnanceur tourne ·
 **Aucune tâche propre à analytics n'est à créer** · le paquet inscrit les
 siennes dans l'ordonnanceur de Laravel.
 
+### Et s'il ne tourne pas
+
+**Rien n'est perdu.** L'effacement refuse un jour que le résumé n'a pas traité,
+donc les deux s'arrêtent ensemble et le retard attend. Vos écrans continuent de
+répondre depuis les lignes.
+
+**Ouvrir un écran d'analytique rattrape ce retard**, après l'envoi de la page,
+une fois par heure au plus et par tranches — c'est le filet pour les
+hébergements mutualisés, dont les ordonnanceurs s'arrêtent sans un mot.
+
+`analytics:check` dit combien de jours attendent. **Si ce nombre ne baisse pas
+d'un jour à l'autre, votre `schedule:run` ne tourne pas.**
+
 ---
 
 ## Désinstaller
@@ -321,7 +334,7 @@ rm config/analytics.php
 
 Les variables `ANALYTICS_*` de `.env` et `.env.example` sont à retirer à la main.
 
-**Les huit tables `falcon_analytics_*` restent**, et aucune commande ne les
+**Les dix tables `falcon_analytics_*` restent**, et aucune commande ne les
 supprime · le paquet n'efface pas des données qu'on ne lui a pas demandé
 d'effacer. Elles se retirent quand vous êtes sûr de ne plus vouloir l'historique,
 et une sauvegarde d'ici là ne coûte rien.

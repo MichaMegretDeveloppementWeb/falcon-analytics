@@ -30,7 +30,9 @@ PHP 8.5, Laravel 13, Livewire 4.2, et une base MySQL, MariaDB ou PostgreSQL.
 **Node, non.** `falcon/ui-kit` vient avec le paquet.
 
 Il faut aussi que `schedule:run` tourne chaque minute · c'est ce qui ferme les
-sessions inactives et efface les événements périmés.
+sessions inactives, résume les jours clos et efface ce qui a dépassé la
+conservation. **Si votre ordonnanceur s'arrête, rien n'est perdu** · l'effacement
+refuse un jour non résumé, et ouvrir un écran rattrape le retard.
 
 ---
 
@@ -62,7 +64,7 @@ douze contrôles sur des défauts qui échouent tous en silence.
 |---|---|
 | **[installation.md](docs/installation.md)** | l'installation, le montage des écrans, le déploiement |
 | **[configuration.md](docs/configuration.md)** | **les 36 réglages**, un tableau par bloc · la seule autorité |
-| **[fonctionnalites.md](docs/fonctionnalites.md)** | une fiche par écran, les neuf commandes, l'instrumentation, les tunnels, le marketing, la vie privée |
+| **[fonctionnalites.md](docs/fonctionnalites.md)** | une fiche par écran, les dix commandes, l'instrumentation, les tunnels, le marketing, la vie privée |
 | **[mise-a-jour.md](docs/mise-a-jour.md)** | monter de version, le contrat public, revenir en arrière |
 | **[developpement.md](docs/developpement.md)** | travailler sur le paquet |
 | **[CHANGELOG.md](CHANGELOG.md)** | l'historique, et ce que chaque version demande à l'intégrateur |
@@ -120,10 +122,13 @@ marquer comme conversions et de les enchaîner en tunnels. Le détail est dans
 
 - **Un seul domaine.** Un visiteur qui passe d'un site à l'autre est deux
   visiteurs · il n'y a pas de suivi inter-domaines, et il n'y en aura pas.
-- **Les événements bruts s'effacent** au bout de 90 jours par défaut. Les
-  sessions et les profils de visiteur, eux, **restent indéfiniment** · vos
-  courbes de fréquentation ne se creusent pas, mais le détail d'une session de
-  l'an dernier ne se rejoue pas.
+- **Le pas à pas d'une session ne se consulte que 90 jours** par défaut. Au-delà,
+  les pages vues et les clics anonymes sont effacés — **et aucun chiffre d'aucun
+  écran ne bouge** · ils ont été comptés d'avance, et tout ce qui porte un nom
+  est gardé pour toujours. Vous pouvez demander deux ans sans rien fausser.
+- **Un tunnel ou un événement déclaré aujourd'hui ne dit rien du passé déjà
+  effacé.** La matière n'existe plus ; l'historique de cette mesure commence le
+  jour où vous la déclarez. C'est vrai de tous les outils du genre.
 - **Les robots sont enregistrés, puis écartés de tous les écrans.** Ce qui passe
   pour un navigateur inconnu, en revanche, compte comme une visite ordinaire.
 - **La géolocalisation demande une clé MaxMind**, gratuite mais à demander, et

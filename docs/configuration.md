@@ -206,30 +206,52 @@ groupes de routes · elles n'héritent de rien.
 
 | Clé | Type | Défaut | Ce qu'elle fait |
 |---|---|---|---|
-| `retention_days` | entier (jours) | `90` | Au-delà, les événements bruts sont effacés par `analytics:prune`. **Les sessions et les profils de visiteur sont gardés indéfiniment** · seul le détail événement par événement disparaît. |
+| `retention_days` | nombre de jours, ou `null` | `90` | Combien de temps le **pas à pas d'une session** reste consultable. Au-delà, `analytics:prune` efface les pages vues et les clics **anonymes**, et rien d'autre. `null` n'efface jamais rien. |
 
-> **`0` ou un nombre négatif coupe la purge**, il ne l'accélère pas · rien n'est
-> jamais effacé, et la commande le dit en clair plutôt que de vider la table.
-> C'est la lecture prudente d'une valeur qu'on ne peut pas deviner, mais c'est
-> l'inverse de ce qu'on attend en l'écrivant · pour ne rien garder, il n'y a pas
-> de réglage, et c'est volontaire.
+> **`0` et les nombres négatifs sont refusés.** Ils voudraient dire l'inverse de
+> ce qu'on tape en les écrivant · la commande s'arrête en le disant, et
+> `analytics:check` le signale comme bloquant. Pour ne jamais effacer, écrivez
+> `null`.
 
-**Cette valeur plafonne ce que trois écrans peuvent montrer**, et c'est la
-conséquence qu'on ne voit pas venir · ils lisent les événements bruts ·
+### Ce que ce réglage ne touche pas
 
-| | Ce qui arrive au-delà de la rétention |
-|---|---|
-| **les tunnels** | ne rapportent rien · les étapes se lisent sur les événements |
-| **les événements** | même chose · l'écran ne remonte pas plus loin |
-| **le détail d'une session** | la session **reste listée**, avec ses chiffres, mais **son parcours est vide** · les pages et les clics qui le composaient ont été effacés |
+**Aucun chiffre d'aucun écran.** C'est le point, et il a demandé du travail ·
 
-Les autres écrans ne sont pas concernés · fréquentation, visiteurs, sources,
-marketing et Search Console lisent des données que la purge ne touche pas.
+- **ce qui porte un nom n'est jamais effacé** · vos événements nommés, et donc
+  l'écran des événements, les tunnels et les conversions marketing, restent
+  exacts **sans limite de profondeur** ;
+- **les pages et les clics les plus vus sont comptés d'avance**, chaque nuit, et
+  ces compteurs sont gardés pour toujours · la vue d'ensemble remonte aussi loin
+  que vous le demandez ;
+- **les sessions, les visiteurs et leurs chiffres restent** · fréquentation,
+  sources, appareils, localités, portée des campagnes ne bougent pas ;
+- **les pages vues que traverse une étape de tunnel déclarée** sont gardées
+  aussi, parce qu'un tunnel ne se reconstitue pas à partir de totaux.
 
-> **Une période de 90 jours sur une rétention de 90 jours est une coïncidence**,
-> et elle se voit · le bord de la fenêtre se dégarnit à mesure que la purge
-> avance. Gardez la rétention au-dessus de la plus longue période que vous
-> comptez lire.
+**Une seule chose se perd, et c'est ce que vous achetez avec ce réglage** · le
+détail pas à pas d'une session plus ancienne. Son écran affiche alors ses
+compteurs, ses événements nommés, et dit que le reste a été effacé.
+
+> **Vous pouvez donc demander deux ans sans rien fausser.** Il n'y a aucune
+> période maximale d'affichage, et il n'y en a pas besoin.
+
+**La limite, la vraie** · un tunnel ou un événement nommé **déclaré aujourd'hui
+ne peut rien dire des périodes déjà effacées**. La matière n'existe plus, et
+l'historique de cette mesure-là commence le jour où vous la déclarez. Matomo a
+exactement la même contrainte. L'attribution des campagnes, elle, **reste
+rétroactive** · elle se calcule sur les paramètres d'URL gardés sur la session.
+
+### Ce qu'il faut pour que ça marche
+
+Deux tâches planifiées, dans cet ordre · le résumé à 03:00, l'effacement à
+03:30. **L'effacement refuse un jour que le résumé n'a pas traité**, et c'est ce
+qui rend une panne d'ordonnanceur inoffensive · les deux s'arrêtent ensemble, et
+rien n'est perdu.
+
+Le paquet les inscrit lui-même · il vous suffit que `schedule:run` tourne. Et si
+votre ordonnanceur s'arrête quand même, **ouvrir un écran d'analytique rattrape
+le retard**, après l'envoi de la page. `analytics:check` dit le nombre de jours
+en attente.
 
 | Clé | Type | Défaut | Ce qu'elle fait |
 |---|---|---|---|

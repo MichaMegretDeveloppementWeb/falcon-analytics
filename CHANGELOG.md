@@ -34,10 +34,14 @@ architecture qui n'existe plus.
   donc un visiteur est *ce client-là*, ce qu'aucun outil externe ne peut faire ;
 - **Google Search Console**, pour les vraies requêtes organiques ;
 - **la géolocalisation locale**, par base MaxMind téléchargée chez vous ;
-- **neuf commandes** · installation, diagnostic, deux pour les événements, deux
-  pour la géolocalisation, une pour la Search Console et deux d'entretien —
-  **dont quatre que le paquet planifie lui-même**, sans que vous ayez de tâche à
+- **dix commandes** · installation, diagnostic, deux pour les événements, deux
+  pour la géolocalisation, une pour la Search Console et trois d'entretien —
+  **dont cinq que le paquet planifie lui-même**, sans que vous ayez de tâche à
   créer ;
+- **une conservation qui ne fausse aucun chiffre** · le pas à pas d'une session
+  s'efface au bout de 90 jours, et c'est tout ce qui s'efface · les pages et
+  clics les plus vus sont comptés d'avance chaque nuit, et **tout ce qui porte un
+  nom est gardé pour toujours**. Aucune période maximale d'affichage ;
 - **trente-six réglages**, tous facultatifs · le paquet fonctionne sans qu'on en
   touche un seul, et un essai le tient ;
 - **des fichiers déjà compilés** · aucun Node n'est requis chez l'hôte.
@@ -59,15 +63,20 @@ ses propres écrans et livre `analytics.css` déjà fait ; le kit le sert. Un im
 du collecteur dans votre bundle en donnerait deux.
 
 > **Un point mérite l'attention** · `schedule:run` doit tourner chaque minute.
-> Sans lui les sessions inactives ne se ferment jamais, et les événements bruts
-> ne s'effacent pas. **Aucune tâche propre à analytics n'est à créer** · le
+> Sans lui les sessions inactives ne se ferment jamais, et les jours clos ne
+> sont plus résumés. **Aucune tâche propre à analytics n'est à créer** · le
 > paquet inscrit les siennes dans l'ordonnanceur de Laravel.
+>
+> **Et s'il s'arrête, rien n'est perdu** · l'effacement refuse un jour que le
+> résumé n'a pas traité, donc les deux s'arrêtent ensemble. Ouvrir un écran
+> d'analytique rattrape le retard, et `analytics:check` dit où on en est.
 
 ### Les migrations
 
-Le paquet crée **huit tables** préfixées `falcon_analytics_`, chargées
+Le paquet crée **dix tables** préfixées `falcon_analytics_`, chargées
 automatiquement · un `php artisan migrate` suffit, et `analytics:install` le
-lance pour vous.
+lance pour vous. Huit portent vos mesures ; les deux autres sont la mécanique de
+la conservation, et ne sont pas une interface.
 
 Elles sont toutes réversibles. Ce qui ne veut pas dire qu'il faille les
 redescendre · voir [mise-a-jour.md](docs/mise-a-jour.md#le-schéma-qui-est-la-vraie-question).
@@ -87,5 +96,7 @@ PHP 8.5, Laravel 13, Livewire 4.2, et une base MySQL, MariaDB ou PostgreSQL.
 comportement par défaut, pas une option à activer. Les données restent dans
 votre base ; aucun tiers, aucun service externe, aucun démon.
 
-Les événements bruts s'effacent au bout de quatre-vingt-dix jours par défaut ;
-les sessions et les profils de visiteur restent indéfiniment.
+**Le pas à pas d'une session ne se consulte que quatre-vingt-dix jours** par
+défaut · au-delà, les pages vues et les clics anonymes sont effacés. Ce qui
+porte un nom est gardé, les chiffres des écrans ne bougent pas, et l'écran de
+cette session dit ce qu'il a perdu. Écrivez `null` pour ne jamais rien effacer.

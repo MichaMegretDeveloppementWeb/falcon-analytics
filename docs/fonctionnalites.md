@@ -1,6 +1,6 @@
 # Ce que Falcon Analytics fait, écran par écran
 
-Quatorze écrans, neuf commandes, un point de collecte. Cette page dit ce que
+Quatorze écrans, dix commandes, un point de collecte. Cette page dit ce que
 chacun fait, ce qu'il attend et ce qu'il rend.
 
 Pour les réglages, une seule autorité · [configuration.md](configuration.md).
@@ -190,9 +190,11 @@ Les statistiques d'engagement de la période, et la liste paginée et filtrable 
 Ses informations principales et **son parcours chronologique** · les pages
 visitées, les clics rangés sous la page où ils ont eu lieu, et le temps passé.
 
-> **Au-delà de la rétention, le parcours est vide** · la session reste listée
-> avec ses chiffres, mais les événements qui la détaillaient ont été effacés.
-> Voir [`retention_days`](configuration.md#la-durée-de-vie-des-données).
+> **Au-delà de la conservation, le pas à pas n'est plus là, et l'écran le dit.**
+> Il affiche alors ce que la session sait encore · ses pages vues, ses clics,
+> ses conversions, et la liste de ses événements nommés, qui ne sont jamais
+> effacés. **C'est le seul écran que la conservation change** · voir
+> [`retention_days`](configuration.md#la-durée-de-vie-des-données).
 
 ### Événements
 
@@ -333,14 +335,15 @@ limite de débit tiennent sa place, et ils sont posés **après** votre pile · 
 page publique très fréquentée veut la monter. Le contrôle d'origine, lui, n'a
 aucun réglage.
 
-### Les neuf commandes
+### Les dix commandes
 
 | Commande | Ce qu'elle fait | Quand |
 |---|---|---|
 | `analytics:install` | publie la configuration, ajoute les variables d'environnement, lance les migrations | à l'installation |
 | `analytics:check` | dit si le paquet est correctement installé et opérationnel | après l'installation, et quand quelque chose cloche |
 | `analytics:sweep` | clôt les sessions inactives au-delà du délai | **planifiée, toutes les 5 minutes** |
-| `analytics:prune` | supprime les événements bruts plus vieux que la rétention | **planifiée, chaque jour à 03:30** |
+| `analytics:archive` | résume les jours clos, pour que l'effacement ne coûte aucun chiffre · `--days` borne un passage | **planifiée, chaque jour à 03:00** |
+| `analytics:prune` | efface les pages vues et clics **anonymes** au-delà de la conservation · refuse un jour non résumé | **planifiée, chaque jour à 03:30** |
 | `analytics:geoip:download` | télécharge la base MaxMind GeoLite2 City | **planifiée, le 1er de chaque mois à 04:00** · inerte sans clé |
 | `analytics:geoip:check` | dit si la base est utilisable, et pourquoi une adresse résout ou non · accepte une adresse en argument | au besoin |
 | `analytics:search-console:sync` | tire les requêtes organiques dans le cache local | **planifiée, chaque jour à 05:00** · inerte sans connexion |
@@ -382,14 +385,25 @@ Ce qu'il faut en savoir concrètement ·
 
 ### La planification, et ce qu'elle exige de vous
 
-**Rien de particulier.** Le paquet inscrit lui-même ses quatre tâches dans
+**Rien de particulier.** Le paquet inscrit lui-même ses cinq tâches dans
 l'ordonnanceur de Laravel · il vous suffit de déclencher `schedule:run` comme
 vous le faites déjà, par une tâche système ou par un appel HTTP.
 
 > **Aucune tâche dédiée à analytics n'est à créer**, et aucun processus permanent
 > n'est requis. Si votre application n'a pas encore d'ordonnanceur, c'est le seul
-> prérequis · sans lui, les sessions ne se ferment pas toutes seules et les
-> événements anciens ne sont jamais effacés.
+> prérequis.
+
+**L'ordre de deux d'entre elles est une garantie, pas un détail** · le résumé à
+03:00, l'effacement à 03:30. **L'effacement refuse un jour que le résumé n'a pas
+traité**, donc un ordonnanceur qui s'arrête les arrête tous les deux · le retard
+attend, et rien n'est perdu.
+
+> **Et si le vôtre s'arrête quand même, ouvrir un écran d'analytique rattrape le
+> retard** — après l'envoi de la page, une fois par heure au plus, et par
+> tranches. C'est le filet pour les hébergements mutualisés, dont les
+> ordonnanceurs s'arrêtent sans un mot. `analytics:check` dit combien de jours
+> attendent ; si ce nombre ne baisse pas d'un jour à l'autre, votre
+> `schedule:run` ne tourne pas.
 
 ---
 

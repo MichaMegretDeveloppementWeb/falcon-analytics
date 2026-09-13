@@ -157,7 +157,7 @@ n'a pas de Node.
 
 ## L'organisation du domaine
 
-155 classes, dont **16 publiques** · le reste porte `@internal`, et
+162 classes, dont **16 publiques** · le reste porte `@internal`, et
 `TheSurfaceIsDeclaredTest` refuse que cette frontière bouge sans qu'on le dise.
 La liste tient dans ce fichier d'essai, qui est l'endroit où la lire.
 
@@ -195,17 +195,46 @@ Actions/IngestEventsAction                le seul endroit qui décide
 Repositories/…WriteRepository             visiteur, session, événement
 ```
 
+### La conservation · ce qui s'efface, et ce qui le rend indolore
+
+Le troisième chemin, et le moins évident. **Le volume et la valeur ne sont pas
+au même endroit** · les pages vues et les clics anonymes sont la quasi-totalité
+des lignes et ne servent qu'à deux blocs de la vue d'ensemble et au pas à pas
+d'une session ; les événements **nommés** sont rares et portent l'écran des
+événements, les tunnels et les conversions marketing.
+
+```
+DailyCountArchiver         résume un jour clos · avance depuis le dernier traité
+        ↓
+Maintenance                la décision, partagée par les deux chemins
+        ↓                              ↑
+ArchiveCommand · PruneCommand    CatchesUpTheMaintenance (au chargement d'un écran)
+```
+
+Quatre règles tiennent l'ensemble, et chacune a son essai ·
+
+| | |
+|---|---|
+| **le résumé dit la même chose que le brut** | comparé sur un jour où les deux existent · c'est ce que la fenêtre de conservation permet, et `TheSummaryAgreesWithTheDetail` s'en sert |
+| **l'effacement refuse un jour non résumé** | ce qui rend une panne d'ordonnanceur inoffensive · pas de résumé, pas d'effacement |
+| **la lecture coupe sur une frontière enregistrée**, jamais déduite de la conservation | les deux divergent dès qu'un ordonnanceur s'arrête ou qu'une durée est raccourcie · une ligne au mauvais endroit doublerait un chiffre ou en perdrait un |
+| **effacer ne change aucun chiffre** | `ThePurgeChangesNoFigure` mesure sept lectures, efface, remesure, et nomme le bloc qui a bougé |
+
+> **Le piège de cette partie** · un jour vidé garde ses lignes **nommées**, que
+> le résumé a comptées aussi. Lire les deux compterait deux fois un clic nommé,
+> d'où une coupure stricte plutôt qu'un recouvrement.
+
 ### Le reste
 
 | Dossier | Ce qu'on y trouve |
 |---|---|
-| `Models/` | les huit tables, et leurs relations |
+| `Models/` | les dix tables, et leurs relations · huit portent vos mesures, deux la mécanique de la conservation |
 | `Enums/` | les types d'événement et d'objectif |
 | `Funnels/` | les tunnels · déclarés par l'hôte, évalués ici |
 | `Events/` | les événements nommés, déclarés par l'hôte |
 | `Services/SearchConsole/` | l'authentification OAuth, le client, la synchronisation |
 | `Support/` | ce qui ne tient à aucune couche · géolocalisation, agent utilisateur, expurgation d'URL, palette |
-| `Console/` | les neuf commandes |
+| `Console/` | les dix commandes |
 | `View/` | ce que la directive du collecteur a besoin de savoir |
 
 ---

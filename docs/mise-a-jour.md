@@ -81,7 +81,7 @@ aucune de ces signatures.
 Ce qui n'est pas dans cette liste et pas décrit dans
 [configuration.md](configuration.md) **n'est pas public**, et peut changer sans
 préavis. Concrètement · les écrans, ce qui les alimente, ce qui lit et écrit, ce
-que font les commandes — **139 classes sur 155**, et chacune le dit dans son
+que font les commandes — **146 classes sur 162**, et chacune le dit dans son
 propre code.
 
 > **Les écrans méritent un mot.** Le fournisseur les annonce à Laravel sous
