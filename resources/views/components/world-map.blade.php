@@ -34,10 +34,12 @@
         },
         {{-- The Miller projection, identical to the generated base map
              (yTop = miller(85 deg)). --}}
-        {{-- Read at this element · a custom property is inherited, so only the
-             place where it is used knows what it holds there. --}}
-        online() { return window.falconToken('--an-online', this.$el); },
-        recent() { return window.falconToken('--an-accent', this.$el); },
+        {{-- The class rather than the colour · these markers are SVG, which a
+             stylesheet does reach, unlike a canvas. So nothing is resolved here:
+             the rules below hold the two tokens, and a theme switch repaints the
+             markers with everything else, without a line of script. --}}
+        online() { return 'fa-map-online'; },
+        recent() { return 'fa-map-recent'; },
         project(lat, lon) {
             const clamped = Math.max(-60, Math.min(85, lat));
             const x = (lon + 180) * (1000 / 360);
@@ -61,9 +63,9 @@
                 const label = this.esc(place + ' · ' + suffix + (online && this.mode !== 'online' ? ' · ' + p.online + ' ' + this.onlineLabel : ''));
                 html += '<g data-tooltip=\x22' + label + '\x22>';
                 if (online) {
-                    html += '<circle class=\x22fa-map-pulse\x22 cx=\x22' + x + '\x22 cy=\x22' + y + '\x22 r=\x22' + (r * 1.5) + '\x22 fill=\x22' + this.online() + '\x22></circle>';
+                    html += '<circle class=\x22fa-map-pulse ' + this.online() + '\x22 cx=\x22' + x + '\x22 cy=\x22' + y + '\x22 r=\x22' + (r * 1.5) + '\x22></circle>';
                 }
-                html += '<circle cx=\x22' + x + '\x22 cy=\x22' + y + '\x22 r=\x22' + r + '\x22 fill=\x22' + (online ? this.online() : this.recent()) + '\x22 fill-opacity=\x220.9\x22></circle>';
+                html += '<circle class=\x22' + (online ? this.online() : this.recent()) + '\x22 cx=\x22' + x + '\x22 cy=\x22' + y + '\x22 r=\x22' + r + '\x22 fill-opacity=\x220.9\x22></circle>';
                 html += '</g>';
             }
             this.$refs.markers.innerHTML = html;
@@ -82,11 +84,8 @@
         },
         init() { this.apply(); },
     }"
-    {{-- The countries and their borders follow the theme through the
-         stylesheet, having classes. The markers are drawn in JavaScript and
-         hold the value they were given, so they are drawn again · `apply()`
-         asks for the tokens each time it runs, which is all there is to do. --}}
-    x-on:theme-changed.window="apply()"
+    {{-- Nothing to listen to · countries, borders and markers all carry classes
+         now, so the stylesheet repaints the whole map on a theme switch. --}}
     x-on:{{ $event }}.window="refresh($event.detail)"
     x-on:analytics-realtime-mode.window="setMode($event.detail)"
     x-on:resize.window.debounce.250ms="apply()"
@@ -99,6 +98,12 @@
     </svg>
 
     <style>
+        /* The two marker colours, held by the stylesheet and not by the script ·
+           an SVG circle is reached by CSS, so a theme switch repaints it with
+           the rest of the page and nothing has to be redrawn. */
+        .fa-map-online { fill: var(--an-online); }
+        .fa-map-recent { fill: var(--an-accent); }
+
         @keyframes fa-map-pulse {
             0% { opacity: .5; transform: scale(1); }
             70% { opacity: 0; transform: scale(2.4); }

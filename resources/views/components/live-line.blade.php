@@ -21,10 +21,10 @@
                  that pages without a chart never download. --}}
             await window.falconCharts();
 
-            {{-- `color` is a token NAME · a canvas resolves no `var()`, so the
-                 page is asked what it currently holds. Ticks, grid and tooltip
-                 are not named at all: the kit's defaults carry them. --}}
-            const color = window.falconToken(@js($color), this.$el);
+            {{-- `color` is a token NAME, written as the page would write it ·
+                 the kit turns it into the value of the theme in force, before
+                 every draw and therefore after every switch. Ticks, grid and
+                 tooltip are not named at all: the kit's defaults carry them. --}}
             {{-- Chart kept on the DOM node, not in Alpine's reactive state (see area-chart). --}}
             this.$el._chart = new window.Chart(this.$refs.canvas, {
                 type: 'line',
@@ -32,28 +32,17 @@
                     labels: @js(array_values($labels)),
                     datasets: [{
                         data: @js(array_values($values)),
-                        borderColor: color,
+                        borderColor: 'var({{ $color }})',
                         borderWidth: 2.5,
                         tension: 0.4,
                         cubicInterpolationMode: 'monotone',
                         pointRadius: 0,
                         pointHoverRadius: 4,
-                        pointHoverBackgroundColor: color,
-                        pointHoverBorderColor: window.falconToken('--ui-bg-surface', this.$el),
+                        pointHoverBackgroundColor: 'var({{ $color }})',
+                        pointHoverBorderColor: 'var(--ui-bg-surface)',
                         pointHoverBorderWidth: 2,
                         fill: true,
-                        {{-- Asked for at paint time, so a theme switch needs no
-                             help here: the gradient is rebuilt on every update
-                             and reads the token it is given. --}}
-                        backgroundColor: (c) => {
-                            const { ctx, chartArea } = c.chart;
-                            if (!chartArea) return 'transparent';
-                            const tint = window.falconToken(@js($color), this.$el);
-                            const g = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-                            g.addColorStop(0, tint + '33');
-                            g.addColorStop(1, tint + '00');
-                            return g;
-                        },
+                        backgroundColor: window.falconFade(@js($color), 0.2),
                     }],
                 },
                 options: {
@@ -80,21 +69,6 @@
             });
 
         },
-        {{-- A drawn chart holds the values it was handed, so a theme switch has
-             to hand them over again. **Only what is this component's own** ·
-             the graduations, the grid, the tooltip and the legend come from the
-             kit's tokens, and the kit repaints them once for the whole page. --}}
-        repaint() {
-            const chart = this.$el._chart;
-            if (!chart) return;
-            const color = window.falconToken(@js($color), this.$el);
-            Object.assign(chart.data.datasets[0], {
-                borderColor: color,
-                pointHoverBackgroundColor: color,
-                pointHoverBorderColor: window.falconToken('--ui-bg-surface', this.$el),
-            });
-            chart.update('none');
-        },
         refresh(detail) {
             const payload = (Array.isArray(detail) ? detail[0] : detail)?.[@js($channel)];
             if (!payload || !this.$el._chart) return;
@@ -106,7 +80,6 @@
             this.$el._chart?.destroy();
         },
     }"
-    x-on:theme-changed.window="repaint()"
     x-on:{{ $event }}.window="refresh($event.detail)"
 >
     <canvas x-ref="canvas"></canvas>

@@ -16,15 +16,10 @@
     class="an:relative an:shrink-0 {{ $size }}"
     x-data="{
         chart: null,
-        {{-- `colors` arrives as token NAMES, never as values · a canvas resolves
-             no `var()`, so the page is asked what each name currently holds —
-             **at this element**, since a custom property is inherited and only
-             the place where it is used knows what it holds there.
-
-             An arrow function and not the bare name: `map` hands its callback
-             the index as a second argument, which would land in the element
-             parameter. --}}
-        slices() { return @js(array_values($colors)).map((name) => window.falconToken(name, this.$el)); },
+        {{-- `colors` arrives as token NAMES, never as values · they are handed
+             to the chart as names too, and the kit turns each into the value of
+             the theme in force before every draw. --}}
+        slices() { return @js(array_values($colors)).map((name) => 'var(' + name + ')'); },
         async init() {
             {{-- Chart.js loads on demand: the kit ships it as a separate file
                  that pages without a chart never download. --}}
@@ -40,7 +35,7 @@
                     datasets: [{
                         data: @js(array_values($values)),
                         backgroundColor: this.slices(),
-                        borderColor: window.falconToken('--ui-bg-surface', this.$el),
+                        borderColor: 'var(--ui-bg-surface)',
                         borderWidth: 2,
                         hoverOffset: 3,
                     }],
@@ -57,23 +52,10 @@
             });
 
         },
-        {{-- A drawn chart holds the values it was handed, so a theme switch has
-             to hand them over again. **Only what is this component's own** ·
-             the tooltip comes from the kit's tokens, and the kit repaints it
-             once for the whole page. --}}
-        repaint() {
-            if (!this.chart) return;
-            Object.assign(this.chart.data.datasets[0], {
-                backgroundColor: this.slices(),
-                borderColor: window.falconToken('--ui-bg-surface', this.$el),
-            });
-            this.chart.update('none');
-        },
         destroy() {
             this.chart?.destroy();
         },
     }"
-    x-on:theme-changed.window="repaint()"
 >
     {{-- Center content sits behind the canvas and shows through the doughnut hole,
          so tooltips (drawn on the canvas) render above it instead of being hidden. --}}

@@ -19,17 +19,11 @@
     class="an:relative an:shrink-0 {{ $size }}"
     x-data="{
         total: @js((string) $total),
-        {{-- Token NAMES in, values out · a canvas resolves no `var()`, so the
-             page is asked what each name currently holds — **at this element**,
-             since a custom property is inherited and only the place where it is
-             used knows what it holds there. Used both at first draw and on
-             every live refresh, the names travelling with the payload just as
-             they came from the view.
-
-             An arrow function and not the bare name: `map` hands its callback
-             the index as a second argument, which would land in the element
-             parameter. --}}
-        resolve(names) { return (names ?? []).map((name) => window.falconToken(name, this.$el)); },
+        {{-- Token NAMES in, token names out · the chart is handed the names and
+             the kit turns each into the value of the theme in force, before
+             every draw. Used at first draw and on every live refresh, the names
+             travelling with the payload just as they came from the view. --}}
+        named(names) { return (names ?? []).map((name) => 'var(' + name + ')'); },
         async init() {
             {{-- Chart.js loads on demand: the kit ships it as a separate file
                  that pages without a chart never download. --}}
@@ -43,8 +37,8 @@
                     labels: @js(array_values($labels)),
                     datasets: [{
                         data: @js(array_values($values)),
-                        backgroundColor: this.resolve(@js(array_values($colors))),
-                        borderColor: window.falconToken('--ui-bg-surface', this.$el),
+                        backgroundColor: this.named(@js(array_values($colors))),
+                        borderColor: 'var(--ui-bg-surface)',
                         borderWidth: 2,
                         hoverOffset: 3,
                     }],
@@ -60,38 +54,20 @@
                 },
             });
 
-            {{-- The names the last payload brought, kept beside the chart so a
-                 theme switch can resolve them again. On the DOM node and not in
-                 Alpine's state, for the same reason the chart is. --}}
-            this.$el._names = @js(array_values($colors));
-        },
-        {{-- A drawn chart holds the values it was handed, so a theme switch has
-             to hand them over again. **Only what is this component's own** ·
-             the tooltip comes from the kit's tokens, and the kit repaints it
-             once for the whole page. --}}
-        repaint() {
-            if (!this.$el._chart) return;
-            Object.assign(this.$el._chart.data.datasets[0], {
-                backgroundColor: this.resolve(this.$el._names),
-                borderColor: window.falconToken('--ui-bg-surface', this.$el),
-            });
-            this.$el._chart.update('none');
         },
         refresh(detail) {
             const payload = (Array.isArray(detail) ? detail[0] : detail)?.[@js($channel)];
             if (!payload || !this.$el._chart) return;
             this.total = payload.total;
-            this.$el._names = payload.colors;
             this.$el._chart.data.labels = payload.labels;
             this.$el._chart.data.datasets[0].data = payload.values;
-            this.$el._chart.data.datasets[0].backgroundColor = this.resolve(payload.colors);
+            this.$el._chart.data.datasets[0].backgroundColor = this.named(payload.colors);
             this.$el._chart.update('none');
         },
         destroy() {
             this.$el._chart?.destroy();
         },
     }"
-    x-on:theme-changed.window="repaint()"
     x-on:{{ $event }}.window="refresh($event.detail)"
 >
     {{-- Center content sits behind the canvas and shows through the doughnut hole,

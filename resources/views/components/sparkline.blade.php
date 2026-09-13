@@ -12,11 +12,10 @@
                  that pages without a chart never download. --}}
             await window.falconCharts();
 
-            {{-- `color` is a token NAME · a canvas resolves no `var()`, so the
-                 page is asked what it currently holds. A sparkline draws no
-                 axis and no tooltip, so its line is the only thing it has to
-                 ask for. --}}
-            const color = window.falconToken(@js($color), this.$el);
+            {{-- `color` is a token NAME, written as the page would write it ·
+                 the kit turns it into the value of the theme in force, before
+                 every draw and therefore after every theme switch. Nothing here
+                 knows which theme is on, and that is the point. --}}
             {{-- Chart kept on the DOM node, not in Alpine's reactive state (see area-chart). --}}
             this.$el._chart = new window.Chart(this.$refs.canvas, {
                 type: 'line',
@@ -24,23 +23,13 @@
                     labels: @js(array_keys(array_values($values))),
                     datasets: [{
                         data: @js(array_values($values)),
-                        borderColor: color,
+                        borderColor: 'var({{ $color }})',
                         borderWidth: 1.5,
                         tension: 0.4,
                         cubicInterpolationMode: 'monotone',
                         pointRadius: 0,
                         fill: true,
-                        {{-- Asked for at paint time, so a theme switch needs no
-                             help here: the gradient is rebuilt on every update. --}}
-                        backgroundColor: (c) => {
-                            const { ctx, chartArea } = c.chart;
-                            if (!chartArea) return 'transparent';
-                            const tint = window.falconToken(@js($color), this.$el);
-                            const g = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-                            g.addColorStop(0, tint + '26');
-                            g.addColorStop(1, tint + '00');
-                            return g;
-                        },
+                        backgroundColor: window.falconFade(@js($color), 0.15),
                     }],
                 },
                 options: {
@@ -53,22 +42,10 @@
                 },
             });
         },
-        {{-- A drawn chart holds the values it was handed, so a theme switch has
-             to hand them over again. It had nothing at all here until
-             2026-09-13, on the ground that its parent redrew it whole — which
-             the parent does on a refresh of its figures, and never on a theme
-             switch. The line stayed in the colour of the theme before. --}}
-        repaint() {
-            const chart = this.$el._chart;
-            if (!chart) return;
-            chart.data.datasets[0].borderColor = window.falconToken(@js($color), this.$el);
-            chart.update('none');
-        },
         destroy() {
             this.$el._chart?.destroy();
         },
     }"
-    x-on:theme-changed.window="repaint()"
 >
     <canvas x-ref="canvas"></canvas>
 </div>

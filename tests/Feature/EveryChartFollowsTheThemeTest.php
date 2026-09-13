@@ -8,23 +8,25 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
- * The six drawings of the package follow a theme switch, and all in one way.
+ * The six drawings of the package name their colours and resolve none of them.
  *
- * A chart is painted on a canvas, which no stylesheet reaches: it keeps the
- * colours it was handed. So somebody has to hand them over again when the theme
- * changes — and until 2026-09-13 that somebody was each component in turn,
- * which produced the same watcher written six times and three behaviours.
+ * **The division of labour, and it took three goes to land on it.** This package
+ * knows which colour a line carries, and declares both versions of it — one per
+ * theme — in its own stylesheet, exactly as it declares a class. The kit knows
+ * which theme is in force and where to read it. Neither needs the other's half.
  *
- * Measured in a browser, that day, switching to dark on a drawn page: the
- * doughnuts repainted, the area chart and the realtime line kept `#1684ea` and
- * `#10b981` — the light ramp — while the tokens held `#3b8fe8` and `#34d399`,
- * and the sparklines and the map markers kept theirs too. Nobody had decided
- * any of it; copies had aged.
+ * So a component writes a NAME:
  *
- * **The split is the point of these tests.** The frame — graduations, grid,
- * tooltip, legend — is identical for every chart of the suite and comes from
- * the kit's tokens, so the kit repaints it once for the whole page. What stays
- * here is the only part that differs: the colour of a component's own series.
+ *     borderColor: 'var(--an-series-1)'
+ *
+ * and the kit turns it into a value before every draw, reading at the canvas.
+ * Nothing here knows whether the page is light or dark, and nothing here has to
+ * be told to look again after a switch.
+ *
+ * What it replaced, on 2026-09-13, was the same watcher written six times and
+ * drifted three ways, then a resolution the component had to perform itself and
+ * a test standing over it to check the habit. A test that watches a habit is an
+ * admission that the work sits in the wrong place; this one watches a contract.
  *
  * No database here: it reads files, and nothing else.
  */
@@ -45,109 +47,110 @@ final class EveryChartFollowsTheThemeTest extends TestCase
         ];
     }
 
-    #[DataProvider('drawings')]
-    public function test_it_listens_for_the_theme_change(string $component): void
-    {
-        $this->assertStringContainsString(
-            'x-on:theme-changed.window=',
-            $this->source($component),
-            "{$component} does not follow a theme switch: what it drew keeps the colours of the theme before.",
-        );
-    }
-
     /**
-     * And it asks for its colours again rather than reusing what it resolved.
+     * Nothing here turns a name into a value.
      *
-     * A component that listens and repaints from a value captured at first draw
-     * repaints the same thing, which is the failure this guards against.
+     * That is the kit's half, and doing it here means knowing what the kit
+     * knows: that a canvas needs resolving at all, and where to read so the
+     * answer matches the theme in force. Both were got wrong, in that order.
      */
     #[DataProvider('drawings')]
-    public function test_it_asks_for_its_colours_again(string $component): void
-    {
-        $source = $this->source($component);
-        $handler = $this->afterTheFirstDraw($source);
-
-        $this->assertStringContainsString(
-            'falconToken',
-            $handler,
-            "{$component} repaints without asking for a token: it will repaint the same colour.",
-        );
-    }
-
-    /**
-     * And none of them watches the document by itself any more.
-     *
-     * Six watchers were six chances to drift, and three of them had. What
-     * announces the change is what changed it, and everything listens to that.
-     */
-    #[DataProvider('drawings')]
-    public function test_it_does_not_watch_the_document_by_itself(string $component): void
-    {
-        $this->assertStringNotContainsString(
-            'MutationObserver',
-            $this->source($component),
-            "{$component} watches the theme on its own again: the announcement is what to listen to.",
-        );
-    }
-
-    /**
-     * And none of them repaints the frame, which is not theirs to repaint.
-     *
-     * Two copies of one value that a host may redefine is exactly what this
-     * whole pass removed. The kit reads its own tokens for the whole page.
-     */
-    #[DataProvider('drawings')]
-    public function test_it_leaves_the_frame_to_the_kit(string $component): void
-    {
-        $this->assertStringNotContainsString(
-            'falconChartColors',
-            $this->source($component),
-            "{$component} repaints the frame itself: the kit already does it for the page.",
-        );
-    }
-
-    /**
-     * And every token is read AT the element that uses it.
-     *
-     * A custom property is inherited, so what it holds depends on where it is
-     * read. Read from the document while the theme sits on a wrapper — which is
-     * how an application with a dark mode of its own places it — the answer is
-     * the light value on a page that is dark. Measured on 2026-09-13: the HTML
-     * went dark and all eight canvases stayed light.
-     */
-    #[DataProvider('drawings')]
-    public function test_it_reads_its_tokens_where_they_are_used(string $component): void
+    public function test_it_resolves_no_colour_itself(string $component): void
     {
         $source = $this->source($component);
 
-        preg_match_all('/falconToken\((?:[^()]|\([^()]*\))*\)/', $source, $matches);
+        foreach (['falconToken', 'falconChartColors', 'getComputedStyle'] as $reading) {
+            $this->assertStringNotContainsString(
+                $reading,
+                $source,
+                "{$component} turns a token into a value itself: name it and let the kit answer.",
+            );
+        }
+    }
 
-        $this->assertNotSame([], $matches[0], "{$component} reads no token at all.");
+    /** And nothing here watches the theme, because there is nothing to redo. */
+    #[DataProvider('drawings')]
+    public function test_it_watches_nothing(string $component): void
+    {
+        $source = $this->source($component);
 
-        foreach ($matches[0] as $call) {
-            $this->assertStringContainsString(
-                'this.$el',
-                $call,
-                "{$component} reads a token without saying where: {$call}",
+        foreach (['MutationObserver', 'theme-changed'] as $watching) {
+            $this->assertStringNotContainsString(
+                $watching,
+                $source,
+                "{$component} follows the theme by itself: the kit reads the names again on every draw.",
             );
         }
     }
 
     /**
-     * What follows the first `new window.Chart(` — or the whole file for the
-     * map, which draws no chart at all.
+     * What it does say is a name, and one the theme sheet actually declares.
+     *
+     * A name nobody declared resolves to an empty string, and an empty string is
+     * a line that simply does not appear — with nothing in the console to say so.
      */
-    private function afterTheFirstDraw(string $source): string
+    #[DataProvider('drawings')]
+    public function test_every_name_it_writes_is_declared(string $component): void
     {
-        $drawn = strpos($source, 'new window.Chart(');
+        $source = $this->source($component);
 
-        return $drawn === false ? $source : substr($source, $drawn);
+        // Three ways a name appears: written into the chart, handed to the fade,
+        // or standing as the default of a prop the view may override.
+        preg_match_all('/var\(\s*(--[\w-]+)\s*\)/', $source, $inline);
+        preg_match_all('/(--[\w-]+)/', $this->propsOf($source), $declaredAsDefault);
+
+        $named = array_unique([...$inline[1], ...$declaredAsDefault[1]]);
+
+        // The two doughnuts and the map are handed their names by the view, so
+        // there is nothing written here to check beyond the surface colour.
+        $this->assertNotSame([], $named, "{$component} names no colour at all.");
+
+        $ofThePackage = (string) file_get_contents($this->packagePath('resources/css/theme.css'));
+        $ofTheKit = (string) file_get_contents($this->packagePath('vendor/falcon/ui-kit/resources/css/ui.css'));
+
+        foreach ($named as $token) {
+            $this->assertTrue(
+                str_contains($ofThePackage, $token.':') || str_contains($ofTheKit, $token.':'),
+                "{$component} names {$token}, which neither the package nor the kit declares.",
+            );
+        }
+    }
+
+    /**
+     * And the names reach the chart as names.
+     *
+     * A component that named a token and then handed the chart something else
+     * would pass everything above and still draw the wrong colour.
+     */
+    #[DataProvider('drawings')]
+    public function test_it_hands_the_chart_names_rather_than_values(string $component): void
+    {
+        $source = $this->source($component);
+
+        $this->assertSame(
+            0,
+            preg_match('/#[0-9a-fA-F]{3,8}\b/', $source),
+            "{$component} hands over a colour written by hand.",
+        );
+    }
+
+    /** The `@props` block, where a colour the view may override has its default. */
+    private function propsOf(string $source): string
+    {
+        preg_match('/@props\(\[(.*?)\]\)/s', $source, $found);
+
+        return $found[1] ?? '';
     }
 
     private function source(string $component): string
     {
         return (string) file_get_contents(
-            dirname(__DIR__, 2).'/resources/views/components/'.$component.'.blade.php',
+            $this->packagePath('resources/views/components/'.$component.'.blade.php'),
         );
+    }
+
+    private function packagePath(string $path): string
+    {
+        return dirname(__DIR__, 2).'/'.$path;
     }
 }
