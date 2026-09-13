@@ -31,6 +31,44 @@ Les **adresses**, elles, se changent · `admin.route_prefix` et
 
 ---
 
+## Les filtres sont dans l'adresse, et vous pouvez les écrire
+
+**C'est ce qui permet de lier vers une vue déjà filtrée** depuis votre propre
+interface · « voir les sessions mobiles des 7 derniers jours » est un lien, pas
+un parcours de clics.
+
+Ce sont des paramètres de requête ordinaires, et ils s'ajoutent à l'adresse que
+`route()` vous rend ·
+
+```blade
+<a href="{{ route('analytics.admin.sessions') }}?period=7&device=mobile">
+    Sessions mobiles de la semaine
+</a>
+```
+
+| Paramètre | Où | Valeurs | Défaut |
+|---|---|---|---|
+| `period` | les huit écrans à période | **`7`, `30` ou `90`** · toute autre valeur retombe sur le défaut, sans erreur | `30` |
+| `subject` | les mêmes | un de vos gardes suivis · **vide veut dire tous**, visiteurs anonymes compris | vide |
+| `search` | sessions, visiteurs | texte libre | vide |
+| `device` | sessions | `desktop`, `mobile`, `tablet` · vide veut dire tous | vide |
+| `source` | sessions | une source d'acquisition · vide veut dire toutes | vide |
+| `sort` | sessions, visiteurs | une colonne triable de la liste | `started_at` · `last_seen_at` |
+| `direction` | sessions, visiteurs | `asc` ou `desc` | `desc` |
+
+**Les huit écrans à période** · vue d'ensemble, événements, tunnels, sessions,
+visiteurs, synthèse marketing, détail d'une campagne, détail d'une publicité.
+
+**Les six qui n'en ont pas** · temps réel, qui lit sa propre fenêtre récente ;
+intégrations ; campagnes et publicités, qui listent des définitions et non du
+trafic ; et les deux détails, visiteur et session, qui montrent tout ce qu'ils
+ont.
+
+> **Ce ne sont pas des noms de routes**, et ils n'ont pas la même garantie ·
+> voir [ce qui compte comme rupture](mise-a-jour.md#ce-qui-compte-comme-rupture).
+
+---
+
 ## Ce que toutes les fiches partagent
 
 On ne le répète donc pas, et chaque exception est dite dans sa fiche ·
@@ -42,6 +80,7 @@ On ne le répète donc pas, et chaque exception est dite dans sa fiche ·
 | **layout** | ce que `admin.layout` nomme · la coquille du paquet au défaut |
 | **mode d'usage** | une page, dans votre layout ou dans notre coquille. **Jamais un composant à poser dans une de vos pages** · un écran attend une page entière autour de lui |
 | **lecture seule** | sauf **trois** écrans marketing et l'effacement RGPD, tous signalés dans leur fiche |
+| **paramètres** | **ceux de l'adresse**, quand l'écran en porte un · les filtres, eux, sont dans la section ci-dessus et ne sont pas répétés fiche par fiche |
 
 Les écrans marketing prennent `admin.marketing.middleware`, qui peut désigner un
 autre garde.
@@ -56,7 +95,7 @@ autre garde.
 |---|---|
 | **route** | `analytics.admin.overview` |
 | **adresse** | `{admin.route_prefix}` · `/admin/analytics` |
-| **paramètres** | aucun · période et sujet par la barre de filtres |
+| **paramètres** | aucun dans l'adresse · période et sujet par la barre de filtres |
 
 L'en-tête et les filtres paraissent tout de suite ; les indicateurs de tête avec
 leurs courbes, puis l'audience, l'acquisition, le contenu et le résumé des
