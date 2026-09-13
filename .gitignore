@@ -1,6 +1,14 @@
 /vendor
 /node_modules
-composer.lock
+
+# Les deux verrous sont commites, et ce n'est pas un oubli a corriger.
+#
+# `package-lock.json` fige ce qui a produit les fichiers compiles livres : sans
+# lui, personne ne peut reconstruire le meme artefact, et le paquet ment sur ce
+# qu'il livre. `composer.lock` reproduit l'environnement d'essai de l'auteur ;
+# une application qui installe le paquet resout ses propres dependances et ne
+# le lit jamais. Le plancher annonce reste eprouve par `composer qa:lowest`,
+# qui resout expres sans le verrou.
 
 # The directory `npm run check-assets` rebuilds into to compare. It removes
 # itself; it only survives an interrupted build.
