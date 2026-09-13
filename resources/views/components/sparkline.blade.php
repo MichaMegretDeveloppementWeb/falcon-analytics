@@ -16,7 +16,7 @@
                  page is asked what it currently holds. A sparkline draws no
                  axis and no tooltip, so its line is the only thing it has to
                  ask for. --}}
-            const color = window.falconToken(@js($color));
+            const color = window.falconToken(@js($color), this.$el);
             {{-- Chart kept on the DOM node, not in Alpine's reactive state (see area-chart). --}}
             this.$el._chart = new window.Chart(this.$refs.canvas, {
                 type: 'line',
@@ -35,7 +35,7 @@
                         backgroundColor: (c) => {
                             const { ctx, chartArea } = c.chart;
                             if (!chartArea) return 'transparent';
-                            const tint = window.falconToken(@js($color));
+                            const tint = window.falconToken(@js($color), this.$el);
                             const g = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
                             g.addColorStop(0, tint + '26');
                             g.addColorStop(1, tint + '00');
@@ -61,7 +61,7 @@
         repaint() {
             const chart = this.$el._chart;
             if (!chart) return;
-            chart.data.datasets[0].borderColor = window.falconToken(@js($color));
+            chart.data.datasets[0].borderColor = window.falconToken(@js($color), this.$el);
             chart.update('none');
         },
         destroy() {

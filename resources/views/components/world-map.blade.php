@@ -34,8 +34,10 @@
         },
         {{-- The Miller projection, identical to the generated base map
              (yTop = miller(85 deg)). --}}
-        online() { return window.falconToken('--an-online'); },
-        recent() { return window.falconToken('--an-accent'); },
+        {{-- Read at this element · a custom property is inherited, so only the
+             place where it is used knows what it holds there. --}}
+        online() { return window.falconToken('--an-online', this.$el); },
+        recent() { return window.falconToken('--an-accent', this.$el); },
         project(lat, lon) {
             const clamped = Math.max(-60, Math.min(85, lat));
             const x = (lon + 180) * (1000 / 360);

@@ -20,10 +20,16 @@
     x-data="{
         total: @js((string) $total),
         {{-- Token NAMES in, values out · a canvas resolves no `var()`, so the
-             page is asked what each name currently holds. Used both at first
-             draw and on every live refresh, the names travelling with the
-             payload just as they came from the view. --}}
-        resolve(names) { return (names ?? []).map(window.falconToken); },
+             page is asked what each name currently holds — **at this element**,
+             since a custom property is inherited and only the place where it is
+             used knows what it holds there. Used both at first draw and on
+             every live refresh, the names travelling with the payload just as
+             they came from the view.
+
+             An arrow function and not the bare name: `map` hands its callback
+             the index as a second argument, which would land in the element
+             parameter. --}}
+        resolve(names) { return (names ?? []).map((name) => window.falconToken(name, this.$el)); },
         async init() {
             {{-- Chart.js loads on demand: the kit ships it as a separate file
                  that pages without a chart never download. --}}
@@ -38,7 +44,7 @@
                     datasets: [{
                         data: @js(array_values($values)),
                         backgroundColor: this.resolve(@js(array_values($colors))),
-                        borderColor: window.falconToken('--ui-bg-surface'),
+                        borderColor: window.falconToken('--ui-bg-surface', this.$el),
                         borderWidth: 2,
                         hoverOffset: 3,
                     }],
@@ -67,7 +73,7 @@
             if (!this.$el._chart) return;
             Object.assign(this.$el._chart.data.datasets[0], {
                 backgroundColor: this.resolve(this.$el._names),
-                borderColor: window.falconToken('--ui-bg-surface'),
+                borderColor: window.falconToken('--ui-bg-surface', this.$el),
             });
             this.$el._chart.update('none');
         },

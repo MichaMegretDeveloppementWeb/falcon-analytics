@@ -25,8 +25,8 @@
             {{-- Both colours are token NAMES · a canvas resolves no `var()`, so
                  the page is asked what they currently hold. Ticks, grid and
                  tooltip are not named at all: the kit's defaults carry them. --}}
-            const color = window.falconToken(@js($color));
-            const color2 = window.falconToken(@js($color2));
+            const color = window.falconToken(@js($color), this.$el);
+            const color2 = window.falconToken(@js($color2), this.$el);
             const data2 = @js(array_values($data2));
             const hasSecond = data2.length > 0;
             {{-- The Chart instance lives on the DOM node, not in Alpine's reactive
@@ -42,7 +42,7 @@
                 pointRadius: 0,
                 pointHoverRadius: 4,
                 pointHoverBackgroundColor: color,
-                pointHoverBorderColor: window.falconToken('--ui-bg-surface'),
+                pointHoverBorderColor: window.falconToken('--ui-bg-surface', this.$el),
                 pointHoverBorderWidth: 2,
                 fill: true,
                 yAxisID: 'y',
@@ -51,7 +51,7 @@
                 backgroundColor: (ctx) => {
                     const area = ctx.chart.chartArea;
                     if (!area) return 'transparent';
-                    const tint = window.falconToken(@js($color));
+                    const tint = window.falconToken(@js($color), this.$el);
                     const g = ctx.chart.ctx.createLinearGradient(0, area.top, 0, area.bottom);
                     g.addColorStop(0, tint + '2b');
                     g.addColorStop(1, tint + '00');
@@ -69,7 +69,7 @@
                     pointRadius: 0,
                     pointHoverRadius: 4,
                     pointHoverBackgroundColor: color2,
-                    pointHoverBorderColor: window.falconToken('--ui-bg-surface'),
+                    pointHoverBorderColor: window.falconToken('--ui-bg-surface', this.$el),
                     pointHoverBorderWidth: 2,
                     fill: false,
                     yAxisID: 'y2',
@@ -116,8 +116,8 @@
         repaint() {
             const chart = this.$el._chart;
             if (!chart) return;
-            const surface = window.falconToken('--ui-bg-surface');
-            const colors = [window.falconToken(@js($color)), window.falconToken(@js($color2))];
+            const surface = window.falconToken('--ui-bg-surface', this.$el);
+            const colors = [window.falconToken(@js($color), this.$el), window.falconToken(@js($color2), this.$el)];
             chart.data.datasets.forEach((dataset, index) => {
                 Object.assign(dataset, {
                     borderColor: colors[index],

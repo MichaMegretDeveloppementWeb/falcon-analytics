@@ -107,6 +107,33 @@ final class EveryChartFollowsTheThemeTest extends TestCase
     }
 
     /**
+     * And every token is read AT the element that uses it.
+     *
+     * A custom property is inherited, so what it holds depends on where it is
+     * read. Read from the document while the theme sits on a wrapper — which is
+     * how an application with a dark mode of its own places it — the answer is
+     * the light value on a page that is dark. Measured on 2026-09-13: the HTML
+     * went dark and all eight canvases stayed light.
+     */
+    #[DataProvider('drawings')]
+    public function test_it_reads_its_tokens_where_they_are_used(string $component): void
+    {
+        $source = $this->source($component);
+
+        preg_match_all('/falconToken\((?:[^()]|\([^()]*\))*\)/', $source, $matches);
+
+        $this->assertNotSame([], $matches[0], "{$component} reads no token at all.");
+
+        foreach ($matches[0] as $call) {
+            $this->assertStringContainsString(
+                'this.$el',
+                $call,
+                "{$component} reads a token without saying where: {$call}",
+            );
+        }
+    }
+
+    /**
      * What follows the first `new window.Chart(` — or the whole file for the
      * map, which draws no chart at all.
      */

@@ -17,8 +17,14 @@
     x-data="{
         chart: null,
         {{-- `colors` arrives as token NAMES, never as values · a canvas resolves
-             no `var()`, so the page is asked what each name currently holds. --}}
-        slices() { return @js(array_values($colors)).map(window.falconToken); },
+             no `var()`, so the page is asked what each name currently holds —
+             **at this element**, since a custom property is inherited and only
+             the place where it is used knows what it holds there.
+
+             An arrow function and not the bare name: `map` hands its callback
+             the index as a second argument, which would land in the element
+             parameter. --}}
+        slices() { return @js(array_values($colors)).map((name) => window.falconToken(name, this.$el)); },
         async init() {
             {{-- Chart.js loads on demand: the kit ships it as a separate file
                  that pages without a chart never download. --}}
@@ -34,7 +40,7 @@
                     datasets: [{
                         data: @js(array_values($values)),
                         backgroundColor: this.slices(),
-                        borderColor: window.falconToken('--ui-bg-surface'),
+                        borderColor: window.falconToken('--ui-bg-surface', this.$el),
                         borderWidth: 2,
                         hoverOffset: 3,
                     }],
@@ -59,7 +65,7 @@
             if (!this.chart) return;
             Object.assign(this.chart.data.datasets[0], {
                 backgroundColor: this.slices(),
-                borderColor: window.falconToken('--ui-bg-surface'),
+                borderColor: window.falconToken('--ui-bg-surface', this.$el),
             });
             this.chart.update('none');
         },

@@ -24,7 +24,7 @@
             {{-- `color` is a token NAME · a canvas resolves no `var()`, so the
                  page is asked what it currently holds. Ticks, grid and tooltip
                  are not named at all: the kit's defaults carry them. --}}
-            const color = window.falconToken(@js($color));
+            const color = window.falconToken(@js($color), this.$el);
             {{-- Chart kept on the DOM node, not in Alpine's reactive state (see area-chart). --}}
             this.$el._chart = new window.Chart(this.$refs.canvas, {
                 type: 'line',
@@ -39,7 +39,7 @@
                         pointRadius: 0,
                         pointHoverRadius: 4,
                         pointHoverBackgroundColor: color,
-                        pointHoverBorderColor: window.falconToken('--ui-bg-surface'),
+                        pointHoverBorderColor: window.falconToken('--ui-bg-surface', this.$el),
                         pointHoverBorderWidth: 2,
                         fill: true,
                         {{-- Asked for at paint time, so a theme switch needs no
@@ -48,7 +48,7 @@
                         backgroundColor: (c) => {
                             const { ctx, chartArea } = c.chart;
                             if (!chartArea) return 'transparent';
-                            const tint = window.falconToken(@js($color));
+                            const tint = window.falconToken(@js($color), this.$el);
                             const g = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
                             g.addColorStop(0, tint + '33');
                             g.addColorStop(1, tint + '00');
@@ -87,11 +87,11 @@
         repaint() {
             const chart = this.$el._chart;
             if (!chart) return;
-            const color = window.falconToken(@js($color));
+            const color = window.falconToken(@js($color), this.$el);
             Object.assign(chart.data.datasets[0], {
                 borderColor: color,
                 pointHoverBackgroundColor: color,
-                pointHoverBorderColor: window.falconToken('--ui-bg-surface'),
+                pointHoverBorderColor: window.falconToken('--ui-bg-surface', this.$el),
             });
             chart.update('none');
         },
