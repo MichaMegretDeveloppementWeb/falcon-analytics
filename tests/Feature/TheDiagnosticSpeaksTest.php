@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Tests\Feature;
 
+use Falcon\Analytics\Enums\EventType;
+use Falcon\Analytics\Models\Event;
+use Falcon\Analytics\Models\Session;
+use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
@@ -275,6 +279,72 @@ final class TheDiagnosticSpeaksTest extends TestCase
      * proxy's address: one visitor, one country, for the whole site. The
      * numbers stay plausible, which is what makes it expensive to find.
      */
+    /**
+     * A retention that cannot be read as a number of days is blocking.
+     *
+     * Zero used to mean « keep everything », which is the opposite of what one
+     * writes it for. It is refused now, and the erasing fails every night while
+     * saying so to a log nobody reads · this is what makes it visible.
+     */
+    public function test_it_blocks_on_a_retention_that_is_not_a_number_of_days(): void
+    {
+        config(['analytics.retention_days' => 0]);
+
+        $this->artisan('analytics:check')
+            ->expectsOutputToContain('Conservation')
+            ->assertFailed();
+    }
+
+    /** Never erasing is a choice, not a defect. */
+    public function test_it_accepts_an_installation_that_never_erases(): void
+    {
+        config(['analytics.retention_days' => null]);
+
+        $this->artisan('analytics:check')->assertSuccessful();
+    }
+
+    /**
+     * A backlog of summaries is how a dead scheduler shows, and nothing else
+     * says it.
+     *
+     * When the scheduler stops, the erasing stops with it — nothing is lost —
+     * and every screen goes on answering from the rows. The only visible trace
+     * is this number, which is why the diagnostic carries it.
+     *
+     * Not blocking · an installation working through the history it had before
+     * the summaries existed shows the same thing, and it is catching up.
+     */
+    public function test_it_points_at_a_backlog_of_summaries_without_blocking_on_it(): void
+    {
+        $visitor = Visitor::create(['uuid' => 'u-'.uniqid(), 'first_seen_at' => now(), 'last_seen_at' => now()]);
+        $session = Session::create([
+            'visitor_id' => $visitor->id,
+            'started_at' => now()->subDays(10),
+            'last_activity_at' => now()->subDays(10),
+            'is_bot' => false,
+        ]);
+        Event::create([
+            'session_id' => $session->id,
+            'visitor_id' => $visitor->id,
+            'type' => EventType::Pageview,
+            'occurred_at' => now()->subDays(10),
+        ]);
+
+        $this->artisan('analytics:check')
+            ->expectsOutputToContain('résumés')
+            ->assertSuccessful();
+    }
+
+    /** And it says nothing about it once the summarising has caught up. */
+    public function test_it_stays_quiet_about_summaries_once_they_are_up_to_date(): void
+    {
+        $this->artisan('analytics:archive')->assertSuccessful();
+
+        $this->artisan('analytics:check')
+            ->expectsOutputToContain('À jour')
+            ->assertSuccessful();
+    }
+
     public function test_it_points_at_the_proxy_setting_without_blocking_on_it(): void
     {
         config(['trustedproxy.proxies' => null, 'app.trusted_proxies' => null]);

@@ -52,7 +52,7 @@ l'authentification GitHub, le montage des écrans dans votre propre habillage, l
 déploiement — est dans **[docs/installation.md](docs/installation.md)**.
 
 Pour vérifier une installation à tout moment · `php artisan analytics:check`,
-dix contrôles sur des défauts qui échouent tous en silence.
+douze contrôles sur des défauts qui échouent tous en silence.
 
 ---
 

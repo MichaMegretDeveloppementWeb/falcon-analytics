@@ -260,11 +260,11 @@ donc d'être mis à jour. C'est tout l'intérêt de ne toucher qu'à l'enveloppe
 php artisan analytics:check
 ```
 
-Il rend un tableau de **dix points** et s'arrête en échec s'il en trouve un
+Il rend un tableau de **douze points** et s'arrête en échec s'il en trouve un
 bloquant · les migrations passées, l'interrupteur général, la directive posée
 dans vos vues, le point de collecte joignable, le middleware des écrans, le
-gabarit que vous avez nommé, la feuille publiée à jour, l'identité, le proxy et
-la géolocalisation.
+gabarit que vous avez nommé, la feuille publiée à jour, l'identité, la durée de
+conservation, les résumés à jour, le proxy et la géolocalisation.
 
 **Lancez-le après chaque déploiement.** Analytics échoue en silence · un
 collecteur jamais rendu, un point de collecte derrière le mauvais middleware ou

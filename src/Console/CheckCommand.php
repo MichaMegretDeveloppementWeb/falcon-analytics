@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Console;
 
+use Falcon\Analytics\Services\DailyCountArchiver;
 use Falcon\Analytics\Services\SubjectResolver;
 use Falcon\Ui\Assets;
 use Falcon\Ui\Exceptions\UiException;
@@ -82,8 +83,83 @@ final class CheckCommand extends Command
             $this->checkAreaLayout($config),
             $this->checkPublishedAssets(),
             $this->checkIdentity($config),
+            $this->checkRetention($config),
+            $this->checkSummaries(),
             $this->checkProxy(),
             $this->checkGeoip($config),
+        ];
+    }
+
+    /**
+     * The retention setting, read the way the erasing reads it.
+     *
+     * A number of days, or `null` to never erase. **Zero and negatives are
+     * refused** rather than taken for « keep everything », which is the
+     * opposite of what one writes them for — and the erasing would then stop
+     * every night while saying so to a log nobody reads.
+     *
+     * @return array{0: string, 1: string, 2: string}
+     */
+    private function checkRetention(Config $config): array
+    {
+        $days = $config->get('analytics.retention_days');
+
+        if ($days === null) {
+            return ['Conservation', 'OK', 'Aucune : le détail est gardé indéfiniment.'];
+        }
+
+        if (! is_int($days) || $days < 1) {
+            return [
+                'Conservation',
+                'KO',
+                'analytics.retention_days doit être un nombre de jours d’au moins 1, ou null pour ne jamais '
+                .'effacer. Tant que ce n’est pas le cas, rien n’est effacé et la commande échoue chaque nuit.',
+            ];
+        }
+
+        return [
+            'Conservation',
+            'OK',
+            "Le pas à pas des sessions est gardé {$days} jours. Au-delà, seuls les pages vues et clics "
+            .'anonymes sont effacés ; les événements nommés restent, et aucun autre écran ne bouge.',
+        ];
+    }
+
+    /**
+     * Whether the summarising keeps up, which is how a dead scheduler shows.
+     *
+     * **Nothing else says it.** When the scheduler stops, the erasing stops
+     * with it — nothing is lost, by design — and the screens go on answering
+     * from the rows. The only visible trace is this backlog growing, and the
+     * catch-up on a screen load hides even that while an administrator visits.
+     *
+     * One day waiting is the normal state between midnight and the nightly run.
+     * More than that means either a scheduler that is not running, or an
+     * installation still working through the history it had before the
+     * summaries existed — and the two are told apart by watching the number
+     * fall, which is what the message asks for.
+     *
+     * @return array{0: string, 1: string, 2: string}
+     */
+    private function checkSummaries(): array
+    {
+        try {
+            $waiting = count(app(DailyCountArchiver::class)->pendingDays());
+        } catch (Throwable) {
+            return ['Résumés', 'KO', 'Impossible de lire l’état des résumés : la base ne répond pas comme attendu.'];
+        }
+
+        if ($waiting <= 1) {
+            return ['Résumés', 'OK', 'À jour. Les jours clos sont résumés avant que leur détail ne soit effacé.'];
+        }
+
+        return [
+            'Résumés',
+            'À voir',
+            "{$waiting} jour(s) clos attendent d’être résumés. Rien n’est perdu — l’effacement refuse un jour "
+            .'non résumé — mais ce nombre doit baisser d’un jour à l’autre. S’il ne baisse pas, votre '
+            .'planificateur ne tourne pas : vérifiez que schedule:run est déclenché chaque minute. '
+            .'Pour rattraper tout de suite : php artisan analytics:archive.',
         ];
     }
 
