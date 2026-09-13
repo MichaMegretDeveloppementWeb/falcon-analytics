@@ -18,7 +18,6 @@
     wire:ignore
     class="an:relative an:shrink-0 {{ $size }}"
     x-data="{
-        observer: null,
         total: @js((string) $total),
         {{-- Token NAMES in, values out · a canvas resolves no `var()`, so the
              page is asked what each name currently holds. Used both at first
@@ -55,28 +54,22 @@
                 },
             });
 
-            {{-- A drawn chart holds its resolved values, so a theme switch has
-                 to be read again and written back. --}}
-            this.observer = new MutationObserver(() => {
-                if (!this.$el._chart) return;
-                const c = window.falconChartColors();
-                const dataset = this.$el._chart.data.datasets[0];
-                dataset.backgroundColor = this.resolve(this.$el._names);
-                dataset.borderColor = window.falconToken('--ui-bg-surface');
-                Object.assign(this.$el._chart.options.plugins.tooltip, {
-                    backgroundColor: c.tooltipBg,
-                    titleColor: c.tooltipTitle,
-                    bodyColor: c.tooltipBody,
-                    borderColor: c.tooltipBorder,
-                });
-                this.$el._chart.update('none');
-            });
-            this.observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-
             {{-- The names the last payload brought, kept beside the chart so a
                  theme switch can resolve them again. On the DOM node and not in
                  Alpine's state, for the same reason the chart is. --}}
             this.$el._names = @js(array_values($colors));
+        },
+        {{-- A drawn chart holds the values it was handed, so a theme switch has
+             to hand them over again. **Only what is this component's own** ·
+             the tooltip comes from the kit's tokens, and the kit repaints it
+             once for the whole page. --}}
+        repaint() {
+            if (!this.$el._chart) return;
+            Object.assign(this.$el._chart.data.datasets[0], {
+                backgroundColor: this.resolve(this.$el._names),
+                borderColor: window.falconToken('--ui-bg-surface'),
+            });
+            this.$el._chart.update('none');
         },
         refresh(detail) {
             const payload = (Array.isArray(detail) ? detail[0] : detail)?.[@js($channel)];
@@ -89,10 +82,10 @@
             this.$el._chart.update('none');
         },
         destroy() {
-            this.observer?.disconnect();
             this.$el._chart?.destroy();
         },
     }"
+    x-on:theme-changed.window="repaint()"
     x-on:{{ $event }}.window="refresh($event.detail)"
 >
     {{-- Center content sits behind the canvas and shows through the doughnut hole,

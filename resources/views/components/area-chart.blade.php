@@ -17,7 +17,6 @@
 --}}
 <div
     x-data="{
-        observer: null,
         async init() {
             {{-- Chart.js loads on demand: the kit ships it as a separate file
                  that pages without a chart never download. --}}
@@ -47,12 +46,15 @@
                 pointHoverBorderWidth: 2,
                 fill: true,
                 yAxisID: 'y',
+                {{-- Asked for at paint time, so a theme switch needs no help
+                     here: the gradient is rebuilt on every update. --}}
                 backgroundColor: (ctx) => {
                     const area = ctx.chart.chartArea;
                     if (!area) return 'transparent';
+                    const tint = window.falconToken(@js($color));
                     const g = ctx.chart.ctx.createLinearGradient(0, area.top, 0, area.bottom);
-                    g.addColorStop(0, color + '2b');
-                    g.addColorStop(1, color + '00');
+                    g.addColorStop(0, tint + '2b');
+                    g.addColorStop(1, tint + '00');
                     return g;
                 },
             }];
@@ -106,35 +108,30 @@
                 },
             });
 
-            {{-- A drawn chart holds its resolved values, so a theme switch has
-                 to be read again and written back. --}}
-            this.observer = new MutationObserver(() => {
-                if (!this.$el._chart) return;
-                const c = window.falconChartColors();
-                const o = this.$el._chart.options;
-                o.scales.x.ticks.color = c.tick;
-                o.scales.y.ticks.color = c.tick;
-                o.scales.y.grid.color = c.grid;
-                if (o.scales.y2) o.scales.y2.ticks.color = c.tick;
-                if (o.plugins.legend.labels) o.plugins.legend.labels.color = c.tick;
-                Object.assign(o.plugins.tooltip, {
-                    backgroundColor: c.tooltipBg,
-                    titleColor: c.tooltipTitle,
-                    bodyColor: c.tooltipBody,
-                    borderColor: c.tooltipBorder,
+        },
+        {{-- A drawn chart holds the values it was handed, so a theme switch has
+             to hand them over again. **Only what is this component's own** ·
+             the graduations, the grid, the tooltip and the legend come from the
+             kit's tokens, and the kit repaints them once for the whole page. --}}
+        repaint() {
+            const chart = this.$el._chart;
+            if (!chart) return;
+            const surface = window.falconToken('--ui-bg-surface');
+            const colors = [window.falconToken(@js($color)), window.falconToken(@js($color2))];
+            chart.data.datasets.forEach((dataset, index) => {
+                Object.assign(dataset, {
+                    borderColor: colors[index],
+                    pointHoverBackgroundColor: colors[index],
+                    pointHoverBorderColor: surface,
                 });
-                for (const dataset of this.$el._chart.data.datasets) {
-                    dataset.pointHoverBorderColor = window.falconToken('--ui-bg-surface');
-                }
-                this.$el._chart.update('none');
             });
-            this.observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+            chart.update('none');
         },
         destroy() {
-            this.observer?.disconnect();
             this.$el._chart?.destroy();
         },
     }"
+    x-on:theme-changed.window="repaint()"
     {{ $attributes->merge(['class' => 'an:relative '.$height]) }}
 >
     <canvas x-ref="canvas"></canvas>

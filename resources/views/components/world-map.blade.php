@@ -80,6 +80,11 @@
         },
         init() { this.apply(); },
     }"
+    {{-- The countries and their borders follow the theme through the
+         stylesheet, having classes. The markers are drawn in JavaScript and
+         hold the value they were given, so they are drawn again · `apply()`
+         asks for the tokens each time it runs, which is all there is to do. --}}
+    x-on:theme-changed.window="apply()"
     x-on:{{ $event }}.window="refresh($event.detail)"
     x-on:analytics-realtime-mode.window="setMode($event.detail)"
     x-on:resize.window.debounce.250ms="apply()"

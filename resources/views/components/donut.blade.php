@@ -16,7 +16,6 @@
     class="an:relative an:shrink-0 {{ $size }}"
     x-data="{
         chart: null,
-        observer: null,
         {{-- `colors` arrives as token NAMES, never as values · a canvas resolves
              no `var()`, so the page is asked what each name currently holds. --}}
         slices() { return @js(array_values($colors)).map(window.falconToken); },
@@ -51,28 +50,24 @@
                 },
             });
 
-            {{-- A drawn chart holds its resolved values, so a theme switch has
-                 to be read again and written back. --}}
-            this.observer = new MutationObserver(() => {
-                if (!this.chart) return;
-                const c = window.falconChartColors();
-                this.chart.data.datasets[0].backgroundColor = this.slices();
-                this.chart.data.datasets[0].borderColor = window.falconToken('--ui-bg-surface');
-                Object.assign(this.chart.options.plugins.tooltip, {
-                    backgroundColor: c.tooltipBg,
-                    titleColor: c.tooltipTitle,
-                    bodyColor: c.tooltipBody,
-                    borderColor: c.tooltipBorder,
-                });
-                this.chart.update('none');
+        },
+        {{-- A drawn chart holds the values it was handed, so a theme switch has
+             to hand them over again. **Only what is this component's own** ·
+             the tooltip comes from the kit's tokens, and the kit repaints it
+             once for the whole page. --}}
+        repaint() {
+            if (!this.chart) return;
+            Object.assign(this.chart.data.datasets[0], {
+                backgroundColor: this.slices(),
+                borderColor: window.falconToken('--ui-bg-surface'),
             });
-            this.observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+            this.chart.update('none');
         },
         destroy() {
-            this.observer?.disconnect();
             this.chart?.destroy();
         },
     }"
+    x-on:theme-changed.window="repaint()"
 >
     {{-- Center content sits behind the canvas and shows through the doughnut hole,
          so tooltips (drawn on the canvas) render above it instead of being hidden. --}}
