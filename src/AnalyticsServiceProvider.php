@@ -20,6 +20,7 @@ use Falcon\Analytics\Support\GeoResolver;
 use Falcon\Ui\AssetRegistry;
 use Falcon\Ui\Config\CompletesDefaults;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\View;
@@ -37,6 +38,21 @@ final class AnalyticsServiceProvider extends ServiceProvider
         // every sub-key added since, without a word. The kit carries this
         // policy for the whole suite; it is not copied here.
         $this->completeConfigFrom(__DIR__.'/../config/analytics.php', 'analytics');
+
+        /*
+         * The package's own settings, and they are not the host's.
+         *
+         * Posed AFTER the host's configuration and without regard for what a
+         * published copy might say: these are design decisions, not questions.
+         * A key of that file copied into `config/analytics.php` therefore has
+         * no effect, which is the point — a value that suits nobody is a defect
+         * to fix here, not a question to ask of every project.
+         *
+         * They live in a file rather than in constants so they read in one
+         * place, change in one line, and can be moved for the length of an
+         * essay.
+         */
+        $this->app->make(ConfigRepository::class)->set('analytics.internal', require __DIR__.'/../config/internal.php');
 
         $this->app->singleton(Analytics::class);
 

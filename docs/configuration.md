@@ -11,6 +11,21 @@ dites rien, et un essai le tient.
 > plus — `identity`, `admin`, `geoip`… — mais ce sont des groupes, pas des
 > valeurs · on ne règle pas `identity`, on règle ce qu'il contient.
 
+## Ce qui n'est pas là, et pourquoi
+
+Le paquet porte **un second fichier de réglages, qu'il ne publie jamais** · ses
+propres constantes de conception, comme la cadence à laquelle il se rattrape
+tout seul quand un planificateur s'est arrêté.
+
+**Ce ne sont pas des questions qu'on vous pose.** Deux intégrateurs raisonnables
+ne répondraient pas différemment, donc une valeur qui ne conviendrait à personne
+serait un défaut à corriger dans le paquet — pas une case à remplir dans chaque
+projet.
+
+Concrètement · vous ne les verrez jamais dans votre `config/`, et une clé de ce
+genre recopiée dans `config/analytics.php` **n'aurait aucun effet**. Si l'une
+d'elles vous gêne, c'est une demande à faire au paquet.
+
 ---
 
 ## Trois choses vraies pour toutes les clés

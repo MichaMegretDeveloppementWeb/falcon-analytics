@@ -203,7 +203,7 @@ final class TheMaintenanceRunsBothWaysTest extends TestCase
     /** And a host that trusts its scheduler can switch it off. */
     public function test_it_can_be_switched_off(): void
     {
-        config(['analytics.maintenance.on_screen_load' => false]);
+        config(['analytics.internal.maintenance.on_screen_load' => false]);
         $this->aVisitOn('2026-06-12');
 
         $this->actingAs($this->anAdmin(), 'admin')
@@ -246,7 +246,7 @@ final class TheMaintenanceRunsBothWaysTest extends TestCase
      */
     public function test_a_visit_catches_up_a_bounded_number_of_days(): void
     {
-        config(['analytics.maintenance.days_per_run' => 2]);
+        config(['analytics.internal.maintenance.days_per_run' => 2]);
         $this->aVisitOn('2026-06-01');
 
         $this->actingAs($this->anAdmin(), 'admin')

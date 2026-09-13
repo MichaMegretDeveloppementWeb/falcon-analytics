@@ -21,8 +21,13 @@ use Throwable;
  * screens can read. Someone has to notice, and nobody does.
  *
  * So opening any analytics screen catches the backlog up a little. Matomo has
- * done this for years, and recommends turning it off once a real scheduler is
- * trusted — which is what `maintenance.on_screen_load` is for.
+ * done this for years.
+ *
+ * **What it does is settled here, not by the host.** How often it may run and
+ * how much it takes on are design decisions, so they live in the package's own
+ * settings file — the one nothing publishes. Two reasonable hosts would not
+ * answer these differently, and a value that suits nobody is a defect to fix
+ * rather than a question to ask of every project.
  *
  * **It does the same thing the scheduler does**, through the same service, and
  * that is deliberate rather than convenient: a second path with its own logic
@@ -59,7 +64,7 @@ final class CatchesUpTheMaintenance
      */
     public function terminate(Request $request, Response $response): void
     {
-        if (config('analytics.maintenance.on_screen_load') !== true) {
+        if (config('analytics.internal.maintenance.on_screen_load') !== true) {
             return;
         }
 
@@ -73,7 +78,7 @@ final class CatchesUpTheMaintenance
 
     private function catchUp(): void
     {
-        $interval = max(1, (int) config('analytics.maintenance.interval_minutes', 60));
+        $interval = max(1, (int) config('analytics.internal.maintenance.interval_minutes', 60));
 
         if (Cache::get(self::MARKER) !== null) {
             return;
@@ -90,7 +95,7 @@ final class CatchesUpTheMaintenance
             // not have the next page load start it all over again.
             Cache::put(self::MARKER, true, $interval * 60);
 
-            $days = max(1, (int) config('analytics.maintenance.days_per_run', 7));
+            $days = max(1, (int) config('analytics.internal.maintenance.days_per_run', 7));
 
             /*
              * The very thing the scheduler's two commands do, in their order,
