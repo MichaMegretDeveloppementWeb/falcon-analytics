@@ -237,18 +237,13 @@ la carte dit ce qui manque** et la connexion refuse.
 ## Les écrans marketing
 
 Ils prennent `admin.marketing.route_prefix` et `admin.marketing.middleware` · un
-hôte peut les monter ailleurs et derrière un autre garde que les écrans
-d'analytique.
+hôte peut les monter ailleurs que les écrans d'analytique, derrière un autre
+garde, **ou ne pas les proposer du tout**.
 
-> **Ils sont montés, et il n'y a pas de réglage pour ne pas les monter** — pas
-> plus que pour les autres écrans. Ce qui se règle, c'est **l'adresse** et **ce
-> qui la protège**. Pour les mettre hors d'atteinte, désignez un garde que
-> personne n'a, ou bloquez le préfixe en amont.
->
-> **Ne videz pas la liste de middlewares pour ça.** Une liste vide ne retire pas
-> les écrans · elle les monte **sans aucune protection**, donc publiquement. Le
-> paquet inscrit un avertissement dans son journal et `analytics:check` la
-> signale comme bloquante, mais le mal serait déjà fait.
+> **Ne pas les proposer, c'est simplement ne pas mettre les liens.** Les routes
+> existent de toute façon — c'est ce qui permet d'ouvrir le marketing plus tard,
+> ou à quelques personnes seulement, sans rien changer au paquet. Elles restent
+> protégées par `admin.marketing.middleware` comme les autres.
 
 ### Synthèse marketing
 

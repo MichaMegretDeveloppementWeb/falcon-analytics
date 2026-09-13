@@ -146,16 +146,12 @@ Le nom d'un sujet est **lu au moment de l'affichage et jamais stocké**.
 
 | Clé | Type | Défaut | Ce qu'elle fait |
 |---|---|---|---|
-| `admin.marketing.route_prefix` | chemin | `'admin/marketing'` | L'adresse des écrans marketing, qu'un hôte peut monter ailleurs que les autres. |
+| `admin.marketing.route_prefix` | chemin | `'admin/marketing'` | L'adresse des écrans marketing, qu'un hôte peut monter ailleurs que les autres — ou ne pas proposer dans sa navigation, les routes existant de toute façon. |
 | `admin.marketing.middleware` | liste | `['web', 'auth']` | Ce qui protège les écrans marketing, indépendamment des autres. |
 
-> **Une liste vide monte les écrans sans aucune protection**, elle ne les retire
-> pas · ni session, ni authentification, donc **joignables publiquement**. Il n'y
-> a pas de réglage pour ne pas monter les écrans · pour les mettre hors
-> d'atteinte, désignez un garde que personne n'a, ou bloquez le préfixe en amont.
->
-> Le paquet inscrit un avertissement dans son journal au moment du montage, et
-> `analytics:check` le rapporte comme **bloquant**. Les deux arrivent après coup.
+> **Une liste vide monte les écrans sans aucune protection** · ni session, ni
+> authentification. Le paquet l'inscrit dans son journal et `analytics:check` le
+> rapporte comme bloquant.
 
 > **La pile doit être complète**, session comprise · les routes du paquet sont
 > déclarées hors de vos groupes, donc elles n'héritent d'aucun de vos
