@@ -167,9 +167,29 @@
             <x-ui::card>
                 <x-ui::section-header :title="__('Parcours')" :description="__('Ce que le visiteur a fait, dans l\'ordre')" class="an:mb-5" />
 
-                @if (empty($journey))
+                {{--
+                    Deux absences, et elles ne se disent pas pareil.
+
+                    Un parcours vide parce que la session n'a rien enregistré,
+                    et un parcours vide parce que la conservation est passée
+                    dessus. Dire « cette session n'a enregistré aucun
+                    évènement » d'une session qui en avait quatre est un
+                    mensonge que le paquet se raconte tout seul · les chiffres
+                    juste au-dessus le contredisent à l'écran.
+                --}}
+                @if (empty($journey) && $detailErased)
+                    <x-ui::empty-state
+                        icon="archive-box"
+                        :title="__('Détail effacé')"
+                        :description="__('Le pas à pas de cette session a été effacé, sa journée étant sortie de la durée de conservation. Les chiffres ci-dessus et les événements nommés, eux, sont gardés.')" />
+                @elseif (empty($journey))
                     <x-ui::empty-state icon="signal" :title="__('Aucun évènement')" :description="__('Cette session n\'a enregistré aucun évènement.')" />
                 @else
+                    @if ($detailErased)
+                        <x-ui::alert type="info" class="an:mb-5">
+                            {{ __('Les pages vues et les clics de cette session ont été effacés, sa journée étant sortie de la durée de conservation. Ce qui reste ci-dessous porte un nom, et est gardé indéfiniment.') }}
+                        </x-ui::alert>
+                    @endif
                     <ol class="an:relative">
                         @foreach ($journey as $step)
                             @php
