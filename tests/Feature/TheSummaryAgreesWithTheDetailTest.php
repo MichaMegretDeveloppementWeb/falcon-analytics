@@ -1,0 +1,300 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Falcon\Analytics\Tests\Feature;
+
+use Carbon\CarbonImmutable;
+use Falcon\Analytics\DTOs\Dashboard\Period;
+use Falcon\Analytics\Enums\EventType;
+use Falcon\Analytics\Models\DailyArchive;
+use Falcon\Analytics\Models\DailyCount;
+use Falcon\Analytics\Models\Event;
+use Falcon\Analytics\Models\Session;
+use Falcon\Analytics\Models\Visitor;
+use Falcon\Analytics\Repositories\Dashboard\OverviewReadRepository;
+use Falcon\Analytics\Services\DailyCountArchiver;
+use Falcon\Analytics\Services\Dashboard\MarketingReportBuilder;
+use Falcon\Analytics\Tests\TestCase;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
+
+/**
+ * The one essay the whole retention rests on.
+ *
+ * Two blocks of the overview count rows the purge is allowed to erase — the
+ * most seen pages and the most clicked elements — so their figures are read
+ * from a daily summary once those rows are gone. **If the summary and the raw
+ * reading ever disagreed, the two blocks would jump on the day the purge
+ * crossed them**, and nothing would say why.
+ *
+ * So both are computed over the same day, while both still exist, and compared.
+ * That window is the whole point: for the length of the retention the detail
+ * and its summary sit side by side, and this is what uses that overlap.
+ *
+ * Written 2026-09-13, with the summaries themselves.
+ */
+final class TheSummaryAgreesWithTheDetailTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private OverviewReadRepository $overview;
+
+    private DailyCountArchiver $archiver;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->travelTo(CarbonImmutable::parse('2026-06-15 12:00:00'));
+        $this->overview = new OverviewReadRepository(new MarketingReportBuilder);
+        $this->archiver = new DailyCountArchiver;
+    }
+
+    private function newSession(bool $isBot = false, ?string $subjectType = null): Session
+    {
+        $visitor = Visitor::create([
+            'uuid' => (string) Str::uuid(),
+            'first_seen_at' => now(),
+            'last_seen_at' => now(),
+        ]);
+
+        return Session::create([
+            'visitor_id' => $visitor->id,
+            'started_at' => now(),
+            'last_activity_at' => now(),
+            'is_bot' => $isBot,
+            'subject_type' => $subjectType,
+            'subject_id' => $subjectType !== null ? 1 : null,
+        ]);
+    }
+
+    private function pageview(Session $session, string $url, CarbonImmutable $at): void
+    {
+        Event::create([
+            'session_id' => $session->id,
+            'visitor_id' => $session->visitor_id,
+            'type' => EventType::Pageview,
+            'url' => $url,
+            'occurred_at' => $at,
+        ]);
+    }
+
+    private function click(Session $session, ?string $text, ?string $name, ?string $route, CarbonImmutable $at): void
+    {
+        Event::create([
+            'session_id' => $session->id,
+            'visitor_id' => $session->visitor_id,
+            'type' => EventType::Click,
+            'target_text' => $text,
+            'name' => $name,
+            'route' => $route,
+            'occurred_at' => $at,
+        ]);
+    }
+
+    /**
+     * A day with everything the two readings have to agree about · several
+     * addresses, repeats, a click whose label falls back on its technical name,
+     * a bot, and two subjects.
+     */
+    private function aBusyDay(CarbonImmutable $day): void
+    {
+        $anonymous = $this->newSession();
+        $client = $this->newSession(subjectType: 'client');
+        $robot = $this->newSession(isBot: true);
+
+        $this->pageview($anonymous, 'https://exemple.fr/', $day->setTime(9, 0));
+        $this->pageview($anonymous, 'https://exemple.fr/', $day->setTime(10, 0));
+        $this->pageview($anonymous, 'https://exemple.fr/tarifs', $day->setTime(11, 0));
+        $this->pageview($client, 'https://exemple.fr/tarifs', $day->setTime(12, 0));
+
+        // A bot's rows are excluded from both readings, and a summary that
+        // forgot to exclude them would be the easiest mistake to make.
+        $this->pageview($robot, 'https://exemple.fr/', $day->setTime(13, 0));
+
+        $this->click($anonymous, 'Demander un devis', 'devis.demande', 'accueil', $day->setTime(9, 30));
+        $this->click($anonymous, 'Demander un devis', 'devis.demande', 'accueil', $day->setTime(9, 40));
+
+        // No visible text: the label falls back on the technical name.
+        $this->click($client, null, 'panier.ajout', 'tarifs', $day->setTime(12, 30));
+
+        // Neither text nor name: nothing to show, so nothing counted.
+        $this->click($anonymous, '', '', null, $day->setTime(9, 45));
+
+        $this->click($robot, 'Demander un devis', 'devis.demande', 'accueil', $day->setTime(13, 30));
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $rows
+     * @return list<array<string, mixed>>
+     */
+    private function sorted(array $rows): array
+    {
+        $rows = array_values($rows);
+
+        usort($rows, fn (array $a, array $b): int => [$b['total'], $a['label']] <=> [$a['total'], $b['label']]);
+
+        return $rows;
+    }
+
+    /**
+     * What the summary holds for a day, in the shape the raw reading answers
+     * with · read from the table rather than through the model, so that a
+     * grouping cannot hand back a null the analysis has to be argued out of.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function summarised(CarbonImmutable $day, string $kind, bool $withRoute, ?string $subjectType = null): array
+    {
+        $grouped = [];
+
+        $rows = DailyCount::query()
+            ->where('day', $day->toDateString())
+            ->where('kind', $kind)
+            ->when($subjectType !== null, fn ($query) => $query->where('subject_type', $subjectType))
+            ->get(['label', 'route', 'total']);
+
+        foreach ($rows as $row) {
+            $label = $row->label;
+            $route = $row->route;
+            $key = $label.'|'.($route ?? '');
+
+            $grouped[$key] ??= $withRoute
+                ? ['label' => $label, 'route' => $route, 'total' => 0]
+                : ['label' => $label, 'total' => 0];
+
+            $grouped[$key]['total'] += $row->total;
+        }
+
+        return $this->sorted(array_values($grouped));
+    }
+
+    public function test_the_summary_counts_the_same_pages_as_the_detail(): void
+    {
+        $day = CarbonImmutable::parse('2026-06-10');
+        $this->aBusyDay($day);
+        $this->archiver->archive($day);
+
+        $oneDay = new Period($day->startOfDay(), $day->endOfDay(), 1);
+
+        $fromDetail = $this->sorted(array_map(
+            fn (array $row): array => ['label' => $row['label'], 'total' => $row['total']],
+            $this->overview->topPages($oneDay, null, 20),
+        ));
+
+        $fromSummary = $this->summarised($day, DailyCount::KIND_PAGE, withRoute: false);
+
+        $this->assertSame($fromDetail, $fromSummary);
+        $this->assertNotSame([], $fromDetail, 'The day has to hold something, or this proves nothing.');
+    }
+
+    public function test_the_summary_counts_the_same_clicks_as_the_detail(): void
+    {
+        $day = CarbonImmutable::parse('2026-06-10');
+        $this->aBusyDay($day);
+        $this->archiver->archive($day);
+
+        $oneDay = new Period($day->startOfDay(), $day->endOfDay(), 1);
+
+        $fromDetail = $this->sorted(array_map(
+            fn (array $row): array => ['label' => $row['label'], 'route' => $row['route'], 'total' => $row['total']],
+            $this->overview->topClicks($oneDay, null, 20),
+        ));
+
+        $fromSummary = $this->summarised($day, DailyCount::KIND_CLICK, withRoute: true);
+
+        $this->assertSame($fromDetail, $fromSummary);
+        $this->assertNotSame([], $fromDetail);
+    }
+
+    /**
+     * And they agree per subject too, which is the half a summary gets wrong
+     * without noticing · the screens filter on the subject of the SESSION, so a
+     * summary that read it off the event would drift the moment a visitor
+     * signed in mid-session.
+     */
+    public function test_the_summary_agrees_subject_by_subject(): void
+    {
+        $day = CarbonImmutable::parse('2026-06-10');
+        $this->aBusyDay($day);
+        $this->archiver->archive($day);
+
+        $oneDay = new Period($day->startOfDay(), $day->endOfDay(), 1);
+
+        $fromDetail = $this->sorted(array_map(
+            fn (array $row): array => ['label' => $row['label'], 'total' => $row['total']],
+            $this->overview->topPages($oneDay, 'client', 20),
+        ));
+
+        $fromSummary = $this->summarised($day, DailyCount::KIND_PAGE, withRoute: false, subjectType: 'client');
+
+        $this->assertSame($fromDetail, $fromSummary);
+        $this->assertNotSame([], $fromDetail);
+    }
+
+    /**
+     * Run twice, and nothing doubles.
+     *
+     * The scheduler, an administrator opening a screen and a hand-run command
+     * can all land on the same day. Rewriting rather than adding is what lets
+     * that be true, and it is worth holding: the failure would be silent
+     * inflation, which reads as growth.
+     */
+    public function test_summarising_a_day_twice_changes_nothing(): void
+    {
+        $day = CarbonImmutable::parse('2026-06-10');
+        $this->aBusyDay($day);
+
+        $this->archiver->archive($day);
+        $once = DailyCount::query()->where('day', $day->toDateString())->sum('total');
+
+        $this->archiver->archive($day);
+        $twice = DailyCount::query()->where('day', $day->toDateString())->sum('total');
+
+        $this->assertSame($once, $twice);
+        $this->assertSame(1, DailyArchive::query()->where('day', $day->toDateString())->count());
+    }
+
+    /**
+     * A day without traffic is recorded as treated.
+     *
+     * Deducing "archived" from the presence of counts would leave a quiet day
+     * looking untreated forever, and the purge — which refuses untreated days —
+     * would never move past it.
+     */
+    public function test_a_day_without_traffic_is_still_recorded(): void
+    {
+        $quiet = CarbonImmutable::parse('2026-06-10');
+
+        $this->archiver->archive($quiet);
+
+        $this->assertSame(0, DailyCount::query()->where('day', $quiet->toDateString())->count());
+        $this->assertTrue($this->archiver->isArchived($quiet));
+    }
+
+    /**
+     * The sequence goes forward from the last treated day, so a gap cannot
+     * open, and it stops at yesterday · today is not closed.
+     */
+    public function test_it_takes_the_closed_days_in_order_and_leaves_today_alone(): void
+    {
+        $this->pageview($this->newSession(), 'https://exemple.fr/', CarbonImmutable::parse('2026-06-12 10:00'));
+
+        $done = $this->archiver->run();
+
+        $this->assertSame(['2026-06-12', '2026-06-13', '2026-06-14'], $done);
+        $this->assertFalse($this->archiver->isArchived(CarbonImmutable::parse('2026-06-15')), 'Today is not closed.');
+    }
+
+    /** A bounded run catches up a slice, and the next one resumes where it left off. */
+    public function test_a_bounded_run_resumes_where_it_stopped(): void
+    {
+        $this->pageview($this->newSession(), 'https://exemple.fr/', CarbonImmutable::parse('2026-06-12 10:00'));
+
+        $this->assertSame(['2026-06-12'], $this->archiver->run(1));
+        $this->assertSame(['2026-06-13'], $this->archiver->run(1));
+        $this->assertSame(['2026-06-14'], $this->archiver->run(1));
+        $this->assertSame([], $this->archiver->run(1));
+    }
+}

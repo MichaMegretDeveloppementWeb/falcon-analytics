@@ -178,7 +178,21 @@ return [
     | Data lifecycle
     |--------------------------------------------------------------------------
     |
-    | Raw events are pruned past retention_days. Aggregates are kept forever.
+    | How long the step-by-step detail is kept. Past it, analytics:prune erases
+    | the ANONYMOUS page views and clicks — and only those. They have already
+    | been counted into the daily summaries, so no screen loses a figure.
+    |
+    | What carries a name is never erased: the events screen, the funnels and
+    | the marketing conversions read those rows, and no summary could stand in
+    | for them exactly. Page views on routes a declared funnel steps through
+    | stay too. Sessions and visitor profiles are never touched.
+    |
+    | So this setting decides one thing only: how far back a single session's
+    | page-by-page journey can still be opened.
+    |
+    | A number of days, or null to never erase anything. Zero and negatives are
+    | refused rather than read as "keep everything", which is the opposite of
+    | what one writes them for.
     |
     */
 

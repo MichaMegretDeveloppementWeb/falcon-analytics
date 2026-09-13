@@ -29,7 +29,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 final class Event extends Model
 {
-    protected $table = 'falcon_analytics_events';
+    /** Named because the archiving and the purge build joins by hand. */
+    public const TABLE = 'falcon_analytics_events';
+
+    protected $table = self::TABLE;
 
     public $timestamps = false;
 

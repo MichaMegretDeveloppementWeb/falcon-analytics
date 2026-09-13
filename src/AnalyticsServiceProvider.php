@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics;
 
+use Falcon\Analytics\Console\ArchiveCommand;
 use Falcon\Analytics\Console\CheckCommand;
 use Falcon\Analytics\Console\CheckEventsCommand;
 use Falcon\Analytics\Console\GeoipCheckCommand;
@@ -141,6 +142,7 @@ final class AnalyticsServiceProvider extends ServiceProvider
             CheckCommand::class,
             GeoipDownloadCommand::class,
             GeoipCheckCommand::class,
+            ArchiveCommand::class,
             PruneCommand::class,
             SweepCommand::class,
             ScanEventsCommand::class,
@@ -153,8 +155,17 @@ final class AnalyticsServiceProvider extends ServiceProvider
         // dedicated analytics cron. Lazily bound: the events register when the
         // Schedule is actually resolved, i.e. only inside scheduler runs.
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
-            // Close idle sessions and prune expired raw events on a fixed cadence.
+            // Close idle sessions on a fixed cadence.
             $schedule->command('analytics:sweep')->everyFiveMinutes()->withoutOverlapping();
+
+            /*
+             * Summarise, then erase, and in that order. The purge refuses a day
+             * the archiving has not treated, so a scheduler that stops running
+             * loses nothing: both halt together and the backlog is caught up
+             * later. Half an hour apart so a long catch-up does not meet its
+             * own purge.
+             */
+            $schedule->command('analytics:archive')->dailyAt('03:00')->withoutOverlapping();
             $schedule->command('analytics:prune')->dailyAt('03:30')->withoutOverlapping();
 
             // Refresh the GeoLite2 database monthly; inert until a licence key is set.
