@@ -32,12 +32,6 @@
         visible() {
             return this.mode === 'online' ? this.points.filter(p => p.online > 0) : this.points;
         },
-        {{-- The class rather than the colour · these markers are SVG, which a
-             stylesheet does reach, unlike a canvas. So nothing is resolved here:
-             the rules below hold the two tokens, and a theme switch repaints the
-             markers with everything else, without a line of script. --}}
-        online() { return 'fa-map-online'; },
-        recent() { return 'fa-map-recent'; },
         {{-- The Miller projection, identical to the generated base map
              (yTop = miller(85 deg)). --}}
         project(lat, lon) {
@@ -49,6 +43,11 @@
         },
         esc(value) { return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/\x22/g, '&quot;'); },
         apply() {
+            {{-- The class rather than the colour · a marker is SVG, which a
+                 stylesheet does reach, unlike a canvas. So nothing is resolved
+                 here: the rules below hold the two tokens, and a theme switch
+                 repaints the markers with everything else, without a line of
+                 script. --}}
             {{-- Radius computed in screen pixels, so markers keep the same size
                  on a phone and on a wide display. --}}
             const unitsPerPx = 1000 / (this.$refs.svg.clientWidth || 1000);
@@ -63,9 +62,9 @@
                 const label = this.esc(place + ' · ' + suffix + (online && this.mode !== 'online' ? ' · ' + p.online + ' ' + this.onlineLabel : ''));
                 html += '<g data-tooltip=\x22' + label + '\x22>';
                 if (online) {
-                    html += '<circle class=\x22fa-map-pulse ' + this.online() + '\x22 cx=\x22' + x + '\x22 cy=\x22' + y + '\x22 r=\x22' + (r * 1.5) + '\x22></circle>';
+                    html += '<circle class=\x22fa-map-pulse fa-map-online\x22 cx=\x22' + x + '\x22 cy=\x22' + y + '\x22 r=\x22' + (r * 1.5) + '\x22></circle>';
                 }
-                html += '<circle class=\x22' + (online ? this.online() : this.recent()) + '\x22 cx=\x22' + x + '\x22 cy=\x22' + y + '\x22 r=\x22' + r + '\x22 fill-opacity=\x220.9\x22></circle>';
+                html += '<circle class=\x22' + (online ? 'fa-map-online' : 'fa-map-recent') + '\x22 cx=\x22' + x + '\x22 cy=\x22' + y + '\x22 r=\x22' + r + '\x22 fill-opacity=\x220.9\x22></circle>';
                 html += '</g>';
             }
             this.$refs.markers.innerHTML = html;
