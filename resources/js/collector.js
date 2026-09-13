@@ -73,7 +73,7 @@
       if (navigator.sendBeacon && navigator.sendBeacon(cfg.endpoint, blob)) {
         return;
       }
-    } catch (e) {
+    } catch (_e) {
       /* fall through to fetch */
     }
 
@@ -88,7 +88,7 @@
         /* unreachable endpoint: swallow the rejection so the host console
            never shows an uncaught promise from analytics */
       });
-    } catch (e) {
+    } catch (_e) {
       /* give up silently: analytics must never break the page */
     }
   }
