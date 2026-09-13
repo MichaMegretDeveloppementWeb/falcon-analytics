@@ -63,9 +63,17 @@ abstract class TestCase extends Orchestra
     {
         // A shipped file missing from this list would never be published: the
         // others being in order would be enough to conclude. It happened the
-        // day the package gained its script.
+        // day the package gained its script — and again on 2026-09-13, the kit
+        // being watched on its stylesheet alone: a `npm run build` there
+        // rebuilt `ui.js`, the bench saw a stylesheet in order and concluded,
+        // and sixteen tests fell over the kit's staleness guard while testing
+        // something else. Every file either package ships, or none of it works.
+        $kit = dirname(__DIR__).'/vendor/falcon/ui-kit/public/';
+
         $shipped = [
-            public_path('vendor/falcon/ui/ui.css') => dirname(__DIR__).'/vendor/falcon/ui-kit/public/ui.css',
+            public_path('vendor/falcon/ui/ui.css') => $kit.'ui.css',
+            public_path('vendor/falcon/ui/ui-base.css') => $kit.'ui-base.css',
+            public_path('vendor/falcon/ui/ui.js') => $kit.'ui.js',
             public_path('vendor/falcon/analytics/analytics.css') => dirname(__DIR__).'/public/analytics.css',
             public_path('vendor/falcon/analytics/analytics.js') => dirname(__DIR__).'/public/analytics.js',
         ];
