@@ -227,8 +227,13 @@ vendor/bin/phpunit --filter TheSurfaceIsDeclared
 
 La façon de faire · on modifie le code pour retirer la garantie, on vérifie que
 l'essai tombe **avec le bon message**, et on remet. Si l'essai passe encore,
-c'est lui qu'il faut corriger. Trois essais écrits en 2026 sont passés au vert
-sans rien surveiller du tout, et seul le sabotage l'a montré.
+c'est lui qu'il faut corriger.
+
+**Ce n'est pas une précaution théorique.** Le 2026-09-13, trois essais de
+`falcon/ui-kit` fraîchement écrits sont passés au vert **sans rien surveiller du
+tout** · l'un comparait deux valeurs qui s'accordaient par construction, les deux
+autres éprouvaient une page où le mécanisme en cause n'était même pas ouvert.
+Retirer la garantie ne les faisait pas tomber. Seul le sabotage l'a dit.
 
 ### Le banc publie avant de commencer
 
@@ -270,7 +275,7 @@ le collecteur arrive dans la page, et le responsive.
 
 ---
 
-## Deux pièges d'outillage à connaître
+## Trois pièges d'outillage à connaître
 
 **Après avoir changé la forme d'appel d'un composant, videz les vues
 compilées.** Elles pointent sur l'ancien nom, et les essais rapportent un
@@ -286,3 +291,14 @@ ne le transpile, et il emploie quatre fois `x != null` — le test délibéré d
 La configuration exempte ce fichier de deux règles, avec la raison écrite ·
 **c'est le bloc à changer le jour où l'on décide quels navigateurs ce collecteur
 doit atteindre**, et non avant.
+
+**Une vue publiée par l'hôte n'est lue que si son dossier existait au
+démarrage.** `loadViewsFrom` regarde une fois, au moment où le fournisseur
+démarre · créer `resources/views/vendor/analytics/` après coup ne sert à rien
+pour la durée de vie de cette application.
+
+Ça ne coûte rien en production, où la requête suivante redémarre tout. Ça coûte
+une heure dans un essai qui publie puis interroge dans la même foulée · posez le
+fichier dans `defineEnvironment`, qui passe **avant** le démarrage, et non dans
+`setUp`, qui passe après. `PublishingAViewWrapsTheScreenTest` le fait et dit
+pourquoi.
