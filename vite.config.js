@@ -25,6 +25,19 @@ export default defineConfig({
         emptyOutDir: true,
 
         rollupOptions: {
+            /*
+             * **The source is named for what it is, the output for the package
+             * that ships it**, and the two therefore differ · the skeleton has
+             * them matching, as `ui.js` does in the kit.
+             *
+             * `collector.js` says what the file contains to whoever opens it.
+             * `analytics.js` is what a host publishes and what the declaration
+             * in `assets.blade.php` would name if the package had an admin
+             * script too. Renaming either would lose one of the two readings.
+             *
+             * This is the line to come back to when asking where
+             * `public/analytics.js` is written.
+             */
             input: {
                 analytics: 'resources/js/collector.js',
             },
