@@ -483,8 +483,13 @@ final class CheckCommand extends Command
      * a dashboard lie rather than stay empty.
      *
      * Behind a reverse proxy without that setting, every visit carries the
-     * proxy's address: one visitor, one country, one city, for the whole site.
-     * The numbers stay plausible, which is what makes it expensive to find.
+     * proxy's address: one country and one city for the whole site, and
+     * `exclude_ips` matching either everybody or nobody. The numbers stay
+     * plausible, which is what makes it expensive to find.
+     *
+     * **Visitor counts are not affected**, and saying they were sent the reader
+     * looking for a bug in the wrong place · a visitor is a cookie or a session
+     * id, never an address. See `VisitorIdentityResolver`.
      *
      * It cannot be settled from the console — no request is in flight, and the
      * setting only shows when a forwarded header arrives. So this point says
@@ -505,7 +510,8 @@ final class CheckCommand extends Command
             'Proxy',
             'À voir',
             'Aucun proxy de confiance déclaré. Derrière un reverse proxy, toutes les visites porteront '
-            .'son adresse · un seul visiteur, un seul pays. Sans proxy, il n’y a rien à faire.',
+            .'son adresse · un seul pays, une seule ville, et exclude_ips qui exclut tout le monde ou '
+            .'personne. Sans proxy, il n’y a rien à faire.',
         ];
     }
 

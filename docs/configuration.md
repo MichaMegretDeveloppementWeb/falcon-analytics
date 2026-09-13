@@ -93,7 +93,7 @@ sujet suivi, les exclusions et le consentement, sans une ligne de code.
 |---|---|---|---|
 | `identity.subject_guards` | liste de gardes | `['web']` | Les gardes dont l'utilisateur connecté devient le sujet suivi. |
 | `identity.exclude_guards` | liste de gardes | `[]` | Les gardes dont l'utilisateur connecté est **entièrement** exclu du suivi. Vide veut dire « personne ». |
-| `identity.consent_cookie` | nom de cookie ou `null` | `null` | Le cookie dont la valeur `"1"` autorise l'identifiant de visiteur persistant. **Sans valeur**, aucun identifiant ne survit à la session. |
+| `identity.consent_cookie` | nom de cookie ou `null` | `null` | Le cookie dont la valeur `"1"` autorise l'identifiant de visiteur persistant. **Sans valeur**, aucun identifiant ne survit à la session. Le nommer ici suffit · le paquet le sort du chiffrement de Laravel lui-même, sinon il serait relu à `null` et le consentement ne serait jamais vu. |
 | `identity.subjects` | dictionnaire | `[]` | Comment afficher un sujet · un libellé, et les colonnes à concaténer pour son nom. **Vide**, l'écran affiche le nom du garde et l'identifiant. |
 
 Le nom d'un sujet est **lu au moment de l'affichage et jamais stocké**.
@@ -227,19 +227,24 @@ Une clé gratuite s'obtient sur
 
 ## Les variables d'environnement, rassemblées
 
-| Variable | Clé | Secret |
-|---|---|---|
-| `ANALYTICS_ENABLED` | `enabled` | non |
-| `ANALYTICS_GSC_CLIENT_ID` | `search_console.client_id` | **oui** |
-| `ANALYTICS_GSC_CLIENT_SECRET` | `search_console.client_secret` | **oui** |
-| `ANALYTICS_GSC_REDIRECT` | `search_console.redirect` | non |
-| `ANALYTICS_GEOIP_LICENSE_KEY` | `geoip.license_key` | **oui** |
-| `ANALYTICS_GEOIP_EDITION` | `geoip.edition` | non |
-| `ANALYTICS_GEOIP_DATABASE` | `geoip.database_path` | non |
-| `ANALYTICS_GEOIP_DEV_IP` | `geoip.dev_ip` | non |
+| Variable | Clé | Secret | Écrite dans `.env` par l'installation |
+|---|---|---|---|
+| `ANALYTICS_ENABLED` | `enabled` | non | oui |
+| `ANALYTICS_GSC_CLIENT_ID` | `search_console.client_id` | **oui** | oui, vide |
+| `ANALYTICS_GSC_CLIENT_SECRET` | `search_console.client_secret` | **oui** | oui, vide |
+| `ANALYTICS_GSC_REDIRECT` | `search_console.redirect` | non | oui, vide |
+| `ANALYTICS_GEOIP_LICENSE_KEY` | `geoip.license_key` | **oui** | oui, vide |
+| `ANALYTICS_GEOIP_EDITION` | `geoip.edition` | non | **non** · à écrire soi-même |
+| `ANALYTICS_GEOIP_DATABASE` | `geoip.database_path` | non | oui, vide |
+| `ANALYTICS_GEOIP_DEV_IP` | `geoip.dev_ip` | non | oui, vide |
 
 Une variable **vide vaut absente** · elle est relue comme une chaîne vide, et ce
 n'est ni une clé, ni un chemin.
+
+**Sept des huit sont posées par `analytics:install`**, commentées, et seulement
+si elles manquent · une valeur déjà écrite n'est jamais touchée. L'édition de
+base GeoIP n'y est pas, parce qu'on n'en change pour ainsi dire jamais ·
+écrivez-la à la main le jour où vous passez à une autre.
 
 ---
 
