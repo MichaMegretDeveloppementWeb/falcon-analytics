@@ -12,6 +12,8 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
  * Read model for the visitor profile: whole-history engagement aggregates (in
  * SQL, so the page never loads every session into memory) and a paginated list
  * of the visitor's sessions.
+ *
+ * @internal
  */
 final readonly class VisitorProfileReadRepository
 {

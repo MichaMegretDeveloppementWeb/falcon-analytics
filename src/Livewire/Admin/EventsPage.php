@@ -11,6 +11,8 @@ use Illuminate\Contracts\View\View;
  * The headline figures (with sparklines), the events/conversions trend and the full
  * per-event breakdown load together in one deferred widget, so a single read of the
  * breakdown and of the daily series backs the whole screen.
+ *
+ * @internal
  */
 final class EventsPage extends DashboardComponent
 {

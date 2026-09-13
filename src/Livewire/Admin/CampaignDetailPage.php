@@ -22,6 +22,8 @@ use Throwable;
  * and URL conditions, and the table of its ads with per-ad traffic and conversion
  * objectives. Ads and objectives are managed here; the campaign can be edited or
  * deleted.
+ *
+ * @internal
  */
 final class CampaignDetailPage extends DashboardComponent
 {

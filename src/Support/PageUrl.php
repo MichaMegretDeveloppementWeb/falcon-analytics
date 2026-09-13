@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Route;
  * A clean, human path for a tracked page. The stored URL wins (its real dynamic
  * value, minus domain and query), falling back to the route's URI pattern and
  * finally the raw route name.
+ *
+ * @internal
  */
 final class PageUrl
 {

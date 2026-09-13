@@ -19,6 +19,8 @@ use Illuminate\Console\Command;
  *
  * It also runs the kit's installer, which it depends on. Every step of both is
  * idempotent: running this again costs nothing.
+ *
+ * @internal
  */
 final class InstallCommand extends Command
 {

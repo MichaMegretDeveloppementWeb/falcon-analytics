@@ -19,6 +19,8 @@ use Livewire\WithPagination;
  * A single visitor in detail: their identity, headline figures and the list of
  * their sessions (each linking to the session detail). Read-only apart from the
  * GDPR erasure action.
+ *
+ * @internal
  */
 final class VisitorDetailPage extends Component
 {

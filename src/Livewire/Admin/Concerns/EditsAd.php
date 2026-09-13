@@ -19,6 +19,8 @@ use Throwable;
  * both the campaign detail and the ad detail screens, so an ad can be created or
  * edited from either place with identical behaviour. The host component owns the
  * `$modal` state and provides the campaign the ad belongs to.
+ *
+ * @internal
  */
 trait EditsAd
 {

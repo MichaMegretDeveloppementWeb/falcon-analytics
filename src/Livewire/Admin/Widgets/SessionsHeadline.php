@@ -16,6 +16,8 @@ use Livewire\Component;
  * Deferred engagement headline for the sessions screen: four KPI cards with
  * sparklines, from a single engagement read. Deferred so the session list (the
  * screen's primary content) and the shell paint before the sparkline canvases.
+ *
+ * @internal
  */
 #[Lazy]
 final class SessionsHeadline extends Component

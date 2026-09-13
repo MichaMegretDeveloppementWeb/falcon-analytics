@@ -7,6 +7,8 @@ namespace Falcon\Analytics\DTOs\Dashboard;
 /**
  * A KPI tile: its period-over-period delta plus a daily series for the
  * sparkline. Pure read-model, no behaviour.
+ *
+ * @internal
  */
 final readonly class MetricTrend
 {

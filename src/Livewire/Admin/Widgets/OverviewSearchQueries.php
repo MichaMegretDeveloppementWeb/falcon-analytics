@@ -18,6 +18,8 @@ use Livewire\Component;
  * an attached connection the section renders a call-to-action towards the
  * integrations screen instead of numbers. This is a different source from the
  * campaign terms (utm_term): these are the words typed into Google.
+ *
+ * @internal
  */
 #[Lazy]
 final class OverviewSearchQueries extends Component

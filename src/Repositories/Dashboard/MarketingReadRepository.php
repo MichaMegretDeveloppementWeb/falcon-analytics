@@ -18,6 +18,8 @@ use Illuminate\Support\Facades\Log;
  * campaign/ad definitions and the objective-event completions. No attribution
  * or aggregation happens here; the MarketingReportBuilder matches these rows
  * to campaigns and ads and derives every figure from them.
+ *
+ * @internal
  */
 final class MarketingReadRepository
 {

@@ -11,6 +11,8 @@ use Illuminate\Contracts\View\View;
  * KPI row (with sparklines and the today/yesterday spotlight) and every heavier
  * block (audience, acquisition, content and the events summary) each load as their
  * own deferred widget after the page paints, so the shell never waits for them.
+ *
+ * @internal
  */
 final class OverviewPage extends DashboardComponent
 {

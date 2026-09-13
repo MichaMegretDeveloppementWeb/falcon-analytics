@@ -15,6 +15,8 @@ use Throwable;
  * created or edited from either place with identical behaviour. The host
  * component owns the `$modal` state and tells the trait which campaign is
  * being saved.
+ *
+ * @internal
  */
 trait EditsCampaign
 {

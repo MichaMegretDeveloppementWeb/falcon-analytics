@@ -11,6 +11,8 @@ use Illuminate\Console\Command;
 /**
  * Verifies that every event referenced by a funnel step is declared in the events
  * file, so funnels never point at an undeclared (and thus unnameable) event.
+ *
+ * @internal
  */
 final class CheckEventsCommand extends Command
 {

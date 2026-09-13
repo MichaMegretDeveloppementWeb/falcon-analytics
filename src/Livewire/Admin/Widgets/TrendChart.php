@@ -20,6 +20,8 @@ use Livewire\Component;
  * filter change re-mounts it with the new values (non-reactive props, so nothing
  * leaks onto sibling components). Its query is a single indexed range scan on
  * started_at.
+ *
+ * @internal
  */
 #[Lazy]
 final class TrendChart extends Component

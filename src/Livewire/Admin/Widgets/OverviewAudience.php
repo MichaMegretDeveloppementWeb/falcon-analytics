@@ -15,6 +15,8 @@ use Livewire\Component;
 /**
  * Deferred audience block: new vs returning and device split, loaded once after the
  * page paints. Owns the newVsReturning data (donut + the new-visitor rate stat).
+ *
+ * @internal
  */
 #[Lazy]
 final class OverviewAudience extends Component

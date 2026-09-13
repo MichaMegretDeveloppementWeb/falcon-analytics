@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Str;
 
+/** @internal */
 final readonly class VisitorIdentityResolver
 {
     private const COOKIE = 'fa_vid';

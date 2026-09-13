@@ -8,6 +8,8 @@ namespace Falcon\Analytics\DTOs;
  * Session-level context resolved server-side and ready to be persisted onto a
  * new session. Built lazily by the session context enricher, consumed by the
  * session write repository.
+ *
+ * @internal
  */
 final readonly class IngestionContext
 {

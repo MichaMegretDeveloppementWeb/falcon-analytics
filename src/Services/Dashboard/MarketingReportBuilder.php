@@ -25,6 +25,8 @@ use Illuminate\Database\Eloquent\Collection;
  * Attribution, the crediting of conversions per objective and every aggregate
  * (headline, daily trend, performance, campaign/ad reports) live here; the
  * repository only reads.
+ *
+ * @internal
  */
 final class MarketingReportBuilder
 {

@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Log;
 /**
  * Read model for the sessions screen: the paginated, searchable and sortable
  * session list plus the distinct device/source filter options. Bots excluded.
+ *
+ * @internal
  */
 final readonly class SessionListReadRepository
 {

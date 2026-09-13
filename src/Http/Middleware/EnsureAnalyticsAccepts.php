@@ -14,6 +14,9 @@ use Symfony\Component\HttpFoundation\Response;
  * Gate the ingestion endpoint: silently drop (204) requests that are disabled,
  * cross-origin, or excluded (internal staff, listed IPs). Bots are NOT dropped
  * here, they are flagged during ingestion and filtered in the dashboard.
+ *
+ * @internal it is appended to the collector's stack by the package itself · a
+ *           host never names it.
  */
 final class EnsureAnalyticsAccepts
 {

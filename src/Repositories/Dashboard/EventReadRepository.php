@@ -16,6 +16,8 @@ use Illuminate\Database\Eloquent\Model;
  * Read model for the site-wide events and conversions screen: how many times each
  * named event fired, how many are conversions (key events), and the daily trend.
  * Bots are excluded, consistently with every other dashboard read.
+ *
+ * @internal
  */
 final class EventReadRepository
 {

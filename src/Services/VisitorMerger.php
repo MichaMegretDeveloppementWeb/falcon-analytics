@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\DB;
  * row becomes an alias whose uuid keeps routing future beacons from that browser
  * to the canonical profile. Sessions keep their `browser_key`, so the physical
  * device separation survives the merge.
+ *
+ * @internal
  */
 final readonly class VisitorMerger
 {

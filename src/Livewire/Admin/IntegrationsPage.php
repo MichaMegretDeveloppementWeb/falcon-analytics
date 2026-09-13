@@ -21,6 +21,8 @@ use Throwable;
  * OAuth credentials the card explains what to provide instead of offering a
  * dead button. OAuth redirects land here with a flashed message replayed as a
  * toast.
+ *
+ * @internal
  */
 final class IntegrationsPage extends Component
 {

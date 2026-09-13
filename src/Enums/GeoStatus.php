@@ -14,6 +14,9 @@ namespace Falcon\Analytics\Enums;
  * One set of wording, for the screen and for the console alike. There used to be two, the console
  * keeping English while the dashboard spoke the interface language; both now speak the same
  * language, so a second set would only be something to keep in sync.
+ *
+ * @internal nothing public returns it · the two enumerations cast on a model
+ *           are, and this one is not one of them.
  */
 enum GeoStatus: string
 {

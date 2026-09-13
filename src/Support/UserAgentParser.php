@@ -7,6 +7,7 @@ namespace Falcon\Analytics\Support;
 use DeviceDetector\DeviceDetector;
 use Falcon\Analytics\DTOs\DeviceInfo;
 
+/** @internal */
 final readonly class UserAgentParser
 {
     /** Session column lengths; truncate rather than fail the insert on an exotic UA. */

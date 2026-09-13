@@ -8,6 +8,8 @@ namespace Falcon\Analytics\Services\Dashboard;
  * Pure calculator that derives a visitor's headline engagement figures from the
  * raw session aggregates, so the component stays orchestration-only (mirrors the
  * repo/calculator split of the other dashboard screens).
+ *
+ * @internal
  */
 final class VisitorEngagementCalculator
 {

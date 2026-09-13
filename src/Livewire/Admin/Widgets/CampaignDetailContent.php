@@ -22,6 +22,8 @@ use Livewire\Component;
  * campaignReport + conversions read. The parent keeps its ads table inline (with its
  * CRUD); this widget dispatches the per-ad traffic and conversion figures to it, so
  * those reads happen once here and fill the table's metric cells when they land.
+ *
+ * @internal
  */
 #[Lazy]
 final class CampaignDetailContent extends Component

@@ -16,6 +16,8 @@ use Throwable;
  * transparent access-token refresh and best-effort revocation. Read-only
  * scope; the refresh token is obtained once (access_type=offline +
  * prompt=consent) and stored encrypted on the connection model.
+ *
+ * @internal
  */
 final class SearchConsoleAuth
 {

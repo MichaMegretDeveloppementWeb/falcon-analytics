@@ -6,6 +6,7 @@ namespace Falcon\Analytics\Services;
 
 use Falcon\Analytics\DTOs\Acquisition;
 
+/** @internal */
 final readonly class SourceResolver
 {
     /** @var list<string> */

@@ -17,6 +17,8 @@ use Falcon\Ui\View\Components\Root as BaseRoot;
  * The area is written here rather than inherited from the page, and that is the
  * same reason — inheriting would make the first render and the recomputation
  * differ. Required for the same reason as on {@see Page}.
+ *
+ * @internal
  */
 final class Root extends BaseRoot
 {

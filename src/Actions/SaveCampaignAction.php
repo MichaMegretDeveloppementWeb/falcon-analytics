@@ -9,6 +9,8 @@ use Falcon\Analytics\Models\Campaign;
 /**
  * Create or update a marketing campaign. Keeps the write off the Livewire layer so
  * the component only gathers input and calls execute().
+ *
+ * @internal
  */
 final readonly class SaveCampaignAction
 {

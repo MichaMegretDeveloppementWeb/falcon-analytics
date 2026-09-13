@@ -9,6 +9,8 @@ namespace Falcon\Analytics\DTOs\Dashboard;
  * (the user was authenticated during the session) or, via fallback, the subject
  * stitched on the session's visitor (the user is known but was not connected
  * during this particular session).
+ *
+ * @internal
  */
 final readonly class SessionSubjectAttribution
 {

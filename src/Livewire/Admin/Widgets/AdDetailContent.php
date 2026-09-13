@@ -20,6 +20,8 @@ use Livewire\Component;
  * Deferred ad-detail performance: KPIs (with sparklines), the sessions/conversions
  * trend and the per-objective conversion breakdown. Read-only (the header, edit
  * button and modal stay on the page shell), so it just loads after the shell paints.
+ *
+ * @internal
  */
 #[Lazy]
 final class AdDetailContent extends Component

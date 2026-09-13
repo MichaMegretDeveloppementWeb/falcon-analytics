@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\DB;
  * Delete an ad and its conversion objectives, scoped to its campaign so an id from
  * another campaign cannot be removed. Explicit deletes inside a transaction, matching
  * the campaign deletion. The captured traffic is left untouched.
+ *
+ * @internal
  */
 final readonly class DeleteAdAction
 {

@@ -8,6 +8,8 @@ namespace Falcon\Analytics\DTOs;
  * The minimal, serialisable slice of the request the deferred enrichment needs.
  * Captured synchronously in the controller and carried into the deferred action
  * so the heavy geo/device work never touches the Request on the response path.
+ *
+ * @internal
  */
 final readonly class RequestSnapshot
 {

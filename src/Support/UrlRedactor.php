@@ -8,6 +8,8 @@ namespace Falcon\Analytics\Support;
  * Redact sensitive query parameters (tokens, emails, secrets) from stored URLs
  * while keeping tracking parameters (utm_*, gclid, fbclid, custom ad params)
  * intact. The denylist is configured under analytics.privacy.redact_query_params.
+ *
+ * @internal
  */
 final readonly class UrlRedactor
 {

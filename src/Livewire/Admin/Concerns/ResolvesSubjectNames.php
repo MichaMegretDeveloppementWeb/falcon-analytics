@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Model;
  * Batch-resolves a "guard:id" => name map for the records on the current page,
  * one query per guard, so a list never triggers per-row lookups. Shared by the
  * session and visitor lists.
+ *
+ * @internal
  */
 trait ResolvesSubjectNames
 {

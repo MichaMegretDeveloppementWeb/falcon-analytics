@@ -18,6 +18,8 @@ use Throwable;
  * The campaigns management list: a searchable, paginated table of campaigns with
  * their URL conditions and ad count. Campaigns are created and edited here; ads
  * and objectives are managed from a campaign's detail page.
+ *
+ * @internal
  */
 final class CampaignsPage extends Component
 {

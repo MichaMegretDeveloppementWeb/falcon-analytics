@@ -7,6 +7,7 @@ namespace Falcon\Analytics\Http\Controllers\Marketing;
 use Falcon\Analytics\Models\Ad;
 use Illuminate\Contracts\View\View;
 
+/** @internal */
 final readonly class AdDetailController
 {
     public function __invoke(Ad $ad): View

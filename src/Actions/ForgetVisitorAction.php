@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\DB;
  * aliases), for a GDPR right-to-erasure request. Deletes explicitly inside a
  * transaction rather than relying on the FK cascade, so it behaves identically
  * on every driver.
+ *
+ * @internal
  */
 final readonly class ForgetVisitorAction
 {

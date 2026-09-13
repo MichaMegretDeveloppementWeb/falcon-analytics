@@ -13,6 +13,8 @@ namespace Falcon\Analytics\Livewire\Admin\Concerns;
  * @property string $search
  * @property string $sort
  * @property string $direction
+ *
+ * @internal
  */
 trait SortsAndSearchesList
 {

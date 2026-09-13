@@ -11,6 +11,8 @@ namespace Falcon\Analytics\DTOs\Dashboard;
  * A step declared with parallel branches also carries how many visitors came
  * through each of them, which is the whole point of branching: knowing which
  * way in people actually take.
+ *
+ * @internal
  */
 final readonly class FunnelStepResult
 {

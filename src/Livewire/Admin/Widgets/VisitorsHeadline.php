@@ -16,6 +16,8 @@ use Livewire\Component;
  * Deferred headline for the visitors screen: four KPI cards with sparklines
  * (visitors, new, returning, sessions per visitor) from a single metrics
  * computation. Deferred so the visitor list and shell paint first.
+ *
+ * @internal
  */
 #[Lazy]
 final class VisitorsHeadline extends Component

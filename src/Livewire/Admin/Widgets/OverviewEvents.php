@@ -15,6 +15,8 @@ use Livewire\Component;
 /**
  * Deferred events-and-conversions summary: the top conversions and the top events,
  * with a link through to the full events screen. Loaded once after the page paints.
+ *
+ * @internal
  */
 #[Lazy]
 final class OverviewEvents extends Component

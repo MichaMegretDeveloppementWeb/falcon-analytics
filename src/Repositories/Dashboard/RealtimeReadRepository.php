@@ -19,6 +19,8 @@ use Illuminate\Support\Facades\DB;
  * events (type, occurred_at) / (name, occurred_at)): a read too heavy to poll
  * must be bounded further, never deferred. Bots excluded, like every dashboard
  * read.
+ *
+ * @internal
  */
 final class RealtimeReadRepository
 {

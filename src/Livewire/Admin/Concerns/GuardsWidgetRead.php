@@ -15,6 +15,8 @@ use Throwable;
  * and replaced by a compact inline error state, never a raw 500 that leaves the
  * skeleton hanging. The view builder runs outside the guard so a genuine rendering
  * bug is not masked as a read failure.
+ *
+ * @internal
  */
 trait GuardsWidgetRead
 {

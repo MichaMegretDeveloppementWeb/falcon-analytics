@@ -14,6 +14,8 @@ use Illuminate\Support\Collection;
  * Turns a session's ordered events into its chronological journey and the time
  * spent per page. Deterministic: the output depends only on the given events
  * and session window, so it lives outside the Livewire component.
+ *
+ * @internal
  */
 final class SessionJourneyBuilder
 {

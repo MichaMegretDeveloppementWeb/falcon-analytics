@@ -14,6 +14,8 @@ use Throwable;
  * Resolves a human label and display name for a tracked subject (guard + id),
  * driven entirely by config so the package stays host-agnostic. Names are read
  * from the guard's own model at render time and are never stored.
+ *
+ * @internal what a host writes is `Analytics::resolveSubjectUsing()`.
  */
 final class SubjectResolver
 {

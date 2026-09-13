@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\File;
  * events declared in the events file, so the declared list stays the single
  * source of truth. Dynamic names computed at runtime cannot be detected and must
  * be declared by hand.
+ *
+ * @internal
  */
 final class ScanEventsCommand extends Command
 {

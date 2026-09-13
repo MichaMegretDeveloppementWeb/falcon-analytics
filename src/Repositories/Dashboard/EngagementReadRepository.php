@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\DB;
  * Read model for the engagement headline shared by the overview and sessions
  * screens: raw counts and daily rows (bots excluded). No derivation; the
  * EngagementMetricsCalculator turns these into deltas, ratios and sparklines.
+ *
+ * @internal
  */
 final readonly class EngagementReadRepository
 {

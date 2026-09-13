@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Http;
  * Read-only client for the Search Console API, working on the stored
  * connection with transparent token refresh: the property list (attach step)
  * and the Search Analytics rows (daily sync).
+ *
+ * @internal
  */
 final class SearchConsoleClient
 {

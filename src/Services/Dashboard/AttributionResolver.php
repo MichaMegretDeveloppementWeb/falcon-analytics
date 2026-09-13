@@ -12,6 +12,8 @@ use Falcon\Analytics\Models\Campaign;
  * campaign/ad URL conditions, the most specific (most conditions) definition wins.
  * Pure and deterministic, no persistence, so it lives in the calculation layer
  * rather than the repository.
+ *
+ * @internal
  */
 final class AttributionResolver
 {

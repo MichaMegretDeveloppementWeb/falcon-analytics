@@ -17,6 +17,8 @@ use Throwable;
  * first run backfills the API's full 16-month history. On failure the
  * connection is flagged (surfaced on the dashboard) and the error rethrown
  * for the caller to report.
+ *
+ * @internal
  */
 final class SearchConsoleSynchronizer
 {

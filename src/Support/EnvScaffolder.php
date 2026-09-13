@@ -11,6 +11,8 @@ namespace Falcon\Analytics\Support;
  * discoverable in place, commented, without hunting through vendor config.
  * Append-only and idempotent: existing keys are never rewritten, present keys
  * are never duplicated, and nothing runs outside the install command.
+ *
+ * @internal
  */
 final class EnvScaffolder
 {

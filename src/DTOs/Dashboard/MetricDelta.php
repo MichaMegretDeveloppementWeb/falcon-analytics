@@ -8,6 +8,8 @@ namespace Falcon\Analytics\DTOs\Dashboard;
  * A metric together with its value over the previous period, for
  * period-over-period comparison. The percentage change is only meaningful when
  * a baseline exists (previous > 0).
+ *
+ * @internal
  */
 final readonly class MetricDelta
 {

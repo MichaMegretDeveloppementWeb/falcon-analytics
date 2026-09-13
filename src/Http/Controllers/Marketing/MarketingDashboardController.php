@@ -6,6 +6,7 @@ namespace Falcon\Analytics\Http\Controllers\Marketing;
 
 use Illuminate\Contracts\View\View;
 
+/** @internal */
 final readonly class MarketingDashboardController
 {
     public function __invoke(): View

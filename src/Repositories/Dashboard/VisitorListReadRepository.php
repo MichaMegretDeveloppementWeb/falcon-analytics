@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\DB;
 /**
  * Read model for the visitors screen: raw counts and daily rows feeding the KPI
  * calculator, plus the paginated visitor list. Bots excluded.
+ *
+ * @internal
  */
 final readonly class VisitorListReadRepository
 {

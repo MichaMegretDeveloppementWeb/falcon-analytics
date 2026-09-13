@@ -15,6 +15,8 @@ use Falcon\Analytics\Models\Event;
  * reaches step i only by matching each earlier step in chronological order
  * first, so reach is monotonically decreasing and a step can never out-count
  * the one before it.
+ *
+ * @internal
  */
 final readonly class FunnelEvaluator
 {

@@ -11,6 +11,7 @@ use Falcon\Analytics\Models\Visitor;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
+/** @internal */
 final readonly class SessionWriteRepository
 {
     public function start(Visitor $visitor, IngestionContext $context, CarbonImmutable $startedAt, string $browserKey): Session

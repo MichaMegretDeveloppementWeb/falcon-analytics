@@ -13,6 +13,8 @@ use Falcon\Analytics\DTOs\Dashboard\VisitorMetrics;
  * Pure calculator for the visitors screen headline tiles: turns the repository's
  * raw counts and daily rows into deltas, ratios and zero-filled sparkline
  * series. Deterministic, no persistence, no side effects.
+ *
+ * @internal
  */
 final class VisitorMetricsCalculator
 {

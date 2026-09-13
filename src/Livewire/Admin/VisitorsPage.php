@@ -17,6 +17,8 @@ use Livewire\WithPagination;
  * list of every visitor profile, each row summarising their sessions, first and
  * last visit, locality and acquisition source. The period filter deliberately
  * drives ONLY the headline: the directory reflects the general state.
+ *
+ * @internal
  */
 final class VisitorsPage extends DashboardComponent
 {

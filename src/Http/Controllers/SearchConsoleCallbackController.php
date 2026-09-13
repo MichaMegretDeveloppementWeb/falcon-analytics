@@ -15,6 +15,8 @@ use Throwable;
  * for tokens and lands back on the integrations page, which then offers the
  * property choice. Every failure degrades to a flashed error on that page;
  * this endpoint never renders anything itself.
+ *
+ * @internal
  */
 final class SearchConsoleCallbackController
 {

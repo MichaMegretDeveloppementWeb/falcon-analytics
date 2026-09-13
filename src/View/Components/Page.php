@@ -16,6 +16,8 @@ use Falcon\Ui\View\Components\Page as BasePage;
  *
  * The mechanism is the base's. What is written here is the package's name, the
  * view wrapping the slot, and which layout answers for the area.
+ *
+ * @internal
  */
 final class Page extends BasePage
 {

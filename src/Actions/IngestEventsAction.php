@@ -20,6 +20,7 @@ use Falcon\Analytics\Services\VisitorProfileResolver;
 use Falcon\Analytics\Support\PropsEncoder;
 use Illuminate\Support\Facades\DB;
 
+/** @internal */
 final readonly class IngestEventsAction
 {
     public function __construct(

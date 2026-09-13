@@ -17,6 +17,8 @@ use Livewire\WithPagination;
 /**
  * Session explorer: engagement stats for the period plus a paginated, filterable
  * list of every non-bot session, each row linking to its detail.
+ *
+ * @internal
  */
 final class SessionsPage extends DashboardComponent
 {

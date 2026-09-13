@@ -10,6 +10,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
+/** @internal */
 final class SweepCommand extends Command
 {
     protected $signature = 'analytics:sweep';

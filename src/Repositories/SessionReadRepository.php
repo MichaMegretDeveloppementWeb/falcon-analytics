@@ -7,6 +7,7 @@ namespace Falcon\Analytics\Repositories;
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\Models\Session;
 
+/** @internal */
 final readonly class SessionReadRepository
 {
     /**

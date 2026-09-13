@@ -15,6 +15,7 @@ use Throwable;
 
 use function Illuminate\Support\defer;
 
+/** @internal what is promised is the route name, never this class. */
 final class IngestController
 {
     /**

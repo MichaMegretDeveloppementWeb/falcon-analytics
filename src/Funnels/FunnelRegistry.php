@@ -11,6 +11,9 @@ use Throwable;
  * Holds the funnels declared by the host's funnels file. The file is required
  * once (lazily, when the registry is first resolved); Funnel::define registers
  * into the registry that is currently loading.
+ *
+ * @internal what a host writes is `Funnel::define()`, in the declaration file ·
+ *           this is what gathers them afterwards.
  */
 final class FunnelRegistry
 {

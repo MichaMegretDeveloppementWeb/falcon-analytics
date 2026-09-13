@@ -20,6 +20,8 @@ use Illuminate\Database\Eloquent\Builder;
  * through a callback fired on every advance, so completers, per-step reach
  * and full reports all derive from the same semantics without ever
  * accumulating the event models in memory.
+ *
+ * @internal
  */
 final readonly class FunnelEventWalker
 {

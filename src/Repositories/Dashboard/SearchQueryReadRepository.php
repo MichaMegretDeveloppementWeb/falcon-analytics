@@ -13,6 +13,8 @@ use Falcon\Analytics\Models\SearchQuery;
  * Search Console cache only (never the API): the top queries of the period
  * and the cache's freshness edge. GSC data trails reality by ~3 days, so the
  * freshest cached day is surfaced next to the numbers.
+ *
+ * @internal
  */
 final class SearchQueryReadRepository
 {

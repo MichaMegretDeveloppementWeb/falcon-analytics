@@ -14,6 +14,8 @@ use Illuminate\Contracts\View\View;
  * A single ad in detail: its parent campaign, URL conditions and an in-place editor
  * render immediately; its headline traffic, trend and conversion breakdown load in a
  * deferred widget after the shell paints.
+ *
+ * @internal
  */
 final class AdDetailPage extends DashboardComponent
 {

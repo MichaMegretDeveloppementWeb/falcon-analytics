@@ -10,6 +10,8 @@ use Falcon\Analytics\DTOs\Dashboard\TrendPoint;
 /**
  * Pure calculator that turns the repository's raw daily rows into a zero-filled
  * list of trend points, so the traffic chart draws a continuous line.
+ *
+ * @internal
  */
 final class TrendSeriesCalculator
 {

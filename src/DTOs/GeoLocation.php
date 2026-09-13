@@ -7,6 +7,8 @@ namespace Falcon\Analytics\DTOs;
 /**
  * Locality resolved from an IP. All fields null when geolocation is unavailable
  * (no database configured, private/unknown IP).
+ *
+ * @internal
  */
 final readonly class GeoLocation
 {

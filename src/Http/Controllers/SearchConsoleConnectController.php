@@ -13,6 +13,8 @@ use Illuminate\Support\Str;
  * Starts the Google OAuth flow: stores a random anti-CSRF state in the admin
  * session and sends the browser to Google's consent screen. Inert (redirects
  * back) while the host has not configured the OAuth credentials.
+ *
+ * @internal
  */
 final class SearchConsoleConnectController
 {

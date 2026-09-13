@@ -8,6 +8,8 @@ namespace Falcon\Analytics\Services;
  * Extracts the landing URL's query parameters (bounded), stored verbatim on the
  * session so any marketing (param, value) condition can be matched against them
  * at report time. Definition-free: the campaign/ad rules live in the dashboard.
+ *
+ * @internal
  */
 final readonly class LandingParamsResolver
 {

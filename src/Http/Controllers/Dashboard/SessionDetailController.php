@@ -7,6 +7,7 @@ namespace Falcon\Analytics\Http\Controllers\Dashboard;
 use Falcon\Analytics\Models\Session;
 use Illuminate\Contracts\View\View;
 
+/** @internal */
 final readonly class SessionDetailController
 {
     public function __invoke(Session $session): View

@@ -7,6 +7,7 @@ namespace Falcon\Analytics\DTOs;
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\Enums\EventType;
 
+/** @internal */
 final readonly class IncomingEvent
 {
     /**

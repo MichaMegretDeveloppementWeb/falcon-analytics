@@ -18,6 +18,8 @@ use Illuminate\Support\Facades\DB;
  * Read model for the overview screen: audience mix (new vs returning, devices),
  * the daily traffic trend and the ranked top sources, localities, pages and
  * clicks (each with its previous-period count). Bots excluded.
+ *
+ * @internal
  */
 final readonly class OverviewReadRepository
 {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\DTOs;
 
+/** @internal */
 final readonly class IncomingBatch
 {
     /**

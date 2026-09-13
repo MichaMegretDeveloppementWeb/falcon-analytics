@@ -9,6 +9,8 @@ use Carbon\CarbonImmutable;
 /**
  * One day of the overview trend: the sessions and page views that started that
  * day. Missing days are filled with zeroes so the series is continuous.
+ *
+ * @internal
  */
 final readonly class TrendPoint
 {

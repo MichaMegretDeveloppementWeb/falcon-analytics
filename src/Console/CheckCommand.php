@@ -31,6 +31,8 @@ use Throwable;
  * route behind the wrong middleware, a master switch left off: every one of
  * them leaves working screens showing an empty dashboard, and an empty
  * dashboard reads as « nobody came » rather than « nothing was measured ».
+ *
+ * @internal
  */
 final class CheckCommand extends Command
 {

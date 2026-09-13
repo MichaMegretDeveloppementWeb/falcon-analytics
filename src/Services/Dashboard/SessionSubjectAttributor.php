@@ -18,6 +18,8 @@ use Falcon\Analytics\Models\Visitor;
  * The fallback is withheld for a visitor whose identified sessions point to
  * more than one distinct subject (shared browser, client and lessor accounts
  * side by side): naming its anonymous sessions would be guesswork.
+ *
+ * @internal
  */
 final class SessionSubjectAttributor
 {

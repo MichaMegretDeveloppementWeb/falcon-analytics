@@ -9,6 +9,8 @@ namespace Falcon\Analytics\Support;
  * key count, key length, string value length and total encoded size so a
  * hostile client cannot amplify storage from the public endpoint, and encode to
  * JSON without ever letting a bad value fail the encode. Pure and deterministic.
+ *
+ * @internal
  */
 final class PropsEncoder
 {

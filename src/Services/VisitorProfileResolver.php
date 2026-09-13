@@ -19,6 +19,8 @@ use Falcon\Analytics\Repositories\VisitorWriteRepository;
  * - the browser belongs to someone else (shared device) -> the batch is routed
  *   to the person's own profile, the browser keeps its owner;
  * - first identification ever -> the browser's profile simply becomes theirs.
+ *
+ * @internal
  */
 final readonly class VisitorProfileResolver
 {

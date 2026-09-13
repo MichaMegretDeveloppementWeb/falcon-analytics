@@ -7,6 +7,7 @@ namespace Falcon\Analytics\Repositories;
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\Models\Event;
 
+/** @internal */
 final readonly class EventWriteRepository
 {
     /**

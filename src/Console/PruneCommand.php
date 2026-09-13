@@ -10,6 +10,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
+/** @internal */
 final class PruneCommand extends Command
 {
     protected $signature = 'analytics:prune';

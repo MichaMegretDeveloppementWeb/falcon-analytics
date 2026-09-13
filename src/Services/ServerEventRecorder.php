@@ -21,6 +21,9 @@ use function Illuminate\Support\defer;
  * Records events emitted by application code (server-side), as opposed to those
  * captured in the browser by the collector. Same visitor/session, same storage,
  * same funnels: a code-sent event is just an event whose source is the server.
+ *
+ * @internal what a host calls is `Analytics::record()` · this is what it lands
+ *           on, and its signature is free to move.
  */
 final readonly class ServerEventRecorder
 {

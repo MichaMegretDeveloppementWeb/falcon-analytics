@@ -7,6 +7,8 @@ namespace Falcon\Analytics\DTOs\Dashboard;
 /**
  * A funnel evaluated over a period: its entrants (visitors who completed the
  * first step), the total weighted score, and the per-step results.
+ *
+ * @internal
  */
 final readonly class FunnelReport
 {

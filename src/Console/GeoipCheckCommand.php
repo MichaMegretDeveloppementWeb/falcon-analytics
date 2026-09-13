@@ -14,6 +14,8 @@ use Illuminate\Console\Command;
  * Geolocation degrades to an empty location whatever goes wrong: no database, a truncated one, a
  * private address. All three showed the same blank column, and the only way to tell them apart
  * was to read the source.
+ *
+ * @internal
  */
 final class GeoipCheckCommand extends Command
 {

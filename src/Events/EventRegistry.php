@@ -11,6 +11,9 @@ use Throwable;
  * Holds the tracked events declared by the host's events file. The file is
  * required once (lazily, when the registry is first resolved); TrackedEvent::define
  * registers into the registry that is currently loading. Mirrors FunnelRegistry.
+ *
+ * @internal what a host writes is `TrackedEvent::define()`, in the declaration
+ *           file · this is what gathers them afterwards.
  */
 final class EventRegistry
 {

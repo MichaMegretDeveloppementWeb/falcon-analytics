@@ -17,6 +17,8 @@ use Throwable;
  * The error state no longer carries a layout of its own. The screen is mounted
  * by a controller and a thin view now, so this renders inside them: a failed
  * read costs the panel, not the sidebar, the header and the page title with it.
+ *
+ * @internal
  */
 trait RecoversFromReadFailure
 {

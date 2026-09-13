@@ -7,6 +7,8 @@ namespace Falcon\Analytics\DTOs\Dashboard;
 /**
  * The four headline tiles of the visitors screen, each carrying its delta and
  * sparkline series. Assembled by the VisitorMetricsCalculator.
+ *
+ * @internal
  */
 final readonly class VisitorMetrics
 {

@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Builder;
  * Shared query primitives for the dashboard read models: the non-bot session
  * scope and the driver-aware date/duration SQL, so each finality-specific
  * repository builds on the same trusted base.
+ *
+ * @internal
  */
 trait ScopesSessionQueries
 {

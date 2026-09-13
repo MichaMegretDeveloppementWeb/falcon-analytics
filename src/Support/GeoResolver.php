@@ -9,6 +9,7 @@ use Falcon\Analytics\Enums\GeoStatus;
 use GeoIp2\Database\Reader;
 use Throwable;
 
+/** @internal */
 final class GeoResolver
 {
     private ?Reader $reader = null;

@@ -14,6 +14,8 @@ use Throwable;
  * around the synchronizer, inert without an attached connection so
  * scheduling it unconditionally costs nothing. The integrations screen
  * offers the same sync on demand.
+ *
+ * @internal
  */
 final class SyncSearchConsoleCommand extends Command
 {

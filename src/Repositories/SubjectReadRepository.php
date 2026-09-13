@@ -13,6 +13,8 @@ use Throwable;
  * Eloquent model in this agnostic package. Kept out of SubjectResolver so that
  * service stays pure config resolution and label formatting. Every read degrades to
  * empty on failure, since a broken or absent host schema must never break a read.
+ *
+ * @internal
  */
 final class SubjectReadRepository
 {

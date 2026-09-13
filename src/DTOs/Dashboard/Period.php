@@ -11,6 +11,8 @@ use Carbon\CarbonImmutable;
  * days ending now. Only a fixed set of window sizes is allowed; any other value
  * falls back to the default so the range can never be driven out of bounds by a
  * tampered query string.
+ *
+ * @internal
  */
 final readonly class Period
 {

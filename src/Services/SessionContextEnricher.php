@@ -10,6 +10,7 @@ use Falcon\Analytics\DTOs\RequestSnapshot;
 use Falcon\Analytics\Support\GeoResolver;
 use Falcon\Analytics\Support\UserAgentParser;
 
+/** @internal */
 final readonly class SessionContextEnricher
 {
     public function __construct(

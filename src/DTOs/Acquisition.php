@@ -6,6 +6,8 @@ namespace Falcon\Analytics\DTOs;
 
 /**
  * Resolved acquisition: the classified source plus the raw UTM parameters.
+ *
+ * @internal
  */
 final readonly class Acquisition
 {

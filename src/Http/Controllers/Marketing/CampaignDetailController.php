@@ -10,6 +10,8 @@ use Illuminate\Contracts\View\View;
 /**
  * The title names the campaign, so it is composed here rather than inside the
  * component: the browser tab is decided before the screen renders.
+ *
+ * @internal
  */
 final readonly class CampaignDetailController
 {

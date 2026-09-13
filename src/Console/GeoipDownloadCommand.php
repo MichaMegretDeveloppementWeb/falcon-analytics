@@ -13,6 +13,7 @@ use RecursiveIteratorIterator;
 use RuntimeException;
 use Throwable;
 
+/** @internal */
 final class GeoipDownloadCommand extends Command
 {
     protected $signature = 'analytics:geoip:download';

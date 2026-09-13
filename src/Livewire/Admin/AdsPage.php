@@ -16,6 +16,8 @@ use Livewire\WithPagination;
 /**
  * A flat, searchable table of every ad across all campaigns. Editing an ad and
  * its objectives happens on the parent campaign's detail page.
+ *
+ * @internal
  */
 final class AdsPage extends Component
 {

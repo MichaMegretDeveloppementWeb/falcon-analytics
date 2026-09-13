@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\DB;
  * Create or update an ad together with its conversion objectives. The ad row and the
  * objective rebuild happen in one transaction, so a failure never leaves the ad saved
  * with stale (or missing) objectives.
+ *
+ * @internal
  */
 final readonly class SaveAdAction
 {

@@ -12,6 +12,7 @@ use Falcon\Analytics\Support\UrlRedactor;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
+/** @internal */
 final class IngestBatchRequest extends FormRequest
 {
     /** Oldest event age kept when reconstructing timestamps from client deltas. */

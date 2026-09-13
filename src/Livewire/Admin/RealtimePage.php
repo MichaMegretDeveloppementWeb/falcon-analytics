@@ -26,6 +26,8 @@ use Livewire\Component;
  * realtime shows everything, and realtime IS the period. Each render also
  * dispatches the fresh series to the live charts, which sit under wire:ignore
  * and update in place instead of being destroyed by the morph.
+ *
+ * @internal
  */
 final class RealtimePage extends Component
 {

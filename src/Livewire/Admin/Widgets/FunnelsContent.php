@@ -16,6 +16,8 @@ use Livewire\Component;
  * Deferred funnel reports: every declared funnel evaluated over the period (and the
  * previous one, for per-step deltas). The evaluation is the whole weight of the
  * page, so it loads after the header and filters have painted.
+ *
+ * @internal
  */
 #[Lazy]
 final class FunnelsContent extends Component

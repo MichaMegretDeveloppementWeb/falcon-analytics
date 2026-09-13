@@ -11,6 +11,8 @@ use Falcon\Analytics\DTOs\Dashboard\Period;
  * Pure calculator for the engagement headline shared by the overview and
  * sessions screens: turns the repository's raw counts and daily rows into
  * deltas, ratios and zero-filled sparkline series. Deterministic, no I/O.
+ *
+ * @internal
  */
 final class EngagementMetricsCalculator
 {

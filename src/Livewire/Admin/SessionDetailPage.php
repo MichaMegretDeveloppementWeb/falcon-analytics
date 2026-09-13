@@ -17,6 +17,8 @@ use Livewire\Component;
 /**
  * A single session in detail: its main information and the chronological journey
  * (pages visited, clicks nested under their page, time spent). Read-only.
+ *
+ * @internal
  */
 final class SessionDetailPage extends Component
 {

@@ -9,6 +9,8 @@ use Illuminate\Support\Str;
 /**
  * Human, translated label for a device type, shared by every screen so the same
  * device never reads "Ordinateur" on one and "Desktop" on another.
+ *
+ * @internal
  */
 final class DeviceLabel
 {

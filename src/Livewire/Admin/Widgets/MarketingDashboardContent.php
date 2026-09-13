@@ -20,6 +20,8 @@ use Livewire\Component;
  * Deferred marketing dashboard content: KPIs (with sparklines), the sessions/
  * conversions trend and the per-campaign / top-ad performance. Everything relies on
  * a single conversions() computation, so it lives in one widget to compute it once.
+ *
+ * @internal
  */
 #[Lazy]
 final class MarketingDashboardContent extends Component

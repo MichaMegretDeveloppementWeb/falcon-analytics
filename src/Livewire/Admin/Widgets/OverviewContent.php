@@ -14,6 +14,8 @@ use Livewire\Component;
 /**
  * Deferred content-engagement block: the most viewed pages and the most clicked
  * elements. Loaded once after the page paints.
+ *
+ * @internal
  */
 #[Lazy]
 final class OverviewContent extends Component

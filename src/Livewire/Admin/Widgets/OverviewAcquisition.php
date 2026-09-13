@@ -14,6 +14,8 @@ use Livewire\Component;
 /**
  * Deferred acquisition block: top sources (channels) and top localities, each with
  * their previous-period comparison. Loaded once after the page paints.
+ *
+ * @internal
  */
 #[Lazy]
 final class OverviewAcquisition extends Component

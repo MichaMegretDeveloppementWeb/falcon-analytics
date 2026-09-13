@@ -10,6 +10,8 @@ use Falcon\Analytics\DTOs\Dashboard\Period;
  * Pure marketing metric maths, kept out of the Livewire widgets: the conversion
  * rate and the zero-filled daily trend (sessions, conversions and per-day rate).
  * Mirrors the overview's EngagementMetricsCalculator / TrendSeriesCalculator split.
+ *
+ * @internal
  */
 final class MarketingMetricsCalculator
 {

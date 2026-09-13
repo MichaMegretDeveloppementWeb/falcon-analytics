@@ -11,6 +11,9 @@ use Falcon\Analytics\Models\Event;
  * One step of a funnel: a weighted milestone matched either by a named event,
  * by a pageview route, or by any of several parallel branches. The value is
  * the step's weight.
+ *
+ * @internal a step is built by `Funnel::step()` and never by hand · the fluent
+ *           call hands back the funnel, not the step.
  */
 final readonly class FunnelStep
 {

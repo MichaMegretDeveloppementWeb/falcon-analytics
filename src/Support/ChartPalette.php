@@ -18,6 +18,8 @@ namespace Falcon\Analytics\Support;
  * and three of them had drifted: two steps differed between screens that were
  * meant to look alike. Nobody decided that — a copy aged, and nothing could
  * say so.
+ *
+ * @internal
  */
 final class ChartPalette
 {

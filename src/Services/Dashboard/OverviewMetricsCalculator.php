@@ -9,6 +9,8 @@ use Falcon\Analytics\DTOs\Dashboard\MetricDelta;
 /**
  * Pure calculator for the overview audience metrics derived from the raw
  * new/returning counts. Deterministic, no I/O.
+ *
+ * @internal
  */
 final class OverviewMetricsCalculator
 {

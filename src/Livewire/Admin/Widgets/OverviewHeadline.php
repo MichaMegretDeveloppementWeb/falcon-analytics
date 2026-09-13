@@ -17,6 +17,8 @@ use Livewire\Component;
  * yesterday spotlight) and the engagement statistics, all from a single engagement
  * read. Deferred so the page shell and its heavier sections paint before the
  * sparkline canvases render.
+ *
+ * @internal
  */
 #[Lazy]
 final class OverviewHeadline extends Component

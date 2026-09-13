@@ -10,6 +10,8 @@ use Illuminate\Support\Str;
  * Human, translated label for an acquisition channel, shared by every screen
  * (and by the source Blade component) so the same channel never reads two
  * different ways.
+ *
+ * @internal
  */
 final class SourceLabel
 {

@@ -7,6 +7,8 @@ namespace Falcon\Analytics\DTOs;
 /**
  * Parsed user agent. isBot short-circuits the rest: when true, the device fields
  * are left null because a bot's client/os details are not meaningful.
+ *
+ * @internal
  */
 final readonly class DeviceInfo
 {
