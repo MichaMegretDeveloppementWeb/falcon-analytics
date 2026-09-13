@@ -41,7 +41,7 @@ On ne le répète donc pas, et chaque exception est dite dans sa fiche ·
 | **permissions** | ce que `admin.middleware` contient · `['web', 'auth']` au défaut |
 | **layout** | ce que `admin.layout` nomme · la coquille du paquet au défaut |
 | **mode d'usage** | une page, dans votre layout ou dans notre coquille. **Jamais un composant à poser dans une de vos pages** · un écran attend une page entière autour de lui |
-| **lecture seule** | sauf les quatre écrans marketing et l'effacement RGPD, signalés |
+| **lecture seule** | sauf **trois** écrans marketing et l'effacement RGPD, tous signalés dans leur fiche |
 
 Les écrans marketing prennent `admin.marketing.middleware`, qui peut désigner un
 autre garde.
@@ -76,8 +76,13 @@ graphique par minute, répartitions par appareil et par source, fil d'activité,
 pages consultées, et une **carte du monde en SVG intégré** — aucun serveur de
 tuiles, aucune bibliothèque cartographique, aucune requête sortante.
 
-Elle se rafraîchit par sondage, **suspendu tant que l'onglet est caché**. Aucun
+Elle se rafraîchit par sondage ordinaire de Livewire, **suspendu tant que
+l'onglet est caché, et tant que l'écran est sorti du champ de vision**. Aucun
 service permanent n'est requis · voir `realtime.*` dans la configuration.
+
+> **Un onglet en arrière-plan ne demande rien**, ce qui est le comportement
+> voulu · un écran temps réel laissé ouvert une nuit ne doit pas interroger le
+> serveur huit mille fois pour personne.
 
 La carte a besoin de la [géolocalisation](#la-géolocalisation) pour placer ses
 points ; sans base, les sessions comptent comme non localisées.
@@ -253,10 +258,16 @@ Les deux sont derrière les mêmes protections que les écrans.
 | **route** | `analytics.web.ingest` |
 | **méthode** | `POST` |
 | **adresse** | `{endpoint}` · `/__analytics` |
-| **permissions** | `web.middleware`, puis le contrôle d'origine et la limite de débit, qui ne sont pas réglables |
+| **permissions** | `web.middleware`, puis le contrôle d'origine et la limite de débit, qu'on **ne peut pas retirer** |
 
 C'est là que le collecteur envoie ses lots. **Aucun jeton CSRF**, et il ne peut
-pas y en avoir · une balise d'envoi n'en porte pas.
+pas y en avoir · une balise d'envoi n'en porte pas. Le contrôle d'origine et la
+limite de débit tiennent sa place, et ils sont posés **après** votre pile · vider
+`web.middleware` vous prive de la session, pas d'eux.
+
+**La limite se règle**, elle · `throttle`, 120 requêtes par minute au défaut. Une
+page publique très fréquentée veut la monter. Le contrôle d'origine, lui, n'a
+aucun réglage.
 
 ### Les neuf commandes
 
@@ -271,6 +282,39 @@ pas y en avoir · une balise d'envoi n'en porte pas.
 | `analytics:search-console:sync` | tire les requêtes organiques dans le cache local | **planifiée, chaque jour à 05:00** · inerte sans connexion |
 | `analytics:events:scan` | compare les événements déclarés à ceux employés dans le code · `--fix` ajoute les manquants | quand vous instrumentez |
 | `analytics:events:check` | vérifie que chaque étape de tunnel référence un événement déclaré | quand vous écrivez un tunnel |
+
+### La fusion des identités
+
+**Une personne connue = un profil**, et c'est tenu tout seul, sans écran et sans
+réglage. Vous n'avez rien à faire ; c'est écrit ici parce que ça **change les
+chiffres que vous lisez**, et qu'une variation qu'on ne sait pas expliquer se
+prend pour un défaut.
+
+Quand quelqu'un s'authentifie et qu'un de vos gardes le désigne comme sujet
+suivi, le paquet rassemble ses profils · trois cas, et un seul comportement à
+retenir ·
+
+| Ce qui se passe | Ce que ça donne |
+|---|---|
+| il se connecte pour la première fois depuis ce navigateur, et il n'avait aucun profil | le profil de ce navigateur devient le sien |
+| il avait déjà un profil ailleurs — un autre navigateur, un autre appareil | les deux se replient en un seul, **le plus ancien survit**, et l'autre devient un alias |
+| il se connecte depuis un navigateur qui appartient à quelqu'un d'autre | ses sessions rejoignent **son** profil, et le navigateur garde son propriétaire |
+
+Ce qu'il faut en savoir concrètement ·
+
+- **le profil replié disparaît de l'annuaire**, et ses sessions comme ses
+  événements sont désormais lus sous le profil survivant. Votre nombre de
+  visiteurs **baisse** ce jour-là, sans que rien ait été perdu ;
+- **la première et la dernière visite du survivant s'élargissent** pour couvrir
+  les deux · un visiteur « vu pour la première fois » avant sa propre création ;
+- **l'alias continue de fonctionner** · les envois suivants de ce navigateur
+  arrivent sur le profil survivant, sans nouvelle fusion ;
+- **la séparation des appareils survit** · les sessions gardent leur empreinte
+  de navigateur, donc « deux appareils » reste lisible sous un seul profil.
+
+> **Rien de tout cela ne concerne les visiteurs anonymes.** Deux navigateurs sans
+> personne derrière restent deux visiteurs · le paquet ne rapproche jamais deux
+> profils sur autre chose qu'une authentification de votre application.
 
 ### La planification, et ce qu'elle exige de vous
 
@@ -445,7 +489,9 @@ Console » part vers Google, revient sur la route de rappel, puis demande quelle
 propriété rattacher. La synchronisation est ensuite quotidienne, et
 `analytics:search-console:sync` la déclenche à la main.
 
-**Tant que les identifiants sont vides, la fonction entière reste invisible.**
+**Tant que les identifiants sont vides, la fonction ne se propose pas** · le lien
+disparaît de la barre latérale, l'écran dit ce qui manque si on s'y rend quand
+même, et la connexion refuse en y ramenant.
 
 ---
 
@@ -472,8 +518,10 @@ faire.
 - **L'adresse IP** est stockée entière au défaut, ce qui donne la localité et
   l'historique de connexion. `privacy.anonymize_ip` la tronque.
 - **Les adresses de pages** sont nettoyées de ce qui ressemble à une donnée
-  personnelle — jeton, mot de passe, courriel — avant d'être stockées. Les
-  paramètres de campagne sont gardés. La liste est réglable.
+  personnelle — jeton, mot de passe, courriel — avant d'être stockées. Le
+  paramètre reste, **sa valeur devient `redacted`** · une adresse amputée ne se
+  relirait plus. Les paramètres de campagne sont gardés tels quels, et la liste
+  est réglable.
 - **L'identifiant persistant d'un visiteur** n'existe que si
   `identity.consent_cookie` désigne un cookie et que ce cookie vaut `"1"`. Sinon
   tout reste à la portée de la session.
