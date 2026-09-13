@@ -32,14 +32,14 @@
         visible() {
             return this.mode === 'online' ? this.points.filter(p => p.online > 0) : this.points;
         },
-        {{-- The Miller projection, identical to the generated base map
-             (yTop = miller(85 deg)). --}}
         {{-- The class rather than the colour · these markers are SVG, which a
              stylesheet does reach, unlike a canvas. So nothing is resolved here:
              the rules below hold the two tokens, and a theme switch repaints the
              markers with everything else, without a line of script. --}}
         online() { return 'fa-map-online'; },
         recent() { return 'fa-map-recent'; },
+        {{-- The Miller projection, identical to the generated base map
+             (yTop = miller(85 deg)). --}}
         project(lat, lon) {
             const clamped = Math.max(-60, Math.min(85, lat));
             const x = (lon + 180) * (1000 / 360);

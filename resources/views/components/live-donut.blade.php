@@ -53,7 +53,6 @@
                     },
                 },
             });
-
         },
         refresh(detail) {
             const payload = (Array.isArray(detail) ? detail[0] : detail)?.[@js($channel)];

@@ -97,7 +97,6 @@
                     scales,
                 },
             });
-
         },
         destroy() {
             this.$el._chart?.destroy();

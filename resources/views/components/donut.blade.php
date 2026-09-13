@@ -50,7 +50,6 @@
                     },
                 },
             });
-
         },
         destroy() {
             this.chart?.destroy();
