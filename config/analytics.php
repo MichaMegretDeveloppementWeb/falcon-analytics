@@ -198,6 +198,35 @@ return [
 
     'retention_days' => 90,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Maintenance
+    |--------------------------------------------------------------------------
+    |
+    | Summarising and erasing normally run from the scheduler. On shared hosting
+    | a scheduler stops without a word, and nothing then says so: the erasing
+    | stops with it — nothing is lost, by design — but the summaries fall behind
+    | and no screen complains.
+    |
+    | So opening any analytics screen catches the backlog up a little, after the
+    | response has gone, at most once per interval, under a lock, and bounded to
+    | a few days a visit. It runs the very same two commands the scheduler runs.
+    |
+    | Turn it off once a real scheduler is trusted.
+    |
+    */
+
+    'maintenance' => [
+        'on_screen_load' => true,
+
+        // Never more than once per this many minutes, whoever opens a screen.
+        'interval_minutes' => 60,
+
+        // Days summarised per visit, so a long backlog is caught up over
+        // several of them rather than in one that someone waits for.
+        'days_per_run' => 7,
+    ],
+
     'session' => [
         // A session is considered ended after this much inactivity. The stored
         // ended_at is last_activity_at + timeout_minutes, never the sweep time.

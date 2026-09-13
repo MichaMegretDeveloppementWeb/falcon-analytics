@@ -4,12 +4,7 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Console;
 
-use Carbon\CarbonImmutable;
-use Falcon\Analytics\Funnels\FunnelRegistry;
-use Falcon\Analytics\Models\DailyArchive;
-use Falcon\Analytics\Models\Event;
-use Falcon\Analytics\Repositories\EventWriteRepository;
-use Falcon\Analytics\Services\DailyCountArchiver;
+use Falcon\Analytics\Services\Maintenance;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -26,6 +21,9 @@ use Throwable;
  * what makes a dead scheduler harmless rather than lossy: no summary, no
  * erasing, and the backlog waits.
  *
+ * The deciding lives in `Maintenance`, which the catch-up on a screen load runs
+ * as well · one decision, two ways of reporting it.
+ *
  * @internal
  */
 final class PruneCommand extends Command
@@ -34,87 +32,10 @@ final class PruneCommand extends Command
 
     protected $description = 'Efface les pages vues et clics anonymes au-delà de la conservation, une fois le jour résumé.';
 
-    public function handle(
-        EventWriteRepository $events,
-        DailyCountArchiver $archiver,
-        FunnelRegistry $funnels,
-    ): int {
-        $days = config('analytics.retention_days');
-
-        if ($days === null) {
-            $this->components->info('Aucune conservation réglée : rien n’est jamais effacé.');
-
-            return self::SUCCESS;
-        }
-
-        if (! is_int($days) || $days < 1) {
-            $this->components->error(
-                'analytics.retention_days doit être un nombre de jours d’au moins 1, ou null pour ne jamais effacer. '
-                ."Valeur lue : {$this->describe($days)}."
-            );
-
-            return self::FAILURE;
-        }
-
-        $cutoff = CarbonImmutable::now()->subDays($days)->startOfDay();
-
-        /*
-         * The last day that would be erased. Erasing runs up to the cutoff, so
-         * the day before it is the newest one at stake; if that one has not
-         * been summarised, neither have the older ones — the archiving only
-         * ever moves forward.
-         */
-        $lastAtStake = $cutoff->subDay();
-
-        /*
-         * Every read is inside the guard, and that is deliberate: a database
-         * that answers none of them is a failure to report, not an exception to
-         * let out. The two questions before the erasing are reads like any
-         * other, and leaving them outside would turn a missing table into a
-         * stack trace where the rest of the command gives a sentence.
-         */
+    public function handle(Maintenance $maintenance): int
+    {
         try {
-            /*
-             * Nothing that old exists, so there is nothing to erase and nothing
-             * to complain about. Asked first because a site younger than its
-             * own retention would otherwise be told every night that a day it
-             * never had has not been summarised.
-             */
-            if (! Event::query()->where('occurred_at', '<', $cutoff)->exists()) {
-                $this->components->info("Rien de plus vieux que {$days} jours : rien à effacer.");
-
-                return self::SUCCESS;
-            }
-
-            if (! $archiver->isArchived($lastAtStake)) {
-                $this->components->warn(sprintf(
-                    'Le %s n’est pas encore résumé : rien n’a été effacé. Lancez analytics:archive d’abord.',
-                    $lastAtStake->toDateString(),
-                ));
-
-                return self::SUCCESS;
-            }
-
-            $deleted = $events->pruneAnonymousOlderThan($cutoff, $this->routesFunnelsNeed($funnels));
-
-            /*
-             * The days whose detail has just gone, said out loud.
-             *
-             * **This is what the reading splits on.** Up to here the two blocks
-             * that count anonymous rows read the summaries; after it they read
-             * the rows. Marking the days rather than letting the reading work
-             * the line out from the retention is what keeps the two from
-             * parting company — a retention shortened yesterday moves a line
-             * that erasing has not crossed yet, and a scheduler that stopped
-             * for a month leaves days past the retention still intact.
-             *
-             * Every day marked here was summarised first: the guard above
-             * refuses otherwise, and the archiving only ever moves forward.
-             */
-            DailyArchive::query()
-                ->where('day', '<', $cutoff->toDateString())
-                ->whereNull('pruned_at')
-                ->update(['pruned_at' => CarbonImmutable::now()->toDateTimeString()]);
+            $outcome = $maintenance->prune();
         } catch (Throwable $e) {
             Log::channel(config('analytics.log_channel'))->error('Analytics prune failed.', ['exception' => $e]);
             $this->components->error('L’effacement a échoué ; voyez le canal de journal de l’analytique.');
@@ -122,39 +43,20 @@ final class PruneCommand extends Command
             return self::FAILURE;
         }
 
-        $this->components->info(
-            "{$deleted} page(s) vue(s) et clic(s) anonymes de plus de {$days} jours effacé(s). "
-            .'Les événements nommés sont gardés.'
-        );
+        if ($outcome->refused) {
+            $this->components->error($outcome->said);
 
-        return self::SUCCESS;
-    }
-
-    /**
-     * The routes a declared funnel steps through, which therefore survive.
-     *
-     * **Read at each run, not stored** · a funnel declared today protects its
-     * routes from tomorrow's erasing, and one removed stops protecting them.
-     * Neither can reach back over what is already gone, and that limit belongs
-     * to the documentation rather than to a workaround here.
-     *
-     * @return list<string>
-     */
-    private function routesFunnelsNeed(FunnelRegistry $funnels): array
-    {
-        $routes = [];
-
-        foreach ($funnels->all() as $funnel) {
-            foreach ($funnel->steps() as $step) {
-                $routes = [...$routes, ...$step->routeNames()];
-            }
+            return self::FAILURE;
         }
 
-        return array_values(array_unique($routes));
-    }
+        if ($outcome->erased === 0) {
+            $this->components->warn($outcome->said);
 
-    private function describe(mixed $value): string
-    {
-        return is_scalar($value) ? var_export($value, true) : get_debug_type($value);
+            return self::SUCCESS;
+        }
+
+        $this->components->info($outcome->said);
+
+        return self::SUCCESS;
     }
 }

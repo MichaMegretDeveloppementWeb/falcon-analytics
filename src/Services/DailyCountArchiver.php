@@ -232,7 +232,7 @@ final readonly class DailyCountArchiver
         $prepared = array_map(fn (array $row): array => [
             'day' => $day->toDateString(),
             'kind' => $kind,
-            'label_hash' => DailyCount::hash($row['label']),
+            'signature' => DailyCount::signature($kind, $row['label'], $row['route'], $row['subject_type']),
             'label' => $row['label'],
             'route' => $row['route'],
             'subject_type' => $row['subject_type'],

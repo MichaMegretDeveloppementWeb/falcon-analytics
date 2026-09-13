@@ -37,7 +37,22 @@ return new class extends Migration
             // would otherwise force a migration on a column that means nothing.
             $table->string('kind', 16);
 
-            $table->char('label_hash', 64);
+            /*
+             * The whole identity of a row, as one hash · kind, label, route
+             * and subject together.
+             *
+             * **One hashed column rather than the four real ones**, and it is
+             * not a nicety. An index over the four runs to some 1 200 bytes,
+             * which InnoDB accepts and **MyISAM refuses at 1 000** — measured
+             * on a local MySQL still defaulting to MyISAM, where the migration
+             * stopped dead. A host is free to run whichever engine it likes,
+             * and a package that only migrates on one of them is a package
+             * that fails on somebody's afternoon.
+             *
+             * Day plus this is 259 bytes, which every engine takes.
+             */
+            $table->char('signature', 64);
+
             $table->text('label');
 
             // Where a click sits. Null for a page, and for a click whose page
@@ -48,15 +63,13 @@ return new class extends Migration
             $table->unsignedInteger('total')->default(0);
 
             /*
-             * MySQL treats NULLs as distinct in a unique index, so two rows
-             * with a null route or a null subject could coexist. The archiving
-             * writes a day wholesale — it deletes the day then inserts it — so
-             * the index is here to catch a mistake, never to arbitrate one.
+             * The hash carries the nulls too, so unlike an index over the raw
+             * columns this one does not let two rows with a null route sit side
+             * by side — MySQL counting NULLs as distinct. The archiving writes
+             * a day wholesale anyway, deleting it then inserting it, so the
+             * index is here to catch a mistake rather than to arbitrate one.
              */
-            $table->unique(
-                ['day', 'kind', 'label_hash', 'route', 'subject_type'],
-                'fa_daily_counts_unique'
-            );
+            $table->unique(['day', 'signature'], 'fa_daily_counts_unique');
 
             // The reading always starts from a date range and a kind.
             $table->index(['kind', 'day'], 'fa_daily_counts_kind_day_idx');

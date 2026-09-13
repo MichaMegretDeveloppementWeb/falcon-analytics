@@ -18,6 +18,7 @@ use Falcon\Analytics\Http\Controllers\Marketing\CampaignsController;
 use Falcon\Analytics\Http\Controllers\Marketing\MarketingDashboardController;
 use Falcon\Analytics\Http\Controllers\SearchConsoleCallbackController;
 use Falcon\Analytics\Http\Controllers\SearchConsoleConnectController;
+use Falcon\Analytics\Http\Middleware\CatchesUpTheMaintenance;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 
@@ -32,6 +33,13 @@ use Illuminate\Support\Facades\Route;
  *
  * The middleware must carry a session stack ('web', typically): package routes
  * are registered outside the host's own route groups, so they inherit nothing.
+ *
+ * **The package appends one of its own after the host's list**, which catches
+ * the maintenance up when a scheduler has stopped. It is appended rather than
+ * configured for the same reason the origin check is appended to the collection
+ * endpoint: what the package depends on to do its job is not something a host
+ * takes away by emptying a setting. Turning it off is a setting of its own,
+ * `maintenance.on_screen_load`.
  */
 
 $admin = config('analytics.admin');
@@ -44,7 +52,7 @@ if (($admin['middleware'] ?? null) === []) {
 }
 
 Route::prefix((string) ($admin['route_prefix'] ?? 'admin/analytics'))
-    ->middleware($admin['middleware'] ?? ['web', 'auth'])
+    ->middleware([...((array) ($admin['middleware'] ?? ['web', 'auth'])), CatchesUpTheMaintenance::class])
     ->name('analytics.admin.')
     ->group(function (): void {
         Route::get('/', OverviewController::class)->name('overview');
@@ -73,7 +81,7 @@ if (($marketing['middleware'] ?? null) === []) {
 }
 
 Route::prefix((string) ($marketing['route_prefix'] ?? 'admin/marketing'))
-    ->middleware($marketing['middleware'] ?? ['web', 'auth'])
+    ->middleware([...((array) ($marketing['middleware'] ?? ['web', 'auth'])), CatchesUpTheMaintenance::class])
     ->name('analytics.admin.marketing.')
     ->group(function (): void {
         Route::get('/', MarketingDashboardController::class)->name('dashboard');

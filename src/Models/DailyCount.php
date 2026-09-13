@@ -19,7 +19,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $id
  * @property CarbonImmutable $day
  * @property string $kind
- * @property string $label_hash
+ * @property string $signature
  * @property string $label
  * @property string|null $route
  * @property string|null $subject_type
@@ -41,18 +41,23 @@ final class DailyCount extends Model
     protected $dateFormat = 'Y-m-d';
 
     /** @var list<string> */
-    protected $fillable = ['day', 'kind', 'label_hash', 'label', 'route', 'subject_type', 'total'];
+    protected $fillable = ['day', 'kind', 'signature', 'label', 'route', 'subject_type', 'total'];
 
     /**
-     * The key a label is indexed under.
+     * What identifies a row inside its day, as one indexable value.
      *
      * **Not a cryptographic need, a length one** · a page address runs to 2048
-     * characters and an index holds far less, so the index carries this and the
-     * column carries the address, readable.
+     * characters, and an index over the four real columns comes to some 1 200
+     * bytes — which MyISAM refuses. This is 64, the columns stay readable, and
+     * every engine takes it.
+     *
+     * The separator is a line feed, which none of the four can hold · one they
+     * could carry would let two different rows fold onto one signature, and the
+     * unique index would then reject a row that was never a duplicate.
      */
-    public static function hash(string $label): string
+    public static function signature(string $kind, string $label, ?string $route, ?string $subjectType): string
     {
-        return hash('sha256', $label);
+        return hash('sha256', implode("\n", [$kind, $label, $route ?? '', $subjectType ?? '']));
     }
 
     /** @return array<string, string> */

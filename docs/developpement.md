@@ -275,7 +275,33 @@ le collecteur arrive dans la page, et le responsive.
 
 ---
 
-## Trois pièges d'outillage à connaître
+## Faire tourner le paquet dans une vraie application
+
+```bash
+vendor/bin/testbench schedule:list
+vendor/bin/testbench analytics:archive
+```
+
+La suite d'essais force InnoDB, une base jetable et une horloge figée.
+**Certaines choses ne se voient que sans ce confort** · une migration refusée
+par le moteur par défaut de la machine, une commande qui suppose une
+configuration que seul le banc fournit, le planificateur tel qu'un intégrateur
+le voit.
+
+Le 2026-09-13, c'est comme ça qu'on a découvert qu'un index unique de cinq
+colonnes dépassait la limite de MyISAM · la suite d'essais ne pouvait pas le
+voir, puisqu'elle demande InnoDB.
+
+La base vient de l'environnement · exportez `DB_*` avant d'appeler, ou laissez
+SQLite en mémoire pour ce qui n'a pas besoin de persister.
+
+> **Attention · ça dépose un fichier d'environnement dans le squelette du banc**,
+> et ce fichier s'applique ensuite à toute la suite. Voir le troisième piège
+> ci-dessous.
+
+---
+
+## Quatre pièges d'outillage à connaître
 
 **Après avoir changé la forme d'appel d'un composant, videz les vues
 compilées.** Elles pointent sur l'ancien nom, et les essais rapportent un
@@ -291,6 +317,24 @@ ne le transpile, et il emploie quatre fois `x != null` — le test délibéré d
 La configuration exempte ce fichier de deux règles, avec la raison écrite ·
 **c'est le bloc à changer le jour où l'on décide quels navigateurs ce collecteur
 doit atteindre**, et non avant.
+
+**`vendor/bin/testbench` dépose un `.env` dans le squelette du banc, et ce
+fichier casse la suite.** Il porte `SESSION_DRIVER=cookie` là où la
+configuration du banc vaut `array`, et **il s'applique à tous les essais** ·
+`withSession()` hors d'une requête ne peut alors plus écrire, et des essais qui
+n'ont rien à voir tombent sur *« Attempt to read property "cookies" on null »*.
+
+Il est sous `vendor/`, donc **un `git stash` ne l'emporte pas** · c'est ce qui
+fait croire, de façon très convaincante, à un défaut du code. Une après-midi
+perdue le 2026-09-13, et le candidat le plus sérieux à l'échec intermittent que
+cette suite montrait depuis des semaines.
+
+```bash
+rm vendor/orchestra/testbench-core/laravel/.env
+```
+
+`TheBenchIsNotPolluted` le dit maintenant par son nom, avec le remède dans son
+message · une panne de toute la suite devient un essai nommé.
 
 **Une vue publiée par l'hôte n'est lue que si son dossier existait au
 démarrage.** `loadViewsFrom` regarde une fois, au moment où le fournisseur
