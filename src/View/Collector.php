@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Throwable;
 
-/** @internal what a host writes is the `@analytics` directive. */
+/** @internal what a host writes is the `@analyticsCollector` directive. */
 final class Collector
 {
     /**

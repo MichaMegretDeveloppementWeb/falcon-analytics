@@ -15,7 +15,10 @@ use Throwable;
  * driven entirely by config so the package stays host-agnostic. Names are read
  * from the guard's own model at render time and are never stored.
  *
- * @internal what a host writes is `Analytics::resolveSubjectUsing()`.
+ * @internal it serves the screens, and a host reaches it through its
+ *           configuration, never by its name. Not to be confused with
+ *           `Analytics::resolveSubjectUsing()`, which says WHO is being
+ *           tracked · this one only puts a readable name on the answer.
  */
 final class SubjectResolver
 {
