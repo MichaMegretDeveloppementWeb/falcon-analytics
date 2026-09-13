@@ -373,9 +373,10 @@ propre habillage ; dans ce cas, ajoutez vous-même les liens à votre navigation
 ```
 
 Un gabarit d'hôte doit charger ses propres points d'entrée Vite (ceux dans
-lesquels `analytics:install` a écrit), porter `{{ falcon_theme_class() }}` sur
-`<html>` pour le thème sombre, et rendre la section nommée par `layout_section`
-(`@yield('content')` avec la valeur par défaut).
+lesquels `analytics:install` a écrit), écrire `{{ falcon_theme_class() }}`
+**dans l'attribut `class`** de l'élément qui contient nos écrans — `<html>` ou
+n'importe quel conteneur au-dessus d'eux — et rendre la section nommée par
+`layout_section` (`@yield('content')` avec la valeur par défaut).
 
 ### 4. Styles (sources Tailwind)
 
