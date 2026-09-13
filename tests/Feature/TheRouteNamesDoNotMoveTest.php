@@ -61,6 +61,39 @@ final class TheRouteNamesDoNotMoveTest extends TestCase
     }
 
     /**
+     * The four detail screens, which take a parameter.
+     *
+     * **They are the ones a host is most likely to write down**, because a list
+     * of its own linking to one of our details is the ordinary way in — and
+     * they were the four this file did not hold. Added on 2026-09-13, while
+     * comparing what the documentation promises to what is actually guarded:
+     * `docs/fonctionnalites.md` names all seventeen routes, and twelve were
+     * kept from moving.
+     *
+     * The parameter name is part of the promise too · `route($name, ['visitor'
+     * => …])` is what a caller writes, so renaming `{visitor}` to `{id}` breaks
+     * them exactly as renaming the route would.
+     *
+     * @return array<string, array{0: string, 1: string, 2: string}>
+     */
+    public static function detailScreens(): array
+    {
+        return [
+            'a visitor' => ['analytics.admin.visitors.show', 'visitor', '/admin/analytics/visitors/7'],
+            'a session' => ['analytics.admin.sessions.show', 'session', '/admin/analytics/sessions/7'],
+            'a campaign' => ['analytics.admin.marketing.campaigns.show', 'campaign', '/admin/marketing/campaigns/7'],
+            'an ad' => ['analytics.admin.marketing.ads.show', 'ad', '/admin/marketing/ads/7'],
+        ];
+    }
+
+    #[DataProvider('detailScreens')]
+    public function test_it_names_every_detail_screen_and_its_parameter(string $name, string $parameter, string $address): void
+    {
+        $this->assertTrue(Route::has($name), "The route {$name} is not registered.");
+        $this->assertSame($address, route($name, [$parameter => 7], absolute: false));
+    }
+
+    /**
      * The public area holds one route, and the collector is its only caller.
      * Its name carries the area too, so that nothing has to know whether it was
      * declared beside the screens or apart from them.

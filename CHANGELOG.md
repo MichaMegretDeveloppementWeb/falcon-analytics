@@ -37,8 +37,8 @@ architecture qui n'existe plus.
 - **neuf commandes** · installation, diagnostic, deux pour les événements, deux
   pour la géolocalisation, une pour la Search Console, et deux d'entretien
   qu'un ordonnanceur déclenche seul ;
-- **quarante-cinq réglages**, tous facultatifs · le paquet fonctionne sans
-  qu'on en touche un seul ;
+- **trente-six réglages**, tous facultatifs · le paquet fonctionne sans qu'on en
+  touche un seul, et un essai le tient ;
 - **des fichiers déjà compilés** · aucun Node n'est requis chez l'hôte.
 
 ### Ce que l'intégrateur a à faire

@@ -61,7 +61,7 @@ dix contrôles sur des défauts qui échouent tous en silence.
 | | |
 |---|---|
 | **[installation.md](docs/installation.md)** | l'installation, le montage des écrans, le déploiement |
-| **[configuration.md](docs/configuration.md)** | **les 45 réglages**, un tableau par bloc · la seule autorité |
+| **[configuration.md](docs/configuration.md)** | **les 36 réglages**, un tableau par bloc · la seule autorité |
 | **[fonctionnalites.md](docs/fonctionnalites.md)** | une fiche par écran, les neuf commandes, l'instrumentation, les tunnels, le marketing, la vie privée |
 | **[mise-a-jour.md](docs/mise-a-jour.md)** | monter de version, le contrat public, revenir en arrière |
 | **[developpement.md](docs/developpement.md)** | travailler sur le paquet |
@@ -126,9 +126,9 @@ marquer comme conversions et de les enchaîner en tunnels. Le détail est dans
   pour un navigateur inconnu, en revanche, compte comme une visite ordinaire.
 - **La géolocalisation demande une clé MaxMind**, gratuite mais à demander, et
   une base à télécharger. Sans elle, les localités restent vides.
-- **Search Console demande un client OAuth Google.** Sans lui, toute
-  l'intégration reste cachée, ce qui est le bon comportement mais reste une
-  fonction en moins.
+- **Search Console demande un client OAuth Google.** Sans lui, la fonction ne se
+  propose pas · le lien disparaît du menu et la connexion refuse. C'est le bon
+  comportement, mais ça reste une fonction en moins.
 - **L'attribution publicitaire se fait au rapport**, sur les paramètres d'URL
   capturés à l'arrivée. Une campagne créée après coup retrouve ses sessions ·
   une session sans paramètre reconnaissable ne s'attribue à personne.

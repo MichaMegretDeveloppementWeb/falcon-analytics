@@ -3,9 +3,13 @@
 **Cette page fait autorité.** Le `README.md` montre le minimum pour démarrer ;
 tout ce qui est réglable est ici, et rien n'est ici qui ne soit réglable.
 
-Quarante-cinq clés, en dix-sept blocs. Le paquet **fonctionne sans en toucher
-une seule** · les valeurs ci-dessous sont celles qui s'appliquent tant que vous
-ne dites rien.
+Trente-six clés, en douze blocs. Le paquet **fonctionne sans en toucher une
+seule** · les valeurs ci-dessous sont celles qui s'appliquent tant que vous ne
+dites rien, et un essai le tient.
+
+> **Trente-six réglages, et non quarante-cinq.** Le fichier porte neuf noms de
+> plus — `identity`, `admin`, `geoip`… — mais ce sont des groupes, pas des
+> valeurs · on ne règle pas `identity`, on règle ce qu'il contient.
 
 ---
 
@@ -185,8 +189,9 @@ un administrateur en lecture seule.
 | `search_console.client_secret` | chaîne | `''` · **secret** · `ANALYTICS_GSC_CLIENT_SECRET` | Son secret. |
 | `search_console.redirect` | URL absolue ou `null` | `null` · `ANALYTICS_GSC_REDIRECT` | L'adresse de retour déclarée sur le client OAuth. **Sans valeur**, la route de rappel du paquet · `{admin.route_prefix}/integrations/search-console/callback`. |
 
-> **Tant que les deux premières sont vides, la fonction entière reste
-> invisible.** L'écran d'intégrations le dit, et la page de connexion refuse. Ce
+> **Tant que les deux premières sont vides, la fonction ne se propose pas.** Le
+> lien disparaît de la barre latérale, l'écran d'intégrations dit ce qui manque
+> si on s'y rend quand même, et la connexion refuse en ramenant à cet écran. Ce
 > n'est pas une panne, c'est l'état par défaut · rien à faire si vous ne voulez
 > pas de cette fonction.
 
