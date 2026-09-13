@@ -143,6 +143,49 @@ final class MarketingReportBuilderTest extends TestCase
         $this->assertSame(1, $result['objectives'][$ad->id]['Lead']);
     }
 
+    /**
+     * A visitor driven by two ads credits both, and this is not first-touch.
+     *
+     * **The documentation claimed first-touch until 2026-09-13**, which is the
+     * opposite of what happens: the attribution phase collects the SET of ads a
+     * visitor arrived through in the period, and the conversion is credited to
+     * every one of them. So the per-ad conversions can add up to more than the
+     * total, and that is coherent rather than a double count — the total counts
+     * distinct converting visitors.
+     *
+     * Written the day the claim was corrected, so that whichever of the two
+     * rules is wanted has to be chosen out loud rather than drifted into.
+     */
+    public function test_a_visitor_driven_by_two_ads_credits_both_and_counts_once_in_the_total(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-06-15 12:00:00'));
+
+        $campaign = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'a']]]);
+
+        $first = Ad::create(['campaign_id' => $campaign->id, 'name' => 'Première', 'match_conditions' => [['param' => 'src', 'value' => 'a']]]);
+        $second = Ad::create(['campaign_id' => $campaign->id, 'name' => 'Seconde', 'match_conditions' => [['param' => 'src', 'value' => 'b']]]);
+
+        foreach ([$first, $second] as $ad) {
+            AdObjective::create(['ad_id' => $ad->id, 'type' => 'event', 'reference' => 'Lead']);
+        }
+
+        // One person, two arrivals, two different ads — then one conversion.
+        $visitor = $this->newVisitor();
+        $this->taggedSession(['src' => 'a'], $visitor);
+        $session = $this->taggedSession(['src' => 'b'], $visitor);
+
+        Event::create(['session_id' => $session->id, 'visitor_id' => $visitor->id, 'type' => 'custom', 'name' => 'Lead', 'occurred_at' => now()]);
+
+        $result = (new MarketingReportBuilder)->conversions(Period::ofDays(30), null, app(FunnelRegistry::class));
+
+        // Read through a default rather than by key: crediting only one ad is
+        // exactly what a slide back to first-touch looks like, and an undefined
+        // key would report it as a missing index instead of as a rule change.
+        $this->assertSame(1, $result['ads'][$first->id] ?? 0, 'The first ad is credited.');
+        $this->assertSame(1, $result['ads'][$second->id] ?? 0, 'And so is the second: attribution is not first-touch.');
+        $this->assertSame(1, $result['total'], 'One person converted once, whatever the ads say.');
+    }
+
     public function test_it_credits_a_funnel_objective_and_reports_per_step_reach(): void
     {
         config(['analytics.funnels_path' => __DIR__.'/../Fixtures/analytics-funnels.php']);

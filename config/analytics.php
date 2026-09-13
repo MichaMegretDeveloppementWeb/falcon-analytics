@@ -157,8 +157,11 @@ return [
     | they inherit nothing and the stack has to be complete.
     |
     | There is no CSRF here, and there cannot be: a beacon carries no token.
-    | The origin check and the rate limit hold that role instead, and they are
-    | not configurable — they are appended after this list.
+    | The origin check and the rate limit hold that role instead, and neither
+    | can be REMOVED — they are appended after this list, so emptying it takes
+    | away the session and leaves both of them standing. The rate limit's value
+    | is still yours to set, under `throttle`; it is the origin check that has
+    | no setting at all.
     |
     */
 

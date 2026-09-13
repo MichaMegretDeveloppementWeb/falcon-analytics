@@ -462,15 +462,51 @@ paramètres d'URL que portent les liens.
 
 - **Les campagnes et les publicités se créent dans l'interface.** Chacune porte
   des conditions libres sur les paramètres d'URL — par exemple
-  `utm_source=facebook` et `utm_campaign=summer`. Une session dont les
-  paramètres d'arrivée les satisfont est attribuée à la publicité, **au moment du
-  rapport**.
+  `utm_source=facebook` et `utm_campaign=summer`.
 - **Les objectifs se déclarent par publicité**, en choisissant parmi les
-  événements déclarés. Le module rapporte alors la portée, les conversions et la
-  valeur, par publicité et par campagne.
-- **L'attribution est au premier contact, et rétroactive** · la première session
-  attribuée d'un visiteur marque l'acquisition, et ses conversions ultérieures
-  créditent cette publicité, y compris d'une visite à l'autre.
+  événements déclarés et les tunnels. Le module rapporte alors la portée, les
+  conversions et la valeur, par publicité et par campagne.
+- **Rien n'est stocké sur la session au moment de la visite**, que les paramètres
+  d'URL eux-mêmes. Le rapprochement se refait **à chaque lecture d'écran**, ce qui
+  rend l'attribution **rétroactive** · une campagne définie aujourd'hui retrouve
+  les sessions du mois dernier.
+
+### Les trois règles qui décident à qui va une session
+
+Elles ne se devinent pas, et elles expliquent la plupart des « pourquoi ce
+chiffre » ·
+
+1. **La définition la plus précise gagne.** Si une publicité demande
+   `utm_source=facebook` et une autre `utm_source=facebook` **et**
+   `utm_campaign=summer`, une arrivée portant les deux va à la seconde · c'est le
+   nombre de conditions qui tranche, et à égalité, la première rencontrée.
+2. **Les valeurs sont comparées à l'identique.** Pas de motif, pas de joker, pas
+   de casse ignorée · `Facebook` n'est pas `facebook`. Une condition dont le
+   paramètre est absent de l'arrivée ne correspond pas.
+3. **Une définition sans condition n'attribue jamais rien.** Elle est écartée
+   plutôt que de tout prendre — c'est le comportement voulu, mais une publicité
+   enregistrée sans condition reste à zéro sans qu'aucun écran ne s'en plaigne.
+4. **Seules les définitions actives sont lues.** Une campagne ou une publicité
+   désactivée est écartée du calcul.
+
+> **Désactiver n'archive pas, ça efface des rapports.** Le rapprochement se
+> refaisant à chaque lecture, une publicité désactivée aujourd'hui **disparaît
+> aussi des périodes passées** · ses sessions redeviennent non attribuées, ou
+> partent à la définition la plus précise qui reste. C'est le revers exact de la
+> rétroactivité, et c'est ce qui la rend utile · pour arrêter une campagne sans
+> toucher à son historique, laissez-la active et cessez simplement d'en diffuser
+> les liens.
+
+> **Un visiteur peut être crédité à plusieurs publicités.** S'il est arrivé par
+> l'une puis par l'autre dans la période lue, sa conversion compte pour les deux ·
+> ce n'est **pas** une attribution au premier contact. La somme des conversions
+> par publicité peut donc dépasser le total, et c'est cohérent.
+>
+> Chaque publicité, elle, compte des **visiteurs distincts** · ses conversions ne
+> dépassent jamais sa portée.
+
+> **La lecture se fait dans la période choisie.** Une session hors période
+> n'attribue rien, quelle que soit son ancienneté.
 
 ---
 

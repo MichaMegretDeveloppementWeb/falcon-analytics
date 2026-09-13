@@ -35,8 +35,9 @@ architecture qui n'existe plus.
 - **Google Search Console**, pour les vraies requêtes organiques ;
 - **la géolocalisation locale**, par base MaxMind téléchargée chez vous ;
 - **neuf commandes** · installation, diagnostic, deux pour les événements, deux
-  pour la géolocalisation, une pour la Search Console, et deux d'entretien
-  qu'un ordonnanceur déclenche seul ;
+  pour la géolocalisation, une pour la Search Console et deux d'entretien —
+  **dont quatre que le paquet planifie lui-même**, sans que vous ayez de tâche à
+  créer ;
 - **trente-six réglages**, tous facultatifs · le paquet fonctionne sans qu'on en
   touche un seul, et un essai le tient ;
 - **des fichiers déjà compilés** · aucun Node n'est requis chez l'hôte.

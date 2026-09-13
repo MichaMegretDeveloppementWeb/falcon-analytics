@@ -98,7 +98,7 @@ sujet suivi, les exclusions et le consentement, sans une ligne de code.
 | `identity.subject_guards` | liste de gardes | `['web']` | Les gardes dont l'utilisateur connecté devient le sujet suivi. |
 | `identity.exclude_guards` | liste de gardes | `[]` | Les gardes dont l'utilisateur connecté est **entièrement** exclu du suivi. Vide veut dire « personne ». |
 | `identity.consent_cookie` | nom de cookie ou `null` | `null` | Le cookie dont la valeur `"1"` autorise l'identifiant de visiteur persistant. **Sans valeur**, aucun identifiant ne survit à la session. Le nommer ici suffit · le paquet le sort du chiffrement de Laravel lui-même, sinon il serait relu à `null` et le consentement ne serait jamais vu. |
-| `identity.subjects` | dictionnaire | `[]` | Comment afficher un sujet · un libellé, et les colonnes à concaténer pour son nom. **Vide**, l'écran affiche le nom du garde et l'identifiant. |
+| `identity.subjects` | dictionnaire | `[]` | Comment afficher un sujet · un libellé, et les colonnes à concaténer pour son nom. **Vide**, l'écran affiche le nom du garde mis en forme — `client` devient `Client` — et l'identifiant, faute de savoir quelles colonnes lire. |
 
 Le nom d'un sujet est **lu au moment de l'affichage et jamais stocké**.
 
@@ -166,7 +166,7 @@ groupes de routes · elles n'héritent de rien.
 
 | Clé | Type | Défaut | Ce qu'elle fait |
 |---|---|---|---|
-| `realtime.poll_seconds` | entier | `10` | À quelle fréquence la page se rafraîchit. Suspendu quand l'onglet est caché. |
+| `realtime.poll_seconds` | entier | `10` | À quelle fréquence la page se rafraîchit. **Suspendu quand l'onglet est caché, et quand l'écran est sorti du champ de vision.** |
 | `realtime.online_seconds` | entier | `60` | En deçà de quelle ancienneté d'activité une session compte comme « en ligne ». |
 | `realtime.window_minutes` | entier | `30` | La fenêtre « récent » que lisent tous les blocs de cette page. |
 | `realtime.feed_limit` | entier | `25` | La borne du fil d'activité, pour qu'un rafraîchissement ne grossisse pas avec le trafic. |
