@@ -11,11 +11,22 @@ Une commande, puis trois choses à écrire vous-même. Comptez un quart d'heure.
 | **PHP** | 8.5 ou plus |
 | **Laravel** | 13 |
 | **Livewire** | 4.2 ou plus · dépendance partagée, jamais embarquée |
-| **Une base** | MySQL, MariaDB ou PostgreSQL · le paquet crée dix tables préfixées `falcon_analytics_`, dont huit portent vos mesures |
+| **Une base** | **MySQL ou MariaDB**, et rien d'autre · le paquet crée dix tables préfixées `falcon_analytics_`, dont huit portent vos mesures |
 | **L'ordonnanceur** | `schedule:run` déclenché chaque minute · sans lui, les sessions ne se ferment pas et les jours clos ne sont plus résumés. **Rien n'est perdu pour autant** · voir plus bas |
 | **Node** | **non** · le paquet livre ses fichiers déjà compilés |
 
 `falcon/ui-kit` vient avec, et vous n'avez pas à l'installer séparément.
+
+> **Sur la base, la liste est courte et elle est ferme.** Les tableaux de bord
+> posent trois expressions SQL que l'ORM ne sait pas écrire — un regroupement au
+> jour, un à la minute, une durée en secondes — et elles sont du dialecte MySQL.
+> MariaDB les écrit à l'identique, donc il suit sans un mot de plus. Rien d'autre
+> n'est soutenu, parce que rien d'autre n'est éprouvé.
+>
+> **Une application Laravel neuve arrive réglée sur SQLite.** C'est le cas le
+> plus fréquent, et `analytics:install` **refuse alors de commencer** plutôt que
+> de vous laisser une installation à demi faite. Réglez `DB_CONNECTION`, puis
+> relancez.
 
 > **Un hôte déjà en Livewire 4 n'a rien à faire.** Un hôte en Livewire 3 obtient
 > un conflit de version franc · montez-le d'abord, rien ne casse en silence.
@@ -260,11 +271,16 @@ donc d'être mis à jour. C'est tout l'intérêt de ne toucher qu'à l'enveloppe
 php artisan analytics:check
 ```
 
-Il rend un tableau de **douze points** et s'arrête en échec s'il en trouve un
-bloquant · les migrations passées, l'interrupteur général, la directive posée
-dans vos vues, le point de collecte joignable, le middleware des écrans, le
-gabarit que vous avez nommé, la feuille publiée à jour, l'identité, la durée de
-conservation, les résumés à jour, le proxy et la géolocalisation.
+Il rend un tableau de **treize points** et s'arrête en échec s'il en trouve un
+bloquant · le moteur de la base, les migrations passées, l'interrupteur général,
+la directive posée dans vos vues, le point de collecte joignable, le middleware
+des écrans, le gabarit que vous avez nommé, la feuille publiée à jour,
+l'identité, la durée de conservation, les résumés à jour, le proxy et la
+géolocalisation.
+
+Le moteur vient en premier, et il est relu à chaque passage · une connexion
+change en cours de vie, quand on déplace une base ou qu'on en pointe une seconde
+ailleurs.
 
 **Lancez-le après chaque déploiement.** Analytics échoue en silence · un
 collecteur jamais rendu, un point de collecte derrière le mauvais middleware ou

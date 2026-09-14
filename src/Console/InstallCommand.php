@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Console;
 
+use Falcon\Analytics\Support\DatabaseEngine;
 use Falcon\Analytics\Support\EnvScaffolder;
 use Illuminate\Console\Command;
 
@@ -76,6 +77,18 @@ final class InstallCommand extends Command
 
     public function handle(): int
     {
+        /*
+         * Before anything is written, and that is the whole point. A refusal
+         * further down would leave a published config, published compiled
+         * files, an environment file written and tables half worth having —
+         * an installation that looks done and is not.
+         */
+        if (! DatabaseEngine::isSupported()) {
+            $this->components->error(DatabaseEngine::refusal());
+
+            return self::FAILURE;
+        }
+
         $this->components->info('Installation de Falcon Analytics.');
 
         $this->installTheKit();

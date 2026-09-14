@@ -157,6 +157,62 @@ final class PackageInstallationTest extends TestCase
     }
 
     /**
+     * L'installation refuse un moteur que le paquet ne promet pas, **et elle
+     * refuse avant d'écrire quoi que ce soit**.
+     *
+     * C'est là tout l'enjeu · un refus plus bas laisserait une configuration
+     * publiée, des fichiers compilés publiés, un `.env` écrit et des tables à
+     * demi utiles — une installation qui a l'air faite et ne l'est pas. L'essai
+     * ne se contente donc pas du code de sortie · il vérifie que rien n'a été
+     * posé dans le dossier de l'hôte.
+     *
+     * Une application Laravel neuve arrive réglée sur SQLite · ce n'est pas un
+     * cas de laboratoire, c'est le premier contact le plus probable.
+     */
+    public function test_the_installer_refuses_an_engine_the_package_does_not_promise(): void
+    {
+        $base = sys_get_temp_dir().DIRECTORY_SEPARATOR.'fa-refus-'.uniqid();
+        File::makeDirectory($base.DIRECTORY_SEPARATOR.'config', 0755, true);
+        File::put($base.DIRECTORY_SEPARATOR.'.env', "APP_NAME=Host\n");
+
+        $this->app->setBasePath($base);
+        $this->app->register(AnalyticsServiceProvider::class, force: true);
+
+        $original = config('database.default');
+
+        try {
+            /*
+             * Une connexion de configuration, sans schéma ni migration · la
+             * garde ne lit que le nom du pilote. La valeur d'origine est remise
+             * dans le `finally` : le banc tient sa transaction sur la connexion
+             * par défaut, et la laisser ailleurs empêcherait son annulation.
+             */
+            config([
+                'database.connections.epreuve_sqlite' => ['driver' => 'sqlite', 'database' => ':memory:'],
+                'database.default' => 'epreuve_sqlite',
+            ]);
+
+            $this->artisan('analytics:install')
+                ->expectsOutputToContain('sqlite')
+                ->assertFailed();
+
+            $this->assertFileDoesNotExist(
+                $base.DIRECTORY_SEPARATOR.'config'.DIRECTORY_SEPARATOR.'analytics.php',
+                'Le refus doit arriver avant la moindre publication.',
+            );
+
+            $this->assertStringNotContainsString(
+                'ANALYTICS_ENABLED',
+                File::get($base.DIRECTORY_SEPARATOR.'.env'),
+                'Le refus doit arriver avant que le fichier d’environnement soit touché.',
+            );
+        } finally {
+            config(['database.default' => $original]);
+            File::deleteDirectory($base);
+        }
+    }
+
+    /**
      * The installer asks for no path at all any more.
      *
      * It used to ask for three, and wrote them into the host's entries: that

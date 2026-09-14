@@ -6,6 +6,7 @@ namespace Falcon\Analytics\Console;
 
 use Falcon\Analytics\Services\DailyCountArchiver;
 use Falcon\Analytics\Services\SubjectResolver;
+use Falcon\Analytics\Support\DatabaseEngine;
 use Falcon\Ui\Assets;
 use Falcon\Ui\Exceptions\UiException;
 use Illuminate\Console\Command;
@@ -75,6 +76,7 @@ final class CheckCommand extends Command
     private function checks(Config $config): array
     {
         return [
+            $this->checkDatabaseEngine(),
             $this->checkMigrations(),
             $this->checkMasterSwitch($config),
             $this->checkCollector(),
@@ -187,6 +189,27 @@ final class CheckCommand extends Command
         }
 
         return ['Feuille publiée', 'OK', 'La copie servie correspond au fichier que le paquet livre.'];
+    }
+
+    /**
+     * First of the thirteen, and before the migrations on purpose: the engine
+     * decides whether they mean anything at all.
+     *
+     * A connection can change after an install — a host moves its database, or
+     * points a second environment somewhere else — so this is checked at every
+     * deployment rather than only once.
+     *
+     * @return array{0: string, 1: string, 2: string}
+     */
+    private function checkDatabaseEngine(): array
+    {
+        $driver = DatabaseEngine::current();
+
+        if (! DatabaseEngine::isSupported($driver)) {
+            return ['Base de données', 'KO', DatabaseEngine::refusal($driver)];
+        }
+
+        return ['Base de données', 'OK', "La connexion est en « {$driver} », que le paquet prend en charge."];
     }
 
     /**

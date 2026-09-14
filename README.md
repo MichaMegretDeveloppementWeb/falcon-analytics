@@ -26,7 +26,9 @@ worker · ça tourne là où Laravel tourne, hébergement mutualisé compris.
 
 ## Ce qu'il vous faut
 
-PHP 8.5, Laravel 13, Livewire 4.2, et une base MySQL, MariaDB ou PostgreSQL.
+PHP 8.5, Laravel 13, Livewire 4.2, et une base **MySQL ou MariaDB** · les
+tableaux de bord posent du SQL propre à ce moteur, et l'installation refuse de
+commencer sur un autre.
 **Node, non.** `falcon/ui-kit` vient avec le paquet.
 
 Il faut aussi que `schedule:run` tourne chaque minute · c'est ce qui ferme les

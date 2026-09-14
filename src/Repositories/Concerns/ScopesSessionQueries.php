@@ -6,13 +6,24 @@ namespace Falcon\Analytics\Repositories\Concerns;
 
 use Falcon\Analytics\DTOs\Dashboard\Period;
 use Falcon\Analytics\Models\Session;
-use Illuminate\Database\Connection;
+use Falcon\Analytics\Support\DatabaseEngine;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
  * Shared query primitives for the dashboard read models: the non-bot session
- * scope and the driver-aware date/duration SQL, so each finality-specific
- * repository builds on the same trusted base.
+ * scope and the three bits of date/duration SQL Eloquent cannot express, so
+ * each finality-specific repository builds on the same trusted base.
+ *
+ * **The SQL below is MySQL's, and only MySQL's.** The package supports MySQL
+ * and MariaDB, which write these three expressions identically — `DATE`,
+ * `DATE_FORMAT` and `TIMESTAMPDIFF` exist in both under the same names, so the
+ * second costs not one line here. {@see DatabaseEngine} holds that list, and
+ * refuses the install on anything else.
+ *
+ * It used to branch on the driver, with arms for PostgreSQL, SQL Server and
+ * SQLite. No test ever ran on any of them — which is exactly what made the
+ * branches worth removing: the code promised four engines, the notice promised
+ * three, and the suite proved one.
  *
  * @internal
  */
@@ -32,57 +43,39 @@ trait ScopesSessionQueries
     }
 
     /**
-     * The active database driver name (mysql / sqlite / pgsql / sqlsrv).
-     */
-    private function driver(): string
-    {
-        /** @var Connection $connection */
-        $connection = Session::query()->getConnection();
-
-        return $connection->getDriverName();
-    }
-
-    /**
-     * Driver-aware SQL truncating a timestamp to a 'YYYY-MM-DD' string so daily
-     * buckets group identically on every database. The column is a trusted
+     * SQL truncating a timestamp to a 'YYYY-MM-DD' string, so daily buckets
+     * group on the day rather than on the instant. The column is a trusted
      * internal constant, never user input.
      *
      * `literal-string` holds that last sentence: a column coming from a request
      * stops compiling rather than reaching `selectRaw()`.
+     *
+     * A method rather than a constant, for the ten call sites that name it: the
+     * name says what the SQL means, which the SQL itself does not.
      *
      * @param  literal-string  $column
      * @return literal-string
      */
     private function dayExpression(string $column): string
     {
-        return match ($this->driver()) {
-            'pgsql' => "to_char({$column}, 'YYYY-MM-DD')",
-            'sqlsrv' => "CONVERT(varchar(10), {$column}, 23)",
-            default => "DATE({$column})",
-        };
+        return "DATE({$column})";
     }
 
     /**
-     * Driver-aware SQL truncating a timestamp to a 'YYYY-MM-DD HH:MM' string so
-     * per-minute buckets group identically on every database. The column is a
-     * trusted internal constant, never user input — see {@see dayExpression()}.
+     * The same, to the minute, for the realtime screen — see
+     * {@see dayExpression()}.
      *
      * @param  literal-string  $column
      * @return literal-string
      */
     private function minuteExpression(string $column): string
     {
-        return match ($this->driver()) {
-            'mysql', 'mariadb' => "DATE_FORMAT({$column}, '%Y-%m-%d %H:%i')",
-            'pgsql' => "to_char({$column}, 'YYYY-MM-DD HH24:MI')",
-            'sqlsrv' => "FORMAT({$column}, 'yyyy-MM-dd HH:mm')",
-            default => "strftime('%Y-%m-%d %H:%M', {$column})",
-        };
+        return "DATE_FORMAT({$column}, '%Y-%m-%d %H:%i')";
     }
 
     /**
-     * Driver-aware SQL for the difference in seconds between two timestamp
-     * columns (both trusted internal constants) — see {@see dayExpression()}.
+     * The difference in seconds between two timestamp columns, both trusted
+     * internal constants — see {@see dayExpression()}.
      *
      * @param  literal-string  $start
      * @param  literal-string  $end
@@ -90,11 +83,6 @@ trait ScopesSessionQueries
      */
     private function durationSecondsExpression(string $start, string $end): string
     {
-        return match ($this->driver()) {
-            'sqlite' => "(strftime('%s', {$end}) - strftime('%s', {$start}))",
-            'pgsql' => "EXTRACT(EPOCH FROM ({$end} - {$start}))",
-            'sqlsrv' => "DATEDIFF(SECOND, {$start}, {$end})",
-            default => "TIMESTAMPDIFF(SECOND, {$start}, {$end})",
-        };
+        return "TIMESTAMPDIFF(SECOND, {$start}, {$end})";
     }
 }

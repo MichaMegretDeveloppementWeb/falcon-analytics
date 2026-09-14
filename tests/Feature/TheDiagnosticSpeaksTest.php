@@ -79,6 +79,53 @@ final class TheDiagnosticSpeaksTest extends TestCase
     }
 
     /**
+     * Le premier des treize points, et il nomme le moteur trouvé.
+     *
+     * Avant les migrations, parce que le moteur décide si elles veulent seulement
+     * dire quelque chose. Et à chaque déploiement plutôt qu'une seule fois : une
+     * connexion change en cours de vie, quand un hôte déplace sa base ou en
+     * pointe une seconde ailleurs.
+     */
+    public function test_it_names_the_database_engine_it_found(): void
+    {
+        $this->artisan('analytics:check')
+            ->expectsOutputToContain('mysql')
+            ->assertSuccessful();
+    }
+
+    /**
+     * Et il **tombe** sur un moteur que le paquet ne promet pas.
+     *
+     * Une connexion de configuration suffit · la garde ne lit que le nom du
+     * pilote, aucun schéma n'est touché. La valeur d'origine est remise dans le
+     * `finally`, sans quoi le banc ne pourrait plus annuler sa transaction.
+     *
+     * **Ce qui est attendu est « MariaDB », et pas « sqlite ».** Une base vide
+     * fait aussi tomber les migrations et les résumés · un essai qui se
+     * contenterait du code de sortie, ou du nom du pilote qui paraît ailleurs,
+     * passerait sans que la ligne du moteur existe. Le mot MariaDB n'est écrit
+     * que dans ce refus-là, et il ne se coupe pas au retour à la ligne du
+     * tableau. Vérifié en neutralisant la garde · l'essai tombe.
+     */
+    public function test_it_falls_on_an_engine_the_package_does_not_promise(): void
+    {
+        $original = config('database.default');
+
+        try {
+            config([
+                'database.connections.epreuve_sqlite' => ['driver' => 'sqlite', 'database' => ':memory:'],
+                'database.default' => 'epreuve_sqlite',
+            ]);
+
+            $this->artisan('analytics:check')
+                ->expectsOutputToContain('MariaDB')
+                ->assertFailed();
+        } finally {
+            config(['database.default' => $original]);
+        }
+    }
+
+    /**
      * **The point that is missing most often**, and the only one whose symptom
      * is strictly invisible: the screens work, the routes answer, the tables
      * exist, and not a single visit arrives.
