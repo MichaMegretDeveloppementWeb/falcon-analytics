@@ -1,0 +1,217 @@
+# The same chain as locally, and it fails on the first red.
+#
+# `composer qa` chains pint --test, phpstan and paratest. What needs node lives
+# in a second job: making them fall together would teach nothing more, and
+# separating them says which one breaks.
+#
+# There is no `phpstan-baseline.neon` in this package, so nothing to stop from
+# growing. The equivalent guard is `reportUnmatchedIgnoredErrors`, on in
+# `phpstan.neon`: an exception that stops matching fails the analysis instead of
+# surviving out of inertia.
+#
+# **Two checkouts, side by side, exactly as on the workbench.** The manifest
+# declares a `path` repository towards `../falcon-ui-kit`, which an ordinary
+# single checkout does not produce. Both jobs need it: the PHP one to resolve
+# the dependency, the node one because the stylesheet reaches into `vendor/`.
+#
+# It is the workshop arrangement, and it has an end date. **At the birth at
+# 1.0.0** the `path` repository goes away, `minimum-stability: dev` with it, and
+# the kit is taken by tag from its own repository: the second checkout then
+# disappears and only `COMPOSER_AUTH` remains.
+
+name: QA
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  # The kit's repository is private, and it is declared twice in the manifest —
+  # once as a `path`, once as a `vcs`. Composer enumerates versions in BOTH, so
+  # it needs credentials even though the local copy is what wins. They come from
+  # the platform's secrets, never from the repository (paquet-cycle §4).
+  #
+  # **And it is the local copy that wins**: at equal versions composer prefers
+  # the repository declared first, and `path` is first. Without that, the
+  # package would test itself against the kit's published v3.0.0 — the old one.
+  COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ secrets.FALCON_KIT_TOKEN }}"}}'
+
+jobs:
+  qa:
+    name: PHP ${{ matrix.php }} · ${{ matrix.resolution }} resolution
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: packages/falcon-analytics
+
+    strategy:
+      # Every combination runs to the end: knowing that the floor breaks and
+      # the current version passes is worth more than learning only that
+      # "something" broke.
+      fail-fast: false
+
+      # **Two resolutions, and that is the point.** A dependency manager takes
+      # the top of the range by default, so without the explicit flag below the
+      # chain would exercise the same thing twice and the announced floor would
+      # never be verified by anyone.
+      #
+      # **The floor has been 8.5 since 2026-09-11**, so both lines carry it: the
+      # host, the kit and falcon/booking all require it, and a suite whose
+      # members announce three different floors keeps no coherent promise. What
+      # is verified here stays the two resolutions, not two versions of PHP.
+      #
+      # **Two deprecation lines are expected on the `lowest` line, and they are
+      # not a fault.** `--prefer-lowest` installs the oldest version each range
+      # still allows, and the chain
+      # `laravel/framework` → `nesbot/carbon 3.8.4` → `symfony/translation v6.4.0`
+      # lands on a file written in November 2023, before PHP asked for an
+      # explicit `?string`. Nothing falls, the 539 tests pass, and the only way
+      # to silence it would be to require a package this one never calls.
+      matrix:
+        include:
+          - php: '8.5'
+            resolution: lowest
+            flags: '--prefer-lowest --prefer-stable'
+          - php: '8.5'
+            resolution: highest
+            flags: ''
+
+    # MySQL, and nothing else. The suite refuses to start without it and falls
+    # back on no other engine: the screens are aggregations, so GROUP BY, date
+    # functions and composite indexes are exactly what has to be exercised.
+    # 8.4 is the long-term release, the one a host runs.
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: falcon_analytics_test
+        ports:
+          # Quoted, because an unquoted `3306:3306` is a sexagesimal integer in
+          # YAML 1.1 and not every parser reads it as a port mapping.
+          - '3306:3306'
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    # Read by `tests/TestCase.php` through `getenv()`. No `.env.test` is written:
+    # that file exists for a workstation, carries a password, and stays out of
+    # the repository — what is already in the environment wins over it.
+    #
+    # Paratest runs four workers, and each creates its own
+    # `falcon_analytics_test_1` … `_4` from this account.
+    env:
+      ANALYTICS_TEST_MYSQL_DATABASE: falcon_analytics_test
+      ANALYTICS_TEST_MYSQL_HOST: 127.0.0.1
+      ANALYTICS_TEST_MYSQL_PORT: '3306'
+      ANALYTICS_TEST_MYSQL_USERNAME: root
+      ANALYTICS_TEST_MYSQL_PASSWORD: root
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: packages/falcon-analytics
+
+      - name: Check the kit out where the manifest expects it
+        uses: actions/checkout@v4
+        with:
+          repository: MichaMegretDeveloppementWeb/falcon-ui-kit
+          path: packages/falcon-ui-kit
+          token: ${{ secrets.FALCON_KIT_TOKEN }}
+
+      - name: Install PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: pdo_mysql
+          coverage: none
+
+      # First, and on its own: a manifest that does not validate resolves by
+      # accident. It says nothing about the code, which is why it costs a second
+      # and runs before anything is downloaded.
+      - name: Validate the manifest
+        run: composer validate --strict
+
+      # `composer update` and not `install`: this is a library, it resolves at
+      # the place that installs it. The committed lock reproduces the author's
+      # test environment, it does not decide this one — and `install` could
+      # produce neither of the two resolutions above.
+      - name: Install the dependencies
+        run: composer update --prefer-dist --no-interaction --no-progress ${{ matrix.flags }}
+
+      # Says which kit was actually taken, in one line of the log. The reasoning
+      # about repository order is written above; this is what shows it held.
+      - name: Which kit was resolved
+        run: composer show falcon/ui-kit | head -n 4
+
+      - name: The qa chain
+        run: composer qa
+
+  front:
+    name: Build and shipped files
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: packages/falcon-analytics
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: packages/falcon-analytics
+
+      - name: Check the kit out where the stylesheet expects it
+        uses: actions/checkout@v4
+        with:
+          repository: MichaMegretDeveloppementWeb/falcon-ui-kit
+          path: packages/falcon-ui-kit
+          token: ${{ secrets.FALCON_KIT_TOKEN }}
+
+      - name: Install PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          coverage: none
+
+      # **The node chain needs `vendor/`**, which the kit's own does not. The
+      # package's stylesheet opens on
+      # `@import '../../vendor/falcon/ui-kit/resources/css/layers.css'`, and the
+      # rebuild below compiles that very file: without the dependency installed,
+      # it falls on an import that leads nowhere.
+      #
+      # `--no-dev` because no test runs in this job. The rule that forbids it
+      # only covers a chain that goes on to run the Testbench suite.
+      - name: Install the kit
+        run: composer install --no-dev --prefer-dist --no-interaction --no-progress
+
+      # Paths are written out in full: `defaults.run.working-directory` applies
+      # to `run` steps only, and an action's inputs resolve from the workspace
+      # root.
+      - name: Install node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: 'packages/falcon-analytics/.nvmrc'
+          cache: npm
+          cache-dependency-path: 'packages/falcon-analytics/package-lock.json'
+
+      # `npm ci` and not `npm install`: the lock is committed, and it is what
+      # produced the shipped files. Resolving otherwise here would take all the
+      # meaning out of the check that follows.
+      - name: Install the build dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Lint
+        run: npm run lint
+
+      # The only check that catches a build which does not produce the same
+      # file twice: the source fingerprint only says that a source changed since
+      # the last build.
+      - name: Reproducibility of the shipped files
+        run: npm run check-assets
