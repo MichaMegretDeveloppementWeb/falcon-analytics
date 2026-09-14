@@ -346,24 +346,31 @@ final readonly class OverviewReadRepository
     }
 
     /**
-     * A click's identity, as one string.
+     * A click's identity, as one string · the route, then the label.
      *
-     * **The separator is a line feed**, which neither a button's visible text
-     * nor a route name can hold · a character either of them could carry would
-     * let two different clicks collide on one key, silently.
+     * **That order is the whole correctness of this pair**, and it is not the
+     * order one writes first. A button's visible text comes from `textContent`,
+     * which keeps the line feeds of the source · a button written across three
+     * lines of HTML carries them into its label. A route name cannot.
+     *
+     * So the field that may hold the separator goes LAST, and the split takes
+     * everything after the first one. Written label-first, « Demander\nun
+     * devis » on the route `accueil` came back as the label « Demander » on the
+     * route « un devis\naccueil » — a wrong label and a wrong page, on a block
+     * nobody would think to doubt.
      */
     private static function clickKey(string $label, ?string $route): string
     {
-        return $label."\n".($route ?? '');
+        return ($route ?? '')."\n".$label;
     }
 
     /** @return array{0: string, 1: string|null} */
     private static function splitClickKey(string $key): array
     {
         $parts = explode("\n", $key, 2);
-        $route = $parts[1] ?? '';
+        $route = $parts[0];
 
-        return [$parts[0], $route === '' ? null : $route];
+        return [$parts[1] ?? '', $route === '' ? null : $route];
     }
 
     /**

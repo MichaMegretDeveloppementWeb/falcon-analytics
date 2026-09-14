@@ -51,13 +51,19 @@ final class DailyCount extends Model
      * bytes — which MyISAM refuses. This is 64, the columns stay readable, and
      * every engine takes it.
      *
-     * The separator is a line feed, which none of the four can hold · one they
-     * could carry would let two different rows fold onto one signature, and the
-     * unique index would then reject a row that was never a duplicate.
+     * **Encoded before hashing, rather than joined by a separator.** A button's
+     * visible text comes from `textContent`, which keeps the line feeds of the
+     * source, so a label CAN carry whatever one would pick as a separator —
+     * and two different rows folding onto one signature would have the unique
+     * index reject a row that was never a duplicate.
+     *
+     * Encoding removes the question instead of arguing about which character is
+     * safe. `JSON_THROW_ON_ERROR` because a signature that silently became
+     * `false` would collapse every row of a day onto one.
      */
     public static function signature(string $kind, string $label, ?string $route, ?string $subjectType): string
     {
-        return hash('sha256', implode("\n", [$kind, $label, $route ?? '', $subjectType ?? '']));
+        return hash('sha256', json_encode([$kind, $label, $route, $subjectType], JSON_THROW_ON_ERROR));
     }
 
     /** @return array<string, string> */

@@ -234,6 +234,54 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
     }
 
     /**
+     * A label that spans lines survives the round trip, both halves of it.
+     *
+     * **This is not a curiosity.** A button written across three lines of HTML
+     * gives a label with line feeds in it · `textContent` keeps them, and only
+     * the outer whitespace is trimmed. Both the summary's signature and the
+     * joining of the two halves had taken a line feed for a separator they
+     * could rely on, and both were wrong.
+     *
+     * Written label-first, the joining answered « Demander » on the route
+     * « un devis\naccueil » — a wrong label on a wrong page, in a block nobody
+     * would think to doubt. Measured 2026-09-14.
+     */
+    public function test_a_label_that_spans_lines_comes_back_whole(): void
+    {
+        $day = CarbonImmutable::parse('2026-06-10');
+        $session = $this->newSession();
+
+        $overTwoLines = "Demander\nun devis";
+
+        $this->click($session, $overTwoLines, null, 'accueil', $day->setTime(9, 0));
+        $this->click($session, $overTwoLines, null, 'accueil', $day->setTime(9, 1));
+
+        // A second click labelled with the first line alone · the two are
+        // different buttons and must stay two rows.
+        $this->click($session, 'Demander', null, 'accueil', $day->setTime(9, 2));
+
+        $this->archiver->archive($day);
+
+        $oneDay = new Period($day->startOfDay(), $day->endOfDay(), 1);
+        $read = $this->overview->topClicks($oneDay, null, 20);
+
+        $byLabel = [];
+        foreach ($read as $row) {
+            $byLabel[$row['label']] = $row;
+        }
+
+        $this->assertArrayHasKey($overTwoLines, $byLabel, 'The label came back cut at its line feed.');
+        $this->assertSame('accueil', $byLabel[$overTwoLines]['route'], 'And its page went with the cut.');
+        $this->assertSame(2, $byLabel[$overTwoLines]['total']);
+
+        // The other button, which the broken split turned into a twin of the
+        // first · same label, and only the route told them apart.
+        $this->assertArrayHasKey('Demander', $byLabel);
+        $this->assertSame('accueil', $byLabel['Demander']['route']);
+        $this->assertSame(1, $byLabel['Demander']['total']);
+    }
+
+    /**
      * Run twice, and nothing doubles.
      *
      * The scheduler, an administrator opening a screen and a hand-run command
