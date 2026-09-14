@@ -18,6 +18,10 @@
 # 1.0.0** the `path` repository goes away, `minimum-stability: dev` with it, and
 # the kit is taken by tag from its own repository: the second checkout then
 # disappears and only `COMPOSER_AUTH` remains.
+#
+# `@v5` on the two `actions/*` below, and not `@v4`: the fourth generation runs
+# on a Node the runners have deprecated, and each job it appears in raises a
+# warning. Measured on run #1, three warnings for three jobs.
 
 name: QA
 
@@ -65,13 +69,18 @@ jobs:
       # members announce three different floors keeps no coherent promise. What
       # is verified here stays the two resolutions, not two versions of PHP.
       #
-      # **Two deprecation lines are expected on the `lowest` line, and they are
-      # not a fault.** `--prefer-lowest` installs the oldest version each range
-      # still allows, and the chain
+      # **The `lowest` line carries a deprecation, and it is not a fault.**
+      # `--prefer-lowest` installs the oldest version each range still allows,
+      # and the chain
       # `laravel/framework` → `nesbot/carbon 3.8.4` → `symfony/translation v6.4.0`
       # lands on a file written in November 2023, before PHP asked for an
       # explicit `?string`. Nothing falls, the 539 tests pass, and the only way
       # to silence it would be to require a package this one never calls.
+      #
+      # It does **not** show in this log: paratest reads its workers through a
+      # protocol and their startup output never reaches here. Run
+      # `vendor/bin/phpunit` on that resolution to see the two lines. Noting it
+      # so nobody concludes from a clean log that the floor is clean.
       matrix:
         include:
           - php: '8.5'
@@ -115,12 +124,12 @@ jobs:
       ANALYTICS_TEST_MYSQL_PASSWORD: root
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           path: packages/falcon-analytics
 
       - name: Check the kit out where the manifest expects it
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: MichaMegretDeveloppementWeb/falcon-ui-kit
           path: packages/falcon-ui-kit
@@ -146,10 +155,12 @@ jobs:
       - name: Install the dependencies
         run: composer update --prefer-dist --no-interaction --no-progress ${{ matrix.flags }}
 
-      # Says which kit was actually taken, in one line of the log. The reasoning
-      # about repository order is written above; this is what shows it held.
+      # Says which kit was actually taken, and **from where**. The version alone
+      # would not settle it: the local copy and the published tag both answer
+      # 3.0.0. `dist` is the line that names the directory, and it is what shows
+      # the repository order held.
       - name: Which kit was resolved
-        run: composer show falcon/ui-kit | head -n 4
+        run: composer show falcon/ui-kit | grep -E '^(name|versions|source|dist)'
 
       - name: The qa chain
         run: composer qa
@@ -163,12 +174,12 @@ jobs:
         working-directory: packages/falcon-analytics
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           path: packages/falcon-analytics
 
       - name: Check the kit out where the stylesheet expects it
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: MichaMegretDeveloppementWeb/falcon-ui-kit
           path: packages/falcon-ui-kit
@@ -195,7 +206,7 @@ jobs:
       # to `run` steps only, and an action's inputs resolve from the workspace
       # root.
       - name: Install node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version-file: 'packages/falcon-analytics/.nvmrc'
           cache: npm
