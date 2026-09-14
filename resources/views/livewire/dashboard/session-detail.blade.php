@@ -181,13 +181,13 @@
                     <x-ui::empty-state
                         icon="archive-box"
                         :title="__('Détail effacé')"
-                        :description="__('Le pas à pas de cette session a été effacé, sa journée étant sortie de la durée de conservation. Les chiffres ci-dessus et les événements nommés, eux, sont gardés.')" />
+                        :description="__('Le pas à pas de cette session a été effacé, sa journée étant sortie de la durée de conservation. Les chiffres ci-dessus, eux, restent ceux de la visite.')" />
                 @elseif (empty($journey))
                     <x-ui::empty-state icon="signal" :title="__('Aucun évènement')" :description="__('Cette session n\'a enregistré aucun évènement.')" />
                 @else
                     @if ($detailErased)
                         <x-ui::alert type="info" class="an:mb-5">
-                            {{ __('Les pages vues et les clics de cette session ont été effacés, sa journée étant sortie de la durée de conservation. Ce qui reste ci-dessous porte un nom, et est gardé indéfiniment.') }}
+                            {{ __('Une partie du pas à pas a été effacée : la journée de cette session est sortie de la durée de conservation, et les pages vues et les clics qui ne portent pas de nom y sont effacés. Les chiffres ci-dessus, eux, restent ceux de la visite entière.') }}
                         </x-ui::alert>
                     @endif
                     <ol class="an:relative">

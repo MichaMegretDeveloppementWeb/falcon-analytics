@@ -4,14 +4,16 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Livewire\Admin;
 
+use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Livewire\Admin\Concerns\RecoversFromReadFailure;
-use Falcon\Analytics\Models\DailyArchive;
+use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Services\Dashboard\SessionJourneyBuilder;
 use Falcon\Analytics\Services\Dashboard\SessionSubjectAttributor;
 use Falcon\Analytics\Services\SubjectResolver;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Collection;
 use Livewire\Component;
 
 /**
@@ -69,7 +71,7 @@ final class SessionDetailPage extends Component
 
                     'eventsCount' => $events->whereNotNull('name')->count(),
                     'conversionsCount' => $events->whereIn('name', $conversionNames)->count(),
-                    'detailErased' => $this->detailWasErased(),
+                    'detailErased' => $this->detailWasErased($events),
                     'timePerPage' => $journeys->timePerPage($journey),
                     'subjectLabel' => $attribution !== null ? $subjects->label($attribution->guard) : null,
                     'subjectName' => $attribution !== null ? $subjects->name($attribution->guard, $attribution->id) : null,
@@ -82,32 +84,35 @@ final class SessionDetailPage extends Component
     }
 
     /**
-     * Whether this session had a step-by-step and has lost it.
+     * Whether this session had a step-by-step and has lost part of it.
      *
-     * **Two questions, and both are needed.**
+     * **It asks the session itself, and nothing else.** The counters were kept
+     * as the visit happened; the rows are what is left of it. More counted than
+     * kept means something was erased, and the two being equal means nothing
+     * was — there is no third case, and no date to reason about.
      *
-     * The day's, asked of the archive register rather than worked out from the
-     * retention · the two part company as soon as a scheduler stops — days past
-     * the retention and still intact — or as soon as a retention is shortened,
-     * which moves a line the erasing has not crossed yet.
+     * **The archive register was asked first, and it answered for a DAY.** That
+     * is one question too wide, and it said yes in three situations where
+     * nothing had been lost · a session that recorded nothing, on a day a busy
+     * neighbour had emptied ; a session whose pages all sit on a route a
+     * declared funnel protects, which the erasing spares ; and a session whose
+     * every click carries a name, which the erasing spares too — the ordinary
+     * shape of a visit on a site that declares its conversions. All three would
+     * have read « le détail a été effacé » above a step-by-step that was whole.
      *
-     * And the session's own, because the register answers for a DAY. A session
-     * that recorded nothing, on a day a busy neighbour had emptied, would
-     * otherwise be told it lost something it never had. Its counters settle it:
-     * no pages, no clicks, nothing to have lost.
+     * Nothing is queried for it · the rows are already loaded to draw the
+     * journey.
      *
-     * Named events are left out of the count on purpose · they are never
-     * erased, so a session holding only those has lost nothing either.
+     * @param  Collection<int, Event>  $events
      */
-    private function detailWasErased(): bool
+    private function detailWasErased(Collection $events): bool
     {
-        if ($this->session->pageview_count === 0 && $this->session->click_count === 0) {
-            return false;
-        }
+        $recorded = $this->session->pageview_count + $this->session->click_count;
 
-        return DailyArchive::query()
-            ->where('day', $this->session->started_at->toDateString())
-            ->whereNotNull('pruned_at')
-            ->exists();
+        $kept = $events
+            ->filter(fn (Event $event): bool => $event->type === EventType::Pageview || $event->type === EventType::Click)
+            ->count();
+
+        return $recorded > $kept;
     }
 }

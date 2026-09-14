@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Models;
 
 use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -28,10 +30,37 @@ final class DailyArchive extends Model
 
     public $timestamps = false;
 
-    protected $dateFormat = 'Y-m-d';
-
     /** @var list<string> */
     protected $fillable = ['day', 'archived_at', 'pruned_at'];
+
+    /**
+     * The key, always written as a plain date.
+     *
+     * **A model has ONE `$dateFormat`, and this table has two kinds of column**
+     * · a date that everything queries on, and two timestamps. Set to `Y-m-d`
+     * for the key, it reached the timestamps too: an archiving run at 03:30 was
+     * recorded as having happened at 00:00, on both stamps, without a word.
+     * Measured 2026-09-14.
+     *
+     * So the format is left alone — the timestamps keep their hour — and the
+     * key says for itself what it is. A mutator is the only thing that reaches
+     * the write: a format given to a cast serves `toArray()`, never the
+     * statement.
+     *
+     * Written as a date rather than at midnight because a `date` column is
+     * compared as a string, and `2026-01-05 00:00:00` finds nothing on an
+     * engine that stores what it was given.
+     *
+     * @return Attribute<CarbonImmutable, string>
+     */
+    protected function day(): Attribute
+    {
+        return Attribute::make(
+            set: fn (CarbonInterface|string $value): string => $value instanceof CarbonInterface
+                ? $value->toDateString()
+                : CarbonImmutable::parse($value)->toDateString(),
+        );
+    }
 
     /**
      * The last day whose detail has been erased, or null while none has.

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Models;
 
 use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -37,11 +39,27 @@ final class DailyCount extends Model
 
     public $timestamps = false;
 
-    /** Plain Y-m-d, so Eloquent and the archiving's raw writes agree on the key. */
-    protected $dateFormat = 'Y-m-d';
-
     /** @var list<string> */
     protected $fillable = ['day', 'kind', 'signature', 'label', 'route', 'subject_type', 'total'];
+
+    /**
+     * The key, always written as a plain date · the same mutator as its
+     * register, and for the same reason. See `DailyArchive::day()`.
+     *
+     * Here too the archiving writes raw statements and this never runs; it is
+     * there so that the day it does, the key it writes is the key everything
+     * else queries on.
+     *
+     * @return Attribute<CarbonImmutable, string>
+     */
+    protected function day(): Attribute
+    {
+        return Attribute::make(
+            set: fn (CarbonInterface|string $value): string => $value instanceof CarbonInterface
+                ? $value->toDateString()
+                : CarbonImmutable::parse($value)->toDateString(),
+        );
+    }
 
     /**
      * What identifies a row inside its day, as one indexable value.

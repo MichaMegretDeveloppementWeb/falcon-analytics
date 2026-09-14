@@ -9,6 +9,7 @@ use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Repositories\Concerns\ScopesSessionQueries;
+use Falcon\Analytics\Support\StoredUrl;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -131,12 +132,20 @@ final class RealtimeReadRepository
     }
 
     /**
-     * Most viewed pages of the window by their real URL, top N.
+     * Most viewed pages of the window, grouped on the address WITHOUT its
+     * query string · the same grouping as the overview block, see `StoredUrl`.
+     *
+     * Two screens that both say « les pages les plus vues » have to count a
+     * page the same way, or the live figure and the daily one disagree for
+     * reasons nobody can see · here the window is minutes long, so a campaign
+     * landing would simply arrive as one row per visitor.
      *
      * @return list<array{url: string, total: int}>
      */
     public function topPages(CarbonImmutable $since, ?string $subjectType, int $limit = 5): array
     {
+        $page = StoredUrl::pathExpression($this->driver(), 'url');
+
         // `array_values` because this file declares lists: the result is
         // already keyed from zero, but its type does not say so. Same reason
         // everywhere here.
@@ -144,8 +153,8 @@ final class RealtimeReadRepository
             ->where('type', EventType::Pageview)
             ->whereNotNull('url')
             ->toBase()
-            ->selectRaw('url, COUNT(*) as total')
-            ->groupBy('url')
+            ->selectRaw("{$page} as url, COUNT(*) as total")
+            ->groupByRaw($page)
             ->orderByDesc('total')
             ->limit($limit)
             ->get()

@@ -10,6 +10,7 @@ use Falcon\Analytics\Models\DailyArchive;
 use Falcon\Analytics\Models\DailyCount;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
+use Falcon\Analytics\Support\StoredUrl;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -151,10 +152,19 @@ final readonly class DailyCountArchiver
      */
     private function pageRows(CarbonImmutable $start, CarbonImmutable $end): array
     {
+        /*
+         * The address WITHOUT its query string, exactly as the screen groups
+         * it · see `StoredUrl`. A summary grouped differently from the reading
+         * it stands in for would make the block jump the day the erasing
+         * crossed it, and the essay comparing the two would be the only thing
+         * standing between that and a shipped release.
+         */
+        $page = StoredUrl::pathExpression(DB::connection()->getDriverName(), 'url');
+
         $rows = $this->scope(EventType::Pageview, $start, $end)
             ->whereNotNull('url')
-            ->selectRaw('url as label, s.subject_type as subject_type, COUNT(*) as total')
-            ->groupBy('url', 's.subject_type')
+            ->selectRaw("{$page} as label, s.subject_type as subject_type, COUNT(*) as total")
+            ->groupByRaw("{$page}, s.subject_type")
             ->get();
 
         return $this->shape($rows);

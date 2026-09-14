@@ -6,10 +6,12 @@ namespace Falcon\Analytics\Tests\Feature;
 
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\Enums\EventType;
+use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Livewire\Admin\SessionDetailPage;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
+use Falcon\Analytics\Services\Maintenance;
 use Falcon\Analytics\Tests\Fixtures\Models\TestAdmin;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -196,14 +198,13 @@ final class AnOldSessionSaysWhatItStillKnowsTest extends TestCase
     /**
      * An old session that recorded nothing, on a day that WAS erased.
      *
-     * **The case the register alone cannot answer.** Its day is marked as
-     * emptied — a neighbouring session had plenty to erase — so asking the
-     * register « was this day pruned? » says yes, and the screen would announce
-     * a loss that never happened.
+     * **The first of three cases the archive register got wrong.** Its day is
+     * marked as emptied — a neighbouring session had plenty to erase — so
+     * asking the register « ce jour a-t-il été purgé ? » says yes, and the
+     * screen announced a loss that never happened.
      *
-     * What settles it is the session's own figures: no pages, no clicks,
-     * nothing to have lost. Both questions have to be asked, and this is the
-     * scenario that says so — with the busy session there on purpose, since
+     * What settles it is the session's own arithmetic · nothing counted,
+     * nothing kept, nothing lost. The busy neighbour is there on purpose:
      * without it the erasing finds nothing to do and marks no day at all.
      */
     public function test_an_old_empty_session_is_not_said_to_be_erased_even_on_an_erased_day(): void
@@ -220,5 +221,100 @@ final class AnOldSessionSaysWhatItStillKnowsTest extends TestCase
         $this->open($empty)
             ->assertSee(__('Aucun évènement'))
             ->assertDontSee(__('Détail effacé'));
+    }
+
+    /**
+     * An old session whose every click carries a name keeps its step-by-step,
+     * and is not told otherwise.
+     *
+     * **The second case, and the one that would have been seen most.** A host
+     * that declares its conversions emits named clicks, and the erasing spares
+     * every row that carries a name — so this visit is whole. The register
+     * still answered « ce jour a été purgé » and the screen put « le détail a
+     * été effacé » above a journey nobody had touched.
+     */
+    public function test_an_old_session_made_only_of_named_clicks_lost_nothing(): void
+    {
+        $day = CarbonImmutable::parse('2026-03-01');
+
+        // The neighbour again, so that the day really does get emptied.
+        $this->aSessionOn($day);
+
+        $visitor = Visitor::create(['uuid' => (string) Str::uuid(), 'first_seen_at' => $day, 'last_seen_at' => $day]);
+
+        $named = Session::create([
+            'visitor_id' => $visitor->id,
+            'started_at' => $day->setTime(9, 0),
+            'last_activity_at' => $day->setTime(9, 30),
+            'is_bot' => false,
+            'pageview_count' => 0,
+            'click_count' => 2,
+            'event_count' => 2,
+        ]);
+
+        foreach ([10, 12] as $minute) {
+            Event::create([
+                'session_id' => $named->id,
+                'visitor_id' => $visitor->id,
+                'type' => EventType::Click,
+                'name' => 'devis.demande',
+                'target_text' => 'Demander un devis',
+                'occurred_at' => $day->setTime(9, $minute),
+            ]);
+        }
+
+        $this->archiveThenPrune();
+
+        $this->assertSame(2, Event::query()->where('session_id', $named->id)->count(), 'Named clicks are spared.');
+
+        $this->open($named)->assertDontSee('durée de conservation', false);
+    }
+
+    /**
+     * And the third · an old session whose pages all sit on a route a declared
+     * funnel protects. The erasing leaves those rows where they are, so here
+     * too the journey is whole and the screen must say nothing.
+     */
+    public function test_an_old_session_on_a_protected_route_lost_nothing(): void
+    {
+        $day = CarbonImmutable::parse('2026-03-01');
+
+        // The fixture funnel steps through the route `home`, which therefore
+        // survives the erasing.
+        config(['analytics.funnels_path' => __DIR__.'/../Fixtures/analytics-funnels.php']);
+        $this->app->forgetInstance(FunnelRegistry::class);
+        $this->app->forgetInstance(Maintenance::class);
+
+        // The neighbour, so the day is emptied at all.
+        $this->aSessionOn($day);
+
+        $visitor = Visitor::create(['uuid' => (string) Str::uuid(), 'first_seen_at' => $day, 'last_seen_at' => $day]);
+
+        $protected = Session::create([
+            'visitor_id' => $visitor->id,
+            'started_at' => $day->setTime(9, 0),
+            'last_activity_at' => $day->setTime(9, 30),
+            'is_bot' => false,
+            'pageview_count' => 2,
+            'click_count' => 0,
+            'event_count' => 2,
+        ]);
+
+        foreach ([0, 5] as $minute) {
+            Event::create([
+                'session_id' => $protected->id,
+                'visitor_id' => $visitor->id,
+                'type' => EventType::Pageview,
+                'url' => 'https://exemple.fr/panier',
+                'route' => 'home',
+                'occurred_at' => $day->setTime(9, $minute),
+            ]);
+        }
+
+        $this->archiveThenPrune();
+
+        $this->assertSame(2, Event::query()->where('session_id', $protected->id)->count(), 'A funnel route is spared.');
+
+        $this->open($protected)->assertDontSee('durée de conservation', false);
     }
 }
