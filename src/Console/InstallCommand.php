@@ -82,7 +82,7 @@ final class InstallCommand extends Command
 
         $this->callSilently('vendor:publish', [
             '--tag' => 'analytics-config',
-            '--force' => (bool) $this->option('force'),
+            '--force' => $this->option('force'),
         ]);
         $this->components->task('config/analytics.php publié');
 

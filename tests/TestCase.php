@@ -61,7 +61,38 @@ abstract class TestCase extends Orchestra
         $paths = [
             'APP_SERVICES_CACHE' => $token === '' ? null : "bootstrap/cache/services-{$token}.php",
             'APP_PACKAGES_CACHE' => $token === '' ? null : "bootstrap/cache/packages-{$token}.php",
+
         ];
+
+        /*
+         * The compiled views, for the same reason — and it took a second
+         * incident to see it. They live in ONE directory too, and Blade writes
+         * each one through a temporary file and a `rename()`.
+         *
+         * It stayed hidden because the directory is normally already full:
+         * nobody writes, so nobody collides. Empty it — which is what one does
+         * after changing a component's constructor — and all four workers
+         * compile the same views at the same instant. Three essays fell on
+         * « Accès refusé (code: 5) », about nothing they were testing.
+         * Measured 2026-09-14, right after the bootstrap-cache fix that shares
+         * this reasoning.
+         *
+         * **An absolute path, and the directory created here.** The framework's
+         * default is absolute, and Blade writes into this directory without
+         * ever creating it — a relative name would resolve against the working
+         * directory, and a missing one fails on the first view.
+         */
+        if ($token !== '') {
+            $compiled = dirname(__DIR__).'/vendor/orchestra/testbench-core/laravel/storage/framework/views-'.$token;
+
+            if (! is_dir($compiled)) {
+                mkdir($compiled, 0o777, true);
+            }
+
+            $paths['VIEW_COMPILED_PATH'] = $compiled;
+        } else {
+            $paths['VIEW_COMPILED_PATH'] = null;
+        }
 
         foreach ($paths as $key => $path) {
             if ($path === null) {
@@ -327,7 +358,7 @@ abstract class TestCase extends Orchestra
             ]);
 
             $config->set('analytics.admin.middleware', ['web', 'auth:admin']);
-            $config->set('analytics.admin.layout', null);
+            $config->set('analytics.layouts.admin', null);
         });
     }
 
