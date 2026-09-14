@@ -25,5 +25,27 @@
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="CACHE_STORE" value="array"/>
+
+        <!--
+            Le pilote de session, epingle · et ce n'est pas une preference.
+
+            `vendor/bin/testbench`, qui lance le paquet dans une vraie
+            application et merite d'etre lance, depose son `.env.example` dans
+            le squelette du banc sous le nom `.env`. Ce fichier porte
+            SESSION_DRIVER=cookie et vaut pour TOUTE la suite : quatre essais
+            Search Console sont tombes sur `Attempt to read property "cookies"
+            on null`, sur rien de ce qu'ils eprouvaient. Il vit sous `vendor/`,
+            donc `git stash` ne l'enleve pas, ce qui le faisait passer pour un
+            defaut du code.
+
+            Ce qui est declare ici GAGNE sur un `.env` : PHPUnit pose ces
+            valeurs avant que l'application demarre, et le chargeur du cadre ne
+            remplace jamais une variable deja posee. Le fichier egare devient
+            donc inoffensif, au lieu d'etre seulement detecte.
+
+            Mesure le 2026-09-14 · fichier egare en place, 530 essais sur 531
+            passent. Garde par `TheBenchRunsOnThePinnedEnvironment`.
+        -->
+        <env name="SESSION_DRIVER" value="array"/>
     </php>
 </phpunit>

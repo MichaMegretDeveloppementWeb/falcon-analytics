@@ -367,23 +367,34 @@ La configuration exempte ce fichier de deux règles, avec la raison écrite ·
 **c'est le bloc à changer le jour où l'on décide quels navigateurs ce collecteur
 doit atteindre**, et non avant.
 
-**`vendor/bin/testbench` dépose un `.env` dans le squelette du banc, et ce
-fichier casse la suite.** Il porte `SESSION_DRIVER=cookie` là où la
-configuration du banc vaut `array`, et **il s'applique à tous les essais** ·
-`withSession()` hors d'une requête ne peut alors plus écrire, et des essais qui
-n'ont rien à voir tombent sur *« Attempt to read property "cookies" on null »*.
+**`vendor/bin/testbench` dépose un `.env` dans le squelette du banc**, et ce
+fichier a cassé la suite pendant des semaines. Il porte `SESSION_DRIVER=cookie`
+là où la configuration du banc vaut `array`, et **il s'applique à tous les
+essais** · `withSession()` hors d'une requête ne peut alors plus écrire, et des
+essais qui n'ont rien à voir tombent sur *« Attempt to read property "cookies"
+on null »*.
 
 Il est sous `vendor/`, donc **un `git stash` ne l'emporte pas** · c'est ce qui
 fait croire, de façon très convaincante, à un défaut du code. Une après-midi
 perdue le 2026-09-13, et le candidat le plus sérieux à l'échec intermittent que
 cette suite montrait depuis des semaines.
 
-```bash
-rm vendor/orchestra/testbench-core/laravel/.env
-```
+**Il est désormais sans effet, et vous n'avez rien à faire.** `phpunit.xml`
+épingle le pilote de session, le magasin de cache et la file d'attente ·
+**ce qui y est déclaré est posé avant que l'application démarre**, et le
+chargeur du cadre ne remplace jamais une variable déjà posée. Le fichier arrive
+donc trop tard. Mesuré le 2026-09-14 · avec lui en place, la suite entière
+passe.
 
-`TheBenchIsNotPolluted` le dit maintenant par son nom, avec le remède dans son
-message · une panne de toute la suite devient un essai nommé.
+`TheBenchRunsOnThePinnedEnvironment` garde cet épinglage — et il tombe le jour
+où la ligne disparaît de `phpunit.xml`, c'est-à-dire au moment où la protection
+part, pas des semaines plus tard sur un essai qui parle d'autre chose.
+
+> **Un essai précédent, `TheBenchIsNotPolluted`, interdisait ce fichier.** Il
+> détectait la cause sans rien réparer, et laissait la suite rouge après chaque
+> `vendor/bin/testbench` — une pratique qu'on recommande par ailleurs. Retiré le
+> 2026-09-14, remplacé par le garde ci-dessus · **un essai surveille la
+> garantie, pas une des façons de la casser.**
 
 **Une vue publiée par l'hôte n'est lue que si son dossier existait au
 démarrage.** `loadViewsFrom` regarde une fois, au moment où le fournisseur
