@@ -82,6 +82,18 @@ final class PackageInstallationTest extends TestCase
         $this->assertNotContains('web', $persistent);
     }
 
+    /**
+     * Both mount points say it, and each one for itself.
+     *
+     * An explicitly empty list mounts screens with no session and no auth —
+     * almost certainly a host misconfiguration, and one that shows as a working
+     * page rather than an error. So it is said out loud, twice: the two mount
+     * points are configured apart and a host can empty one without the other.
+     *
+     * **Asked of the provider, not of the route file.** That is where the
+     * mounting lives now, and a test that re-read the file would pass while the
+     * package warned nobody.
+     */
     public function test_it_warns_when_a_screen_group_is_mounted_with_an_empty_middleware_list(): void
     {
         config(['analytics.admin.middleware' => [], 'analytics.admin.marketing.middleware' => []]);
@@ -91,9 +103,10 @@ final class PackageInstallationTest extends TestCase
             ->twice()
             ->withArgs(fn (string $message): bool => str_contains($message, 'empty middleware list'));
 
-        require dirname(__DIR__, 2).'/routes/admin.php';
+        $this->app->register(AnalyticsServiceProvider::class, force: true);
 
         $this->assertTrue(Route::has('analytics.admin.overview'));
+        $this->assertTrue(Route::has('analytics.admin.marketing.campaigns'));
     }
 
     public function test_it_runs_analytics_install_for_real_against_a_temporary_base_path(): void

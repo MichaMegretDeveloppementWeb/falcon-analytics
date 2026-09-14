@@ -11,82 +11,33 @@ use Falcon\Analytics\Http\Controllers\Dashboard\SessionDetailController;
 use Falcon\Analytics\Http\Controllers\Dashboard\SessionsController;
 use Falcon\Analytics\Http\Controllers\Dashboard\VisitorDetailController;
 use Falcon\Analytics\Http\Controllers\Dashboard\VisitorsController;
-use Falcon\Analytics\Http\Controllers\Marketing\AdDetailController;
-use Falcon\Analytics\Http\Controllers\Marketing\AdsController;
-use Falcon\Analytics\Http\Controllers\Marketing\CampaignDetailController;
-use Falcon\Analytics\Http\Controllers\Marketing\CampaignsController;
-use Falcon\Analytics\Http\Controllers\Marketing\MarketingDashboardController;
 use Falcon\Analytics\Http\Controllers\SearchConsoleCallbackController;
 use Falcon\Analytics\Http\Controllers\SearchConsoleConnectController;
-use Falcon\Analytics\Http\Middleware\CatchesUpTheMaintenance;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 
 /*
- * The administration area, and the two entities it holds: the analytics
- * screens, and the marketing screens. Each mounts from its own config block —
- * address and middleware — so a host can hang them wherever it wants, and give
- * marketing another guard than analytics.
+ * The analytics screens of the administration area · the list, and nothing but
+ * the list.
  *
- * The route NAMES are fixed. A host reads them in its menu and its redirects;
- * a name that moves with the configuration cannot be written down anywhere.
+ * Their address, their middleware and their name prefix come from the group the
+ * provider opens around this file. One file tells every address and every guard
+ * of the package, and it is that one.
  *
- * The middleware must carry a session stack ('web', typically): package routes
- * are registered outside the host's own route groups, so they inherit nothing.
- *
- * **The package appends one of its own after the host's list**, which catches
- * the maintenance up when a scheduler has stopped. It is appended rather than
- * configured for the same reason the origin check is appended to the collection
- * endpoint: what the package depends on to do its job is not something a host
- * takes away by emptying a setting. Turning it off is a setting of its own,
- * `maintenance.on_screen_load`.
+ * The route NAMES are fixed. A host reads them in its menu and its redirects; a
+ * name that moved with the configuration could not be written down anywhere.
  */
 
-$admin = config('analytics.admin');
+Route::get('/', OverviewController::class)->name('overview');
+Route::get('/realtime', RealtimeController::class)->name('realtime');
+Route::get('/visitors', VisitorsController::class)->name('visitors');
+Route::get('/visitors/{visitor}', VisitorDetailController::class)->name('visitors.show');
+Route::get('/events', EventsController::class)->name('events');
+Route::get('/funnels', FunnelsController::class)->name('funnels');
+Route::get('/sessions', SessionsController::class)->name('sessions');
+Route::get('/sessions/{session}', SessionDetailController::class)->name('sessions.show');
 
-// An explicitly empty middleware list mounts the screens without any protection
-// (no session, no auth): almost certainly a host misconfiguration, so say it.
-if (($admin['middleware'] ?? null) === []) {
-    Log::channel(config('analytics.log_channel'))
-        ->warning('Analytics screens mounted with an empty middleware list: they are publicly reachable.');
-}
-
-Route::prefix((string) ($admin['route_prefix'] ?? 'admin/analytics'))
-    ->middleware([...((array) ($admin['middleware'] ?? ['web', 'auth'])), CatchesUpTheMaintenance::class])
-    ->name('analytics.admin.')
-    ->group(function (): void {
-        Route::get('/', OverviewController::class)->name('overview');
-        Route::get('/realtime', RealtimeController::class)->name('realtime');
-        Route::get('/visitors', VisitorsController::class)->name('visitors');
-        Route::get('/visitors/{visitor}', VisitorDetailController::class)->name('visitors.show');
-        Route::get('/events', EventsController::class)->name('events');
-        Route::get('/funnels', FunnelsController::class)->name('funnels');
-        Route::get('/sessions', SessionsController::class)->name('sessions');
-        Route::get('/sessions/{session}', SessionDetailController::class)->name('sessions.show');
-
-        // Integrations (Google Search Console): the page plus the two OAuth
-        // legs, all behind the same middleware as the screens.
-        Route::get('/integrations', IntegrationsController::class)->name('integrations');
-        Route::get('/integrations/search-console/connect', SearchConsoleConnectController::class)->name('integrations.search-console.connect');
-        Route::get('/integrations/search-console/callback', SearchConsoleCallbackController::class)->name('integrations.search-console.callback');
-    });
-
-// Marketing: a second entity of the administration, with its own address and
-// its own place in the menu, mounted from its own nested block.
-$marketing = $admin['marketing'] ?? [];
-
-if (($marketing['middleware'] ?? null) === []) {
-    Log::channel(config('analytics.log_channel'))
-        ->warning('Analytics marketing screens mounted with an empty middleware list: they are publicly reachable.');
-}
-
-Route::prefix((string) ($marketing['route_prefix'] ?? 'admin/marketing'))
-    ->middleware([...((array) ($marketing['middleware'] ?? ['web', 'auth'])), CatchesUpTheMaintenance::class])
-    ->name('analytics.admin.marketing.')
-    ->group(function (): void {
-        Route::get('/', MarketingDashboardController::class)->name('dashboard');
-        Route::get('/campaigns', CampaignsController::class)->name('campaigns');
-        Route::get('/campaigns/{campaign}', CampaignDetailController::class)->name('campaigns.show');
-        Route::get('/ads', AdsController::class)->name('ads');
-        Route::get('/ads/{ad}', AdDetailController::class)->name('ads.show');
-    });
+// Integrations (Google Search Console): the page plus the two OAuth legs, all
+// behind the same middleware as the screens.
+Route::get('/integrations', IntegrationsController::class)->name('integrations');
+Route::get('/integrations/search-console/connect', SearchConsoleConnectController::class)->name('integrations.search-console.connect');
+Route::get('/integrations/search-console/callback', SearchConsoleCallbackController::class)->name('integrations.search-console.callback');

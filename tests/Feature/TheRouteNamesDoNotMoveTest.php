@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Tests\Feature;
 
+use Falcon\Analytics\AnalyticsServiceProvider;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Support\Facades\Route;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -107,10 +108,12 @@ final class TheRouteNamesDoNotMoveTest extends TestCase
     /**
      * The whole point, in one test: three addresses moved, and not one name did.
      *
-     * The registration is replayed from a moved configuration, then the routes
-     * are read straight from the collection rather than through `route()` —
-     * a name already taken keeps pointing at its first registration, so the
-     * helper would answer with the old address and prove nothing either way.
+     * **The provider is registered again**, from a moved configuration · that
+     * is where the mounting lives, and replaying the route files alone would
+     * add them with no group at all. Then the routes are read straight from the
+     * collection rather than through `route()` — a name already taken keeps
+     * pointing at its first registration, so the helper would answer with the
+     * old address and prove nothing either way.
      *
      * Each name is expected to carry *two* addresses: the one the provider
      * registered at boot, and the one this replay just added. Anything else
@@ -124,8 +127,7 @@ final class TheRouteNamesDoNotMoveTest extends TestCase
             'analytics.endpoint' => 'collecte',
         ]);
 
-        require dirname(__DIR__, 2).'/routes/admin.php';
-        require dirname(__DIR__, 2).'/routes/web.php';
+        $this->app->register(AnalyticsServiceProvider::class, force: true);
 
         $this->assertSame(
             ['admin/analytics', 'panneau/mesures'],

@@ -16,6 +16,7 @@ use Falcon\Analytics\Console\SweepCommand;
 use Falcon\Analytics\Console\SyncSearchConsoleCommand;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
+use Falcon\Analytics\Http\Middleware\CatchesUpTheMaintenance;
 use Falcon\Analytics\Support\GeoResolver;
 use Falcon\Ui\AssetRegistry;
 use Falcon\Ui\Config\CompletesDefaults;
@@ -23,6 +24,8 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
@@ -89,11 +92,7 @@ final class AnalyticsServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'analytics');
 
-        // One file per area: the administration with its screens, the public
-        // side with its ingestion endpoint. Both are always loaded — a file we
-        // stopped loading would be dead code that looks alive.
-        $this->loadRoutesFrom(__DIR__.'/../routes/admin.php');
-        $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+        $this->mountTheScreens();
 
         // Where the package's compiled files are. The kit reads this registry
         // to build their address, and to compare the published copy with the
@@ -228,6 +227,85 @@ final class AnalyticsServiceProvider extends ServiceProvider
                 __DIR__.'/../public' => public_path($this->publicDirectory().'/analytics'),
             ], ['analytics-assets', 'laravel-assets']);
         }
+    }
+
+    /**
+     * Where every screen of the package mounts, and behind what.
+     *
+     * **One file tells all of it**, and that is why the groups are here rather
+     * than in the route files themselves: an address or a guard of this package
+     * is read in one place, never hunted for.
+     *
+     * **One area, and its mount points.** An area is its shell and its name
+     * prefix; marketing shares both with the analytics screens — same
+     * administration, one chrome — while carrying its own address and its own
+     * guards. Three of its screens WRITE, where the eleven others only read, so
+     * a host is entitled to put them behind another guard.
+     *
+     * **Siblings, never nested**, and it is measured rather than assumed · a
+     * nested group concatenates the prefixes and ACCUMULATES the middleware, so
+     * marketing would answer at `/admin/analytics/admin/marketing/…` and demand
+     * both guards at once. Nobody would get in.
+     *
+     * The middleware must carry a session stack (`web`, typically): package
+     * routes are registered outside the host's own groups, so they inherit
+     * nothing.
+     */
+    private function mountTheScreens(): void
+    {
+        /** @var array<string, mixed> $admin */
+        $admin = (array) config('analytics.admin', []);
+
+        /** @var array<string, mixed> $marketing */
+        $marketing = (array) ($admin['marketing'] ?? []);
+
+        $this->mount(
+            $admin,
+            'admin/analytics',
+            'analytics.admin.',
+            __DIR__.'/../routes/admin.php',
+            'Analytics screens mounted with an empty middleware list: they are publicly reachable.',
+        );
+
+        $this->mount(
+            $marketing,
+            'admin/marketing',
+            'analytics.admin.marketing.',
+            __DIR__.'/../routes/marketing.php',
+            'Analytics marketing screens mounted with an empty middleware list: they are publicly reachable.',
+        );
+
+        // The public side: the collector posts here, and nothing else lives at
+        // this level. Its own stack is written in the file, the origin check
+        // and the rate limit going with it.
+        $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+    }
+
+    /**
+     * One mount point · its address, its guards, its name prefix, its file.
+     *
+     * **The package appends one middleware of its own after the host's list**,
+     * which catches the maintenance up when a scheduler has stopped. Appended
+     * rather than configured, for the same reason the origin check is appended
+     * to the collection endpoint: what the package depends on to do its job is
+     * not something a host removes by emptying a setting. Switching it off is a
+     * setting of its own, `maintenance.on_screen_load`.
+     *
+     * @param  array<string, mixed>  $area
+     */
+    private function mount(array $area, string $prefix, string $name, string $file, string $warning): void
+    {
+        // An explicitly empty list mounts the screens with no protection at all
+        // — no session, no auth. Almost certainly a host misconfiguration, so
+        // say it rather than serve them quietly.
+        if (($area['middleware'] ?? null) === []) {
+            Log::channel(config('analytics.log_channel'))->warning($warning);
+        }
+
+        Route::prefix((string) ($area['route_prefix'] ?? $prefix))
+            ->middleware([...((array) ($area['middleware'] ?? ['web', 'auth'])), CatchesUpTheMaintenance::class])
+            ->name($name)
+            ->group(fn () => $this->loadRoutesFrom($file));
     }
 
     /**
