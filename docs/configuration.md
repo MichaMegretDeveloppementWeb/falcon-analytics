@@ -367,7 +367,6 @@ d'analytics ·
 |---|---|
 | `ui.assets.path` | où nos fichiers compilés sont publiés sous `public/` |
 | `ui.inject` | si le kit pose lui-même ses balises dans les pages qu'il dessine |
-| `ui.reset` | qui fournit le style de base du navigateur |
 
 Leur référence complète · `vendor/falcon/ui-kit/docs/configuration.md`.
 
