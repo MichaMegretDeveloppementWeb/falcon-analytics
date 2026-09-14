@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Support;
 
+use Illuminate\Support\Str;
+
 /**
  * What counts as « the same page » when stored addresses are grouped.
  *
