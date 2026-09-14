@@ -19,6 +19,7 @@ use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 use PDO;
 use RuntimeException;
+use Throwable;
 
 abstract class TestCase extends Orchestra
 {
@@ -263,32 +264,73 @@ abstract class TestCase extends Orchestra
         return is_string($token) && $token !== '' ? '_'.$token : '';
     }
 
+    /** Whether this process has already asked for its database and its removal. */
+    private static bool $workerDatabaseClaimed = false;
+
     /**
-     * Creates the worker's database when it is not there yet.
+     * Creates the worker's database when it is not there yet, **and arranges
+     * for it to go away when this process ends**.
      *
      * Paratest hands out tokens, never databases, and asking the developer to
      * create eight by hand is a step that will be forgotten on the next machine.
+     *
+     * **The removal is the part that was missing, and it cost a red suite.**
+     * Nothing ever dropped these: a run at sixteen processes left sixteen
+     * databases, and the next run at four left twelve of them behind for good.
+     * Measured 2026-09-14 · forty-four worker databases across this package and
+     * falcon-booking, carrying 738 tables — 38 % of everything on the server —
+     * against a `table_definition_cache` of 600. MySQL then evicts a table
+     * definition between the preparing and the executing of a statement, and
+     * answers « 1615 Prepared statement needs to be re-prepared » to a query
+     * that has nothing wrong with it. It fell in a `tearDown`, on a test about
+     * erasure, and looked like anything but what it was.
+     *
+     * At the end of the process rather than at the start · dropping at the start
+     * would still leave every database of a wider run behind it.
      */
     protected static function ensureTheDatabaseExists(): void
     {
-        if (self::parallelSuffix() === '') {
+        if (self::parallelSuffix() === '' || self::$workerDatabaseClaimed) {
             return;
         }
 
+        self::$workerDatabaseClaimed = true;
+
+        $connection = self::connectionForTests();
+        $name = str_replace('`', '', (string) $connection['database']);
+
+        self::server()->exec(sprintf(
+            'CREATE DATABASE IF NOT EXISTS `%s` CHARACTER SET %s COLLATE %s',
+            $name,
+            $connection['charset'],
+            $connection['collation'],
+        ));
+
+        /*
+         * A shutdown function rather than a `tearDownAfterClass`: paratest runs
+         * one process per worker, and this has to fire once the whole share of
+         * that worker is done, not after each class.
+         */
+        register_shutdown_function(static function () use ($name): void {
+            try {
+                self::server()->exec("DROP DATABASE IF EXISTS `{$name}`");
+            } catch (Throwable) {
+                // An interrupted run leaves it; the next one with the same token
+                // drops it at its own end. Never fail a suite over housekeeping.
+            }
+        });
+    }
+
+    /** A connection to the server itself, with no database selected. */
+    private static function server(): PDO
+    {
         $connection = self::connectionForTests();
 
-        $server = new PDO(
+        return new PDO(
             sprintf('mysql:host=%s;port=%s', $connection['host'], $connection['port']),
             (string) $connection['username'],
             (string) $connection['password'],
         );
-
-        $server->exec(sprintf(
-            'CREATE DATABASE IF NOT EXISTS `%s` CHARACTER SET %s COLLATE %s',
-            str_replace('`', '', (string) $connection['database']),
-            $connection['charset'],
-            $connection['collation'],
-        ));
     }
 
     /**
