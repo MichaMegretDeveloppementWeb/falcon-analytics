@@ -393,8 +393,8 @@ abstract class TestCase extends Orchestra
 
     /**
      * Testbench calls this hook on every test, and `loadMigrationsFrom` makes
-     * it migrate and roll back around each one: nineteen migrations up and
-     * nineteen down, three hundred and sixty-seven times over. On MySQL every
+     * it migrate and roll back around each one: twenty migrations up and
+     * twenty down, three hundred and sixty-seven times over. On MySQL every
      * schema statement is an implicit commit that reaches the disk, and that is
      * what the suite was paying for.
      *

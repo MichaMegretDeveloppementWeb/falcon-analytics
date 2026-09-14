@@ -18,9 +18,8 @@ use Falcon\Analytics\Services\Dashboard\MarketingReportBuilder;
 use Falcon\Analytics\Support\StoredUrl;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * Une page atteinte par plusieurs liens reste une page.
@@ -31,12 +30,14 @@ use InvalidArgumentException;
  * l'adresse. Sur un site qui reçoit du trafic de campagne l'effet n'a rien de
  * discret : `fbclid` est unique par clic, donc la vraie page la plus vue se
  * divise en autant de lignes qu'elle a eu de visites et n'atteint jamais le
- * haut de la liste.
+ * haut de la liste. Les liens d'ancre font pareil avec `#`, et deux hôtes
+ * servant un même site le feraient avec l'hôte.
  *
- * Le défaut était antérieur aux résumés ; les résumés l'auraient rendu
- * définitif, puisqu'un compteur écrit de travers ne se recalcule plus une fois
- * les lignes effacées. Les trois lectures qui posent la question — la vue
- * d'ensemble, son résumé, et le temps réel — doivent donc y répondre pareil.
+ * **Décidé le 2026-09-14 · une page, c'est le chemin de sa route.** Sans hôte,
+ * sans paramètres, sans ancre. Il est écrit une fois, à l'arrivée, par la même
+ * fonction que l'écran utilise pour afficher une adresse. Les trois lectures
+ * qui posent la question — la vue d'ensemble, son résumé, et le temps réel —
+ * groupent dessus, et l'adresse entière reste écrite pour le parcours.
  */
 final class ACampaignLinkDoesNotSplitAPageTest extends TestCase
 {
@@ -86,33 +87,36 @@ final class ACampaignLinkDoesNotSplitAPageTest extends TestCase
     }
 
     /**
-     * Une page ouverte par trois chemins différents · le lien nu, et deux liens
-     * de campagne dont le jeton n'est jamais deux fois le même.
+     * Une page ouverte par cinq chemins différents · le lien nu, deux liens de
+     * campagne dont le jeton n'est jamais deux fois le même, un lien d'ancre,
+     * et le même site servi sans le `www`.
      */
-    private function threeWaysToTheSamePage(CarbonImmutable $day): void
+    private function fiveWaysToTheSamePage(CarbonImmutable $day): void
     {
         $session = $this->newSession();
 
-        $this->pageview($session, 'https://exemple.fr/tarifs', $day->setTime(9, 0));
-        $this->pageview($session, 'https://exemple.fr/tarifs?fbclid=IwAR0aaa', $day->setTime(9, 5));
-        $this->pageview($session, 'https://exemple.fr/tarifs?fbclid=IwAR0bbb', $day->setTime(9, 10));
+        $this->pageview($session, 'https://www.exemple.fr/tarifs', $day->setTime(9, 0));
+        $this->pageview($session, 'https://www.exemple.fr/tarifs?fbclid=IwAR0aaa', $day->setTime(9, 5));
+        $this->pageview($session, 'https://www.exemple.fr/tarifs?fbclid=IwAR0bbb', $day->setTime(9, 10));
+        $this->pageview($session, 'https://www.exemple.fr/tarifs#prix', $day->setTime(9, 12));
+        $this->pageview($session, 'https://exemple.fr/tarifs', $day->setTime(9, 14));
 
         // Une autre page, pour que le classement ait de quoi se tromper : avec
-        // le regroupement fautif elle passait devant, à une vue contre trois.
-        $this->pageview($session, 'https://exemple.fr/contact', $day->setTime(9, 15));
+        // le regroupement fautif elle passait devant, à une vue contre cinq.
+        $this->pageview($session, 'https://www.exemple.fr/contact', $day->setTime(9, 15));
     }
 
     public function test_the_overview_counts_one_page_once(): void
     {
         $day = CarbonImmutable::parse('2026-06-10');
-        $this->threeWaysToTheSamePage($day);
+        $this->fiveWaysToTheSamePage($day);
 
         $read = $this->overview->topPages(new Period($day->startOfDay(), $day->endOfDay(), 1), null, 20);
 
         $this->assertSame(
             [
-                ['label' => 'https://exemple.fr/tarifs', 'total' => 3],
-                ['label' => 'https://exemple.fr/contact', 'total' => 1],
+                ['label' => '/tarifs', 'total' => 5],
+                ['label' => '/contact', 'total' => 1],
             ],
             array_map(fn (array $row): array => ['label' => $row['label'], 'total' => $row['total']], $read),
         );
@@ -125,7 +129,7 @@ final class ACampaignLinkDoesNotSplitAPageTest extends TestCase
     public function test_the_summary_writes_one_row_for_that_page(): void
     {
         $day = CarbonImmutable::parse('2026-06-10');
-        $this->threeWaysToTheSamePage($day);
+        $this->fiveWaysToTheSamePage($day);
 
         $this->archiver->archive($day);
 
@@ -139,8 +143,8 @@ final class ACampaignLinkDoesNotSplitAPageTest extends TestCase
 
         $this->assertSame(
             [
-                ['label' => 'https://exemple.fr/tarifs', 'total' => 3],
-                ['label' => 'https://exemple.fr/contact', 'total' => 1],
+                ['label' => '/tarifs', 'total' => 5],
+                ['label' => '/contact', 'total' => 1],
             ],
             $rows,
         );
@@ -157,10 +161,11 @@ final class ACampaignLinkDoesNotSplitAPageTest extends TestCase
 
         $this->pageview($session, 'https://exemple.fr/tarifs', CarbonImmutable::now()->subMinutes(10));
         $this->pageview($session, 'https://exemple.fr/tarifs?gclid=xyz', CarbonImmutable::now()->subMinutes(5));
+        $this->pageview($session, 'https://exemple.fr/tarifs#prix', CarbonImmutable::now()->subMinutes(2));
 
         $read = $this->realtime->topPages(CarbonImmutable::now()->subMinutes(30), null);
 
-        $this->assertSame([['url' => 'https://exemple.fr/tarifs', 'total' => 2]], $read);
+        $this->assertSame([['url' => '/tarifs', 'total' => 3]], $read);
     }
 
     /**
@@ -168,44 +173,56 @@ final class ACampaignLinkDoesNotSplitAPageTest extends TestCase
      * session la montre entière · ce n'est pas la même question, et on ne perd
      * rien en la posant autrement ailleurs.
      */
-    public function test_the_stored_address_keeps_its_query_string(): void
+    public function test_the_stored_address_keeps_its_query_string_and_fragment(): void
     {
         $day = CarbonImmutable::parse('2026-06-10');
-        $this->threeWaysToTheSamePage($day);
+        $this->fiveWaysToTheSamePage($day);
 
         $this->assertTrue(
-            Event::query()->where('url', 'https://exemple.fr/tarifs?fbclid=IwAR0aaa')->exists(),
-            "L'adresse doit rester entière en base : seule la lecture groupe autrement.",
+            Event::query()->where('url', 'https://www.exemple.fr/tarifs?fbclid=IwAR0aaa')->exists(),
+            "L'adresse doit rester entière en base : seule la page est posée à côté.",
         );
+        $this->assertTrue(Event::query()->where('url', 'https://www.exemple.fr/tarifs#prix')->exists());
     }
 
     /**
-     * Une adresse sans point d'interrogation traverse l'expression sans y
-     * perdre un caractère · c'est le cas ordinaire, et une troncature d'un
-     * caractère y passerait inaperçue longtemps.
+     * La page est posée à côté de l'adresse dès l'écriture, par le modèle
+     * comme par l'ingestion · une ligne ne peut pas porter une adresse et pas
+     * de page.
      */
-    public function test_an_address_without_a_query_string_comes_back_whole(): void
+    public function test_a_row_written_through_the_model_carries_its_page(): void
     {
-        $expression = StoredUrl::pathExpression(DB::connection()->getDriverName(), 'url');
-
         $day = CarbonImmutable::parse('2026-06-10');
-        $this->pageview($this->newSession(), 'https://exemple.fr/a-propos', $day->setTime(9, 0));
+        $this->pageview($this->newSession(), 'https://exemple.fr/a-propos?x=1#y', $day->setTime(9, 0));
 
-        $read = DB::table(Event::TABLE)->selectRaw("{$expression} as label")->value('label');
-
-        $this->assertSame('https://exemple.fr/a-propos', $read);
+        $this->assertSame('/a-propos', Event::query()->firstOrFail()->page);
     }
 
     /**
-     * Sur un moteur qu'il ne sait pas traiter, il lève plutôt que de retomber
-     * sur l'adresse entière · un repli silencieux mettrait les chiffres d'un
-     * moteur en désaccord avec ceux de tous les autres, et avec les résumés
-     * écrits à côté.
+     * Ce que « la page » veut dire, cas par cas · le chemin, et rien d'autre.
+     *
+     * @return array<string, array{0: string|null, 1: string|null}>
      */
-    public function test_an_unknown_engine_stops_rather_than_guesses(): void
+    public static function addresses(): array
     {
-        $this->expectException(InvalidArgumentException::class);
+        return [
+            'une adresse nue' => ['https://exemple.fr/tarifs', '/tarifs'],
+            'un lien de campagne' => ['https://exemple.fr/tarifs?fbclid=IwAR0aaa', '/tarifs'],
+            'un lien d’ancre' => ['https://exemple.fr/tarifs#prix', '/tarifs'],
+            'les deux' => ['https://exemple.fr/tarifs?a=1#prix', '/tarifs'],
+            'un autre hôte' => ['http://www.exemple.fr/tarifs', '/tarifs'],
+            'la racine' => ['https://exemple.fr/', '/'],
+            'un chemin profond, avec sa barre finale' => ['https://exemple.fr/blog/mon-article/', '/blog/mon-article/'],
+            'un chemin seul' => ['/tarifs?x=1', '/tarifs'],
+            'rien' => ['', null],
+            'null' => [null, null],
+            'un hôte sans chemin' => ['https://exemple.fr', null],
+        ];
+    }
 
-        StoredUrl::pathExpression('oracle', 'url');
+    #[DataProvider('addresses')]
+    public function test_the_page_of_an_address_is_its_path(?string $url, ?string $page): void
+    {
+        $this->assertSame($page, StoredUrl::page($url));
     }
 }

@@ -126,12 +126,13 @@ leurs courbes, puis l'audience, l'acquisition, le contenu et le résumé des
 événements arrivent chacun quand il est prêt. **Une page lente ne retient pas la
 suivante.**
 
-> **« Les pages les plus vues » compte une page, pas une adresse.** Le
-> regroupement se fait sur l'adresse jusqu'au `?`, donc `/tarifs`,
-> `/tarifs?fbclid=…` et `/tarifs?utm_source=…` sont la même ligne. Sans cela une
-> page d'atterrissage de campagne se diviserait en autant de lignes qu'elle a eu
-> de visites — `fbclid` est unique à chaque clic — et n'atteindrait jamais le
-> haut de la liste. Le temps réel compte de la même façon.
+> **« Les pages les plus vues » compte des pages, pas des adresses.** Une page,
+> c'est le chemin de sa route — sans hôte, sans paramètres, sans ancre · donc
+> `/tarifs`, `/tarifs?fbclid=…`, `/tarifs#prix` et `www.exemple.fr/tarifs` sont
+> la même ligne. Sans cela une page d'atterrissage de campagne se diviserait en
+> autant de lignes qu'elle a eu de visites — `fbclid` est unique à chaque clic —
+> et n'atteindrait jamais le haut de la liste. Le temps réel compte de la même
+> façon.
 >
 > **L'adresse reste stockée entière**, elle · le parcours d'une session montre
 > le lien exact qui a été ouvert, et l'attribution des campagnes se calcule sur

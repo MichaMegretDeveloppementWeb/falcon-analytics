@@ -18,6 +18,7 @@ use Falcon\Analytics\Repositories\VisitorWriteRepository;
 use Falcon\Analytics\Services\SessionContextEnricher;
 use Falcon\Analytics\Services\VisitorProfileResolver;
 use Falcon\Analytics\Support\PropsEncoder;
+use Falcon\Analytics\Support\StoredUrl;
 use Illuminate\Support\Facades\DB;
 
 /** @internal */
@@ -122,6 +123,12 @@ final readonly class IngestEventsAction
             'name' => $event->name,
             'route' => $event->route,
             'url' => $event->url,
+
+            // The page, written once here · the path of the route, without
+            // host, query string or fragment. Every count of « pages » groups
+            // on this column, and the screen displays exactly this.
+            'page' => StoredUrl::page($event->url),
+
             'target_selector' => $event->targetSelector,
             'target_text' => $event->targetText,
             'props' => $this->propsEncoder->encode($event->props),

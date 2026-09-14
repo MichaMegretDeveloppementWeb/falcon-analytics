@@ -301,7 +301,7 @@ final class DashboardRepositoriesTest extends TestCase
         $this->assertSame(['country' => 'FR', 'city' => 'Paris', 'total' => 2, 'previous' => 0], $localities[0]);
     }
 
-    public function test_it_ranks_the_most_viewed_pages_by_their_real_url_excluding_bot_sessions(): void
+    public function test_it_ranks_the_most_viewed_pages_by_their_page_excluding_bot_sessions(): void
     {
         $session = $this->makeSession();
         $this->makeEvent($session, EventType::Pageview, ['route' => 'listing.detail', 'url' => 'https://x.test/listings/25']);
@@ -312,9 +312,9 @@ final class DashboardRepositoriesTest extends TestCase
         $this->makeEvent($bot, EventType::Pageview, ['route' => 'home', 'url' => 'https://x.test/']);
 
         $this->assertSame([
-            // The same address aggregates.
-            ['label' => 'https://x.test/listings/25', 'total' => 2, 'previous' => 0],
-            ['label' => 'https://x.test/catalog', 'total' => 1, 'previous' => 0],
+            // The same page aggregates, and a page is the path of its route.
+            ['label' => '/listings/25', 'total' => 2, 'previous' => 0],
+            ['label' => '/catalog', 'total' => 1, 'previous' => 0],
         ], $this->overview->topPages($this->period, null));
     }
 

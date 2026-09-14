@@ -6,6 +6,7 @@ namespace Falcon\Analytics\Models;
 
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\Enums\EventType;
+use Falcon\Analytics\Support\StoredUrl;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -18,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $name
  * @property string|null $route
  * @property string|null $url
+ * @property string|null $page
  * @property string|null $target_selector
  * @property string|null $target_text
  * @property array<string, mixed>|null $props
@@ -44,6 +46,23 @@ final class Event extends Model
      * @var array<string>
      */
     protected $guarded = [];
+
+    /**
+     * The page is derived from the address whenever a row is made through the
+     * model and nobody said otherwise.
+     *
+     * The ingestion writes in bulk and sets it itself, by the same function ·
+     * this is for every other writer, so that a row can never carry an address
+     * and no page. One source for the reading, wherever the row comes from.
+     */
+    protected static function booted(): void
+    {
+        self::creating(function (Event $event): void {
+            if ($event->page === null && $event->url !== null) {
+                $event->page = StoredUrl::page($event->url);
+            }
+        });
+    }
 
     /** @return BelongsTo<Session, $this> */
     public function session(): BelongsTo

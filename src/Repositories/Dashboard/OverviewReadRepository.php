@@ -12,7 +12,6 @@ use Falcon\Analytics\Models\DailyCount;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Repositories\Concerns\ScopesSessionQueries;
 use Falcon\Analytics\Services\Dashboard\MarketingReportBuilder;
-use Falcon\Analytics\Support\StoredUrl;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -188,13 +187,15 @@ final readonly class OverviewReadRepository
      * @return list<array{label: string, total: int, previous: int}>
      */
     /**
-     * The most seen pages, grouped on the address WITHOUT its query string.
+     * The most seen pages · a page being the path of its route, without host,
+     * query string or fragment.
      *
      * The address is stored whole, and a session's journey shows it whole. This
      * block asks another question · on a site receiving campaign traffic,
      * grouping on the whole address split the real top page into one row per
      * visit — `fbclid` being unique per click — while the screen displayed the
-     * same path on every one of them. See `StoredUrl`.
+     * same path on every one of them. Anchor links did the same. See
+     * `StoredUrl`.
      *
      * @return list<array{label: string, total: int, previous: int}>
      */
@@ -386,28 +387,19 @@ final readonly class OverviewReadRepository
     }
 
     /**
-     * Page views of the window, by address without its query string.
-     *
-     * The expression enters raw SQL, so it comes from `StoredUrl` and carries
-     * the `literal-string` type · a column or a driver coming from a request
-     * stops compiling rather than reaching `selectRaw()`.
-     *
-     * **Grouping and selecting the same expression**, rather than selecting an
-     * alias and grouping on it · MySQL under ONLY_FULL_GROUP_BY accepts the
-     * alias, PostgreSQL does not, and a package that claims both cannot lean on
-     * the more forgiving one.
+     * Page views of the window, by page · the path of the route, written down
+     * at ingestion by the same reading the screen makes to display an address.
+     * See `StoredUrl`.
      *
      * @return Collection<string, int>
      */
     private function rankedPageCounts(Period $period, ?string $subjectType): Collection
     {
-        $page = StoredUrl::pathExpression($this->driver(), 'url');
-
         /** @var Collection<string, int> $counts */
         $counts = $this->eventScope(EventType::Pageview, $period, $subjectType)
-            ->whereNotNull('url')
-            ->selectRaw("{$page} as label, COUNT(*) as total")
-            ->groupByRaw($page)
+            ->whereNotNull('page')
+            ->selectRaw('page as label, COUNT(*) as total')
+            ->groupBy('page')
             ->pluck('total', 'label');
 
         return $counts;

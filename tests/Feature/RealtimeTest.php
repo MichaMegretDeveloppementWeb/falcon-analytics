@@ -194,7 +194,7 @@ final class RealtimeTest extends TestCase
         $this->event($a, EventType::Pageview, ['url' => 'https://x.test/b']);
 
         $this->assertSame(
-            [['url' => 'https://x.test/a', 'total' => 2]],
+            [['url' => '/a', 'total' => 2]],
             $this->repository->topPages($this->windowSince, null, 1),
         );
 

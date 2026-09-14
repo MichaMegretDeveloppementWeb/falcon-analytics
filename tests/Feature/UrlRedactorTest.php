@@ -49,6 +49,23 @@ final class UrlRedactorTest extends TestCase
         $this->assertNull($redactor->redact(null));
     }
 
+    /**
+     * The fragment survives the redaction.
+     *
+     * The collector sends the address as the visitor opened it, `#section`
+     * included, and a session's journey shows it. Rebuilt from the query alone,
+     * a redacted address lost its fragment while an unredacted one kept it ·
+     * the same visit read differently depending on whether a token had been
+     * in the link. Measured 2026-09-14.
+     */
+    public function test_it_keeps_the_fragment_when_it_redacts(): void
+    {
+        $this->assertSame(
+            'https://x.test/tarifs?token=redacted&utm_source=meta#prix',
+            (new UrlRedactor)->redact('https://x.test/tarifs?token=secret&utm_source=meta#prix'),
+        );
+    }
+
     public function test_it_does_nothing_when_the_denylist_is_empty(): void
     {
         config()->set('analytics.privacy.redact_query_params', []);

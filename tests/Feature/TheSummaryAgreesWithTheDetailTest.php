@@ -410,7 +410,7 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
 
         $counted = DailyCount::query()
             ->where('day', '2026-06-14')
-            ->where('label', 'https://exemple.fr/tarifs')
+            ->where('label', '/tarifs')
             ->value('total');
 
         $this->assertSame(1, (int) $counted, 'The late row was summarised into its own day.');
