@@ -40,7 +40,7 @@
                 <dl class="an:grid an:max-w-[26rem] an:grid-cols-[minmax(0,1fr)_auto] an:items-center an:gap-x-5 an:gap-y-3">
                     @foreach ($topClicks as $click)
                         <dt class="an:min-w-0">
-                            <span class="an:block an:truncate an:text-[13px] an:text-secondary" data-tooltip="{{ $click['label'] }}">{{ $click['label'] }}</span>
+                            <span class="an:block an:truncate an:text-[13px] an:text-secondary" data-an-tooltip="{{ $click['label'] }}">{{ $click['label'] }}</span>
                             @if ($click['route'])
                                 <span class="an:block an:truncate an:text-[11px] an:text-muted"><x-analytics::page-url :route="$click['route']" /></span>
                             @endif

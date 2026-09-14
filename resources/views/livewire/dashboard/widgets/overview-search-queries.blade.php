@@ -35,7 +35,7 @@
                 @foreach ($queries as $item)
                     <div class="an:flex an:items-center an:justify-between an:gap-4 an:border-b an:border-subtle an:py-2.5 an:lg:[&:nth-last-child(-n+2)]:border-b-0 an:[&:last-child]:border-b-0">
                         <div class="an:min-w-0">
-                            <p class="an:truncate an:text-[13px] an:font-medium an:text-primary" data-tooltip="{{ $item['query'] }}">{{ $item['query'] }}</p>
+                            <p class="an:truncate an:text-[13px] an:font-medium an:text-primary" data-an-tooltip="{{ $item['query'] }}">{{ $item['query'] }}</p>
                             <p class="an:text-[11px] an:text-muted">
                                 {{ __('Position moy. : :position', ['position' => $item['position'] !== null ? number_format($item['position'], 1, ',', ' ') : '–']) }}
                                 · {{ number_format($item['impressions'], 0, ',', ' ') }} {{ __('impressions') }}

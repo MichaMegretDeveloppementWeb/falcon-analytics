@@ -51,7 +51,7 @@
                             <div class="an:flex an:items-baseline an:justify-between an:gap-3">
                                 <div class="an:flex an:min-w-0 an:items-baseline an:gap-x-2">
                                     <span class="an:text-lg an:font-semibold an:tabular-nums an:tracking-tight an:text-primary">{{ number_format($step->visitors, 0, ',', ' ') }}</span>
-                                    <span class="an:truncate an:text-[13px] an:text-secondary" data-tooltip="{{ $step->label }}">{{ $step->label }}</span>
+                                    <span class="an:truncate an:text-[13px] an:text-secondary" data-an-tooltip="{{ $step->label }}">{{ $step->label }}</span>
                                 </div>
                                 <div class="an:flex an:shrink-0 an:items-center an:gap-x-2">
                                     @if ($previousVisitors !== null && $previousVisitors > 0)

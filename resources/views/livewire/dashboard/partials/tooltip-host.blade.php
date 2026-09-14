@@ -1,4 +1,4 @@
-{{-- Delegated, viewport-clamped tooltip. Any element carrying a data-tooltip
+{{-- Delegated, viewport-clamped tooltip. Any element carrying a data-an-tooltip
      attribute reveals its full value on hover, positioned so it never overflows
      the screen. One host per page (event delegation on window); x-show only, so
      it is safe inside re-rendering Livewire components. --}}
@@ -6,9 +6,9 @@
     x-data="{
         text: '', show: false, x: 0, y: 0,
         move(e) {
-            const el = e.target.closest ? e.target.closest('[data-tooltip]') : null;
-            if (! el || ! el.getAttribute('data-tooltip')) { this.show = false; return; }
-            this.text = el.getAttribute('data-tooltip');
+            const el = e.target.closest ? e.target.closest('[data-an-tooltip]') : null;
+            if (! el || ! el.getAttribute('data-an-tooltip')) { this.show = false; return; }
+            this.text = el.getAttribute('data-an-tooltip');
             this.show = true;
             this.$nextTick(() => {
                 const tip = this.$refs.tip;

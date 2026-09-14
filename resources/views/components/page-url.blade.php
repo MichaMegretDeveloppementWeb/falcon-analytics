@@ -10,5 +10,5 @@
     $display = $display !== '' ? $display : __('Inconnu');
 @endphp
 
-{{-- data-tooltip reveals the full path on hover via the dashboard tooltip host. --}}
-<span data-tooltip="{{ $display }}">{{ $display }}</span>
+{{-- data-an-tooltip reveals the full path on hover via the dashboard tooltip host. --}}
+<span data-an-tooltip="{{ $display }}">{{ $display }}</span>

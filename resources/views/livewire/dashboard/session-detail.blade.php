@@ -234,7 +234,7 @@
                                                 <div class="an:flex an:items-center an:gap-2">
                                                     <x-ui::icon :name="$isConversion ? 'bolt' : 'cursor-arrow-rays'" @class(['an:h-3.5 an:w-3.5 an:shrink-0', 'an:text-emerald-500' => $isConversion, 'an:text-series-1' => ! $isConversion]) />
                                                     @php $childLabel = $eventLabel($child); @endphp
-                                                    <span @class(['an:min-w-0 an:truncate an:text-[12px]', 'an:font-medium an:text-emerald-600 an:dark:text-emerald-400' => $isConversion, 'an:text-secondary' => ! $isConversion]) data-tooltip="{{ $childLabel }}">{{ $childLabel }}</span>
+                                                    <span @class(['an:min-w-0 an:truncate an:text-[12px]', 'an:font-medium an:text-emerald-600 an:dark:text-emerald-400' => $isConversion, 'an:text-secondary' => ! $isConversion]) data-an-tooltip="{{ $childLabel }}">{{ $childLabel }}</span>
                                                     <span class="an:ml-auto an:shrink-0 an:text-[11px] an:tabular-nums an:text-muted">{{ $child->occurred_at->translatedFormat('H:i:s') }}</span>
                                                 </div>
                                             @endforeach

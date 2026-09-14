@@ -23,7 +23,7 @@
                         @foreach ($topConversions as $item)
                             <dt class="an:flex an:min-w-0 an:items-center an:gap-2.5">
                                 <span class="an:h-2 an:w-2 an:shrink-0 an:rounded-full an:bg-emerald-500 an:dark:bg-emerald-400"></span>
-                                <span class="an:truncate an:text-[13px] an:text-secondary" data-tooltip="{{ $item['label'] }}">{{ $item['label'] }}</span>
+                                <span class="an:truncate an:text-[13px] an:text-secondary" data-an-tooltip="{{ $item['label'] }}">{{ $item['label'] }}</span>
                             </dt>
                             <dd class="an:w-8 an:text-right an:text-[13px] an:font-semibold an:tabular-nums an:text-primary"
                                 title="{{ $conversionsTotal > 0 ? ((int) round($item['count'] / $conversionsTotal * 100))."\u{00A0}%" : '' }}">{{ number_format($item['count'], 0, ',', ' ') }}</dd>
@@ -41,7 +41,7 @@
                         @foreach ($topEvents as $item)
                             <dt class="an:flex an:min-w-0 an:items-center an:gap-2.5">
                                 <span class="an:w-5 an:shrink-0 an:text-[11px] an:font-medium an:tabular-nums an:text-muted">{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
-                                <span class="an:truncate an:text-[13px] an:text-secondary" data-tooltip="{{ $item['label'] }}">{{ $item['label'] }}</span>
+                                <span class="an:truncate an:text-[13px] an:text-secondary" data-an-tooltip="{{ $item['label'] }}">{{ $item['label'] }}</span>
                             </dt>
                             <dd class="an:w-8 an:text-right an:text-[13px] an:font-semibold an:tabular-nums an:text-primary">{{ number_format($item['count'], 0, ',', ' ') }}</dd>
                         @endforeach

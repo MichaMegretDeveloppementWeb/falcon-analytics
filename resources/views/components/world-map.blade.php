@@ -14,7 +14,7 @@
     tick (the `map` payload), sized in SCREEN PIXELS so they look the same on a
     phone and on a wide display. The page's 30 min / Online tab filters them
     through the `analytics-realtime-mode` event, and the tooltip goes through
-    the dashboard's delegated `data-tooltip`.
+    the dashboard's delegated `data-an-tooltip`.
 
     Its four colours are tokens · land, borders, the live green and the recent
     accent. They were literals, and the dark theme was a second set of classes
@@ -60,11 +60,11 @@
                 const place = p.city || p.country || '?';
                 const suffix = count + ' ' + (count > 1 ? this.sessionsLabel : this.sessionLabel);
                 const label = this.esc(place + ' · ' + suffix + (online && this.mode !== 'online' ? ' · ' + p.online + ' ' + this.onlineLabel : ''));
-                html += '<g data-tooltip=\x22' + label + '\x22>';
+                html += '<g data-an-tooltip=\x22' + label + '\x22>';
                 if (online) {
-                    html += '<circle class=\x22fa-map-pulse fa-map-online\x22 cx=\x22' + x + '\x22 cy=\x22' + y + '\x22 r=\x22' + (r * 1.5) + '\x22></circle>';
+                    html += '<circle class=\x22an-map-pulse an-map-online\x22 cx=\x22' + x + '\x22 cy=\x22' + y + '\x22 r=\x22' + (r * 1.5) + '\x22></circle>';
                 }
-                html += '<circle class=\x22' + (online ? 'fa-map-online' : 'fa-map-recent') + '\x22 cx=\x22' + x + '\x22 cy=\x22' + y + '\x22 r=\x22' + r + '\x22 fill-opacity=\x220.9\x22></circle>';
+                html += '<circle class=\x22' + (online ? 'an-map-online' : 'an-map-recent') + '\x22 cx=\x22' + x + '\x22 cy=\x22' + y + '\x22 r=\x22' + r + '\x22 fill-opacity=\x220.9\x22></circle>';
                 html += '</g>';
             }
             this.$refs.markers.innerHTML = html;
@@ -100,16 +100,16 @@
         /* The two marker colours, held by the stylesheet and not by the script ·
            an SVG circle is reached by CSS, so a theme switch repaints it with
            the rest of the page and nothing has to be redrawn. */
-        .fa-map-online { fill: var(--an-online); }
-        .fa-map-recent { fill: var(--an-accent); }
+        .an-map-online { fill: var(--an-online); }
+        .an-map-recent { fill: var(--an-accent); }
 
-        @keyframes fa-map-pulse {
+        @keyframes an-map-pulse {
             0% { opacity: .5; transform: scale(1); }
             70% { opacity: 0; transform: scale(2.4); }
             100% { opacity: 0; transform: scale(2.4); }
         }
-        .fa-map-pulse {
-            animation: fa-map-pulse 2s cubic-bezier(0, 0, .2, 1) infinite;
+        .an-map-pulse {
+            animation: an-map-pulse 2s cubic-bezier(0, 0, .2, 1) infinite;
             transform-box: fill-box;
             transform-origin: center;
         }

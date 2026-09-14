@@ -135,7 +135,7 @@
                         <x-ui::table.cell>
                             @if ($session->device_type || $session->browser)
                                 @php $deviceLine = ($session->device_type ? DeviceLabel::for($session->device_type) : __('Inconnu')).($session->browser ? ' · '.$session->browser : ''); @endphp
-                                <div class="an:max-w-40 an:truncate" data-tooltip="{{ $deviceLine }}">{{ $deviceLine }}</div>
+                                <div class="an:max-w-40 an:truncate" data-an-tooltip="{{ $deviceLine }}">{{ $deviceLine }}</div>
                             @else
                                 <span class="an:text-muted">{{ __('Inconnu') }}</span>
                             @endif
