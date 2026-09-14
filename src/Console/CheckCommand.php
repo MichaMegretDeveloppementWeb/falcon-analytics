@@ -408,7 +408,7 @@ final class CheckCommand extends Command
      */
     private function checkAreaLayout(Config $config): array
     {
-        $layout = $config->get('analytics.admin.layout');
+        $layout = $config->get('analytics.layouts.admin');
 
         if (! is_string($layout) || $layout === '') {
             return ['Gabarit', 'OK', 'Les écrans utilisent la coquille du paquet.'];

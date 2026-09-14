@@ -32,7 +32,7 @@ final class ScreenMountingTest extends TestCase
 
         View::addLocation(__DIR__.'/../Fixtures/views');
 
-        config()->set('analytics.admin.layout', 'host-shell');
+        config()->set('analytics.layouts.admin', 'host-shell');
     }
 
     private function admin(): TestAdmin

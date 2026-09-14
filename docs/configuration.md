@@ -157,7 +157,7 @@ Le nom d'un sujet est **lu au moment de l'affichage et jamais stocké**.
 |---|---|---|---|
 | `admin.route_prefix` | chemin | `'admin/analytics'` | Ce qui apparaît dans l'URL de chaque écran d'analytique. |
 | `admin.middleware` | liste | `['web', 'auth']` | Ce qui protège ces écrans. Le défaut convient à une application à un seul garde · adaptez-le, par exemple `['web', 'auth:admin']`. |
-| `admin.layout` | nom de composant ou `null` | `null` | Le composant Blade qui dessine ces écrans. **Sans valeur**, la coquille du paquet, qui est une administration complète et autonome. |
+| `layouts.admin` | nom de composant ou `null` | `null` | Le composant Blade qui dessine ces écrans. **Sans valeur**, la coquille du paquet, qui est une administration complète et autonome. Une clé par espace, nommée d'après lui · le paquet n'en a qu'un. |
 
 | Clé | Type | Défaut | Ce qu'elle fait |
 |---|---|---|---|

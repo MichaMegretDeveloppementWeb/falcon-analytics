@@ -85,7 +85,7 @@ On ne le répète donc pas, et chaque exception est dite dans sa fiche ·
 |---|---|
 | **méthode** | `GET` |
 | **permissions** | ce que `admin.middleware` contient · `['web', 'auth']` au défaut |
-| **layout** | ce que `admin.layout` nomme · la coquille du paquet au défaut |
+| **layout** | ce que `layouts.admin` nomme · la coquille du paquet au défaut |
 | **mode d'usage** | une page, dans votre layout ou dans notre coquille. **Jamais un composant à poser dans une de vos pages** · un écran attend une page entière autour de lui |
 | **lecture seule** | sauf **trois** écrans marketing et l'effacement RGPD, tous signalés dans leur fiche |
 | **paramètres** | **ceux de l'adresse**, quand l'écran en porte un · les filtres, eux, sont dans la section ci-dessus et ne sont pas répétés fiche par fiche |

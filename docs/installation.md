@@ -167,7 +167,7 @@ barre latérale, sa barre du haut, sa bascule de thème. Une administration prê
 à l'emploi, et vous n'avez rien à écrire.
 
 Pour les mettre dans votre propre habillage, nommez votre composant Blade dans
-`admin.layout`, puis liez les écrans depuis votre navigation ·
+`layouts.admin`, puis liez les écrans depuis votre navigation ·
 
 ```blade
 <a href="{{ route('analytics.admin.overview') }}">Vue d'ensemble</a>
@@ -177,7 +177,7 @@ Pour les mettre dans votre propre habillage, nommez votre composant Blade dans
 **Les noms de routes ne bougent jamais ; seules les adresses se règlent.** La
 liste complète est dans [fonctionnalites.md](fonctionnalites.md).
 
-`admin.layout` attend le nom **du composant tel que vous l'écririez** ·
+`layouts.admin` attend le nom **du composant tel que vous l'écririez** ·
 `'layout.admin'` pour `<x-layout.admin>`. Il vaut pour toute l'administration,
 marketing compris · c'est la même, et on n'en habille pas la moitié.
 

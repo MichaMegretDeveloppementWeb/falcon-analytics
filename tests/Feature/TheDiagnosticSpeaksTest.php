@@ -189,7 +189,7 @@ final class TheDiagnosticSpeaksTest extends TestCase
 
     public function test_it_says_when_a_named_host_layout_does_not_exist(): void
     {
-        config(['analytics.admin.layout' => 'layouts.absent']);
+        config(['analytics.layouts.admin' => 'layouts.absent']);
 
         $this->artisan('analytics:check')
             ->expectsOutputToContain('layouts.absent')
@@ -199,7 +199,7 @@ final class TheDiagnosticSpeaksTest extends TestCase
     /** An unnamed layout mounts the package's own shell: that is not a defect. */
     public function test_it_accepts_screens_that_use_the_package_shell(): void
     {
-        config(['analytics.admin.layout' => null]);
+        config(['analytics.layouts.admin' => null]);
 
         $this->artisan('analytics:check')->assertSuccessful();
     }

@@ -108,6 +108,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | The shell each area is drawn in
+    |--------------------------------------------------------------------------
+    |
+    | One key per area, named after it. The value is a Blade COMPONENT — a
+    | screen opens it as a tag and fills its slot, so name it the way you would
+    | write it: 'layout.admin' for <x-layout.admin>. null uses the package's own
+    | shell, which is a complete, self-contained administration.
+    |
+    | Marketing has no key of its own, and that is deliberate: the layout
+    | belongs to the AREA, and marketing is the same administration. A host
+    | mounting both wants one chrome around them.
+    |
+    */
+    'layouts' => [
+        'admin' => null,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Administration area
     |--------------------------------------------------------------------------
     |
@@ -125,13 +144,6 @@ return [
         // Middleware protecting the screens. The default suits a single-guard
         // app; override to match the project (e.g. ['web', 'auth:admin']).
         'middleware' => ['web', 'auth'],
-
-        // The Blade COMPONENT drawing the screens of this area — a screen opens
-        // it as a tag and fills its slot, so name it the way you would write it:
-        // 'layout.admin' for <x-layout.admin>. null uses the package's own
-        // shell. The layout belongs to the area, marketing included: it is the
-        // same administration, and a host mounting both wants one chrome.
-        'layout' => null,
 
         /*
         | Marketing: a second entity of the administration, with its own

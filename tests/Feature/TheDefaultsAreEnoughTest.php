@@ -67,7 +67,7 @@ final class TheDefaultsAreEnoughTest extends TestCase
 
         $this->get(route('analytics.admin.overview'))
             ->assertSuccessful()
-            // The shipped `admin.layout` is null, so the package draws its own
+            // The shipped `layouts.admin` is null, so the package draws its own
             // shell — the whole point of shipping one.
             ->assertSee('data-ui-scope="analytics"', false)
             ->assertSee('vendor/falcon/analytics/analytics.css', false);
