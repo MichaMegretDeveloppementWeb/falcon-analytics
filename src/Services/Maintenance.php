@@ -96,10 +96,8 @@ final readonly class Maintenance
             ));
         }
 
-        $deleted = $this->events->pruneAnonymousOlderThan($cutoff, $this->routesFunnelsNeed());
-
         /*
-         * The days whose detail has just gone, said out loud.
+         * The days whose detail is about to go, said out loud BEFORE it goes.
          *
          * **This is what the reading splits on.** Up to here the two blocks that
          * count anonymous rows read the summaries; after it they read the rows.
@@ -109,6 +107,16 @@ final readonly class Maintenance
          * crossed yet, and a scheduler stopped for a month leaves days past the
          * retention still intact.
          *
+         * **Before, and not after, because the erasing can stop halfway.** It
+         * deletes in batches rather than in one statement, so a timeout leaves
+         * a day part erased; marked afterwards, that day would still be read
+         * from rows that are no longer all there, and the two blocks would
+         * quietly shrink until the next run finished the job. Marked first, the
+         * same interruption costs nothing · the summary already holds the whole
+         * day — that is what the guard above just checked — so the reading is
+         * exact whether the rows went or stayed, and the leftovers simply go
+         * next time.
+         *
          * Every day marked here was summarised first: the guard above refuses
          * otherwise, and the archiving only ever moves forward.
          */
@@ -116,6 +124,8 @@ final readonly class Maintenance
             ->where('day', '<', $cutoff->toDateString())
             ->whereNull('pruned_at')
             ->update(['pruned_at' => CarbonImmutable::now()->toDateTimeString()]);
+
+        $deleted = $this->events->pruneAnonymousOlderThan($cutoff, $this->routesFunnelsNeed());
 
         return MaintenanceOutcome::erased(
             $deleted,

@@ -13,14 +13,18 @@ use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Models\Ad;
 use Falcon\Analytics\Models\AdObjective;
 use Falcon\Analytics\Models\Campaign;
+use Falcon\Analytics\Models\DailyArchive;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Repositories\Dashboard\EventReadRepository;
 use Falcon\Analytics\Repositories\Dashboard\OverviewReadRepository;
 use Falcon\Analytics\Services\Dashboard\MarketingReportBuilder;
+use Falcon\Analytics\Services\Maintenance;
 use Falcon\Analytics\Tests\TestCase;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
@@ -128,6 +132,21 @@ final class ThePurgeChangesNoFigureTest extends TestCase
 
             $this->event($session, EventType::Pageview, $when->setTime(9, 0), ['url' => 'https://exemple.fr/', 'route' => 'home']);
             $this->event($session, EventType::Pageview, $when->setTime(9, 5), ['url' => 'https://exemple.fr/tarifs', 'route' => 'tarifs']);
+
+            /*
+             * The same page, reached through two campaign links whose token is
+             * never twice the same.
+             *
+             * They are here so that this essay exercises the GROUPING across
+             * the erasing, and not only the counting · the summary and the
+             * reading it stands in for both group on the address up to the `?`,
+             * and if either one ever stopped, « les pages les plus vues » would
+             * change shape on the day the erasing crossed this history —
+             * silently, since both readings would look plausible on their own.
+             */
+            $this->event($session, EventType::Pageview, $when->setTime(9, 6), ['url' => 'https://exemple.fr/tarifs?fbclid=IwAR0aaa', 'route' => 'tarifs']);
+            $this->event($session, EventType::Pageview, $when->setTime(9, 7), ['url' => 'https://exemple.fr/tarifs?utm_source=meta&utm_campaign=ete', 'route' => 'tarifs']);
+
             $this->event($session, EventType::Click, $when->setTime(9, 10), ['target_text' => 'Demander un devis', 'route' => 'home']);
             $this->event($session, EventType::Click, $when->setTime(9, 11), ['target_text' => 'Demander un devis', 'route' => 'home']);
 
@@ -135,7 +154,7 @@ final class ThePurgeChangesNoFigureTest extends TestCase
             // still be able to say once its rows are gone. Written here because
             // these rows are laid down directly rather than through the
             // endpoint; `IngestEventsAction` is what does it in the real path.
-            $session->update(['pageview_count' => 2, 'click_count' => 2, 'event_count' => 5]);
+            $session->update(['pageview_count' => 4, 'click_count' => 2, 'event_count' => 7]);
 
             // Named: the funnel's second step, the events screen, and the ad's
             // objective all read this one.
@@ -219,7 +238,7 @@ final class ThePurgeChangesNoFigureTest extends TestCase
 
         $old = Session::query()->orderBy('started_at')->firstOrFail();
 
-        $this->assertSame(2, $old->pageview_count, 'What it counted while it happened.');
+        $this->assertSame(4, $old->pageview_count, 'What it counted while it happened.');
         $this->assertSame(2, $old->click_count);
 
         $kept = Event::query()->where('session_id', $old->id)->get();
@@ -229,5 +248,101 @@ final class ThePurgeChangesNoFigureTest extends TestCase
             $kept->pluck('name')->filter()->values()->all(),
             'The named event stays; the anonymous views and clicks are gone.',
         );
+    }
+
+    /**
+     * An erasing that stops halfway costs no figure either.
+     *
+     * **The erasing deletes in batches, not in one statement**, so a timeout or
+     * a killed process leaves a day part erased. The order the two writes are
+     * made in is what decides what that costs ·
+     *
+     * - marked AFTER, the day is still read from rows that are no longer all
+     *   there, and the two blocks shrink quietly until some later run finishes
+     *   the job — the exact failure this whole design exists to forbid ;
+     * - marked BEFORE, the same interruption costs nothing · the summary
+     *   already holds the whole day, so the reading is exact whether the rows
+     *   went or stayed, and the leftovers go next time.
+     *
+     * So the order is watched at the statements themselves, which is the only
+     * place it is really decided.
+     */
+    public function test_the_days_are_marked_before_the_first_row_goes(): void
+    {
+        $this->aHistory();
+        $this->artisan('analytics:archive')->assertSuccessful();
+
+        /** @var list<string> $order */
+        $order = [];
+
+        DB::listen(function (QueryExecuted $query) use (&$order): void {
+            $sql = strtolower(ltrim($query->sql));
+
+            if (str_starts_with($sql, 'update') && str_contains($sql, 'falcon_analytics_daily_archives')) {
+                $order[] = 'marque';
+            }
+
+            if (str_starts_with($sql, 'delete') && str_contains($sql, 'falcon_analytics_events')) {
+                $order[] = 'efface';
+            }
+        });
+
+        app(Maintenance::class)->prune();
+
+        $this->assertContains('efface', $order, 'Rien n’a été effacé, donc rien n’est prouvé.');
+        $this->assertSame('marque', $order[0], 'La marque doit être écrite avant la première suppression.');
+    }
+
+    /**
+     * And a day marked then erased **halfway** reads exactly, which is what
+     * makes the order above worth having.
+     *
+     * This is the state an interruption leaves behind, and it is the one that
+     * discriminates · une journée marquée dont les lignes sont toutes encore là
+     * se lit juste de toute façon, les deux sources s'accordant. Une journée
+     * marquée dont la moitié des lignes sont parties ne se lit juste que si
+     * c'est le résumé qui répond.
+     *
+     * Marquée après coup, cette même journée aurait été lue sur ce qu'il reste
+     * de ses lignes, et les deux blocs auraient maigri en silence jusqu'à ce
+     * qu'un passage ultérieur finisse le travail.
+     */
+    public function test_a_day_marked_then_erased_halfway_reads_exactly(): void
+    {
+        $this->aHistory();
+        $this->artisan('analytics:archive')->assertSuccessful();
+
+        $before = $this->everythingAtStake();
+
+        $cutoff = CarbonImmutable::now()->subDays(30)->startOfDay();
+
+        // The interrupted state, laid down by hand · la marque est posée, puis
+        // l'effacement s'arrête après une seule ligne.
+        DailyArchive::query()
+            ->where('day', '<', $cutoff->toDateString())
+            ->update(['pruned_at' => CarbonImmutable::now()->toDateTimeString()]);
+
+        // Une ligne que l'effacement aurait effacée · anonyme, et sur une route
+        // qu'aucune étape de tunnel ne protège.
+        $halfDone = Event::query()
+            ->where('occurred_at', '<', $cutoff)
+            ->where('type', EventType::Pageview->value)
+            ->whereNull('name')
+            ->where('route', 'tarifs')
+            ->firstOrFail();
+
+        $halfDone->delete();
+
+        $this->assertGreaterThan(
+            0,
+            Event::query()->where('occurred_at', '<', $cutoff)->whereNull('name')->count(),
+            'Il doit rester des lignes, sinon ce n’est pas un effacement interrompu.',
+        );
+
+        $after = $this->everythingAtStake();
+
+        foreach ($before as $block => $figures) {
+            $this->assertEquals($figures, $after[$block], "Le bloc « {$block} » a bougé sur un effacement interrompu.");
+        }
     }
 }
