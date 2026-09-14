@@ -92,4 +92,28 @@ final class PeriodTest extends TestCase
 
         CarbonImmutable::setTestNow();
     }
+
+    /**
+     * The previous window is made of whole days, and it touches this one.
+     *
+     * It ended at the same hour of the day as the current window at first —
+     * 14:30, a week earlier — and two things were wrong with that. The hours
+     * from 14:30 to midnight on that day belonged to neither window, so a visit
+     * there counted nowhere. And a window ending mid-day cannot be read from
+     * the daily summaries, which know whole days only · the « previous » figure
+     * of the two summarised blocks moved on the day the erasing crossed it.
+     */
+    public function test_the_previous_window_is_whole_days_touching_this_one(): void
+    {
+        CarbonImmutable::setTestNow('2026-06-15 14:30:00');
+
+        $previous = Period::ofDays(7)->previous();
+
+        $this->assertSame('2026-06-02 00:00:00', $previous->from->toDateTimeString());
+        $this->assertSame('2026-06-08 23:59:59', $previous->to->toDateTimeString(), 'It ends the second before this window begins.');
+        $this->assertSame(7, $previous->days);
+        $this->assertCount(7, $previous->eachDay());
+
+        CarbonImmutable::setTestNow();
+    }
 }

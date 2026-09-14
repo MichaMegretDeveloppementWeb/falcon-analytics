@@ -277,6 +277,25 @@ avec la feuille précédente et seize essais tombaient sur le garde du kit, au
 milieu d'essais qui parlaient d'autre chose. **Chaque fichier que l'un ou l'autre
 paquet livre est dans la liste**, ou rien ne marche.
 
+### Chaque processus a son propre cache de démarrage
+
+**L'échec intermittent de la suite en parallèle, pris sur le fait le
+2026-09-14.** Les quatre processus de paratest démarrent la même application
+d'essai, dont les manifestes `bootstrap/cache/services.php` et `packages.php`
+sont un seul fichier chacun. Quand un manifeste est périmé — un
+`vendor/bin/testbench` l'a écrit avec d'autres fournisseurs, un `composer update`
+a changé la liste — chaque processus le réécrit au démarrage, par un fichier
+temporaire et un `rename()`. **Sous Windows, renommer par-dessus un fichier
+qu'un autre processus lit est refusé** · un essai tombait dans son `setUp` avec
+« Accès refusé (code: 5) », sur rien de ce qu'il éprouvait. Une fois tous les
+processus d'accord avec le fichier, dix passages verts suivaient, ce qui lui
+donnait l'air du hasard.
+
+Le cadre laisse nommer ces deux chemins par l'environnement
+(`APP_SERVICES_CACHE`, `APP_PACKAGES_CACHE`), et paratest nomme ses processus
+dans `TEST_TOKEN` · le banc donne donc à chacun sa paire, avant de démarrer.
+`EachWorkerKeepsItsOwnBootstrapCache` le tient.
+
 ---
 
 ## Ce qu'on ne teste pas automatiquement

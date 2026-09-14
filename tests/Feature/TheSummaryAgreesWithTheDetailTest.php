@@ -345,4 +345,74 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
         $this->assertSame(['2026-06-14'], $this->archiver->run(1));
         $this->assertSame([], $this->archiver->run(1));
     }
+
+    /**
+     * Just after midnight, yesterday is not closed yet.
+     *
+     * **A row can land after the day it belongs to has ended** · the collector
+     * stamps an event with the moment it happened and sends it seconds later,
+     * and the endpoint writes it after the response has gone. A visit at
+     * 23:59:58 reaches the table at 00:00:05. The nightly run at 03:00 never
+     * meets this ; the catch-up on a screen load can, since an administrator
+     * opens screens at midnight too.
+     *
+     * Summarised in that gap, the day would be missing those rows for good —
+     * and the erasing would still take them. So yesterday only closes once a
+     * grace has passed, which no delay the collector can produce comes near.
+     */
+    public function test_just_after_midnight_yesterday_is_still_open(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-06-15 00:00:30'));
+        $this->pageview($this->newSession(), 'https://exemple.fr/', CarbonImmutable::parse('2026-06-13 10:00'));
+
+        $this->assertSame(['2026-06-13'], $this->archiver->run(), 'Only the day before yesterday is closed at 00:00:30.');
+        $this->assertFalse($this->archiver->isArchived(CarbonImmutable::parse('2026-06-14')), 'Yesterday is still open.');
+    }
+
+    /** And once the grace has passed, it is. */
+    public function test_after_the_grace_yesterday_is_closed(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-06-15 01:00:00'));
+        $this->pageview($this->newSession(), 'https://exemple.fr/', CarbonImmutable::parse('2026-06-13 10:00'));
+
+        $this->assertSame(['2026-06-13', '2026-06-14'], $this->archiver->run());
+    }
+
+    /**
+     * And the row that lands late is counted, which is what the grace is for.
+     *
+     * Told as it happens · the day ends, the last visit's rows arrive a few
+     * seconds later, a screen is opened in between. The summary written once
+     * the day really closes holds that visit.
+     */
+    public function test_a_row_that_lands_after_midnight_is_still_counted(): void
+    {
+        $day = CarbonImmutable::parse('2026-06-14');
+        $session = $this->newSession();
+
+        // The day already holds a visit · without one there is nothing to
+        // summarise at midnight and the essay would pass with no grace at all,
+        // which is not the situation it is written for.
+        $this->pageview($session, 'https://exemple.fr/', $day->setTime(10, 0));
+
+        // 23:59:58 · a page is opened. Its row is not in the table yet.
+
+        // 00:00:01 · an administrator opens a screen, which tries to catch up.
+        $this->travelTo(CarbonImmutable::parse('2026-06-15 00:00:01'));
+        $this->archiver->run();
+
+        // 00:00:05 · the row lands, stamped with the moment it happened.
+        $this->pageview($session, 'https://exemple.fr/tarifs', $day->setTime(23, 59, 58));
+
+        // 03:00 · the nightly run.
+        $this->travelTo(CarbonImmutable::parse('2026-06-15 03:00:00'));
+        $this->archiver->run();
+
+        $counted = DailyCount::query()
+            ->where('day', '2026-06-14')
+            ->where('label', 'https://exemple.fr/tarifs')
+            ->value('total');
+
+        $this->assertSame(1, (int) $counted, 'The late row was summarised into its own day.');
+    }
 }

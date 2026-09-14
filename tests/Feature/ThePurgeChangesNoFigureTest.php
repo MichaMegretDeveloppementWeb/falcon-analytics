@@ -163,6 +163,21 @@ final class ThePurgeChangesNoFigureTest extends TestCase
             $signed = $this->newSession($this->visitor(), $when, 'client');
             $this->event($signed, EventType::Pageview, $when->setTime(10, 0), ['url' => 'https://exemple.fr/tarifs', 'route' => 'tarifs']);
         }
+
+        /*
+         * One visit on the LAST day of the previous window, in the afternoon.
+         *
+         * The « previous » figure every block carries is read over a window
+         * that ends at the same hour as the current one, thirty days earlier.
+         * Read from rows, that window stops at noon ; read from summaries, a
+         * day is whole. So a visit on that day after noon is the one that tells
+         * whether the erasing moves the previous figure — it did, until the
+         * previous window was made of whole days.
+         */
+        $lastDayOfThePreviousWindow = $this->wideEnoughToReachBack->previous()->to;
+        $afternoon = $this->newSession($this->visitor(), $lastDayOfThePreviousWindow->setTime(15, 0));
+        $this->event($afternoon, EventType::Pageview, $lastDayOfThePreviousWindow->setTime(15, 0), ['url' => 'https://exemple.fr/tarifs', 'route' => 'tarifs']);
+        $afternoon->update(['pageview_count' => 1, 'event_count' => 1]);
     }
 
     /** Summarise every closed day, then erase what the retention allows. */
@@ -236,7 +251,10 @@ final class ThePurgeChangesNoFigureTest extends TestCase
         $this->aHistory();
         $this->archiveThenPrune();
 
-        $old = Session::query()->orderBy('started_at')->firstOrFail();
+        $old = Session::query()
+            ->where('started_at', CarbonImmutable::parse(self::ANCIENT))
+            ->whereNull('subject_type')
+            ->firstOrFail();
 
         $this->assertSame(4, $old->pageview_count, 'What it counted while it happened.');
         $this->assertSame(2, $old->click_count);

@@ -42,12 +42,27 @@ final readonly class Period
     /**
      * The window of identical length immediately preceding this one, used for
      * period-over-period comparisons.
+     *
+     * **Made of whole days, ending the second before this one starts.** It was
+     * « the same window shifted back by its length » at first, ending at the
+     * same hour of the day as this one — and that had two faults.
+     *
+     * The hours between that end and this window's first midnight belonged to
+     * neither period ; a visit there counted nowhere.
+     *
+     * And a window that ends mid-day cannot be read from the daily summaries,
+     * which know whole days only. Read from rows it stopped at noon ; read from
+     * summaries it took the whole last day · so the « previous » figure of the
+     * two summarised blocks changed on the day the erasing crossed it, which
+     * is the one thing the erasing must never do. Measured 2026-09-14.
+     *
+     * Whole days is also what every tool of this kind compares against.
      */
     public function previous(): self
     {
         return new self(
             $this->from->subDays($this->days),
-            $this->to->subDays($this->days),
+            $this->from->subDay()->endOfDay(),
             $this->days,
         );
     }

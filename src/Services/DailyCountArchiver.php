@@ -39,6 +39,22 @@ final readonly class DailyCountArchiver
     private const CHUNK = 500;
 
     /**
+     * How long after midnight a day is still considered open.
+     *
+     * **A row can land after the day it belongs to has ended.** The collector
+     * stamps an event with the moment it happened and sends it a few seconds
+     * later; the endpoint writes it after the response has gone. So a visit at
+     * 23:59:58 reaches the table at 00:00:05 — and a summary written in
+     * between would never count it, while the erasing would still take it. The
+     * scheduler runs at 03:00 and is never caught by this; the catch-up on a
+     * screen load runs whenever an administrator opens one, midnight included.
+     *
+     * An hour is far beyond any delay the collector can produce, and it costs
+     * nothing · the nightly run comes later anyway.
+     */
+    private const GRACE_MINUTES = 60;
+
+    /**
      * Summarise the days waiting for it, oldest first.
      *
      * @param  int|null  $limit  how many days at most · null takes them all,
@@ -65,11 +81,14 @@ final readonly class DailyCountArchiver
      * database that has never been archived it starts at the oldest event
      * there is, so an installation upgrading to this keeps all of its depth.
      *
+     * **And it stops at the last day that is really closed** · yesterday, once
+     * the grace after midnight has passed. See `GRACE_MINUTES`.
+     *
      * @return list<CarbonImmutable>
      */
     public function pendingDays(?int $limit = null): array
     {
-        $yesterday = CarbonImmutable::now()->subDay()->startOfDay();
+        $yesterday = CarbonImmutable::now()->subMinutes(self::GRACE_MINUTES)->subDay()->startOfDay();
         $from = $this->firstPendingDay();
 
         if ($from === null || $from->greaterThan($yesterday)) {

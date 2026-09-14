@@ -24,10 +24,65 @@ abstract class TestCase extends Orchestra
 {
     protected function setUp(): void
     {
+        self::isolateTheBootstrapCache(self::parallelToken());
+
         parent::setUp();
 
         $this->withoutVite();
         $this->publishTheCompiledFiles();
+    }
+
+    /**
+     * One provider manifest per parallel worker, instead of one for all.
+     *
+     * **This is the intermittent failure, and it took a run to catch it in
+     * the act.** Every worker boots the same test application, whose
+     * `bootstrap/cache/services.php` and `packages.php` are ONE file each. When
+     * a manifest is stale — a `vendor/bin/testbench` run wrote it with another
+     * set of providers, or a `composer update` changed the list — every worker
+     * rewrites it at boot, through a temporary file and a `rename()`. On
+     * Windows a rename onto a file another process is reading is refused, and
+     * one test in four hundred fell with « Accès refusé (code: 5) » in its
+     * `setUp`, about nothing it was testing. Once every worker agreed with the
+     * file, the next ten runs were green, which is exactly what made it look
+     * like chance. Measured 2026-09-14.
+     *
+     * The framework lets the two paths be named through the environment, and
+     * paratest names its workers in `TEST_TOKEN` · so each worker gets its own
+     * pair, and nobody renames over anybody. A sequential run keeps the
+     * default paths.
+     *
+     * Set through the three channels the framework's `Env` may read, before
+     * the application boots · the paths are resolved while providers are
+     * being registered, and there is no later.
+     */
+    protected static function isolateTheBootstrapCache(string $token): void
+    {
+        $paths = [
+            'APP_SERVICES_CACHE' => $token === '' ? null : "bootstrap/cache/services-{$token}.php",
+            'APP_PACKAGES_CACHE' => $token === '' ? null : "bootstrap/cache/packages-{$token}.php",
+        ];
+
+        foreach ($paths as $key => $path) {
+            if ($path === null) {
+                putenv($key);
+                unset($_ENV[$key], $_SERVER[$key]);
+
+                continue;
+            }
+
+            putenv("{$key}={$path}");
+            $_ENV[$key] = $path;
+            $_SERVER[$key] = $path;
+        }
+    }
+
+    /** Paratest's name for this worker, or an empty string when the run is sequential. */
+    private static function parallelToken(): string
+    {
+        $token = getenv('TEST_TOKEN');
+
+        return is_string($token) ? $token : '';
     }
 
     /**

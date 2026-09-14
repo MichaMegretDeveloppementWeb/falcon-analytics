@@ -59,6 +59,14 @@ Ce sont des paramètres de requête ordinaires, et ils s'ajoutent à l'adresse q
 **Les huit écrans à période** · vue d'ensemble, événements, tunnels, sessions,
 visiteurs, synthèse marketing, détail d'une campagne, détail d'une publicité.
 
+> **Une période de 30 jours, c'est aujourd'hui et les 29 jours qui précèdent**,
+> aujourd'hui étant compté jusqu'à l'heure où vous lisez. Les flèches de
+> variation comparent à **la période précédente** · les 30 jours entiers juste
+> avant, sans trou entre les deux. Elle est faite de journées entières parce que
+> c'est ce que tout outil de ce genre compare, et parce qu'une fenêtre qui
+> s'arrêterait en milieu de journée ne pourrait pas se lire dans les compteurs
+> quotidiens une fois son détail effacé.
+
 **Les six qui n'en ont pas** · temps réel, qui lit sa propre fenêtre récente ;
 intégrations ; campagnes et publicités, qui listent des définitions et non du
 trafic ; et les deux détails, visiteur et session, qui montrent tout ce qu'ils
