@@ -1,0 +1,18 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Falcon\Analytics\Http\Controllers\Dashboard;
+
+use Illuminate\Contracts\View\View;
+
+/** @internal */
+final readonly class OverviewController
+{
+    public function __invoke(): View
+    {
+        return view('analytics::admin.dashboard.overview', [
+            'analyticsTitle' => __('Vue d\'ensemble').' · '.__('Analytics'),
+        ]);
+    }
+}

@@ -1,0 +1,67 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Falcon\Analytics\Http\Middleware;
+
+use Closure;
+use Falcon\Analytics\Facades\Analytics;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\IpUtils;
+use Symfony\Component\HttpFoundation\Response;
+
+/**
+ * Gate the ingestion endpoint: silently drop (204) requests that are disabled,
+ * cross-origin, or excluded (internal staff, listed IPs). Bots are NOT dropped
+ * here, they are flagged during ingestion and filtered in the dashboard.
+ *
+ * @internal it is appended to the collector's stack by the package itself · a
+ *           host never names it.
+ */
+final class EnsureAnalyticsAccepts
+{
+    public function handle(Request $request, Closure $next): Response
+    {
+        if ($this->shouldDrop($request)) {
+            return response()->noContent();
+        }
+
+        return $next($request);
+    }
+
+    private function shouldDrop(Request $request): bool
+    {
+        return config('analytics.enabled') !== true
+            || ! $this->isSameOrigin($request)
+            || Analytics::isExcluded()
+            || IpUtils::checkIp((string) $request->ip(), config('analytics.exclude_ips', []));
+    }
+
+    /**
+     * A forged cross-site beacon always carries an Origin (browsers set it on
+     * cross-origin POST), so a mismatched host is rejected. A present but
+     * unparseable Origin/Referer (e.g. "null" from a sandboxed iframe) is also
+     * dropped. Only a fully absent Origin AND Referer is allowed, since that
+     * cannot be a browser cross-site forgery.
+     */
+    private function isSameOrigin(Request $request): bool
+    {
+        $source = $request->headers->get('Origin') ?? $request->headers->get('Referer');
+
+        if ($source === null) {
+            return true;
+        }
+
+        $sourceHost = parse_url($source, PHP_URL_HOST);
+
+        // parse_url returns false (not null) for a malformed URL such as
+        // "http://:80"; both mean "no usable host", so the request is dropped.
+        if (! is_string($sourceHost)) {
+            return false;
+        }
+
+        $normalise = fn (string $host): string => (string) preg_replace('/^www\./i', '', strtolower($host));
+
+        return $normalise($sourceHost) === $normalise($request->getHost());
+    }
+}

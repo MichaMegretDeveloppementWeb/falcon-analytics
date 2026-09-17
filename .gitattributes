@@ -1,0 +1,45 @@
+# Line endings come from here, never from the machine.
+#
+# Without this file, git converts them on checkout under Windows, and
+# `pint --test` then fails on **every** file of a fresh clone: the laravel
+# preset wants LF. The validation chain was red for anyone cloning under
+# Windows, with nothing wrong in the code.
+*               text=auto eol=lf
+
+# What the build produces is neither normalised nor shown in a diff: it is
+# noise, and the source is elsewhere. The reproducibility check compares bytes,
+# so a normalisation would fail it on a difference nobody asked for.
+public/*        -text -diff
+
+# What stays out of the distributed archive. An application installing the
+# package needs neither its build chain, nor its tests, nor its analysis
+# tooling. It receives `public/`, already compiled, and nothing to rebuild it
+# with.
+#
+# `resources/css` and `resources/js` belong here too, and not merely for
+# weight: shipped, they cannot serve. The stylesheet reaches for the kit's
+# layers and theme through a relative path that leads nowhere once the package
+# sits under a host's dependencies, and the script is already compiled next
+# door. Leaving them in says the opposite.
+# La liste est tenue par `TheArchiveCarriesOnlyWhatAHostNeeds`, en liste
+# BLANCHE · un oubli ici ne se voyait pas, et deux fichiers d'outillage sont
+# partis chez les hôtes avant qu'on s'en aperçoive.
+/.env.test.example  export-ignore
+/.github            export-ignore
+/.gitattributes     export-ignore
+/.gitignore         export-ignore
+/.nvmrc             export-ignore
+/eslint.config.js   export-ignore
+/node_modules       export-ignore
+/package.json       export-ignore
+/package-lock.json  export-ignore
+/phpstan-bootstrap.php export-ignore
+/phpstan.neon       export-ignore
+/phpunit.xml        export-ignore
+/pint.json          export-ignore
+/resources/css      export-ignore
+/resources/js       export-ignore
+/scripts            export-ignore
+/testbench.yaml     export-ignore
+/tests              export-ignore
+/vite.config.js     export-ignore

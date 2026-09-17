@@ -1,0 +1,51 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Falcon\Analytics\Livewire\Admin\Widgets;
+
+use Falcon\Analytics\DTOs\Dashboard\Period;
+use Falcon\Analytics\Events\EventRegistry;
+use Falcon\Analytics\Livewire\Admin\Concerns\GuardsWidgetRead;
+use Falcon\Analytics\Repositories\Dashboard\EventReadRepository;
+use Illuminate\Contracts\View\View;
+use Livewire\Attributes\Lazy;
+use Livewire\Component;
+
+/**
+ * Deferred events-and-conversions summary: the top conversions and the top events,
+ * with a link through to the full events screen. Loaded once after the page paints.
+ *
+ * @internal
+ */
+#[Lazy]
+final class OverviewEvents extends Component
+{
+    use GuardsWidgetRead;
+
+    public int $period = Period::DEFAULT_DAYS;
+
+    public string $subject = '';
+
+    public function placeholder(): View
+    {
+        return view('analytics::livewire.dashboard.widgets.section-skeleton');
+    }
+
+    public function render(EventReadRepository $repository, EventRegistry $events): View
+    {
+        return $this->guardedWidget(function () use ($repository, $events): array {
+            $range = Period::ofDays($this->period);
+            $subjectType = $this->subject !== '' ? $this->subject : null;
+
+            $breakdown = $repository->eventBreakdown($range, $subjectType, $events);
+            $conversions = array_values(array_filter($breakdown, fn (array $row): bool => $row['isConversion']));
+
+            return [
+                'topConversions' => array_slice($conversions, 0, 6),
+                'topEvents' => array_slice($breakdown, 0, 6),
+                'eventsRoute' => route('analytics.admin.events'),
+            ];
+        }, fn (array $data): View => view('analytics::livewire.dashboard.widgets.overview-events', $data));
+    }
+}

@@ -1,0 +1,27 @@
+# Ce qu'il faut pour faire tourner le paquet dans une VRAIE application, hors
+# du banc d'essai · `vendor/bin/testbench <commande>`.
+#
+# À quoi ça sert : la suite d'essais force InnoDB, une base jetable et une
+# horloge figée. Certaines choses ne se voient que sans ce confort — une
+# migration refusée par le moteur par défaut de la machine, une commande qui
+# suppose une configuration que seul le banc fournit, le planificateur tel que
+# `schedule:list` le montre à un intégrateur.
+#
+# Le 2026-09-13, c'est comme ça qu'on a découvert qu'un index unique de cinq
+# colonnes dépassait la limite de MyISAM : la suite d'essais ne pouvait pas le
+# voir, puisqu'elle demande InnoDB.
+#
+# La base vient de l'environnement · exportez DB_* avant d'appeler, ou laissez
+# SQLite en mémoire pour ce qui n'a pas besoin de persister.
+
+providers:
+  - Falcon\Ui\UiServiceProvider
+  - Livewire\LivewireServiceProvider
+  - BladeUI\Icons\BladeIconsServiceProvider
+  - BladeUI\Heroicons\BladeHeroiconsServiceProvider
+  - Falcon\Analytics\AnalyticsServiceProvider
+
+env:
+  # Sans ça, le cache tombe sur la base et réclame une table `cache_locks` que
+  # personne n'a migrée · `schedule:list` s'arrête dessus.
+  - CACHE_STORE="array"

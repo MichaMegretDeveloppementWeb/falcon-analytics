@@ -1,0 +1,200 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Falcon\Analytics\Livewire\Admin;
+
+use Carbon\CarbonImmutable;
+use Falcon\Analytics\Events\EventRegistry;
+use Falcon\Analytics\Livewire\Admin\Concerns\RecoversFromReadFailure;
+use Falcon\Analytics\Livewire\Admin\Concerns\ResolvesSubjectNames;
+use Falcon\Analytics\Repositories\Dashboard\RealtimeReadRepository;
+use Falcon\Analytics\Services\Dashboard\SessionSubjectAttributor;
+use Falcon\Analytics\Services\SubjectResolver;
+use Falcon\Analytics\Support\ChartPalette;
+use Falcon\Analytics\Support\DeviceLabel;
+use Falcon\Analytics\Support\SourceLabel;
+use Illuminate\Contracts\View\View;
+use Livewire\Component;
+
+/**
+ * Realtime screen: who is online now and the recent-window activity (KPIs,
+ * per-minute chart, device and source doughnuts, activity feed, top pages),
+ * refreshed through plain Livewire polling suspended while the tab is hidden.
+ * No worker, websocket or external service: it must run on any host. Every
+ * read is bounded because the whole render re-runs on each tick. No filters:
+ * realtime shows everything, and realtime IS the period. Each render also
+ * dispatches the fresh series to the live charts, which sit under wire:ignore
+ * and update in place instead of being destroyed by the morph.
+ *
+ * @internal
+ */
+final class RealtimePage extends Component
+{
+    use RecoversFromReadFailure;
+    use ResolvesSubjectNames;
+
+    // The ramp's names, never its colours: the values live in the package's
+    // theme, in both modes, and the chart asks the page what each name holds.
+    // See {@see ChartPalette}.
+
+    /** Bound of the "Pays" list next to the map. */
+    private const MAX_COUNTRY_ROWS = 8;
+
+    public function render(
+        RealtimeReadRepository $repository,
+        SessionSubjectAttributor $attributor,
+        SubjectResolver $subjects,
+        EventRegistry $events,
+    ): View {
+        return $this->guardedRender(
+            function () use ($repository, $attributor, $subjects, $events): array {
+                $now = CarbonImmutable::now();
+                $windowMinutes = max(1, (int) config('analytics.realtime.window_minutes', 30));
+                $since = $now->subMinutes($windowMinutes);
+                $onlineSince = $now->subSeconds(max(1, (int) config('analytics.realtime.online_seconds', 60)));
+
+                // Recent visitors span the last 24 hours (as in the reference);
+                // the live feed, the KPIs and the map stay on the realtime window.
+                $daySince = $now->subDay();
+                $listLimit = max(1, (int) config('analytics.realtime.feed_limit', 25));
+
+                $conversionNames = [];
+                $eventLabels = [];
+                foreach ($events->all() as $declared) {
+                    $eventLabels[$declared->name] = $declared->label;
+                    if ($declared->isConversion()) {
+                        $conversionNames[] = $declared->name;
+                    }
+                }
+
+                // One row per visitor (their most recent session), like the
+                // reference: the bounded list is deduplicated after fetch.
+                $recentSessions = $repository->recentSessions($daySince, null, $listLimit)
+                    ->unique('visitor_id')
+                    ->values();
+                $feed = $repository->activityFeed($since, null, $listLimit);
+
+                $attributedSessions = $recentSessions
+                    ->concat($feed->pluck('session')->filter())
+                    ->unique('id')
+                    ->values();
+                $attributions = $attributor->attribute($attributedSessions);
+
+                $minuteSeries = $this->zeroFilledMinutes($repository->pageviewsPerMinute($since, null), $since, $now);
+                $devices = $this->chartSeries($repository->topDevices($since, null), fn (string $label): string => DeviceLabel::for($label));
+                $sources = $this->chartSeries($repository->topSources($since, null), fn (string $label): string => SourceLabel::for($label));
+                $map = [
+                    'points' => $repository->mapPoints($since, $onlineSince),
+                    'unlocated' => $repository->unlocatedCount($since),
+                ];
+
+                // Fresh series for the live charts (wire:ignore + in-place
+                // update). The doughnut centre shows the number of categories
+                // ("2 types", "3 sources"), not the session count.
+                $this->dispatch(
+                    'analytics-realtime-tick',
+                    pulse: ['labels' => array_keys($minuteSeries), 'values' => array_values($minuteSeries)],
+                    devices: [...$devices, 'total' => $devices['count']],
+                    sources: [...$sources, 'total' => $sources['count']],
+                    map: $map,
+                );
+
+                return [
+                    'onlineCount' => $repository->onlineCount($onlineSince, null),
+                    'window' => $repository->windowCounts($since, null),
+                    'conversionsCount' => $repository->conversionsCount($since, null, $conversionNames),
+                    'minuteSeries' => $minuteSeries,
+                    'devices' => $devices,
+                    'sources' => $sources,
+                    'map' => $map,
+                    'countries' => $this->countriesFrom($map['points']),
+                    'recentSessions' => $recentSessions,
+                    'feed' => $feed,
+                    'attributions' => $attributions,
+                    'subjectNames' => $this->resolveAttributedNames($attributions, $subjects),
+                    'conversionNames' => $conversionNames,
+                    'eventLabels' => $eventLabels,
+                    'topPages' => $repository->topPages($since, null),
+                    'windowMinutes' => $windowMinutes,
+                    'pollSeconds' => max(1, (int) config('analytics.realtime.poll_seconds', 10)),
+                ];
+            },
+            fn (array $data): View => view('analytics::livewire.dashboard.realtime', $data),
+        );
+    }
+
+    /**
+     * One bucket per minute of the window, oldest first, zeros where the
+     * repository returned nothing, so the per-minute chart always spans the
+     * window.
+     *
+     * @param  array<string, int>  $buckets
+     * @return array<string, int>
+     */
+    private function zeroFilledMinutes(array $buckets, CarbonImmutable $since, CarbonImmutable $now): array
+    {
+        $series = [];
+        $cursor = $since->startOfMinute();
+        $end = $now->startOfMinute();
+
+        while ($cursor->lessThanOrEqualTo($end)) {
+            $key = $cursor->format('Y-m-d H:i');
+            $series[$cursor->format('H:i')] = $buckets[$key] ?? 0;
+            $cursor = $cursor->addMinute();
+        }
+
+        return $series;
+    }
+
+    /**
+     * Country rows for the "Pays" list, derived from the map points (no extra
+     * query): totals and online counts per country, busiest first.
+     *
+     * @param  list<array{city: string|null, country: string|null, latitude: float, longitude: float, total: int, online: int}>  $points
+     * @return list<array{country: string|null, total: int, online: int}>
+     */
+    private function countriesFrom(array $points): array
+    {
+        $countries = [];
+
+        foreach ($points as $point) {
+            $key = $point['country'] ?? '??';
+            $countries[$key] ??= ['country' => $point['country'], 'total' => 0, 'online' => 0];
+            $countries[$key]['total'] += $point['total'];
+            $countries[$key]['online'] += $point['online'];
+        }
+
+        usort($countries, fn (array $a, array $b): int => $b['total'] <=> $a['total']);
+
+        return array_slice($countries, 0, self::MAX_COUNTRY_ROWS);
+    }
+
+    /**
+     * Doughnut-ready series from a breakdown: display labels, values, one ramp
+     * token per slice, the session sum and the category count.
+     *
+     * @param  list<array{label: string, total: int}>  $breakdown
+     * @param  callable(string): string  $labelFor
+     * @return array{labels: list<string>, values: list<int>, colors: list<string>, total: int, count: int}
+     */
+    private function chartSeries(array $breakdown, callable $labelFor): array
+    {
+        $labels = [];
+        $values = [];
+        $colors = ChartPalette::steps(count($breakdown), ChartPalette::LIVE);
+
+        foreach ($breakdown as $row) {
+            $labels[] = $labelFor($row['label']);
+            $values[] = $row['total'];
+        }
+
+        return [
+            'labels' => $labels,
+            'values' => $values,
+            'colors' => $colors,
+            'total' => array_sum($values),
+            'count' => count($labels),
+        ];
+    }
+}

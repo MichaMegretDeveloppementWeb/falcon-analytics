@@ -1,0 +1,314 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Falcon\Analytics\Tests\Feature;
+
+use Carbon\CarbonImmutable;
+use Falcon\Analytics\DTOs\Dashboard\Period;
+use Falcon\Analytics\Events\EventRegistry;
+use Falcon\Analytics\Funnels\FunnelRegistry;
+use Falcon\Analytics\Models\Ad;
+use Falcon\Analytics\Models\AdObjective;
+use Falcon\Analytics\Models\Campaign;
+use Falcon\Analytics\Models\Event;
+use Falcon\Analytics\Models\Session;
+use Falcon\Analytics\Models\Visitor;
+use Falcon\Analytics\Services\Dashboard\MarketingReportBuilder;
+use Falcon\Analytics\Tests\TestCase;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+
+final class MarketingReportBuilderTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private function newVisitor(): Visitor
+    {
+        return Visitor::create(['uuid' => (string) Str::uuid(), 'first_seen_at' => now(), 'last_seen_at' => now()]);
+    }
+
+    /**
+     * @param  array<string, string>  $params
+     */
+    private function taggedSession(array $params, ?Visitor $visitor = null): Session
+    {
+        $visitor ??= $this->newVisitor();
+
+        return Session::create([
+            'visitor_id' => $visitor->id,
+            'started_at' => now(),
+            'last_activity_at' => now(),
+            'is_bot' => false,
+            'mkt_params' => $params,
+        ]);
+    }
+
+    public function test_it_resolves_the_most_specific_ad_whose_conditions_all_match_the_session_params(): void
+    {
+        $ete = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
+        $generic = Ad::create(['campaign_id' => $ete->id, 'name' => 'Été générique', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
+        $cabrio = Ad::create(['campaign_id' => $ete->id, 'name' => 'Cabriolet', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete'], ['param' => 'creative', 'value' => 'cabrio']]]);
+
+        $builder = new MarketingReportBuilder;
+
+        // Two conditions beat one.
+        $twoConditions = $builder->resolveAd(['src' => 'meta_ete', 'creative' => 'cabrio']);
+        $otherCreative = $builder->resolveAd(['src' => 'meta_ete', 'creative' => 'other']);
+        $sourceOnly = $builder->resolveAd(['src' => 'meta_ete']);
+
+        $this->assertNotNull($twoConditions);
+        $this->assertNotNull($otherCreative);
+        $this->assertNotNull($sourceOnly);
+
+        $this->assertSame($cabrio->id, $twoConditions->id);
+        $this->assertSame($generic->id, $otherCreative->id);
+        $this->assertSame($generic->id, $sourceOnly->id);
+    }
+
+    public function test_it_returns_null_when_a_condition_is_unmet_and_resolves_the_campaign_independently(): void
+    {
+        $ete = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
+        Ad::create(['campaign_id' => $ete->id, 'name' => 'Cabrio', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete'], ['param' => 'creative', 'value' => 'cabrio']]]);
+
+        $builder = new MarketingReportBuilder;
+
+        $this->assertNull($builder->resolveAd(['src' => 'meta_hiver', 'creative' => 'cabrio']), 'src differs');
+        $this->assertNull($builder->resolveAd(['src' => 'meta_ete']), 'creative manque');
+        $this->assertNull($builder->resolveAd([]));
+        $matched = $builder->resolveCampaign(['src' => 'meta_ete']);
+
+        $this->assertNotNull($matched);
+        $this->assertSame($ete->id, $matched->id);
+        $this->assertNull($builder->resolveCampaign(['src' => 'meta_hiver']));
+    }
+
+    public function test_it_ignores_inactive_ads_and_conditionless_definitions(): void
+    {
+        $ete = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
+        Ad::create(['campaign_id' => $ete->id, 'name' => 'Off', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']], 'is_active' => false]);
+        Ad::create(['campaign_id' => $ete->id, 'name' => 'Empty', 'match_conditions' => []]);
+
+        $this->assertNull((new MarketingReportBuilder)->resolveAd(['src' => 'meta_ete']));
+    }
+
+    public function test_it_aggregates_ad_driven_traffic_per_campaign_and_ad_over_the_period(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-06-15 12:00:00'));
+
+        $ete = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
+        $cabrio = Ad::create(['campaign_id' => $ete->id, 'name' => 'Cabrio', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete'], ['param' => 'creative', 'value' => 'cabrio']]]);
+
+        $visitor = $this->newVisitor();
+        $this->taggedSession(['src' => 'meta_ete', 'creative' => 'cabrio'], $visitor);
+        $this->taggedSession(['src' => 'meta_ete', 'creative' => 'cabrio'], $visitor);
+        $this->taggedSession(['src' => 'meta_ete', 'creative' => 'other']);
+        $this->taggedSession(['src' => 'other']);
+
+        $builder = new MarketingReportBuilder;
+        $period = Period::ofDays(30);
+
+        // Only sessions attached to a campaign count as paid traffic: the
+        // src=other session is set aside.
+        $this->assertSame(['sessions' => 3, 'visitors' => 2], $builder->headline($period, null));
+
+        $performance = $builder->performance($period, null);
+
+        $this->assertSame(['sessions' => 3, 'visitors' => 2], $performance['campaigns'][$ete->id]);
+        $this->assertSame(['sessions' => 2, 'visitors' => 1], $performance['ads'][$cabrio->id]);
+    }
+
+    public function test_it_credits_an_ad_with_a_conversion_when_its_visitor_completes_an_event_objective(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-06-15 12:00:00'));
+
+        $ete = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
+        $ad = Ad::create(['campaign_id' => $ete->id, 'name' => 'Cabrio', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
+        AdObjective::create(['ad_id' => $ad->id, 'type' => 'event', 'reference' => 'Lead']);
+
+        $converter = $this->newVisitor();
+        $session = $this->taggedSession(['src' => 'meta_ete'], $converter);
+        Event::create(['session_id' => $session->id, 'visitor_id' => $converter->id, 'type' => 'custom', 'name' => 'Lead', 'occurred_at' => now()]);
+
+        // A second visitor who came through the ad and never fired the event.
+        $this->taggedSession(['src' => 'meta_ete']);
+
+        $result = (new MarketingReportBuilder)->conversions(Period::ofDays(30), null, app(FunnelRegistry::class));
+
+        $this->assertSame(1, $result['total']);
+        $this->assertSame(1, $result['ads'][$ad->id]);
+        $this->assertSame(1, $result['campaigns'][$ete->id]);
+        $this->assertSame(1, $result['objectives'][$ad->id]['Lead']);
+    }
+
+    /**
+     * A visitor driven by two ads credits both, and this is not first-touch.
+     *
+     * **The documentation claimed first-touch until 2026-09-13**, which is the
+     * opposite of what happens: the attribution phase collects the SET of ads a
+     * visitor arrived through in the period, and the conversion is credited to
+     * every one of them. So the per-ad conversions can add up to more than the
+     * total, and that is coherent rather than a double count — the total counts
+     * distinct converting visitors.
+     *
+     * Written the day the claim was corrected, so that whichever of the two
+     * rules is wanted has to be chosen out loud rather than drifted into.
+     */
+    public function test_a_visitor_driven_by_two_ads_credits_both_and_counts_once_in_the_total(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-06-15 12:00:00'));
+
+        $campaign = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'a']]]);
+
+        $first = Ad::create(['campaign_id' => $campaign->id, 'name' => 'Première', 'match_conditions' => [['param' => 'src', 'value' => 'a']]]);
+        $second = Ad::create(['campaign_id' => $campaign->id, 'name' => 'Seconde', 'match_conditions' => [['param' => 'src', 'value' => 'b']]]);
+
+        foreach ([$first, $second] as $ad) {
+            AdObjective::create(['ad_id' => $ad->id, 'type' => 'event', 'reference' => 'Lead']);
+        }
+
+        // One person, two arrivals, two different ads — then one conversion.
+        $visitor = $this->newVisitor();
+        $this->taggedSession(['src' => 'a'], $visitor);
+        $session = $this->taggedSession(['src' => 'b'], $visitor);
+
+        Event::create(['session_id' => $session->id, 'visitor_id' => $visitor->id, 'type' => 'custom', 'name' => 'Lead', 'occurred_at' => now()]);
+
+        $result = (new MarketingReportBuilder)->conversions(Period::ofDays(30), null, app(FunnelRegistry::class));
+
+        // Read through a default rather than by key: crediting only one ad is
+        // exactly what a slide back to first-touch looks like, and an undefined
+        // key would report it as a missing index instead of as a rule change.
+        $this->assertSame(1, $result['ads'][$first->id] ?? 0, 'The first ad is credited.');
+        $this->assertSame(1, $result['ads'][$second->id] ?? 0, 'And so is the second: attribution is not first-touch.');
+        $this->assertSame(1, $result['total'], 'One person converted once, whatever the ads say.');
+    }
+
+    public function test_it_credits_a_funnel_objective_and_reports_per_step_reach(): void
+    {
+        config(['analytics.funnels_path' => __DIR__.'/../Fixtures/analytics-funnels.php']);
+        $this->app->forgetInstance(FunnelRegistry::class);
+        $this->travelTo(CarbonImmutable::parse('2026-06-15 12:00:00'));
+
+        $ete = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
+        $ad = Ad::create(['campaign_id' => $ete->id, 'name' => 'Cabrio', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
+        AdObjective::create(['ad_id' => $ad->id, 'type' => 'funnel', 'reference' => 'sample']);
+
+        // A visitor attached to the ad, who walks the funnel in order:
+        // pageview home, then sample.action.
+        $converter = $this->newVisitor();
+        $session = $this->taggedSession(['src' => 'meta_ete'], $converter);
+        Event::create(['session_id' => $session->id, 'visitor_id' => $converter->id, 'type' => 'pageview', 'route' => 'home', 'occurred_at' => now()->subMinutes(2)]);
+        Event::create(['session_id' => $session->id, 'visitor_id' => $converter->id, 'type' => 'custom', 'name' => 'sample.action', 'occurred_at' => now()->subMinute()]);
+
+        // Another visitor who came through the ad and only reaches the first
+        // step: no conversion.
+        $halfway = $this->newVisitor();
+        $halfSession = $this->taggedSession(['src' => 'meta_ete'], $halfway);
+        Event::create(['session_id' => $halfSession->id, 'visitor_id' => $halfway->id, 'type' => 'pageview', 'route' => 'home', 'occurred_at' => now()->subMinutes(2)]);
+
+        $funnels = app(FunnelRegistry::class);
+        $result = (new MarketingReportBuilder)->conversions(Period::ofDays(30), null, $funnels);
+
+        $this->assertSame(1, $result['total']);
+        $this->assertSame(1, $result['ads'][$ad->id]);
+        $this->assertSame(1, $result['campaigns'][$ete->id]);
+
+        $elements = (new MarketingReportBuilder)->conversionElements(
+            Period::ofDays(30),
+            null,
+            $funnels,
+            app(EventRegistry::class),
+            array_values(Ad::query()->with('objectives')->get()->all()),
+        );
+
+        $this->assertCount(1, $elements);
+        $this->assertSame('funnel', $elements[0]['type']);
+        $this->assertSame('sample', $elements[0]['reference']);
+        $this->assertSame(1, $elements[0]['conversions']);
+        $this->assertSame([
+            ['label' => 'Viewed', 'count' => 2],
+            ['label' => 'Acted', 'count' => 1],
+        ], $elements[0]['steps']);
+    }
+
+    public function test_it_batches_event_objective_conversions_into_one_query_and_buckets_them_per_ad(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-06-15 12:00:00'));
+
+        $ete = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
+        $ad1 = Ad::create(['campaign_id' => $ete->id, 'name' => 'A1', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete'], ['param' => 'creative', 'value' => 'c1']]]);
+        $ad2 = Ad::create(['campaign_id' => $ete->id, 'name' => 'A2', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete'], ['param' => 'creative', 'value' => 'c2']]]);
+        AdObjective::create(['ad_id' => $ad1->id, 'type' => 'event', 'reference' => 'Lead']);
+        AdObjective::create(['ad_id' => $ad2->id, 'type' => 'event', 'reference' => 'Lead']);
+
+        $v1 = $this->newVisitor();
+        $s1 = $this->taggedSession(['src' => 'meta_ete', 'creative' => 'c1'], $v1);
+        Event::create(['session_id' => $s1->id, 'visitor_id' => $v1->id, 'type' => 'custom', 'name' => 'Lead', 'occurred_at' => now()]);
+
+        $v2 = $this->newVisitor();
+        $s2 = $this->taggedSession(['src' => 'meta_ete', 'creative' => 'c2'], $v2);
+        Event::create(['session_id' => $s2->id, 'visitor_id' => $v2->id, 'type' => 'custom', 'name' => 'Lead', 'occurred_at' => now()]);
+
+        DB::enableQueryLog();
+
+        $elements = (new MarketingReportBuilder)->conversionElements(
+            Period::ofDays(30), null, app(FunnelRegistry::class), app(EventRegistry::class),
+            array_values(Ad::query()->with('objectives')->get()->all()),
+        );
+
+        $eventQueries = Collection::make(DB::getQueryLog())
+            ->filter(fn (array $q): bool => str_contains($q['query'], 'falcon_analytics_events'))
+            ->count();
+
+        DB::disableQueryLog();
+
+        $byAd = Collection::make($elements)->keyBy('adId');
+
+        // Each ad is credited only with its own visitor's conversion, from one
+        // single grouped read.
+        // Each ad has to have its element: without it, reading a column would
+        // fail without saying which of the two is missing.
+        $firstAd = $byAd->get($ad1->id);
+        $secondAd = $byAd->get($ad2->id);
+
+        $this->assertNotNull($firstAd, 'no element for the first ad');
+        $this->assertNotNull($secondAd, 'no element for the second ad');
+
+        $this->assertSame(1, $firstAd['conversions']);
+        $this->assertSame(1, $secondAd['conversions']);
+        $this->assertLessThanOrEqual(1, $eventQueries);
+    }
+
+    public function test_it_lists_conversion_elements_with_their_count_and_source_ad_sorted(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-06-15 12:00:00'));
+
+        $ete = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
+        $ad = Ad::create(['campaign_id' => $ete->id, 'name' => 'Cabrio', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
+        AdObjective::create(['ad_id' => $ad->id, 'type' => 'event', 'reference' => 'Lead']);
+
+        foreach (range(1, 2) as $ignored) {
+            $visitor = $this->newVisitor();
+            $session = $this->taggedSession(['src' => 'meta_ete'], $visitor);
+            Event::create(['session_id' => $session->id, 'visitor_id' => $visitor->id, 'type' => 'custom', 'name' => 'Lead', 'occurred_at' => now()]);
+        }
+
+        $elements = (new MarketingReportBuilder)->conversionElements(
+            Period::ofDays(30),
+            null,
+            app(FunnelRegistry::class),
+            app(EventRegistry::class),
+            array_values(Ad::query()->with('objectives')->get()->all()),
+        );
+
+        $this->assertCount(1, $elements);
+        $this->assertSame('event', $elements[0]['type']);
+        $this->assertSame('Lead', $elements[0]['reference']);
+        $this->assertSame(2, $elements[0]['conversions']);
+        $this->assertSame('Cabrio', $elements[0]['adName']);
+        $this->assertNull($elements[0]['steps']);
+    }
+}

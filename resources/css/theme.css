@@ -1,0 +1,124 @@
+/*
+ | The package's own tokens · the values a host can change, and nothing else.
+ |
+ | **A token, not a literal, because a canvas cannot read a class.** A chart is
+ | drawn by Chart.js on a canvas, so nothing declared in a stylesheet reaches it
+ | on its own. The values were therefore written by hand, in both themes, in
+ | every view that drew something — and four views ended up declaring what was
+ | meant to be one ramp of blues, three of them disagreeing on two steps. Nobody
+ | decided that; a copy aged, and nothing could say so.
+ |
+ | Declared here once, in both themes, they are read at runtime · by
+ | `var()` in a class, or by `window.falconToken()` for whatever goes onto a
+ | canvas. A host redefines one in its own stylesheet and every screen follows,
+ | **with no build**.
+ |
+ | What is NOT here · everything the kit already names. Grid, ticks, tooltip,
+ | surfaces, text and borders come from `--ui-…`, and the socle's order of
+ | preference is explicit: an existing kit token first. This file holds only
+ | what the kit has no opinion about.
+ */
+
+@layer theme {
+    :root {
+        /* The ramp, for a donut's slices and the swatches beside them. Ordered
+           from the strongest to the palest: a chart slices it to the number of
+           segments it has, so step 1 is always the most prominent. */
+        --an-series-1: #1684ea;
+        --an-series-2: #4b9bf0;
+        --an-series-3: #7cb8f2;
+        --an-series-4: #a5cdf7;
+        --an-series-5: #bcdcfa;
+        --an-series-6: #d1d5db;
+
+        /* Meaning, not decoration. A conversion is a success, so it is green in
+           the same family as the kit's; « online » is a live state, and its
+           strong variant carries the word that names it on a dark feed. */
+        --an-conversion: #10b981;
+        --an-online: #54ce91;
+        --an-online-strong: #22a96f;
+
+        /* The realtime screen keeps its own ink and accent · it is the one
+           screen built to be looked at from across a room, and it reads as a
+           board rather than as a page. */
+        --an-ink: #000624;
+        --an-ink-soft: #44485f;
+        --an-accent: #116dff;
+
+        /* The world map · land and the lines between countries. */
+        --an-map-land: #f5f5f5;
+        --an-map-border: #dddddd;
+
+        /* The realtime board's own ramp, and it is a second ramp on purpose ·
+           that screen is built to be read from across a room, so it opens on
+           the accent and the live green rather than on six shades of one blue.
+           Its first two steps DERIVE from those two tokens instead of copying
+           them: a host retinting the accent gets a board that still agrees
+           with itself. */
+        --an-live-1: var(--an-accent);
+        --an-live-2: var(--an-online);
+        --an-live-3: #8ab5ff;
+        --an-live-4: #c9dbff;
+        --an-live-5: #dde1e6;
+        --an-live-6: #eff1f5;
+    }
+
+    .dark {
+        --an-series-1: #3b8fe8;
+        --an-series-2: #2f77c8;
+        --an-series-3: #2560a4;
+        --an-series-4: #1d4b80;
+        --an-series-5: #17395f;
+        --an-series-6: #374151;
+
+        --an-conversion: #34d399;
+        --an-online: #4ade80;
+        --an-online-strong: #22c55e;
+
+        /* In the dark the ink becomes the light text, and the accent brightens
+           to keep its contrast against a near-black ground. */
+        --an-ink: #f3f4f6;
+        --an-ink-soft: #9ca3af;
+        --an-accent: #4b9bf0;
+
+        --an-map-land: #1f2937;
+        --an-map-border: #374151;
+
+        --an-live-3: #2f6bb5;
+        --an-live-4: #24507f;
+        --an-live-5: #313845;
+        --an-live-6: #232833;
+    }
+}
+
+/*
+ | The mapping, for the tokens a view writes as a class.
+ |
+ | `an:bg-accent/70` rather than `an:bg-[var(--an-accent)]/70` · the same CSS
+ | comes out, and the second form is what a view stops being readable with.
+ | Measured on 2026-09-12 · the opacity modifier composes either way, Tailwind
+ | emitting a `color-mix` with a `@supports` fallback.
+ |
+ | `inline` matters · it keeps the utility pointing at the custom property
+ | instead of freezing today's value into the class. That is what makes the dark
+ | theme follow with no `dark:` variant anywhere, and a host's override land
+ | without a build.
+ |
+ | The ramp is here too, because a bar chart draws its fill with a class where a
+ | donut draws its slices on a canvas. Same names, two ways in.
+ */
+@theme inline {
+    --color-series-1: var(--an-series-1);
+    --color-series-2: var(--an-series-2);
+    --color-series-3: var(--an-series-3);
+    --color-series-4: var(--an-series-4);
+    --color-series-5: var(--an-series-5);
+    --color-series-6: var(--an-series-6);
+    --color-accent: var(--an-accent);
+    --color-ink: var(--an-ink);
+    --color-ink-soft: var(--an-ink-soft);
+    --color-online: var(--an-online);
+    --color-online-strong: var(--an-online-strong);
+    --color-map-land: var(--an-map-land);
+    --color-map-border: var(--an-map-border);
+}

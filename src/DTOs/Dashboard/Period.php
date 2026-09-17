@@ -1,0 +1,86 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Falcon\Analytics\DTOs\Dashboard;
+
+use Carbon\CarbonImmutable;
+
+/**
+ * A closed date range for a dashboard query, expressed as a whole number of
+ * days ending now. Only a fixed set of window sizes is allowed; any other value
+ * falls back to the default so the range can never be driven out of bounds by a
+ * tampered query string.
+ *
+ * @internal
+ */
+final readonly class Period
+{
+    /** @var list<int> */
+    public const ALLOWED_DAYS = [7, 30, 90];
+
+    public const DEFAULT_DAYS = 30;
+
+    public function __construct(
+        public CarbonImmutable $from,
+        public CarbonImmutable $to,
+        public int $days,
+    ) {}
+
+    public static function ofDays(int $days): self
+    {
+        if (! in_array($days, self::ALLOWED_DAYS, true)) {
+            $days = self::DEFAULT_DAYS;
+        }
+
+        $to = CarbonImmutable::now();
+        $from = $to->subDays($days - 1)->startOfDay();
+
+        return new self($from, $to, $days);
+    }
+
+    /**
+     * The window of identical length immediately preceding this one, used for
+     * period-over-period comparisons.
+     *
+     * **Made of whole days, ending the second before this one starts.** It was
+     * « the same window shifted back by its length » at first, ending at the
+     * same hour of the day as this one — and that had two faults.
+     *
+     * The hours between that end and this window's first midnight belonged to
+     * neither period ; a visit there counted nowhere.
+     *
+     * And a window that ends mid-day cannot be read from the daily summaries,
+     * which know whole days only. Read from rows it stopped at noon ; read from
+     * summaries it took the whole last day · so the « previous » figure of the
+     * two summarised blocks changed on the day the erasing crossed it, which
+     * is the one thing the erasing must never do. Measured 2026-09-14.
+     *
+     * Whole days is also what every tool of this kind compares against.
+     */
+    public function previous(): self
+    {
+        return new self(
+            $this->from->subDays($this->days),
+            $this->from->subDay()->endOfDay(),
+            $this->days,
+        );
+    }
+
+    /**
+     * Each day in the range as a start-of-day instant, for zero-filling a daily
+     * series so gaps in the data still render as points.
+     *
+     * @return list<CarbonImmutable>
+     */
+    public function eachDay(): array
+    {
+        $days = [];
+
+        for ($cursor = $this->from->startOfDay(); $cursor->lessThanOrEqualTo($this->to); $cursor = $cursor->addDay()) {
+            $days[] = $cursor;
+        }
+
+        return $days;
+    }
+}

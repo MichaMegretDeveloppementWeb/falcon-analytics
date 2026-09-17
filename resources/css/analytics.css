@@ -1,0 +1,48 @@
+/*
+ | The package's single entry: this is what `npm run build` compiles, and
+ | nothing else. What it produces, `public/analytics.css`, is committed and
+ | published to the host's public directory. The host never reads this file.
+ */
+
+/* The eight layers, taken from the kit rather than copied over: the first
+   declaration encountered fixes the order for the whole document, so two copies
+   that drifted apart would break the priority of the entire suite. */
+@import '../../vendor/falcon/ui-kit/resources/css/layers.css';
+
+/* The prefix is declared here, on the theme import, and holds for everything
+   this build generates: `an:flex`, `an:dark:bg-gray-900`. The order is
+   `an:dark:` and never the reverse, which produces nothing. */
+@import 'tailwindcss/theme' layer(theme) prefix(an);
+
+/* The kit's mapping: the names the generator turns into utilities,
+   `an:bg-surface` and its neighbours. The VALUES stay with the kit, as custom
+   properties an application redefines without recompiling anything — importing
+   them here would freeze a copy of them into this stylesheet.
+
+   The path goes through `vendor/` and not through npm: the kit is not
+   distributed there, and that is a decision. This is exactly the line its
+   installer hands to hosts. */
+@import '../../vendor/falcon/ui-kit/resources/css/theme.css' layer(theme) prefix(an);
+
+/* And the package's own tokens · only what the kit has no opinion about. Their
+   values live there, in both themes, and their mapping beside them, so a view
+   writes `an:bg-accent` and a host redefines the value without a build. */
+@import './theme.css' prefix(an);
+
+/* Neither typeface nor reset: the kit carries those for the whole suite.
+   Declaring a typeface would repaint every paragraph of the page, and two
+   resets on one page fight each other. */
+
+/* `source(none)` and an explicit `@source` rather than automatic detection.
+   Left automatic, the generator reads everything git does not hide from it:
+   classes coming from tests and fixtures inflate the stylesheet, and a class no
+   view actually writes survives by accident. */
+@import 'tailwindcss/utilities' layer(pkg-utilities) source(none);
+
+@source '../views/**/*.blade.php';
+
+/* `:where` counts for nothing in specificity, so a dark variant loses against
+   a later rule of the same weight rather than beating it. That is the wanted
+   behaviour now that the layers decide. This line is identical across the whole
+   suite. */
+@custom-variant dark (&:where(.dark, .dark *));

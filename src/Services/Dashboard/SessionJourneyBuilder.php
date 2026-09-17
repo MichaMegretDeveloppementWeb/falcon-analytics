@@ -1,0 +1,104 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Falcon\Analytics\Services\Dashboard;
+
+use Carbon\CarbonInterface;
+use Falcon\Analytics\Enums\EventType;
+use Falcon\Analytics\Models\Event;
+use Falcon\Analytics\Support\PageUrl;
+use Illuminate\Support\Collection;
+
+/**
+ * Turns a session's ordered events into its chronological journey and the time
+ * spent per page. Deterministic: the output depends only on the given events
+ * and session window, so it lives outside the Livewire component.
+ *
+ * @internal
+ */
+final class SessionJourneyBuilder
+{
+    /**
+     * Group events into a journey: each pageview is a step, other events nest
+     * under the page they happened on, and each step carries the seconds spent
+     * before the next step (or the end of the session).
+     *
+     * The whole session window is partitioned across the steps so the per-page
+     * times always sum to the session duration: the first step starts at the
+     * session start, every boundary is clamped inside [start, end].
+     *
+     * @param  Collection<int, Event>  $events
+     * @return list<array{event: Event, children: list<Event>, seconds: int}>
+     */
+    public function build(Collection $events, CarbonInterface $windowStart, CarbonInterface $windowEnd): array
+    {
+        // Two parallel accumulators rather than one array of shapes: each list
+        // keeps a clean type, and the final shape composes in one pass.
+        $steps = [];
+        $children = [];
+
+        // The index of the current step, held rather than asked for again: the
+        // two lists grow together, and the second branch is only reached after
+        // at least one push.
+        $current = -1;
+
+        foreach ($events as $event) {
+            if ($event->type === EventType::Pageview || $steps === []) {
+                $steps[] = $event;
+                $children[] = [];
+                $current++;
+
+                continue;
+            }
+
+            $children[$current][] = $event;
+        }
+
+        $clamp = fn (CarbonInterface $moment): CarbonInterface => $moment->lessThan($windowStart)
+            ? $windowStart
+            : ($moment->greaterThan($windowEnd) ? $windowEnd : $moment);
+
+        $journey = [];
+
+        foreach ($steps as $index => $event) {
+            $from = $index === 0 ? $windowStart : $clamp($event->occurred_at);
+            $to = isset($steps[$index + 1]) ? $clamp($steps[$index + 1]->occurred_at) : $windowEnd;
+
+            $journey[] = [
+                'event' => $event,
+                'children' => $children[$index],
+                'seconds' => max(0, (int) $from->diffInSeconds($to)),
+            ];
+        }
+
+        return $journey;
+    }
+
+    /**
+     * Seconds spent per page (route resolved to a clean URL), aggregated across
+     * repeat visits and sorted from most to least time.
+     *
+     * @param  list<array{event: Event, children: list<Event>, seconds: int}>  $journey
+     * @return array<string, int>
+     */
+    public function timePerPage(array $journey): array
+    {
+        $byPage = [];
+
+        foreach ($journey as $step) {
+            if ($step['event']->type !== EventType::Pageview) {
+                continue;
+            }
+
+            $label = PageUrl::resolve($step['event']->route, $step['event']->url);
+            $label = $label === '' ? '·' : $label;
+
+            $byPage[$label] = ($byPage[$label] ?? 0) + $step['seconds'];
+        }
+
+        arsort($byPage);
+
+        return $byPage;
+    }
+}
