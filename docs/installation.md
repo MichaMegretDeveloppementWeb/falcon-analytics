@@ -199,17 +199,18 @@ Votre composant doit ·
 2. **rendre `{{ $slot }}`**, comme n'importe quel composant ;
 3. écrire `{{ falcon_theme_class() }}` **dans l'attribut `class`** de l'élément
    qui contient nos écrans, s'il veut le mode sombre ;
-4. **donner au slot une largeur et des marges.** Nos écrans n'en portent pas ·
-   ils remplissent ce que vous leur donnez. Dans notre coquille autonome, c'est
-   elle qui les pose ; dès que vous nommez votre gabarit, elle n'est plus là et
-   **rien ne la remplace** · les écrans se collent aux bords, sans qu'aucune
-   erreur ne le signale.
+4. **rendre l'espace en entier.** Pas de largeur maximale, pas de marge
+   intérieure sur ce qui contient `{{ $slot }}` · chacun de nos écrans porte sa
+   propre boîte et se cadre lui-même, ceux qui se plafonnent comme ceux qui
+   prennent tout. Un plafond posé ici s'ajouterait au leur et les enfermerait
+   dans une colonne, sans qu'aucune erreur ne le signale.
 
-> **Nos dimensions de référence**, si vous n'en avez pas déjà ·
-> `mx-auto max-w-[90em] px-4 py-6 sm:px-6 sm:py-8`. Rien ne vous y oblige · vous
-> avez sans doute votre propre rythme de page, et c'est justement pour ça que
-> nous ne l'imposons pas depuis le paquet · il entrerait en conflit avec le
-> vôtre.
+> **Ce n'est pas une largeur que le gabarit fournit, c'est une place.** Il dit
+> « voici l'espace dont je dispose » ; ce que l'écran en prend le regarde lui.
+> Les nôtres s'arrêtent aujourd'hui à `90em` — un tableau de bord dont les
+> indicateurs s'écartent cesse de se lire d'un coup d'œil — et cette valeur est
+> la leur, écrite sur leur propre boîte. Le jour où l'un d'eux aura besoin de
+> toute la fenêtre, il la prendra sans que rien ne bouge chez vous.
 
 Et c'est tout · **nos feuilles ne sont pas à charger**. L'écran déclare la
 sienne avant de vous appeler, le kit la pose, et votre compilation à vous ne
@@ -227,15 +228,16 @@ concerne que votre propre habillage.
 </head>
 <body class="h-full bg-gray-50 dark:bg-gray-950">
     {{-- votre navigation --}}
-    <main class="mx-auto max-w-[90em] px-4 py-6 sm:px-6 sm:py-8">{{ $slot }}</main>
+    <main>{{ $slot }}</main>
 </body>
 </html>
 ```
 
-> **Le `<main>` de cet exemple porte la largeur, et ce n'est pas décoratif.**
-> Avec un `<main>` nu, les écrans s'affichent d'un bord à l'autre de la fenêtre.
-> Mesuré le 14/09/2026 dans une application vierge · 2554 pixels de large sur un
-> écran de 2560.
+> **Le `<main>` de cet exemple est nu, et ce n'est pas un oubli.** Y ajouter
+> `mx-auto max-w-[90em] px-4 py-6` par réflexe met nos écrans dans une colonne
+> au milieu d'une colonne · ils ont déjà la leur, et la vôtre la rétrécit
+> d'autant. Le symptôme ne ressemble pas à une erreur — la page s'affiche, elle
+> est simplement plus étroite qu'elle ne devrait, et rien ne le dit.
 
 > **Du Tailwind ordinaire dans cet exemple, à dessein.** Écrire `bg-page` ou
 > `border-base` ici demande que **votre** compilation connaisse les noms du kit —
