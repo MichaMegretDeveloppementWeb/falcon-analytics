@@ -87,10 +87,15 @@ final class AssetsAreUpToDateTest extends TestCase
             'The stylesheet carries almost no prefixed rule: did the view scan find anything?',
         );
 
+        // The `base` layer is where a reset lives, and it belongs to the kit:
+        // two resets on one page fight each other. Read as a layer and not as a
+        // property name, because a package may legitimately ship third-party
+        // CSS that sets `box-sizing` on its own scoped selectors — those are
+        // scoped rules, not a reset.
         $this->assertStringNotContainsString(
-            'box-sizing',
+            '@layer base{',
             $css,
-            'The reset belongs to the kit: two resets on one page fight each other.',
+            'The sheet opens the base layer, which is the kit\'s: it would ship a second reset.',
         );
     }
 
