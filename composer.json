@@ -23,7 +23,7 @@
     ],
     "require": {
         "php": "^8.5",
-        "falcon/ui-kit": "^3.0",
+        "falcon/ui-kit": "^1.0",
         "geoip2/geoip2": "^3.0",
         "laravel/framework": "^13.0",
         "livewire/livewire": "^4.2",
@@ -55,6 +55,9 @@
             "providers": [
                 "Falcon\\Analytics\\AnalyticsServiceProvider"
             ]
+        },
+        "branch-alias": {
+            "dev-main": "1.0.x-dev"
         }
     },
     "scripts": {
