@@ -75,6 +75,8 @@
         ],
         "qa:lowest": [
             "@composer update --prefer-lowest --prefer-stable --no-interaction",
+            "@php vendor/bin/pint --test",
+            "@php vendor/bin/phpstan analyse --no-progress --memory-limit=2G",
             "@php vendor/bin/phpunit"
         ]
     },
