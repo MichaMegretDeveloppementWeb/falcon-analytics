@@ -94,11 +94,25 @@ export default [
 
     {
         /* The build chain, which runs under node. */
-        files: ['scripts/**/*.{js,mjs}', 'vite.config.js'],
+        files: ['scripts/**/*.{js,mjs}', 'vite.config.js', 'vite.admin.config.js', 'vitest.config.js'],
         languageOptions: {
             ecmaVersion: 'latest',
             sourceType: 'module',
             globals: globals.node,
+        },
+        rules,
+    },
+
+    {
+        /*
+         * The script tests · a browser's globals, since that is the environment
+         * they run the package's own files in, plus node's for the runner.
+         */
+        files: ['tests/js/**/*.js'],
+        languageOptions: {
+            ecmaVersion: 'latest',
+            sourceType: 'module',
+            globals: { ...globals.browser, ...globals.node },
         },
         rules,
     },

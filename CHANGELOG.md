@@ -44,7 +44,10 @@ architecture qui n'existe plus.
   nom est gardé pour toujours**. Aucune période maximale d'affichage ;
 - **trente-six réglages**, tous facultatifs · le paquet fonctionne sans qu'on en
   touche un seul, et un essai le tient ;
-- **des fichiers déjà compilés** · aucun Node n'est requis chez l'hôte.
+- **des fichiers déjà compilés** · aucun Node n'est requis chez l'hôte. Le
+  script des écrans, `analytics-admin.js`, ne part que vers les écrans
+  d'administration · une page publique ne reçoit que le collecteur. **Rien
+  n'est à faire pour cela**, la republication du point 5 plus bas le livre.
 
 ### Ce que l'intégrateur a à faire
 

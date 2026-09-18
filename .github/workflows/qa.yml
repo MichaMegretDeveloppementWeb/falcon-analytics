@@ -230,6 +230,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Client script tests
+        run: npm test
+
       # The only check that catches a build which does not produce the same
       # file twice: the source fingerprint only says that a source changed since
       # the last build.

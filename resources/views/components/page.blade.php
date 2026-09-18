@@ -14,7 +14,7 @@
     it a page has nothing to hang one on. It costs one element and it is the
     only hold a screen has.
 --}}
-<x-analytics::assets />
+<x-analytics::assets :area="$area" />
 
 <x-dynamic-component :component="$layout" :title="$title">
     <div {{ $attributes->merge(['data-an-area' => $area])->class(['an-root']) }}>

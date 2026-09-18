@@ -6,27 +6,7 @@
      is unavailable. --}}
 <button
     type="button"
-    x-data="{
-        copied: false,
-        copy() {
-            const text = @js((string) $value);
-            const done = () => { this.copied = true; setTimeout(() => this.copied = false, 1400); };
-
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(text).then(done).catch(() => {});
-                return;
-            }
-
-            const el = document.createElement('textarea');
-            el.value = text;
-            el.style.position = 'fixed';
-            el.style.opacity = '0';
-            document.body.appendChild(el);
-            el.select();
-            try { document.execCommand('copy'); done(); } catch (e) { /* ignore */ }
-            document.body.removeChild(el);
-        },
-    }"
+    x-data="anCopyButton(@js((string) $value))"
     @click.stop="copy()"
     :title="copied ? @js(__('Copié')) : @js(__('Copier l\'identifiant'))"
     {{ $attributes->merge(['class' => 'an:inline-flex an:shrink-0 an:cursor-pointer an:items-center an:justify-center an:rounded-lg an:p-1 an:text-muted an:transition-colors an:hover:bg-elevated an:hover:text-secondary']) }}

@@ -10,13 +10,17 @@
     `@falconScripts` render, and the request's state, because the framework
     empties its stacks as soon as the topmost view has finished.
 
-    One file only here: the package has no administration script. Its charts are
-    Alpine written in the views, and Chart.js comes from the kit.
+    **The area decides the list.** `analytics-admin.js` carries the dashboard's
+    Alpine components, and only an administration screen uses them.
 
-    **And `analytics.js` is absent on purpose, not by omission.** It is built,
-    committed and published like the stylesheet, but it is the collector — the
-    tracker a host puts on its own public pages — and `collector.blade.php`
-    declares it for itself, where it is rendered. Named here, every screen of
-    the dashboard would download it to count nothing.
+    **And `analytics.js` is absent on purpose, not by omission.** It is the
+    collector — the tracker a host puts on its own public pages — and
+    `collector.blade.php` declares it for itself, where it is rendered. Named
+    here, every screen of the dashboard would download it to count nothing.
 --}}
-<x-ui::assets package="analytics" :files="['analytics.css']" />
+@props(['area' => null])
+
+<x-ui::assets
+    package="analytics"
+    :files="$area === 'admin' ? ['analytics.css', 'analytics-admin.js'] : ['analytics.css']"
+/>

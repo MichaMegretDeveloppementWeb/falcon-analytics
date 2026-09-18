@@ -142,11 +142,20 @@ final class EveryChartFollowsTheThemeTest extends TestCase
         return $found[1] ?? '';
     }
 
+    /**
+     * The view, the module that draws it and the parts the charts share, read
+     * as one: a colour can be named in any of them.
+     */
     private function source(string $component): string
     {
-        return (string) file_get_contents(
-            $this->packagePath('resources/views/components/'.$component.'.blade.php'),
-        );
+        return implode("\n", array_map(
+            fn (string $path): string => (string) file_get_contents($this->packagePath($path)),
+            [
+                'resources/views/components/'.$component.'.blade.php',
+                'resources/js/admin/components/'.$component.'.js',
+                'resources/js/admin/components/chart-parts.js',
+            ],
+        ));
     }
 
     private function packagePath(string $path): string

@@ -49,12 +49,12 @@
         <div class="an:space-y-6 an:lg:col-span-2">
 
             {{-- The main card, Wix style: KPI tabs, map + countries, breakdowns --}}
-            <div class="an:rounded-xl an:border an:border-base an:bg-surface" x-data="{ tab: 'window' }">
+            <div class="an:rounded-xl an:border an:border-base an:bg-surface" x-data="anRealtimeTabs">
 
                 {{-- Tabs --}}
                 <div class="an:flex an:items-stretch an:px-5 an:pt-1">
                     <button type="button"
-                            @click="tab = 'window'; $dispatch('an-realtime-mode', { mode: 'window' })"
+                            @click="choose('window')"
                             class="an:flex-1 an:cursor-pointer an:border-b-[3px] an:pb-3 an:pr-4 an:pt-3 an:text-left an:transition-colors an:sm:pr-6"
                             {{-- `window` is a tab name, not a class; the other two are. --}}
                             :class="tab === 'window' ? 'an:border-accent' : 'an:border-transparent'">
@@ -62,7 +62,7 @@
                         <span class="an:mt-0.5 an:block an:text-[21px] an:font-bold an:leading-6 {{ $ink }}">{{ number_format($window['visitors'], 0, ',', ' ') }}</span>
                     </button>
                     <button type="button"
-                            @click="tab = 'online'; $dispatch('an-realtime-mode', { mode: 'online' })"
+                            @click="choose('online')"
                             class="an:flex-1 an:cursor-pointer an:border-b-[3px] an:pb-3 an:pt-3 an:text-left an:transition-colors"
                             :class="tab === 'online' ? 'an:border-accent' : 'an:border-transparent'">
                         <span class="an:block an:text-[14px] an:font-medium {{ $ink }}">{{ __('Visiteurs en ligne') }}</span>

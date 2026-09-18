@@ -19,4 +19,4 @@
     before the element and it reads something other than a tag name, then
     throws on the next refresh.
 --}}
-<div {{ $attributes->merge(['class' => 'an-root']) }}><x-analytics::assets />{{ $slot }}</div>
+<div {{ $attributes->merge(['class' => 'an-root']) }}><x-analytics::assets :area="$area" />{{ $slot }}</div>

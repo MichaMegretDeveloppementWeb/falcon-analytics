@@ -14,47 +14,11 @@
 
 <div
     class="an:relative an:shrink-0 {{ $size }}"
-    x-data="{
-        chart: null,
-        {{-- `colors` arrives as token NAMES, never as values · they are handed
-             to the chart as names too, and the kit turns each into the value of
-             the theme in force before every draw. --}}
-        slices() { return @js(array_values($colors)).map((name) => 'var(' + name + ')'); },
-        async init() {
-            {{-- Chart.js loads on demand: the kit ships it as a separate file
-                 that pages without a chart never download. --}}
-            await window.falconCharts();
-
-            {{-- Nothing about the tooltip is named here. `charts.js` reads the
-                 kit's tokens and sets them as Chart.js's defaults, so it comes
-                 out looking like the rest of the suite on its own. --}}
-            this.chart = new window.Chart(this.$refs.canvas, {
-                type: 'doughnut',
-                data: {
-                    labels: @js(array_values($labels)),
-                    datasets: [{
-                        data: @js(array_values($values)),
-                        backgroundColor: this.slices(),
-                        borderColor: 'var(--ui-bg-surface)',
-                        borderWidth: 2,
-                        hoverOffset: 3,
-                    }],
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '72%',
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: { padding: 8, cornerRadius: 6, bodyFont: { size: 12 } },
-                    },
-                },
-            });
-        },
-        destroy() {
-            this.chart?.destroy();
-        },
-    }"
+    x-data="anDonut({
+        labels: @js(array_values($labels)),
+        values: @js(array_values($values)),
+        colors: @js(array_values($colors)),
+    })"
 >
     {{-- Center content sits behind the canvas and shows through the doughnut hole,
          so tooltips (drawn on the canvas) render above it instead of being hidden. --}}

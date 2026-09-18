@@ -144,13 +144,7 @@
     {{-- Body: journey + details. Below lg the aside stacks, so we switch to tabs. --}}
     <div
         class="an:grid an:grid-cols-1 an:gap-6 an:lg:grid-cols-3"
-        x-data="{
-            tab: 'infos',
-            desktop: window.matchMedia('(min-width: 1024px)').matches,
-            init() {
-                window.matchMedia('(min-width: 1024px)').addEventListener('change', (e) => { this.desktop = e.matches; });
-            },
-        }"
+        x-data="anSessionTabs"
     >
         {{-- Mobile-only tabs --}}
         <div class="an:lg:hidden">

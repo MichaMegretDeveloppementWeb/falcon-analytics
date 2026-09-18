@@ -3,23 +3,7 @@
      the screen. One host per page (event delegation on window); x-show only, so
      it is safe inside re-rendering Livewire components. --}}
 <div
-    x-data="{
-        text: '', show: false, x: 0, y: 0,
-        move(e) {
-            const el = e.target.closest ? e.target.closest('[data-an-tooltip]') : null;
-            if (! el || ! el.getAttribute('data-an-tooltip')) { this.show = false; return; }
-            this.text = el.getAttribute('data-an-tooltip');
-            this.show = true;
-            this.$nextTick(() => {
-                const tip = this.$refs.tip;
-                if (! tip) { return; }
-                const r = el.getBoundingClientRect();
-                this.x = Math.max(8, Math.min(r.left, window.innerWidth - tip.offsetWidth - 8));
-                let y = r.top - tip.offsetHeight - 8;
-                this.y = y < 8 ? r.bottom + 8 : y;
-            });
-        },
-    }"
+    x-data="anTooltipHost"
     @mouseover.window="move($event)"
     @scroll.window.passive="show = false"
 >

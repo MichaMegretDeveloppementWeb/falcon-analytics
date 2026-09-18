@@ -49,8 +49,8 @@
 
                     <div class="an:flex an:flex-wrap an:gap-2">
                         {{-- Tunnel picker --}}
-                        <div x-data="{ open: false, search: '' }" @click.outside="open = false" class="an:relative">
-                            <x-ui::button type="button" variant="secondary" size="compact" x-on:click="open = ! open; search = ''"><x-ui::icon name="funnel" class="an:h-3.5 an:w-3.5" /> {{ __('Tunnel') }}</x-ui::button>
+                        <div x-data="anObjectivePicker" @click.outside="open = false" class="an:relative">
+                            <x-ui::button type="button" variant="secondary" size="compact" x-on:click="toggle()"><x-ui::icon name="funnel" class="an:h-3.5 an:w-3.5" /> {{ __('Tunnel') }}</x-ui::button>
                             <div x-show="open" x-cloak x-transition.opacity class="an:absolute an:bottom-full an:left-0 an:z-30 an:mb-1 an:w-72 an:overflow-hidden an:rounded-lg an:border an:border-base an:bg-surface an:shadow-xl">
                                 <div class="an:border-b an:border-subtle an:p-2">
                                     <input x-model="search" x-on:click.stop type="text" placeholder="{{ __('Rechercher un tunnel...') }}" class="an:w-full an:rounded-lg an:border an:border-base an:bg-elevated an:px-2.5 an:py-1.5 an:text-[13px] an:text-primary an:placeholder:text-muted an:focus:outline-none an:focus:ring-2 an:focus:ring-gray-900/10 an:dark:focus:ring-white/10">
@@ -68,8 +68,8 @@
                         </div>
 
                         {{-- Event picker --}}
-                        <div x-data="{ open: false, search: '' }" @click.outside="open = false" class="an:relative">
-                            <x-ui::button type="button" variant="secondary" size="compact" x-on:click="open = ! open; search = ''"><x-ui::icon name="bolt" class="an:h-3.5 an:w-3.5" /> {{ __('Événement') }}</x-ui::button>
+                        <div x-data="anObjectivePicker" @click.outside="open = false" class="an:relative">
+                            <x-ui::button type="button" variant="secondary" size="compact" x-on:click="toggle()"><x-ui::icon name="bolt" class="an:h-3.5 an:w-3.5" /> {{ __('Événement') }}</x-ui::button>
                             <div x-show="open" x-cloak x-transition.opacity class="an:absolute an:bottom-full an:left-0 an:z-30 an:mb-1 an:w-72 an:overflow-hidden an:rounded-lg an:border an:border-base an:bg-surface an:shadow-xl">
                                 <div class="an:border-b an:border-subtle an:p-2">
                                     <input x-model="search" x-on:click.stop type="text" placeholder="{{ __('Rechercher un événement...') }}" class="an:w-full an:rounded-lg an:border an:border-base an:bg-elevated an:px-2.5 an:py-1.5 an:text-[13px] an:text-primary an:placeholder:text-muted an:focus:outline-none an:focus:ring-2 an:focus:ring-gray-900/10 an:dark:focus:ring-white/10">
