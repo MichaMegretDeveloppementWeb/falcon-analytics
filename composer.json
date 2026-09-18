@@ -27,7 +27,9 @@
         "geoip2/geoip2": "^3.0",
         "laravel/framework": "^13.12",
         "livewire/livewire": "^4.2",
-        "matomo/device-detector": "^6.0"
+        "matomo/device-detector": "^6.0",
+        "nesbot/carbon": "^3.8.4",
+        "symfony/http-foundation": "^7.4.0 || ^8.0.0"
     },
     "require-dev": {
         "brianium/paratest": "^7.20",
