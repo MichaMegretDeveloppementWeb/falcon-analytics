@@ -34,6 +34,14 @@ on:
 permissions:
   contents: read
 
+# One run per branch, and it is the last push that gets to finish. A superseded
+# run proves nothing the one replacing it does not, and its verdict lands on a
+# commit that is no longer the head — which is worse than no verdict, because it
+# is read as one.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   # The kit's repository is private, and it is declared twice in the manifest —
   # once as a `path`, once as a `vcs`. Composer enumerates versions in BOTH, so
