@@ -28,7 +28,7 @@ d'elles vous gêne, c'est une demande à faire au paquet.
 
 ---
 
-## Trois choses vraies pour toutes les clés
+## Quatre choses vraies pour toutes les clés
 
 On ne les répète donc pas dans les tableaux, et chaque exception est signalée
 là où elle est ·
@@ -39,6 +39,11 @@ là où elle est ·
    affichage. La seule exception est le cache de configuration de Laravel · si
    vous employez `config:cache`, relancez-le, comme pour n'importe quel réglage.
 3. **Toutes existent depuis la `1.0.0`**, la première version du paquet.
+4. **Aucune n'est obligatoire.** Le paquet démarre et collecte sur ses défauts.
+   Celles qui n'en ont pas — la licence MaxMind, les identifiants Search
+   Console — n'ouvrent qu'une fonctionnalité précise, et **chacune dit qu'elle
+   est éteinte plutôt que de se taire** · `analytics:check` pour la
+   géolocalisation, la commande de synchronisation pour Search Console.
 
 ---
 

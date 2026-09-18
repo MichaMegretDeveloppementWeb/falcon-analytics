@@ -14,10 +14,11 @@
 # single checkout does not produce. Both jobs need it: the PHP one to resolve
 # the dependency, the node one because the stylesheet reaches into `vendor/`.
 #
-# It is the workshop arrangement, and it has an end date. **At the birth at
-# 1.0.0** the `path` repository goes away, `minimum-stability: dev` with it, and
-# the kit is taken by tag from its own repository: the second checkout then
-# disappears and only `COMPOSER_AUTH` remains.
+# It is the workshop arrangement, and it ends on a condition rather than on a
+# date. **The day the kit carries a tag**, the `path` repository goes away,
+# `minimum-stability: dev` with it, and the kit is taken by that tag from its own
+# repository: the second checkout then disappears and only `COMPOSER_AUTH`
+# remains.
 #
 # `@v5` on the two `actions/*` below, and not `@v4`: the fourth generation runs
 # on a Node the runners have deprecated, and each job it appears in raises a
