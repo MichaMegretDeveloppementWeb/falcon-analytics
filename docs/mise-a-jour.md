@@ -8,12 +8,20 @@
 composer update falcon/analytics
 php artisan migrate
 php artisan vendor:publish --tag=laravel-assets --force
+php artisan view:cache
 php artisan analytics:check
 ```
 
 **La republication n'est pas optionnelle.** Le kit compare la copie que vous
 servez au fichier que le paquet livre, et **refuse de servir une copie
 périmée** · vos pages lèveraient une erreur nommant le fichier et la commande.
+
+> **`view:cache` non plus, et personne ne vous le dira.** Une vue Blade déjà
+> compilée peut survivre à la mise à jour qui remplace sa source. Le balisage
+> d'hier tourne alors avec le script d'aujourd'hui, et les deux ne se
+> reconnaissent plus · mesuré sur une installation à nu, un conteneur écoutait
+> encore l'ancien nom d'un événement, si bien que rien de ce qu'il devait
+> montrer ne paraissait. La page s'affichait, et rien ne levait.
 
 **`migrate` avant la republication**, et pas l'inverse · si une montée ajoute
 une colonne, un écran qui la lit doit la trouver. Entre les deux commandes, le

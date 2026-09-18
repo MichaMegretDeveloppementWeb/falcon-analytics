@@ -76,6 +76,12 @@ composer require falcon/analytics
 php artisan analytics:install
 ```
 
+> **Avant la première étiquette**, le paquet n'a pas encore de version publiée ·
+> la commande est alors `composer require falcon/analytics:dev-main`, et votre
+> `composer.json` a besoin de `"minimum-stability": "dev"` avec
+> `"prefer-stable": true`. Dès la 1.0.0, la forme ci-dessus est la bonne et ces
+> deux réglages s'en vont.
+
 **Ce que la commande fait**, dans cet ordre ·
 
 1. elle installe le kit · `ui-kit:install`, sans question ;
@@ -95,6 +101,13 @@ publiée. **Elle se rejoue sans dommage.**
 > **Elle ne pose aucune question**, et elle n'écrit dans aucun de vos fichiers de
 > style ou de script. Elle finit en disant ce qui reste à votre charge, et c'est
 > la section suivante.
+
+**Puis `php artisan view:cache`, et sous Windows ce n'est pas un confort.** Une
+vue Blade se compile à son premier affichage, et le tableau de bord ouvre une
+dizaine de blocs à la fois · sous Windows, deux compilations se disputent
+parfois le même fichier temporaire et l'une échoue en écriture. Le bloc reste
+alors sur son squelette de chargement, et la raison n'est que dans le journal.
+Compilées d'avance, elles ne se croisent plus.
 
 ---
 
