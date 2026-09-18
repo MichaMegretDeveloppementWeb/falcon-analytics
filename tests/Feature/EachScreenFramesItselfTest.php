@@ -41,7 +41,7 @@ final class EachScreenFramesItselfTest extends TestCase
             '<x-analytics::page area="admin" class="an:max-w-[42em]">une page</x-analytics::page>'
         );
 
-        $this->assertSame(1, preg_match('/<div\b[^>]*\bdata-area="admin"[^>]*>/', $html, $matches),
+        $this->assertSame(1, preg_match('/<div\b[^>]*\bdata-an-area="admin"[^>]*>/', $html, $matches),
             "La page n'a pas rendu son conteneur.");
 
         $this->assertStringContainsString('an-root', $matches[0]);

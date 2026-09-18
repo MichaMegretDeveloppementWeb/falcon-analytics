@@ -32,6 +32,7 @@ final class Root extends BaseRoot
         return 'analytics';
     }
 
+    /** @return view-string */
     protected function wrapper(): string
     {
         return 'analytics::components.root';

@@ -17,7 +17,7 @@
 <x-analytics::assets />
 
 <x-dynamic-component :component="$layout" :title="$title">
-    <div {{ $attributes->merge(['data-area' => $area])->class(['an-root']) }}>
+    <div {{ $attributes->merge(['data-an-area' => $area])->class(['an-root']) }}>
         {{ $slot }}
     </div>
 </x-dynamic-component>

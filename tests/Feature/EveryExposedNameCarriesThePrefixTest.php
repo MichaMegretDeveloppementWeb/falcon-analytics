@@ -38,9 +38,6 @@ final class EveryExposedNameCarriesThePrefixTest extends TestCase
      * @var list<string>
      */
     private const SHARED = [
-        // Le contrat de la suite, posé par la base du kit sur chaque page.
-        'data-area',
-
         // Ceux du kit, qu'il lit lui-même.
         'data-ui-scope',
         'data-ui-area',
@@ -78,7 +75,7 @@ final class EveryExposedNameCarriesThePrefixTest extends TestCase
     public static function exposedNames(): array
     {
         return [
-            'un attribut de données' => ['/\b(data-[a-z][a-z0-9-]*)\s*=/', 'data-'.self::PREFIX.'-…'],
+            'un attribut de données' => ['/\b(data-[a-z][a-z0-9-]*)(?:\s*=|[\'"]\s*=>)/', 'data-'.self::PREFIX.'-…'],
             'une animation' => ['/@keyframes\s+([a-z][a-z0-9-]*)/', self::PREFIX.'-…'],
             'une classe écrite à la main' => ['/\.((?!'.self::PREFIX.'-)[a-z][a-z0-9]*-[a-z0-9-]+)\s*\{/', self::PREFIX.'-…'],
         ];
