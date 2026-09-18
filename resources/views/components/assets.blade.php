@@ -12,5 +12,11 @@
 
     One file only here: the package has no administration script. Its charts are
     Alpine written in the views, and Chart.js comes from the kit.
+
+    **And `analytics.js` is absent on purpose, not by omission.** It is built,
+    committed and published like the stylesheet, but it is the collector — the
+    tracker a host puts on its own public pages — and `collector.blade.php`
+    declares it for itself, where it is rendered. Named here, every screen of
+    the dashboard would download it to count nothing.
 --}}
 <x-ui::assets package="analytics" :files="['analytics.css']" />
