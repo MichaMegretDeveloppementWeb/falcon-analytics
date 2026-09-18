@@ -296,12 +296,12 @@ final class MarketingPagesTest extends TestCase
 
         Livewire::test(CampaignsPage::class)
             ->call('editCampaign', 999_999)
-            ->assertDispatched('toast', type: 'danger')
+            ->assertDispatched('ui-toast', type: 'danger')
             ->assertSet('modal', '');
 
         Livewire::test(CampaignDetailPage::class, ['campaign' => $campaign])
             ->call('editAd', 999_999)
-            ->assertDispatched('toast', type: 'danger')
+            ->assertDispatched('ui-toast', type: 'danger')
             ->assertSet('modal', '');
     }
 }

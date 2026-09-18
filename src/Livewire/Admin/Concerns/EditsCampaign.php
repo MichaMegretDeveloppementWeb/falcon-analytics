@@ -111,7 +111,7 @@ trait EditsCampaign
                 'campaign_id' => $this->campaignFormId(),
                 'exception' => $e,
             ]);
-            $this->dispatch('toast', type: 'danger', title: __('L\'enregistrement de la campagne a échoué. Réessayez.'));
+            $this->dispatch('ui-toast', type: 'danger', title: __('L\'enregistrement de la campagne a échoué. Réessayez.'));
 
             return;
         }

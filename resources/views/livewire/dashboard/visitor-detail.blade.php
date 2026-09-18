@@ -175,7 +175,7 @@
                 <p class="an:text-[13px] an:font-medium an:text-primary">{{ __('Supprimer les données de ce visiteur') }}</p>
                 <p class="an:mt-0.5 an:text-[12px] an:text-secondary">{{ __('Efface le visiteur, ses sessions et ses évènements. Action irréversible (droit à l\'effacement).') }}</p>
             </div>
-            <x-ui::button variant="danger" class="an:shrink-0" @click="$dispatch('open-modal', 'forget-visitor')">
+            <x-ui::button variant="danger" class="an:shrink-0" @click="$dispatch('ui-open-modal', 'forget-visitor')">
                 <x-ui::icon name="trash" class="an:h-4 an:w-4" /> {{ __('Supprimer') }}
             </x-ui::button>
         </div>
@@ -184,8 +184,8 @@
     <x-ui::modal name="forget-visitor" variant="confirm" :title="__('Supprimer ce visiteur ?')">
         {{ __('Cette action est irréversible : le visiteur, ses :count session(s) et tous leurs évènements seront définitivement supprimés.', ['count' => $visitor->session_count]) }}
         <x-slot:actions>
-            <x-ui::button variant="ghost" @click="$dispatch('close-modal', 'forget-visitor')">{{ __('Annuler') }}</x-ui::button>
-            <x-ui::button variant="danger" wire:click="forget" @click="$dispatch('close-modal', 'forget-visitor')">{{ __('Supprimer définitivement') }}</x-ui::button>
+            <x-ui::button variant="ghost" @click="$dispatch('ui-close-modal', 'forget-visitor')">{{ __('Annuler') }}</x-ui::button>
+            <x-ui::button variant="danger" wire:click="forget" @click="$dispatch('ui-close-modal', 'forget-visitor')">{{ __('Supprimer définitivement') }}</x-ui::button>
         </x-slot:actions>
     </x-ui::modal>
 </x-analytics::root>

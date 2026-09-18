@@ -272,7 +272,7 @@ final class SearchConsoleConnectionTest extends TestCase
 
         Livewire::test(IntegrationsPage::class)
             ->call('selectProperty', 'sc-domain:example.com')
-            ->assertDispatched('toast');
+            ->assertDispatched('ui-toast');
 
         $connection = SearchConsoleConnection::current();
 
@@ -329,7 +329,7 @@ final class SearchConsoleConnectionTest extends TestCase
 
         Livewire::test(IntegrationsPage::class)
             ->call('syncNow')
-            ->assertDispatched('toast');
+            ->assertDispatched('ui-toast');
 
         $this->assertSame(1, SearchQuery::query()->count());
         $this->assertNotNull($connection->refresh()->last_synced_at);
@@ -348,7 +348,7 @@ final class SearchConsoleConnectionTest extends TestCase
 
         Livewire::test(IntegrationsPage::class)
             ->call('syncNow')
-            ->assertDispatched('toast');
+            ->assertDispatched('ui-toast');
 
         $this->assertSame(SearchConsoleConnection::STATUS_ERROR, $connection->refresh()->status);
     }
@@ -376,7 +376,7 @@ final class SearchConsoleConnectionTest extends TestCase
             ->assertSet('modal', 'disconnect')
             ->call('disconnectConfirmed')
             ->assertSet('modal', '')
-            ->assertDispatched('toast');
+            ->assertDispatched('ui-toast');
 
         $this->assertSame(0, SearchConsoleConnection::query()->count());
         Http::assertSent(fn ($request): bool => str_starts_with($request->url(), 'https://oauth2.googleapis.com/revoke'));

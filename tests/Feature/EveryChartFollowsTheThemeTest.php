@@ -74,7 +74,7 @@ final class EveryChartFollowsTheThemeTest extends TestCase
     {
         $source = $this->source($component);
 
-        foreach (['MutationObserver', 'theme-changed'] as $watching) {
+        foreach (['MutationObserver', 'ui-theme-changed'] as $watching) {
             $this->assertStringNotContainsString(
                 $watching,
                 $source,

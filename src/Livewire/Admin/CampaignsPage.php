@@ -63,7 +63,7 @@ final class CampaignsPage extends Component
                 'campaign_id' => $id,
                 'exception' => $e,
             ]);
-            $this->dispatch('toast', type: 'danger', title: __('Cette campagne est introuvable. Actualisez la page.'));
+            $this->dispatch('ui-toast', type: 'danger', title: __('Cette campagne est introuvable. Actualisez la page.'));
 
             return;
         }
@@ -89,7 +89,7 @@ final class CampaignsPage extends Component
                     'campaign_id' => $this->deleteId,
                     'exception' => $e,
                 ]);
-                $this->dispatch('toast', type: 'danger', title: __('La suppression de la campagne a échoué. Réessayez.'));
+                $this->dispatch('ui-toast', type: 'danger', title: __('La suppression de la campagne a échoué. Réessayez.'));
 
                 return;
             }

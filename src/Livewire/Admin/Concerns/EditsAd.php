@@ -164,7 +164,7 @@ trait EditsAd
                 'ad_id' => $this->adId,
                 'exception' => $e,
             ]);
-            $this->dispatch('toast', type: 'danger', title: __('L\'enregistrement de la pub a échoué. Réessayez.'));
+            $this->dispatch('ui-toast', type: 'danger', title: __('L\'enregistrement de la pub a échoué. Réessayez.'));
 
             return;
         }

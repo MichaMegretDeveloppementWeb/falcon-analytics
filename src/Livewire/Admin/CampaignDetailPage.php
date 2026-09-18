@@ -91,7 +91,7 @@ final class CampaignDetailPage extends DashboardComponent
                 'campaign_id' => $this->campaign->id,
                 'exception' => $e,
             ]);
-            $this->dispatch('toast', type: 'danger', title: __('La suppression de la campagne a échoué. Réessayez.'));
+            $this->dispatch('ui-toast', type: 'danger', title: __('La suppression de la campagne a échoué. Réessayez.'));
 
             return;
         }
@@ -114,7 +114,7 @@ final class CampaignDetailPage extends DashboardComponent
                 'ad_id' => $id,
                 'exception' => $e,
             ]);
-            $this->dispatch('toast', type: 'danger', title: __('Cette pub est introuvable. Actualisez la page.'));
+            $this->dispatch('ui-toast', type: 'danger', title: __('Cette pub est introuvable. Actualisez la page.'));
 
             return;
         }
@@ -140,7 +140,7 @@ final class CampaignDetailPage extends DashboardComponent
                     'ad_id' => $this->deleteAdId,
                     'exception' => $e,
                 ]);
-                $this->dispatch('toast', type: 'danger', title: __('La suppression de la pub a échoué. Réessayez.'));
+                $this->dispatch('ui-toast', type: 'danger', title: __('La suppression de la pub a échoué. Réessayez.'));
 
                 return;
             }

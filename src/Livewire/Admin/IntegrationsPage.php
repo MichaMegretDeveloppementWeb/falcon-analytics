@@ -44,7 +44,7 @@ final class IntegrationsPage extends Component
         $flash = session()->pull('analytics.search_console.flash');
 
         if (is_array($flash)) {
-            $this->dispatch('toast', type: (string) $flash['type'], title: (string) $flash['title']);
+            $this->dispatch('ui-toast', type: (string) $flash['type'], title: (string) $flash['title']);
         }
 
         $this->loadPropertiesIfPending();
@@ -55,7 +55,7 @@ final class IntegrationsPage extends Component
         $this->loadPropertiesIfPending();
 
         if ($this->propertiesFailed) {
-            $this->dispatch('toast', type: 'danger', title: __('La liste des propriétés n\'a pas pu être chargée. Réessayez.'));
+            $this->dispatch('ui-toast', type: 'danger', title: __('La liste des propriétés n\'a pas pu être chargée. Réessayez.'));
         }
     }
 
@@ -75,13 +75,13 @@ final class IntegrationsPage extends Component
             ]);
         } catch (Throwable $e) {
             Log::channel(config('analytics.log_channel'))->error('SearchConsole.select_property_failed', ['exception' => $e]);
-            $this->dispatch('toast', type: 'danger', title: __('Le rattachement de la propriété a échoué. Réessayez.'));
+            $this->dispatch('ui-toast', type: 'danger', title: __('Le rattachement de la propriété a échoué. Réessayez.'));
 
             return;
         }
 
         $this->properties = [];
-        $this->dispatch('toast', type: 'success', title: __('Search Console connectée.'));
+        $this->dispatch('ui-toast', type: 'success', title: __('Search Console connectée.'));
     }
 
     /**
@@ -104,12 +104,12 @@ final class IntegrationsPage extends Component
             $count = $synchronizer->sync($connection);
         } catch (Throwable) {
             // Already flagged and logged by the synchronizer.
-            $this->dispatch('toast', type: 'danger', title: __('La synchronisation a échoué. Consultez l\'état de la connexion.'));
+            $this->dispatch('ui-toast', type: 'danger', title: __('La synchronisation a échoué. Consultez l\'état de la connexion.'));
 
             return;
         }
 
-        $this->dispatch('toast', type: 'success', title: __(':count lignes synchronisées depuis Search Console.', ['count' => number_format($count, 0, ',', ' ')]));
+        $this->dispatch('ui-toast', type: 'success', title: __(':count lignes synchronisées depuis Search Console.', ['count' => number_format($count, 0, ',', ' ')]));
     }
 
     public function confirmDisconnect(): void
@@ -127,7 +127,7 @@ final class IntegrationsPage extends Component
                 $connection->delete();
             } catch (Throwable $e) {
                 Log::channel(config('analytics.log_channel'))->error('SearchConsole.disconnect_failed', ['exception' => $e]);
-                $this->dispatch('toast', type: 'danger', title: __('La déconnexion a échoué. Réessayez.'));
+                $this->dispatch('ui-toast', type: 'danger', title: __('La déconnexion a échoué. Réessayez.'));
 
                 return;
             }
@@ -135,7 +135,7 @@ final class IntegrationsPage extends Component
 
         $this->modal = '';
         $this->properties = [];
-        $this->dispatch('toast', type: 'success', title: __('Search Console déconnectée.'));
+        $this->dispatch('ui-toast', type: 'success', title: __('Search Console déconnectée.'));
     }
 
     public function closeModal(): void
