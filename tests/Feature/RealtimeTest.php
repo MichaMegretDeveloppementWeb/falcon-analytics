@@ -303,7 +303,7 @@ final class RealtimeTest extends TestCase
 
         Livewire::test(RealtimePage::class)
             ->assertDispatched(
-                'analytics-realtime-tick',
+                'an-realtime-tick',
                 fn (string $name, array $params): bool => isset($params['pulse'], $params['devices'], $params['sources'], $params['map'])
                     && $params['map']['points'][0]['city'] === 'Geneva'
                     && $params['map']['points'][0]['online'] === 1,

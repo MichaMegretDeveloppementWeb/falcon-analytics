@@ -68,7 +68,7 @@ final class MarketingPagesTest extends TestCase
 
         Livewire::test(CampaignDetailContent::class, ['refId' => $campaign->id, 'period' => 30])
             ->call('$refresh')
-            ->assertDispatched('campaign-metrics-loaded')
+            ->assertDispatched('an-campaign-metrics-loaded')
             ->assertSeeText(__('Sessions'))
             ->assertSeeText(__('Taux de conversion'));
     }

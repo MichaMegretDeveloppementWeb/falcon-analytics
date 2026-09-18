@@ -93,7 +93,7 @@ final class RealtimePage extends Component
                 // update). The doughnut centre shows the number of categories
                 // ("2 types", "3 sources"), not the session count.
                 $this->dispatch(
-                    'analytics-realtime-tick',
+                    'an-realtime-tick',
                     pulse: ['labels' => array_keys($minuteSeries), 'values' => array_values($minuteSeries)],
                     devices: [...$devices, 'total' => $devices['count']],
                     sources: [...$sources, 'total' => $sources['count']],

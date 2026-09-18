@@ -5,7 +5,7 @@
     'total' => '',
     'caption' => null,
     'size' => 'an:h-28 an:w-28',
-    'event' => 'analytics-realtime-tick',
+    'event' => 'an-realtime-tick',
     'channel' => 'devices',
 ])
 

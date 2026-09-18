@@ -159,7 +159,7 @@ final class CampaignDetailPage extends DashboardComponent
      * @param  array<int, array{sessions: int, visitors: int}>  $adMetrics
      * @param  array<int, int>  $adConversions
      */
-    #[On('campaign-metrics-loaded')]
+    #[On('an-campaign-metrics-loaded')]
     public function fillAdMetrics(array $adMetrics, array $adConversions): void
     {
         $this->adMetrics = $adMetrics;

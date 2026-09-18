@@ -3,7 +3,7 @@
     'values' => [],
     'color' => '--an-series-1',
     'height' => 'an:h-56',
-    'event' => 'analytics-realtime-tick',
+    'event' => 'an-realtime-tick',
     'channel' => 'pulse',
 ])
 

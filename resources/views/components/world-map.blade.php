@@ -1,6 +1,6 @@
 @props([
     'points' => [],
-    'event' => 'analytics-realtime-tick',
+    'event' => 'an-realtime-tick',
     'channel' => 'map',
 ])
 
@@ -13,7 +13,7 @@
     The markers live under wire:ignore and are regenerated IN PLACE on every
     tick (the `map` payload), sized in SCREEN PIXELS so they look the same on a
     phone and on a wide display. The page's 30 min / Online tab filters them
-    through the `analytics-realtime-mode` event, and the tooltip goes through
+    through the `an-realtime-mode` event, and the tooltip goes through
     the dashboard's delegated `data-an-tooltip`.
 
     Its four colours are tokens · land, borders, the live green and the recent
@@ -86,7 +86,7 @@
     {{-- Nothing to listen to · countries, borders and markers all carry classes
          now, so the stylesheet repaints the whole map on a theme switch. --}}
     x-on:{{ $event }}.window="refresh($event.detail)"
-    x-on:analytics-realtime-mode.window="setMode($event.detail)"
+    x-on:an-realtime-mode.window="setMode($event.detail)"
     x-on:resize.window.debounce.250ms="apply()"
 >
     <svg x-ref="svg" viewBox="0 0 1000 516" preserveAspectRatio="xMidYMid meet" class="an:w-full" role="img" aria-label="{{ __('Carte des connexions') }}">
