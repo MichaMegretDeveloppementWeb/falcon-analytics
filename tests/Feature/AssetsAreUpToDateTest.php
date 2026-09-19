@@ -177,7 +177,7 @@ final class AssetsAreUpToDateTest extends TestCase
     {
         $found = [];
 
-        foreach ([['resources/js', '.js'], ['resources/css', '.css'], ['resources/views', '.blade.php']] as [$directory, $suffix]) {
+        foreach ([['resources/js', '.js'], ['resources/css', '.css'], ['resources/views', '.blade.php'], ['resources/svg', '.svg']] as [$directory, $suffix]) {
             $iterator = new RecursiveIteratorIterator(
                 new RecursiveDirectoryIterator($this->packagePath($directory), FilesystemIterator::SKIP_DOTS)
             );

@@ -4,7 +4,7 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "build": "vite build && vite build --config vite.admin.config.js && tailwindcss -i resources/css/analytics.css -o public/analytics.css --minify && node ./scripts/fingerprint.mjs",
+        "build": "vite build && vite build --config vite.admin.config.js && tailwindcss -i resources/css/analytics.css -o public/analytics.css --minify && node ./scripts/world-map.mjs && node ./scripts/fingerprint.mjs",
         "check-assets": "node ./scripts/check-assets.mjs",
         "lint": "eslint .",
         "test": "vitest run"

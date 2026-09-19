@@ -148,8 +148,11 @@ suivante.**
 
 Qui est en ligne maintenant, et l'activité de la fenêtre récente · indicateurs,
 graphique par minute, répartitions par appareil et par source, fil d'activité,
-pages consultées, et une **carte du monde en SVG intégré** — aucun serveur de
-tuiles, aucune bibliothèque cartographique, aucune requête sortante.
+pages consultées, et une **carte du monde en SVG livré avec le paquet** —
+aucun serveur de tuiles, aucune bibliothèque cartographique, aucune requête
+sortante. Son tracé, `world-map.svg`, est publié avec les autres fichiers
+compilés et gardé par le navigateur · un rafraîchissement ne renvoie que les
+points.
 
 Elle se rafraîchit par sondage ordinaire de Livewire, **suspendu tant que
 l'onglet est caché, et tant que l'écran est sorti du champ de vision**. Aucun

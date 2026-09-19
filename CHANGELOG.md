@@ -46,8 +46,14 @@ architecture qui n'existe plus.
   touche un seul, et un essai le tient ;
 - **des fichiers déjà compilés** · aucun Node n'est requis chez l'hôte. Le
   script des écrans, `analytics-admin.js`, ne part que vers les écrans
-  d'administration · une page publique ne reçoit que le collecteur. **Rien
-  n'est à faire pour cela**, la republication du point 5 plus bas le livre ;
+  d'administration · une page publique ne reçoit que le collecteur. La carte du
+  monde du temps réel est un fichier de plus, `world-map.svg`, que le navigateur
+  garde · l'écran se rafraîchit toutes les dix secondes sans la renvoyer.
+  **Rien n'est à faire pour cela**, la republication du point 5 plus bas les
+  livre ;
+- **des listes dont une ligne ne coûte rien à dessiner** · la source, la page,
+  le pays et les conditions d'une campagne passent par le raccourci du kit, et
+  une page de vingt sessions coûte autant qu'une seule ;
 - **des écrans qui ne se publient pas** · ils appartiennent au paquet, qui les
   renouvelle à chaque version. Votre gabarit les habille tous, et peut en
   distinguer un par son nom de route · voir

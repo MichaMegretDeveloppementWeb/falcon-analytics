@@ -37,7 +37,7 @@ final class TheArchiveCarriesOnlyWhatAHostNeedsTest extends TestCase
         'database/',        // les migrations
         'docs/',            // la documentation fait partie de la livraison
         'public/',          // les fichiers déjà compilés
-        'resources/',       // les vues · le style et les scripts sont exclus
+        'resources/',       // les vues · le style, les scripts et la carte sont exclus
         'routes/',
         'src/',
     ];
@@ -128,7 +128,7 @@ final class TheArchiveCarriesOnlyWhatAHostNeedsTest extends TestCase
     {
         $output = $this->archive();
 
-        foreach (['resources/css/', 'resources/js/', 'tests/', 'scripts/', 'node_modules/'] as $absent) {
+        foreach (['resources/css/', 'resources/js/', 'resources/svg/', 'tests/', 'scripts/', 'node_modules/'] as $absent) {
             $this->assertEmpty(
                 array_filter($output, fn (string $path): bool => str_starts_with($path, $absent)),
                 "L’archive porte {$absent}, qu’un hôte n’a aucune raison de recevoir.",
