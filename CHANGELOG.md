@@ -47,7 +47,11 @@ architecture qui n'existe plus.
 - **des fichiers déjà compilés** · aucun Node n'est requis chez l'hôte. Le
   script des écrans, `analytics-admin.js`, ne part que vers les écrans
   d'administration · une page publique ne reçoit que le collecteur. **Rien
-  n'est à faire pour cela**, la republication du point 5 plus bas le livre.
+  n'est à faire pour cela**, la republication du point 5 plus bas le livre ;
+- **des écrans qui ne se publient pas** · ils appartiennent au paquet, qui les
+  renouvelle à chaque version. Votre gabarit les habille tous, et peut en
+  distinguer un par son nom de route · voir
+  [installation.md](docs/installation.md#un-écran-en-particulier).
 
 ### Ce que l'intégrateur a à faire
 

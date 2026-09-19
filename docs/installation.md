@@ -265,34 +265,22 @@ concerne que votre propre habillage.
 `admin.middleware`, et `admin.marketing.middleware` pour les écrans marketing,
 qui peuvent répondre à un autre garde.
 
-### Aller plus loin · encadrer un écran
+### Un écran en particulier
 
-Un gabarit habille **tous** les écrans pareil. Pour ajouter un fil d'Ariane, un
-bandeau ou un encadré **à un écran en particulier**, publiez sa vue ·
-
-```bash
-php artisan vendor:publish --tag=analytics-views
-```
-
-Vous recevez alors dans `resources/views/vendor/analytics/` des vues de trois
-lignes, et ce sont **celles-là** qu'il faut modifier ·
+**Les écrans ne se publient pas** · ils appartiennent au paquet, qui les met à
+jour à chaque version. Votre gabarit est l'endroit où vous les habillez, tous à
+la fois. Pour ajouter un fil d'Ariane ou un bandeau **à un écran en
+particulier**, votre gabarit sait lequel il dessine · les noms de routes du
+paquet sont stables.
 
 ```blade
-{{-- resources/views/vendor/analytics/admin/dashboard/overview.blade.php --}}
-<x-analytics::page area="admin" :title="$analyticsTitle">
+{{-- dans votre gabarit, autour du slot --}}
+@if (request()->routeIs('analytics.admin.overview'))
     <x-votre-bandeau />
-    <livewire:analytics::admin.overview-page />
-</x-analytics::page>
+@endif
+
+<main>{{ $slot }}</main>
 ```
-
-**Le corps de l'écran reste le nôtre**, dans le composant Livewire · il continue
-donc d'être mis à jour. C'est tout l'intérêt de ne toucher qu'à l'enveloppe.
-
-> **Ce n'est jamais obligatoire**, et ça se paie. Une vue publiée **n'est plus
-> jamais mise à jour** · elle reste telle quelle, et c'est à vous de la
-> maintenir. Une vue copiée puis oubliée est la façon la plus discrète de rester
-> bloqué sur une version. Ne publiez que ce que vous modifiez vraiment, et
-> supprimez le reste.
 
 ---
 
@@ -375,7 +363,7 @@ Ensuite ·
 
 ```bash
 composer remove falcon/analytics
-rm -rf public/vendor/falcon/analytics resources/views/vendor/analytics
+rm -rf public/vendor/falcon/analytics
 rm config/analytics.php
 ```
 

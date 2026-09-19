@@ -202,20 +202,6 @@ final class AnalyticsServiceProvider extends ServiceProvider
             ], 'analytics-config');
 
             /*
-             * The views, for a host that wants to wrap a screen in a banner, a
-             * breadcrumb or a container of its own. The thin views are the ones
-             * that matter: the screen's body stays the package's, so it keeps
-             * being updated.
-             *
-             * Publishing is never required, a view laid in
-             * `resources/views/vendor/analytics/` being taken into account
-             * anyway.
-             */
-            $this->publishes([
-                __DIR__.'/../resources/views' => resource_path('views/vendor/analytics'),
-            ], 'analytics-views');
-
-            /*
              * The compiled files, under two names. `laravel-assets` is the one
              * a deployment forces in every release; `analytics-assets` is for
              * taking these and nothing else.

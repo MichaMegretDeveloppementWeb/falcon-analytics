@@ -53,13 +53,10 @@ tous sur des défauts qui échouent en silence.
 propres écrans, et votre compilation ne lit pas nos vues. Elle ne concerne que
 votre propre habillage, et donc seulement si vous avez nommé un gabarit à vous.
 
-> **Une mise à jour n'écrase jamais une vue que vous avez publiée** — si vous en
-> avez publié une, ce qui n'est jamais obligatoire et se fait avec
-> `--tag=analytics-views` · voir
-> [installation.md](installation.md#aller-plus-loin--encadrer-un-écran). Elle
-> reste telle quelle, et c'est à vous de la maintenir · c'est le coût de l'avoir
-> copiée. Une vue de paquet publiée et oubliée est la façon la plus discrète de
-> rester bloqué sur une version.
+> **Les écrans ne se publient pas**, et c'est ce qui les garde à jour · une
+> montée les renouvelle tous, sans rien vous demander. Pour habiller un écran en
+> particulier, votre gabarit suffit · voir
+> [installation.md](installation.md#un-écran-en-particulier).
 
 ---
 

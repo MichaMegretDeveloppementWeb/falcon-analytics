@@ -396,13 +396,7 @@ part, pas des semaines plus tard sur un essai qui parle d'autre chose.
 > 2026-09-14, remplacé par le garde ci-dessus · **un essai surveille la
 > garantie, pas une des façons de la casser.**
 
-**Une vue publiée par l'hôte n'est lue que si son dossier existait au
-démarrage.** `loadViewsFrom` regarde une fois, au moment où le fournisseur
-démarre · créer `resources/views/vendor/analytics/` après coup ne sert à rien
-pour la durée de vie de cette application.
-
-Ça ne coûte rien en production, où la requête suivante redémarre tout. Ça coûte
-une heure dans un essai qui publie puis interroge dans la même foulée · posez le
-fichier dans `defineEnvironment`, qui passe **avant** le démarrage, et non dans
-`setUp`, qui passe après. `PublishingAViewWrapsTheScreenTest` le fait et dit
-pourquoi.
+**Le paquet n'offre aucune de ses vues à la publication**, et
+`NoViewIsOfferedForPublicationTest` le tient · ses écrans lui appartiennent, et
+une copie chez un hôte cesserait d'être mise à jour sans un mot. L'hôte les
+habille tous par son gabarit.
