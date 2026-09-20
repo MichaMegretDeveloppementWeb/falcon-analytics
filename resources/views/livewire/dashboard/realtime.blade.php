@@ -49,7 +49,7 @@
         <div class="an:space-y-6 an:lg:col-span-2">
 
             {{-- The main card, Wix style: KPI tabs, map + countries, breakdowns --}}
-            <div class="an:rounded-xl an:border an:border-base an:bg-surface" x-data="anRealtimeTabs">
+            <div class="an:rounded-xl an:border an:border-default an:bg-surface" x-data="anRealtimeTabs">
 
                 {{-- Tabs --}}
                 <div class="an:flex an:items-stretch an:px-5 an:pt-1">
@@ -209,7 +209,7 @@
         <div class="an:space-y-6 an:lg:col-span-1">
 
             {{-- Recent visitors (last 24 hours) --}}
-            <div class="an:rounded-xl an:border an:border-base an:bg-surface">
+            <div class="an:rounded-xl an:border an:border-default an:bg-surface">
                 <div class="an:px-5 an:py-4">
                     <p class="an:text-[16px] an:font-bold {{ $ink }}">{{ __('Visiteurs récents') }}</p>
                     <p class="an:mt-0.5 an:text-[12px] {{ $inkMuted }}">{{ __('24 dernières heures') }}</p>
@@ -253,7 +253,7 @@
             </div>
 
             {{-- Live activity (last 24 hours): the featured event type --}}
-            <div class="an:rounded-xl an:border an:border-base an:bg-surface">
+            <div class="an:rounded-xl an:border an:border-default an:bg-surface">
                 <div class="an:px-5 an:py-4">
                     <p class="an:text-[16px] an:font-bold {{ $ink }}">{{ __('Activité en direct') }}</p>
                     <p class="an:mt-0.5 an:text-[12px] {{ $inkMuted }}">{{ __(':count dernières minutes', ['count' => $windowMinutes]) }}</p>

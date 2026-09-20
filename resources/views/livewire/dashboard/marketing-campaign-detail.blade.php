@@ -114,7 +114,7 @@
         <div x-show="$wire.modal === 'campaign'" x-cloak class="an:fixed an:inset-0 an:z-50 an:overflow-y-auto">
             <div class="an:fixed an:inset-0 an:bg-gray-900/50 an:backdrop-blur-sm an:dark:bg-black/60"></div>
             <div class="an:relative an:flex an:min-h-full an:items-center an:justify-center an:p-4" @click.self="$wire.closeModal()">
-                <div class="an:w-full an:max-w-lg an:rounded-xl an:border an:border-base an:bg-surface an:p-5 an:shadow-xl">
+                <div class="an:w-full an:max-w-lg an:rounded-xl an:border an:border-default an:bg-surface an:p-5 an:shadow-xl">
                     <h3 class="an:text-[13px] an:font-semibold an:text-primary">{{ __('Modifier la campagne') }}</h3>
                     <div class="an:mt-4 an:space-y-4">
                         <x-ui::form-group :label="__('Nom')" for="campaignName">
@@ -152,7 +152,7 @@
         <div x-show="$wire.modal === 'delete-campaign'" x-cloak class="an:fixed an:inset-0 an:z-50 an:overflow-y-auto">
             <div class="an:fixed an:inset-0 an:bg-gray-900/50 an:backdrop-blur-sm an:dark:bg-black/60"></div>
             <div class="an:relative an:flex an:min-h-full an:items-center an:justify-center an:p-4" @click.self="$wire.closeModal()">
-                <div class="an:w-full an:max-w-sm an:rounded-xl an:border an:border-base an:bg-surface an:p-5 an:shadow-xl">
+                <div class="an:w-full an:max-w-sm an:rounded-xl an:border an:border-default an:bg-surface an:p-5 an:shadow-xl">
                     <h3 class="an:text-[13px] an:font-semibold an:text-primary">{{ __('Supprimer la campagne ?') }}</h3>
                     <p class="an:mt-1.5 an:text-[12px] an:text-secondary">{{ __('« :name » et toutes ses pubs et objectifs seront supprimés. Le trafic déjà capté reste en base.', ['name' => $campaign->name]) }}</p>
                     <div class="an:mt-5 an:flex an:justify-end an:gap-2">
@@ -167,7 +167,7 @@
         <div x-show="$wire.modal === 'delete-ad'" x-cloak class="an:fixed an:inset-0 an:z-50 an:overflow-y-auto">
             <div class="an:fixed an:inset-0 an:bg-gray-900/50 an:backdrop-blur-sm an:dark:bg-black/60"></div>
             <div class="an:relative an:flex an:min-h-full an:items-center an:justify-center an:p-4" @click.self="$wire.closeModal()">
-                <div class="an:w-full an:max-w-sm an:rounded-xl an:border an:border-base an:bg-surface an:p-5 an:shadow-xl">
+                <div class="an:w-full an:max-w-sm an:rounded-xl an:border an:border-default an:bg-surface an:p-5 an:shadow-xl">
                     <h3 class="an:text-[13px] an:font-semibold an:text-primary">{{ __('Supprimer la pub ?') }}</h3>
                     <p class="an:mt-1.5 an:text-[12px] an:text-secondary">{{ __('« :name » et ses objectifs seront supprimés. Le trafic déjà capté reste en base.', ['name' => $deleteAdLabel]) }}</p>
                     <div class="an:mt-5 an:flex an:justify-end an:gap-2">

@@ -253,7 +253,7 @@ concerne que votre propre habillage.
 > est simplement plus étroite qu'elle ne devrait, et rien ne le dit.
 
 > **Du Tailwind ordinaire dans cet exemple, à dessein.** Écrire `bg-page` ou
-> `border-base` ici demande que **votre** compilation connaisse les noms du kit —
+> `border-default` ici demande que **votre** compilation connaisse les noms du kit —
 > c'est la ligne que `ui-kit:install` vous donne, et sans elle une classe
 > inconnue ne lève rien du tout · un fond qui manque, et aucune explication.
 

@@ -5,7 +5,7 @@
 <div x-show="$wire.modal === 'ad'" x-cloak class="an:fixed an:inset-0 an:z-50 an:overflow-y-auto">
     <div class="an:fixed an:inset-0 an:bg-gray-900/50 an:backdrop-blur-sm an:dark:bg-black/60"></div>
     <div class="an:relative an:flex an:min-h-full an:items-center an:justify-center an:p-4" @click.self="$wire.closeModal()">
-        <div class="an:w-full an:max-w-lg an:rounded-xl an:border an:border-base an:bg-surface an:p-5 an:shadow-xl">
+        <div class="an:w-full an:max-w-lg an:rounded-xl an:border an:border-default an:bg-surface an:p-5 an:shadow-xl">
             <h3 class="an:text-[13px] an:font-semibold an:text-primary">{{ $adId ? __('Modifier la pub') : __('Nouvelle pub') }}</h3>
 
             <div class="an:mt-4 an:space-y-4">
@@ -51,9 +51,9 @@
                         {{-- Tunnel picker --}}
                         <div x-data="anObjectivePicker" @click.outside="open = false" class="an:relative">
                             <x-ui::button type="button" variant="secondary" size="compact" x-on:click="toggle()"><x-ui::icon name="funnel" class="an:h-3.5 an:w-3.5" /> {{ __('Tunnel') }}</x-ui::button>
-                            <div x-show="open" x-cloak x-transition.opacity class="an:absolute an:bottom-full an:left-0 an:z-30 an:mb-1 an:w-72 an:overflow-hidden an:rounded-lg an:border an:border-base an:bg-surface an:shadow-xl">
+                            <div x-show="open" x-cloak x-transition.opacity class="an:absolute an:bottom-full an:left-0 an:z-30 an:mb-1 an:w-72 an:overflow-hidden an:rounded-lg an:border an:border-default an:bg-surface an:shadow-xl">
                                 <div class="an:border-b an:border-subtle an:p-2">
-                                    <input x-model="search" x-on:click.stop type="text" placeholder="{{ __('Rechercher un tunnel...') }}" class="an:w-full an:rounded-lg an:border an:border-base an:bg-elevated an:px-2.5 an:py-1.5 an:text-[13px] an:text-primary an:placeholder:text-muted an:focus:outline-none an:focus:ring-2 an:focus:ring-gray-900/10 an:dark:focus:ring-white/10">
+                                    <input x-model="search" x-on:click.stop type="text" placeholder="{{ __('Rechercher un tunnel...') }}" class="an:w-full an:rounded-lg an:border an:border-default an:bg-elevated an:px-2.5 an:py-1.5 an:text-[13px] an:text-primary an:placeholder:text-muted an:focus:outline-none an:focus:ring-2 an:focus:ring-gray-900/10 an:dark:focus:ring-white/10">
                                 </div>
                                 <div class="an:max-h-52 an:overflow-y-auto an:p-1">
                                     @forelse ($funnelOptions as $option)
@@ -70,9 +70,9 @@
                         {{-- Event picker --}}
                         <div x-data="anObjectivePicker" @click.outside="open = false" class="an:relative">
                             <x-ui::button type="button" variant="secondary" size="compact" x-on:click="toggle()"><x-ui::icon name="bolt" class="an:h-3.5 an:w-3.5" /> {{ __('Événement') }}</x-ui::button>
-                            <div x-show="open" x-cloak x-transition.opacity class="an:absolute an:bottom-full an:left-0 an:z-30 an:mb-1 an:w-72 an:overflow-hidden an:rounded-lg an:border an:border-base an:bg-surface an:shadow-xl">
+                            <div x-show="open" x-cloak x-transition.opacity class="an:absolute an:bottom-full an:left-0 an:z-30 an:mb-1 an:w-72 an:overflow-hidden an:rounded-lg an:border an:border-default an:bg-surface an:shadow-xl">
                                 <div class="an:border-b an:border-subtle an:p-2">
-                                    <input x-model="search" x-on:click.stop type="text" placeholder="{{ __('Rechercher un événement...') }}" class="an:w-full an:rounded-lg an:border an:border-base an:bg-elevated an:px-2.5 an:py-1.5 an:text-[13px] an:text-primary an:placeholder:text-muted an:focus:outline-none an:focus:ring-2 an:focus:ring-gray-900/10 an:dark:focus:ring-white/10">
+                                    <input x-model="search" x-on:click.stop type="text" placeholder="{{ __('Rechercher un événement...') }}" class="an:w-full an:rounded-lg an:border an:border-default an:bg-elevated an:px-2.5 an:py-1.5 an:text-[13px] an:text-primary an:placeholder:text-muted an:focus:outline-none an:focus:ring-2 an:focus:ring-gray-900/10 an:dark:focus:ring-white/10">
                                 </div>
                                 <div class="an:max-h-52 an:overflow-y-auto an:p-1">
                                     @forelse ($eventOptions as $option)

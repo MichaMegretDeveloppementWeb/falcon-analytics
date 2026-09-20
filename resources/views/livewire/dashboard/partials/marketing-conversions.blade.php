@@ -31,7 +31,7 @@
                             <span class="an:w-16 an:shrink-0 an:text-right an:text-base an:font-semibold an:text-primary an:tabular-nums">{{ number_format($el['conversions'], 0, ',', ' ') }}</span>
                         </div>
                         @if ($el['steps'])
-                            <div x-show="open" x-cloak class="an:ml-2 an:mt-3 an:space-y-1.5 an:border-l an:border-base an:pl-4">
+                            <div x-show="open" x-cloak class="an:ml-2 an:mt-3 an:space-y-1.5 an:border-l an:border-default an:pl-4">
                                 <p class="an:text-[11px] an:font-medium an:uppercase an:tracking-wider an:text-muted">{{ __('Étapes du tunnel') }}</p>
                                 @php $maxStep = collect($el['steps'])->max('count') ?: 1; @endphp
                                 @foreach ($el['steps'] as $si => $step)
