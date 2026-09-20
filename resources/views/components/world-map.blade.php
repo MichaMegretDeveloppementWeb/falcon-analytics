@@ -6,9 +6,10 @@
 
 {{--
     A map of the live connections, entirely self-contained: the base map is an
-    embedded SVG — no tile server and no external library — with per-country
-    borders drawn at a constant stroke (vector-effect), a Miller projection, and
-    a fixed world view.
+    SVG the package ships, `world-map.svg`, referenced by `<use>` so the browser
+    keeps it and no refresh of the screen sends it again · no tile server and
+    no external library. Per-country borders are drawn at a constant stroke
+    (vector-effect), in a Miller projection and a fixed world view.
 
     The markers live under wire:ignore and are regenerated IN PLACE on every
     tick (the `map` payload), sized in SCREEN PIXELS so they look the same on a
@@ -36,7 +37,7 @@
 >
     <svg x-ref="svg" viewBox="0 0 1000 516" preserveAspectRatio="xMidYMid meet" class="an:w-full" role="img" aria-label="{{ __('Carte des connexions') }}">
         <g class="an:fill-map-land an:stroke-map-border" stroke-width="1">
-            @include('analytics::livewire.dashboard.partials.world-map-path')
+            <use href="{{ \Falcon\Ui\Assets::url('analytics', 'world-map.svg') }}#world"></use>
         </g>
         <g x-ref="markers"></g>
     </svg>

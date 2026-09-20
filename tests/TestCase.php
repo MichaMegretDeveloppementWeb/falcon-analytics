@@ -148,32 +148,29 @@ abstract class TestCase extends Orchestra
      */
     private function publishTheCompiledFiles(): void
     {
-        // A shipped file missing from this list would never be published: the
-        // others being in order would be enough to conclude. It happened the
-        // day the package gained its script — and again on 2026-09-13, the kit
-        // being watched on its stylesheet alone: a `npm run build` there
-        // rebuilt `ui.js`, the bench saw a stylesheet in order and concluded,
-        // and sixteen tests fell over the kit's staleness guard while testing
-        // something else. Every file either package ships, or none of it works.
-        $kit = dirname(__DIR__).'/vendor/falcon/ui-kit/public/';
-
-        $shipped = [
-            public_path('vendor/falcon/ui/ui.css') => $kit.'ui.css',
-            public_path('vendor/falcon/ui/ui-base.css') => $kit.'ui-base.css',
-            public_path('vendor/falcon/ui/ui.js') => $kit.'ui.js',
-            public_path('vendor/falcon/analytics/analytics.css') => dirname(__DIR__).'/public/analytics.css',
-            public_path('vendor/falcon/analytics/analytics.js') => dirname(__DIR__).'/public/analytics.js',
+        // Every file either package ships, read from its directory: a file the
+        // comparison did not know of would never be republished, the others
+        // being in order enough to conclude.
+        $shippedBy = [
+            'ui' => dirname(__DIR__).'/vendor/falcon/ui-kit/public',
+            'analytics' => dirname(__DIR__).'/public',
         ];
 
-        foreach ($shipped as $published => $source) {
-            if (is_file($published) && is_file($source) && filesize($published) === filesize($source)
-                && md5_file($published) === md5_file($source)) {
-                continue;
+        foreach ($shippedBy as $package => $directory) {
+            $files = glob($directory.'/*');
+
+            foreach ($files === false ? [] : $files as $source) {
+                $published = public_path('vendor/falcon/'.$package.'/'.basename($source));
+
+                if (is_file($published) && filesize($published) === filesize($source)
+                    && md5_file($published) === md5_file($source)) {
+                    continue;
+                }
+
+                $this->artisan('vendor:publish', ['--tag' => 'laravel-assets', '--force' => true])->run();
+
+                return;
             }
-
-            $this->artisan('vendor:publish', ['--tag' => 'laravel-assets', '--force' => true])->run();
-
-            return;
         }
     }
 

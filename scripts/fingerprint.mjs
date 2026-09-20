@@ -6,7 +6,8 @@
  *
  * What goes into it: the script, the stylesheets, AND THE VIEWS. The views
  * count because the utility generator reads them — a class added to a screen
- * changes the shipped stylesheet as surely as a hand-written rule does.
+ * changes the shipped stylesheet as surely as a hand-written rule does. And
+ * the world map, copied as it stands.
  *
  * Line endings are normalised before hashing: without that the fingerprint
  * differs between a Windows machine and a Unix one, and the test would fail on
@@ -38,6 +39,7 @@ const files = [
     ...filesUnder(join('resources', 'js'), '.js'),
     ...filesUnder(join('resources', 'css'), '.css'),
     ...filesUnder(join('resources', 'views'), '.blade.php'),
+    ...filesUnder(join('resources', 'svg'), '.svg'),
 ]
     // Sorted on the relative path with forward slashes: the order has to be the
     // same whatever the system, otherwise so is the fingerprint.

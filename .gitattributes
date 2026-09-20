@@ -20,7 +20,8 @@ public/*        -text -diff
 # weight: shipped, they cannot serve. The stylesheet reaches for the kit's
 # layers and theme through a relative path that leads nowhere once the package
 # sits under a host's dependencies, and the script is already compiled next
-# door. Leaving them in says the opposite.
+# door. Leaving them in says the opposite. `resources/svg` likewise: the world
+# map ships as its copy in `public/`.
 # La liste est tenue par `TheArchiveCarriesOnlyWhatAHostNeeds`, en liste
 # BLANCHE · un oubli ici ne se voyait pas, et deux fichiers d'outillage sont
 # partis chez les hôtes avant qu'on s'en aperçoive.
@@ -39,6 +40,7 @@ public/*        -text -diff
 /pint.json          export-ignore
 /resources/css      export-ignore
 /resources/js       export-ignore
+/resources/svg      export-ignore
 /scripts            export-ignore
 /testbench.yaml     export-ignore
 /tests              export-ignore

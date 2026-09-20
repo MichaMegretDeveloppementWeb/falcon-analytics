@@ -20,6 +20,7 @@ use Falcon\Analytics\Http\Middleware\CatchesUpTheMaintenance;
 use Falcon\Analytics\Support\GeoResolver;
 use Falcon\Ui\AssetRegistry;
 use Falcon\Ui\Config\CompletesDefaults;
+use Falcon\Ui\View\Leaves;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -115,6 +116,15 @@ final class AnalyticsServiceProvider extends ServiceProvider
          */
         Blade::componentNamespace('Falcon\\Analytics\\View\\Components', 'analytics');
         Blade::anonymousComponentNamespace('analytics::components', 'analytics');
+
+        // A list repeats these once per row, a campaign once per condition:
+        // the kit runs their file directly.
+        $this->app->make(Leaves::class)->add(
+            'analytics::components.source',
+            'analytics::components.page-url',
+            'analytics::components.country',
+            'analytics::components.condition-chip',
+        );
 
         /*
          * The package's only directive: it brings the whole collector to a

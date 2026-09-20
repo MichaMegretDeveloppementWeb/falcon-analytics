@@ -48,6 +48,7 @@ function fail(message) {
 run(`vite build --outDir ${JSON.stringify(relative(root, rebuilt))} --emptyOutDir`);
 run(`vite build --config vite.admin.config.js --outDir ${JSON.stringify(relative(root, rebuilt))}`);
 run(`tailwindcss -i resources/css/analytics.css -o ${JSON.stringify('.build-check/analytics.css')} --minify`);
+run('node ./scripts/world-map.mjs .build-check');
 
 const before = contentsOf(shipped);
 const after = contentsOf(rebuilt);

@@ -359,4 +359,41 @@ final class RealtimeTest extends TestCase
         $this->assertSame(0, $signatures->count() - $signatures->unique()->count());
         $this->assertLessThanOrEqual(16, $signatures->count());
     }
+
+    /**
+     * The world's drawing, over a hundred kilobytes, travels once as a file the
+     * browser keeps, and never with a tick: the map lives under `wire:ignore`,
+     * so a drawing sent every few seconds would be thrown away every time.
+     */
+    public function test_a_tick_names_the_map_and_never_carries_its_drawing(): void
+    {
+        $this->sessionRow(['city' => 'Geneva', 'country' => 'CH', 'latitude' => 46.2044, 'longitude' => 6.1432]);
+
+        $this->actingAs(TestAdmin::create([]), 'admin');
+
+        $tick = Livewire::test(RealtimePage::class)->call('$refresh')->html();
+
+        $this->assertMatchesRegularExpression('#<use href="[^"]*world-map\.svg\?[^"]*\#world"#', $tick);
+        $this->assertStringNotContainsString('vector-effect', $tick);
+
+        $drawing = (string) file_get_contents(dirname(__DIR__, 2).'/public/world-map.svg');
+
+        $this->assertStringContainsString('<symbol id="world" viewBox="0 0 1000 516">', $drawing);
+        $this->assertStringContainsString('vector-effect="non-scaling-stroke"', $drawing);
+        $this->assertGreaterThan(100_000, strlen($drawing));
+
+        // Every point a pair: a single lost space shifts every number after
+        // it, and the world draws as one stray line without any error.
+        $this->assertSame(1, preg_match('/ d="([^"]+)"/', $drawing, $path));
+
+        $points = preg_split('/[MZ\s]+/', $path[1], -1, PREG_SPLIT_NO_EMPTY);
+
+        $this->assertNotFalse($points);
+        $this->assertGreaterThan(1000, count($points));
+
+        $strays = preg_grep('/^-?\d+(\.\d+)?,-?\d+(\.\d+)?$/', $points, PREG_GREP_INVERT);
+
+        $this->assertNotFalse($strays);
+        $this->assertSame([], array_values($strays));
+    }
 }
