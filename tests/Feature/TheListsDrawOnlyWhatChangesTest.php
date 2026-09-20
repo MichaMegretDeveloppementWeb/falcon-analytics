@@ -21,6 +21,7 @@ use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event as Events;
 use Illuminate\Support\Str;
+use Livewire\Component;
 use Livewire\Livewire;
 use PHPUnit\Framework\Attributes\DataProvider;
 
@@ -50,6 +51,7 @@ final class TheListsDrawOnlyWhatChangesTest extends TestCase
      * every render: the setting holds for one component and no more, a state
      * flush clearing it as each test component is torn down.
      *
+     * @param  class-string<Component>  $component
      * @return array<string, int>
      */
     private function viewsOf(string $component): array
@@ -60,7 +62,8 @@ final class TheListsDrawOnlyWhatChangesTest extends TestCase
             $drawn[] = substr($event, strlen('composing: '));
         });
 
-        Livewire::withoutLazyLoading()->test($component);
+        Livewire::withoutLazyLoading();
+        Livewire::test($component);
 
         return array_count_values($drawn);
     }
@@ -105,7 +108,7 @@ final class TheListsDrawOnlyWhatChangesTest extends TestCase
         return $session;
     }
 
-    /** @return array<string, array{class-string}> */
+    /** @return array<string, array{class-string<Component>}> */
     public static function listsOfSessions(): array
     {
         return [
@@ -115,7 +118,7 @@ final class TheListsDrawOnlyWhatChangesTest extends TestCase
         ];
     }
 
-    /** @param  class-string  $component */
+    /** @param  class-string<Component>  $component */
     #[DataProvider('listsOfSessions')]
     public function test_a_page_of_rows_draws_the_views_one_draws(string $component): void
     {

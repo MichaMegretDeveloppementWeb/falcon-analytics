@@ -17,8 +17,6 @@
 providers:
   - Falcon\Ui\UiServiceProvider
   - Livewire\LivewireServiceProvider
-  - BladeUI\Icons\BladeIconsServiceProvider
-  - BladeUI\Heroicons\BladeHeroiconsServiceProvider
   - Falcon\Analytics\AnalyticsServiceProvider
 
 env:
