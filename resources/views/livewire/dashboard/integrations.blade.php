@@ -77,7 +77,7 @@
                             <p class="an:text-[12px] an:text-secondary">{{ __('Aucune propriété vérifiée sur ce compte Google. Vérifiez le site dans Search Console puis réessayez.') }}</p>
                         </div>
                     @else
-                        <ul class="an:divide-y an:divide-subtle an:rounded-lg an:border an:border-base">
+                        <ul class="an:divide-y an:divide-subtle an:rounded-lg an:border an:border-default">
                             @foreach ($properties as $property)
                                 <li class="an:flex an:items-center an:justify-between an:gap-4 an:px-4 an:py-3" wire:key="prop-{{ md5($property['site_url']) }}">
                                     <div class="an:flex an:min-w-0 an:items-center an:gap-3">
@@ -144,7 +144,7 @@
         <div x-show="$wire.modal === 'disconnect'" x-cloak class="an:fixed an:inset-0 an:z-50 an:overflow-y-auto">
             <div class="an:fixed an:inset-0 an:bg-gray-900/50 an:backdrop-blur-sm an:dark:bg-black/60"></div>
             <div class="an:relative an:flex an:min-h-full an:items-center an:justify-center an:p-4" @click.self="$wire.closeModal()">
-                <div class="an:w-full an:max-w-md an:rounded-xl an:border an:border-base an:bg-surface an:p-5 an:shadow-xl">
+                <div class="an:w-full an:max-w-md an:rounded-xl an:border an:border-default an:bg-surface an:p-5 an:shadow-xl">
                     <h3 class="an:text-[13px] an:font-semibold an:text-primary">{{ __('Déconnecter Search Console ?') }}</h3>
                     <p class="an:mt-2 an:text-[12px] an:text-secondary">
                         {{ __('L\'autorisation Google sera révoquée. Les mots-clés déjà synchronisés restent affichés, mais ne seront plus mis à jour.') }}

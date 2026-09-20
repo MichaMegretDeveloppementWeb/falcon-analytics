@@ -65,7 +65,7 @@
                             </div>
                             {{-- Parallel branches: which way in visitors actually took. --}}
                             @if ($step->branches !== [])
-                                <div class="an:mt-2 an:space-y-1 an:border-l an:border-base an:pl-3">
+                                <div class="an:mt-2 an:space-y-1 an:border-l an:border-default an:pl-3">
                                     @foreach ($step->branches as $branchLabel => $branchVisitors)
                                         @php
                                             $branchPct = $step->visitors > 0 ? (int) round($branchVisitors / $step->visitors * 100) : 0;

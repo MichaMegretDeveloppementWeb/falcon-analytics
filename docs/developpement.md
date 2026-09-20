@@ -18,6 +18,20 @@ dans `.nvmrc`. Et **MySQL**, qui n'est pas négociable · voir plus bas.
 `.env.test` **n'est pas facultatif** · sans lui la suite ne démarre pas du tout,
 et c'est voulu · elle ne se rabat jamais en silence sur un autre moteur.
 
+> **Deux réglages du manifeste n'existent que pour l'atelier**, et ils sortent le
+> jour où le kit reçoit sa première étiquette ·
+>
+> - un dépôt de type `path` vers `../falcon-ui-kit`, avec `symlink` · il rend une
+>   modification du kit vivante ici, sans rien republier ;
+> - `"minimum-stability": "dev"`, sans lequel composer refuserait `dev-main`, le
+>   kit n'ayant pas encore de version publiée.
+>
+> **Un clone isolé fonctionne quand même** · le dépôt GitHub du kit est déclaré
+> juste après le premier, et composer y retombe quand le dossier voisin manque.
+>
+> Laissés dans un paquet étiqueté, ces deux réglages feraient chercher à
+> l'intégrateur une version qui n'existe que sur le poste de l'auteur.
+
 ---
 
 ## La chaîne de contrôle
@@ -312,6 +326,9 @@ le collecteur arrive dans la page, et le responsive.
 
 ## Avant de publier une version
 
+- [ ] **les deux réglages d'atelier retirés du manifeste**, et en premier · le
+      dépôt `path` vers le kit et `"minimum-stability": "dev"` · les retirer
+      change la résolution, donc tout ce qui suit s'éprouve après ;
 - [ ] `composer qa`, `composer qa:lowest`, `npm run lint`, `npm run check-assets` ;
 - [ ] `npm run build` et les fichiers compilés commités ;
 - [ ] le journal des versions à jour, **avec les actions de l'intégrateur** ;

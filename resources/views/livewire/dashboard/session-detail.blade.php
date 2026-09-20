@@ -194,7 +194,7 @@
                             @endphp
                             <li class="an:relative an:flex an:gap-4 an:pb-6 an:last:pb-0">
                                 @unless ($loop->last)
-                                    <span class="an:absolute an:bottom-0 an:left-4 an:top-8 an:w-px an:bg-base"></span>
+                                    <span class="an:absolute an:bottom-0 an:left-4 an:top-8 an:w-px an:bg-default"></span>
                                 @endunless
                                 <span class="an:relative an:z-10 an:flex an:h-8 an:w-8 an:shrink-0 an:items-center an:justify-center an:rounded-full an:bg-elevated an:ring-4 an:ring-surface">
                                     <x-ui::icon :name="$isPageview ? 'document-text' : ($isConversionStep ? 'bolt' : 'cursor-arrow-rays')" @class(['an:h-4 an:w-4', 'an:text-emerald-500' => $isConversionStep, 'an:text-secondary' => ! $isConversionStep]) />

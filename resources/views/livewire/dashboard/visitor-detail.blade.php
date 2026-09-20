@@ -108,7 +108,7 @@
         <x-ui::section-header :title="__('Sessions')" class="an:mb-4" />
 
         @if ($sessions->isEmpty())
-            <div class="an:rounded-xl an:border an:border-base an:bg-surface an:px-5 an:py-10 an:text-center an:text-[13px] an:text-secondary">
+            <div class="an:rounded-xl an:border an:border-default an:bg-surface an:px-5 an:py-10 an:text-center an:text-[13px] an:text-secondary">
                 {{ __('Aucune session pour ce visiteur.') }}
             </div>
         @else
