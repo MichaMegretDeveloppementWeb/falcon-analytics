@@ -257,6 +257,25 @@ concerne que votre propre habillage.
 > c'est la ligne que `ui-kit:install` vous donne, et sans elle une classe
 > inconnue ne lève rien du tout · un fond qui manque, et aucune explication.
 
+> **Une ligne, en revanche, est due sans condition**, et elle ne dépend pas de
+> ce que vous écrivez · **l'ordre des huit couches**, en tout premier dans
+> chacun de vos fichiers de `resources/css/` qui contient `@import 'tailwindcss'` ·
+>
+> ```css
+> @import '../../vendor/falcon/ui-kit/resources/css/layers.css';
+> ```
+>
+> **La première déclaration que le document rencontre fixe cet ordre pour toute
+> la page.** Sur une page qui ne porte aucun écran de la suite — et votre
+> vitrine, qui ne porte que le collecteur, en est une — c'est **votre** feuille
+> qui arrive la première. Sans cette ligne, elle n'ouvre que les quatre couches
+> du générateur, celles du kit sont ajoutées derrière, et **le style du kit
+> passe devant le vôtre** dès qu'un écran paraît. La feuille se compile sans la
+> moindre erreur.
+>
+> Elle ne coûte rien quand elle ne sert pas · c'est une déclaration d'ordre,
+> elle n'émet aucune règle.
+
 > **Un nom qui ne désigne aucun composant fait tomber les écrans à la première
 > visite**, et c'est le genre d'erreur qu'on découvre en production.
 > `analytics:check` le vérifie pour vous, sans attendre cette visite.
@@ -284,13 +303,20 @@ paquet sont stables.
 
 ---
 
-## 5 · Vérifier
+## 5 · Vérifier, et il y a deux diagnostics
 
 ```bash
 php artisan analytics:check
+php artisan ui-kit:check
 ```
 
-Il rend un tableau de **treize points** et s'arrête en échec s'il en trouve un
+Le second regarde ce que **la suite** attend de votre application, et non ce que
+ce paquet-là attend · la ligne des couches ci-dessus, l'ordre des feuilles, la
+portée de ce qui réagit. **Aucun des deux ne couvre l'autre** · un
+`analytics:check` vert ne dit rien de ce que le second vérifie, et c'est lui qui
+nomme la ligne manquante.
+
+Le premier rend un tableau de **treize points** et s'arrête en échec s'il en trouve un
 bloquant · le moteur de la base, les migrations passées, l'interrupteur général,
 la directive posée dans vos vues, le point de collecte joignable, le middleware
 des écrans, le gabarit que vous avez nommé, la feuille publiée à jour,
@@ -301,7 +327,7 @@ Le moteur vient en premier, et il est relu à chaque passage · une connexion
 change en cours de vie, quand on déplace une base ou qu'on en pointe une seconde
 ailleurs.
 
-**Lancez-le après chaque déploiement.** Analytics échoue en silence · un
+**Lancez `analytics:check` après chaque déploiement.** Analytics échoue en silence · un
 collecteur jamais rendu, un point de collecte derrière le mauvais middleware ou
 l'interrupteur resté à `false` donnent tous des écrans qui marchent et un tableau
 de bord vide — et un tableau de bord vide se lit « personne n'est venu » plutôt
