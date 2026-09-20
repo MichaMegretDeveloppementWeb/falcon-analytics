@@ -45,6 +45,11 @@ final class TheListsDrawOnlyWhatChangesTest extends TestCase
     /**
      * The views a render asks for, by name and count.
      *
+     * The deferred blocks are resolved, so what is counted is the screen once
+     * it has settled rather than the skeleton it opens on. Asked again before
+     * every render: the setting holds for one component and no more, a state
+     * flush clearing it as each test component is torn down.
+     *
      * @return array<string, int>
      */
     private function viewsOf(string $component): array
@@ -55,7 +60,7 @@ final class TheListsDrawOnlyWhatChangesTest extends TestCase
             $drawn[] = substr($event, strlen('composing: '));
         });
 
-        Livewire::test($component);
+        Livewire::withoutLazyLoading()->test($component);
 
         return array_count_values($drawn);
     }

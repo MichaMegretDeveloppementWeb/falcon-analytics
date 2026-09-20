@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Tests;
 
-use BladeUI\Heroicons\BladeHeroiconsServiceProvider;
-use BladeUI\Icons\BladeIconsServiceProvider;
 use Dotenv\Dotenv;
 use Falcon\Analytics\AnalyticsServiceProvider;
 use Falcon\Analytics\Tests\Fixtures\Models\TestAdmin;
@@ -15,6 +13,7 @@ use Falcon\Ui\UiServiceProvider;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Livewire\Livewire;
 use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 use PDO;
@@ -31,6 +30,12 @@ abstract class TestCase extends Orchestra
 
         $this->withoutVite();
         $this->publishTheCompiledFiles();
+
+        // Lazy loading is switched off by a static that only a state flush
+        // clears. A test that asked for it therefore hands it to the next ones
+        // in the same process, and the first render of each is the one that
+        // inherits it.
+        Livewire::flushState();
     }
 
     /**
@@ -180,8 +185,6 @@ abstract class TestCase extends Orchestra
     protected function getPackageProviders($app): array
     {
         return [
-            BladeIconsServiceProvider::class,
-            BladeHeroiconsServiceProvider::class,
             LivewireServiceProvider::class,
             UiServiceProvider::class,
             AnalyticsServiceProvider::class,
