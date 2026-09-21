@@ -38,9 +38,9 @@ final class DailyArchive extends Model
      *
      * **A model has ONE `$dateFormat`, and this table has two kinds of column**
      * · a date that everything queries on, and two timestamps. Set to `Y-m-d`
-     * for the key, it reached the timestamps too: an archiving run at 03:30 was
-     * recorded as having happened at 00:00, on both stamps, without a word.
-     * Measured 2026-09-14.
+     * for the key, it reaches the timestamps too: an archiving run at 03:30 is
+     * then recorded as having happened at 00:00, on both stamps, without a
+     * word.
      *
      * So the format is left alone — the timestamps keep their hour — and the
      * key says for itself what it is. A mutator is the only thing that reaches

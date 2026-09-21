@@ -6,7 +6,7 @@
             $entrants = number_format($report->entrants, 0, ',', ' ');
         @endphp
         <x-ui::card wire:key="funnel-{{ $report->key }}" class="an:flex an:flex-col">
-            {{-- Header: name, entrants → completion, weighted score. --}}
+            {{-- Header --}}
             <div class="an:mb-5 an:flex an:items-start an:justify-between an:gap-4">
                 <div class="an:min-w-0">
                     <h2 class="an:text-[13px] an:font-semibold an:text-primary">{{ $report->label }}</h2>
@@ -46,7 +46,7 @@
                             </div>
                         @endif
 
-                        {{-- Step: count + label, conversion, proportional (narrowing) bar. --}}
+                        {{-- Step --}}
                         <div>
                             <div class="an:flex an:items-baseline an:justify-between an:gap-3">
                                 <div class="an:flex an:min-w-0 an:items-baseline an:gap-x-2">

@@ -1,12 +1,11 @@
 {{--
     The package's own shell: the one that answers when the host names no layout.
 
-    It no longer writes a document. What it hands to the kit's layout is exactly
-    the part one gets wrong without any error showing: the head, the two asset
-    slots, the theme class on `<html>`, and the notification container —
-    forgetting that last one breaks nothing, no notification ever appears.
-
-    What it keeps is what belongs to it: its navigation, and its title.
+    It mounts the kit's layout rather than writing a document, and hands it only
+    what belongs to the package: its navigation and its title. The head, the two
+    asset slots, the theme class and the notification container come from the
+    kit — and the last one is the piece a hand-written layout forgets without
+    any error showing, no notification ever appearing.
 --}}
 @props(['title' => null])
 

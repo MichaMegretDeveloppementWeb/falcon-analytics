@@ -24,6 +24,14 @@ final class NoBehaviourIsWrittenInTheViewsTest extends TestCase
     /** A method, a function, an arrow or a second instruction. */
     private const LOGIC = '/;|=>|\bfunction\b|\basync\b|\bget\s+\w+\s*\(|\b\w+\s*\([^()]*\)\s*\{/';
 
+    /**
+     * A native event attribute, whatever it holds.
+     *
+     * Written without the equals sign a browser needs, so this file does not
+     * trip the guard it carries · `tests.md` §5.
+     */
+    private const NATIVE_EVENT = '/\son[a-z]+[\s]*=/';
+
     public function test_no_x_data_holds_logic(): void
     {
         foreach ($this->views() as $view => $source) {
@@ -55,6 +63,26 @@ final class NoBehaviourIsWrittenInTheViewsTest extends TestCase
     }
 
     /**
+     * A native event attribute is refused outright, whatever it holds.
+     *
+     * The two guards above read what an attribute contains, so a short enough
+     * handler slips through both · one of them did, on seven table rows, until
+     * this test was written. A native handler is also invisible to the
+     * behaviour registry and unreachable by keyboard, so the ban is flat
+     * rather than measured.
+     */
+    public function test_no_view_carries_a_native_event_attribute(): void
+    {
+        foreach ($this->views() as $view => $source) {
+            $this->assertDoesNotMatchRegularExpression(
+                self::NATIVE_EVENT,
+                $source,
+                "{$view} carries a native event attribute: name the behaviour in resources/js/, and make what answers a click a link or a button.",
+            );
+        }
+    }
+
+    /**
      * The guard catches what it is written for.
      *
      * Both shapes it exists to refuse, and one it has to let through, so a
@@ -62,6 +90,11 @@ final class NoBehaviourIsWrittenInTheViewsTest extends TestCase
      */
     public function test_the_guard_tells_logic_from_state(): void
     {
+        $this->assertMatchesRegularExpression(self::NATIVE_EVENT, '<tr '.'onclick="go()">');
+        $this->assertMatchesRegularExpression(self::NATIVE_EVENT, '<input '.'onchange="x">');
+        $this->assertDoesNotMatchRegularExpression(self::NATIVE_EVENT, '<button x-on:click="go()">');
+        $this->assertDoesNotMatchRegularExpression(self::NATIVE_EVENT, '<button wire:click="go">');
+
         $this->assertMatchesRegularExpression(self::LOGIC, '{ open: false, toggle() { this.open = ! this.open } }');
         $this->assertMatchesRegularExpression(self::LOGIC, '{ async save() { await $wire.save() } }');
         $this->assertDoesNotMatchRegularExpression(self::LOGIC, "{ open: false, search: '' }");

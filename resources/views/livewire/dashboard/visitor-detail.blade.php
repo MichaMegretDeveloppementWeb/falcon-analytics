@@ -127,10 +127,10 @@
                             $sessionUrl = route('analytics.admin.sessions.show', $s);
                             $seconds = (int) $s->started_at->diffInSeconds($s->last_activity_at);
                         @endphp
-                        <x-ui::table.row wire:key="session-{{ $s->id }}" onclick="if (!event.target.closest('a')) window.location='{{ $sessionUrl }}'" class="an:cursor-pointer">
+                        <x-ui::table.row wire:key="session-{{ $s->id }}" class="an-row-link">
                             <x-ui::table.cell :first="true" variant="primary" class="an:whitespace-nowrap">
                                 <span class="an:inline-flex an:items-center an:gap-x-2">
-                                    <a href="{{ $sessionUrl }}" class="an:cursor-pointer an:hover:underline">{{ $s->started_at->translatedFormat('d M Y, H:i') }}</a>
+                                    <a href="{{ $sessionUrl }}" class="an-row-link__target an:cursor-pointer an:hover:underline">{{ $s->started_at->translatedFormat('d M Y, H:i') }}</a>
                                     @if ($visitor->subject_type && $s->subject_type)
                                         <x-ui::badge color="blue">{{ __('Connecté') }}</x-ui::badge>
                                     @endif
@@ -162,7 +162,7 @@
         @endif
     </div>
 
-    {{-- Zone de danger : effacement RGPD --}}
+    {{-- Danger zone --}}
     <div class="an:pt-2">
         <x-ui::section-header :title="__('Zone de danger')" :danger="true" :description="__('L\'effacement des données de ce visiteur est définitif.')" class="an:mb-4" />
 

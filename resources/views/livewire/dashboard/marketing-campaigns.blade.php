@@ -29,10 +29,9 @@
                     @php $showUrl = route('analytics.admin.marketing.campaigns.show', $campaign); @endphp
                     <x-ui::table.row
                         wire:key="campaign-{{ $campaign->id }}"
-                        onclick="if (!event.target.closest('a,button')) window.location='{{ $showUrl }}'"
-                        class="an:cursor-pointer">
+                        class="an-row-link">
                         <x-ui::table.cell :first="true" variant="primary">
-                            <a href="{{ $showUrl }}" class="an:cursor-pointer an:text-[13px] an:font-medium an:text-primary an:hover:underline">{{ $campaign->name }}</a>
+                            <a href="{{ $showUrl }}" class="an-row-link__target an:cursor-pointer an:text-[13px] an:font-medium an:text-primary an:hover:underline">{{ $campaign->name }}</a>
                         </x-ui::table.cell>
                         <x-ui::table.cell>
                             @if ($campaign->platform)<x-ui::badge color="blue">{{ $campaign->platform }}</x-ui::badge>@else<span class="an:text-muted">·</span>@endif
@@ -48,7 +47,7 @@
                         </x-ui::table.cell>
                         <x-ui::table.cell align="right" class="an:tabular-nums">{{ $campaign->ads_count }}</x-ui::table.cell>
                         <x-ui::table.cell :last="true" align="right">
-                            <div class="an:flex an:items-center an:justify-end an:gap-1">
+                            <div class="an-row-link__above an:flex an:items-center an:justify-end an:gap-1">
                                 <x-ui::button variant="ghost" size="compact" wire:click="editCampaign({{ $campaign->id }})" aria-label="{{ __('Modifier') }}"><x-ui::icon name="pencil-square" class="an:h-3.5 an:w-3.5" /></x-ui::button>
                                 <x-ui::button variant="ghost" size="compact" wire:click="confirmDelete({{ $campaign->id }})" aria-label="{{ __('Supprimer') }}"><x-ui::icon name="trash" class="an:h-3.5 an:w-3.5" /></x-ui::button>
                             </div>

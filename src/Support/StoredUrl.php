@@ -12,12 +12,12 @@ namespace Falcon\Analytics\Support;
  * link. But « les pages les plus vues » asks a different question, and asking
  * it of the whole address answers badly.
  *
- * **Measured 2026-09-14** · one page opened three times, twice through a
- * campaign link, came back as three rows of one view each — and the screen
- * displayed the same path on all three, since it renders the path and grouped
- * on the address. `fbclid` is unique per click, so on campaign traffic the real
- * top page never reached the top of the list. Anchor links do the same with
- * `#`, and two hosts serving one site would do it with the host.
+ * Grouped on the whole address, one page opened three times — twice through a
+ * campaign link — comes back as three rows of one view each, and the screen
+ * shows the same path on all three, since it renders the path. `fbclid` is
+ * unique per click, so on campaign traffic the real top page never reaches the
+ * top of the list. Anchor links do the same with `#`, and two hosts serving one
+ * site would do it with the host.
  *
  * **A page is the path of its route, and nothing else.** No host, no query
  * string, no fragment. It is computed once, when the row is written, by the

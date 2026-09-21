@@ -15,7 +15,7 @@
             class="an:mb-4" />
 
         <x-ui::card>
-            {{-- Identity row: what this integration is, and its current state. --}}
+            {{-- Identity row --}}
             <div class="an:flex an:items-center an:justify-between an:gap-4 an:border-b an:border-subtle an:pb-4">
                 <div class="an:flex an:items-center an:gap-3">
                     <span class="an:flex an:h-10 an:w-10 an:shrink-0 an:items-center an:justify-center an:rounded-lg an:bg-elevated">

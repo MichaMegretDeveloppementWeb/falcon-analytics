@@ -50,7 +50,7 @@
         </x-analytics::kpi-card>
     </div>
 
-    {{-- Engagement stats (same headline read as the KPIs) --}}
+    {{-- Engagement stats --}}
     <x-ui::card>
         <x-ui::section-header :title="__('Statistiques')" :description="__('Sur la période')" class="an:mb-4" />
         <div class="an:grid an:grid-cols-1 an:gap-x-8 an:gap-y-2 an:sm:grid-cols-2">

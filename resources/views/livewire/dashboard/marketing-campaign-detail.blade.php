@@ -68,10 +68,9 @@
                         @php $adUrl = route('analytics.admin.marketing.ads.show', $ad->id); @endphp
                         <x-ui::table.row
                             wire:key="ad-{{ $ad->id }}"
-                            onclick="if (!event.target.closest('a,button')) window.location='{{ $adUrl }}'"
-                            class="an:cursor-pointer">
+                            class="an-row-link">
                             <x-ui::table.cell :first="true" variant="primary">
-                                <a href="{{ $adUrl }}" class="an:cursor-pointer an:text-[13px] an:font-medium an:text-primary an:hover:underline">{{ $ad->name }}</a>
+                                <a href="{{ $adUrl }}" class="an-row-link__target an:cursor-pointer an:text-[13px] an:font-medium an:text-primary an:hover:underline">{{ $ad->name }}</a>
                             </x-ui::table.cell>
                             <x-ui::table.cell>
                                 <div class="an:flex an:flex-wrap an:items-center an:gap-1.5">
@@ -95,7 +94,7 @@
                             <x-ui::table.cell align="right" class="an:tabular-nums">@if ($adMetrics === [])<span class="an:inline-block an:h-3 an:w-8 an:animate-pulse an:rounded an:bg-elevated an:align-middle"></span>@else{{ number_format($adMetrics[$ad->id]['sessions'] ?? 0, 0, ',', ' ') }}@endif</x-ui::table.cell>
                             <x-ui::table.cell align="right" class="an:font-medium an:tabular-nums an:text-primary">@if ($adMetrics === [])<span class="an:inline-block an:h-3 an:w-6 an:animate-pulse an:rounded an:bg-elevated an:align-middle"></span>@else{{ number_format($adConversions[$ad->id] ?? 0, 0, ',', ' ') }}@endif</x-ui::table.cell>
                             <x-ui::table.cell :last="true" align="right">
-                                <div class="an:flex an:items-center an:justify-end an:gap-1">
+                                <div class="an-row-link__above an:flex an:items-center an:justify-end an:gap-1">
                                     <x-ui::button variant="ghost" size="compact" wire:click="editAd({{ $ad->id }})" aria-label="{{ __('Modifier') }}"><x-ui::icon name="pencil-square" class="an:h-3.5 an:w-3.5" /></x-ui::button>
                                     <x-ui::button variant="ghost" size="compact" wire:click="confirmDeleteAd({{ $ad->id }})" aria-label="{{ __('Supprimer') }}"><x-ui::icon name="trash" class="an:h-3.5 an:w-3.5" /></x-ui::button>
                                 </div>

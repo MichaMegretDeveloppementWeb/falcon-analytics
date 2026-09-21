@@ -91,8 +91,7 @@
                     @php $sessionUrl = route('analytics.admin.sessions.show', $session); @endphp
                     <x-ui::table.row
                         wire:key="session-{{ $session->id }}"
-                        onclick="if (!event.target.closest('a')) window.location='{{ $sessionUrl }}'"
-                        class="an:cursor-pointer">
+                        class="an-row-link">
                         <x-ui::table.cell :first="true" variant="primary">
                             <div class="an:flex an:flex-col">
                                 @php $attribution = $attributions[$session->id] ?? null; @endphp
@@ -101,10 +100,10 @@
                                         $subjectName = $subjectNames[$attribution->guard.':'.$attribution->id] ?? null;
                                         $subjectLabel = $subjectResolver->label($attribution->guard);
                                     @endphp
-                                    <a href="{{ $sessionUrl }}" class="an:cursor-pointer an:text-[13px] an:font-medium an:text-primary an:hover:underline">{{ $subjectName ?? $subjectLabel.' #'.$attribution->id }}</a>
+                                    <a href="{{ $sessionUrl }}" class="an-row-link__target an:cursor-pointer an:text-[13px] an:font-medium an:text-primary an:hover:underline">{{ $subjectName ?? $subjectLabel.' #'.$attribution->id }}</a>
                                     <span class="an:text-[11px] an:text-muted">@if ($subjectName){{ $subjectLabel }} · @endif{{ substr($session->visitor?->uuid ?? '', 0, 8) }}@if ($attribution->viaVisitor) · {{ __('Non connecté') }}@endif</span>
                                 @else
-                                    <a href="{{ $sessionUrl }}" class="an:cursor-pointer an:text-[13px] an:font-medium an:text-primary an:hover:underline">{{ __('Visiteur #:id', ['id' => $session->visitor_id]) }}</a>
+                                    <a href="{{ $sessionUrl }}" class="an-row-link__target an:cursor-pointer an:text-[13px] an:font-medium an:text-primary an:hover:underline">{{ __('Visiteur #:id', ['id' => $session->visitor_id]) }}</a>
                                     <span class="an:text-[11px] an:text-muted">{{ substr($session->visitor?->uuid ?? '', 0, 8) }}</span>
                                 @endif
                             </div>

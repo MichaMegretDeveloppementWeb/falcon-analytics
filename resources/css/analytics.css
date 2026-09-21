@@ -46,3 +46,29 @@
    behaviour now that the layers decide. This line is identical across the whole
    suite. */
 @custom-variant dark (&:where(.dark, .dark *));
+
+/* A table row that leads somewhere.
+
+   The row carries no handler: the link in its first cell is stretched over the
+   whole row by a pseudo-element. Keyboard reaches it because it is a real
+   link, and a pointer reaches it anywhere on the row.
+
+   A link cannot wrap table cells, which is why this exists at all. Anything
+   else in the row that answers a click — a second link, an action button —
+   must be raised above the stretched area, or the row would swallow it. */
+@layer pkg-components {
+    .an-row-link {
+        position: relative;
+    }
+
+    .an-row-link__target::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+    }
+
+    .an-row-link__above {
+        position: relative;
+        z-index: 1;
+    }
+}

@@ -24,7 +24,7 @@
     {{-- Traffic trend (deferred) --}}
     <livewire:analytics::admin.widgets.trend-chart :period="$period" :subject="$subject" :key="'ov-trend-'.$period.'-'.$subject" />
 
-    {{-- Deferred heavy sections : each loads independently after paint --}}
+    {{-- Deferred sections --}}
     <div class="an:border-t an:border-default an:pt-8">
         <x-ui::section-header :title="__('Audience')" :description="__('Visiteurs et appareils')" class="an:mb-4" />
         <livewire:analytics::admin.widgets.overview-audience :period="$period" :subject="$subject" :key="'ov-audience-'.$period.'-'.$subject" />
