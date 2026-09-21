@@ -14,7 +14,12 @@
             <div class="an:divide-y an:divide-subtle">
                 @foreach ($conversionElements as $i => $el)
                     <div wire:key="conv-{{ $i }}" @if ($el['steps']) x-data="{ open: false }" @endif class="an:px-5 an:py-3">
-                        <div class="an:flex an:items-center an:gap-3">
+                        {{-- Narrow, the label is the only thing worth reading here, so
+                             what competes with it steps aside: the badge repeats what
+                             the icon beside it already says, the count asks for its own
+                             width instead of a fixed one, and the label wraps rather
+                             than being cut. --}}
+                        <div class="an:flex an:items-center an:gap-2 an:sm:gap-3">
                             @if ($el['steps'])
                                 <button type="button" x-on:click="open = ! open" class="an:flex an:h-4 an:w-4 an:shrink-0 an:cursor-pointer an:items-center an:justify-center" aria-label="{{ __('Détail du tunnel') }}">
                                     <x-ui::icon name="chevron-right" class="an:h-4 an:w-4 an:text-muted an:transition-transform" x-bind:class="open && 'an:rotate-90'" />
@@ -23,12 +28,12 @@
                                 <span class="an:w-4 an:shrink-0"></span>
                             @endif
                             <x-ui::icon :name="$el['type'] === 'funnel' ? 'funnel' : 'bolt'" class="an:h-4 an:w-4 an:shrink-0 {{ $el['type'] === 'funnel' ? 'an:text-blue-500' : 'an:text-emerald-500' }}" />
-                            <span class="an:min-w-0 an:flex-1 an:truncate an:text-[13px] an:font-medium an:text-primary">{{ $el['label'] }}</span>
-                            <x-ui::badge :color="$el['type'] === 'funnel' ? 'blue' : 'emerald'">{{ $el['type'] === 'funnel' ? __('Tunnel') : __('Événement') }}</x-ui::badge>
+                            <span class="an:min-w-0 an:flex-1 an:text-[13px] an:font-medium an:text-primary an:sm:truncate">{{ $el['label'] }}</span>
+                            <x-ui::badge :color="$el['type'] === 'funnel' ? 'blue' : 'emerald'" class="an:hidden an:sm:inline-flex">{{ $el['type'] === 'funnel' ? __('Tunnel') : __('Événement') }}</x-ui::badge>
                             @if ($showAd)
                                 <a href="{{ route('analytics.admin.marketing.ads.show', $el['adId']) }}" class="an:hidden an:w-32 an:shrink-0 an:cursor-pointer an:truncate an:text-right an:text-[12px] an:text-secondary an:hover:text-primary an:hover:underline an:sm:inline">{{ $el['adName'] }}</a>
                             @endif
-                            <span class="an:w-16 an:shrink-0 an:text-right an:text-base an:font-semibold an:text-primary an:tabular-nums">{{ number_format($el['conversions'], 0, ',', ' ') }}</span>
+                            <span class="an:shrink-0 an:text-right an:text-base an:font-semibold an:text-primary an:tabular-nums an:sm:w-16">{{ number_format($el['conversions'], 0, ',', ' ') }}</span>
                         </div>
                         @if ($el['steps'])
                             <div x-show="open" x-cloak class="an:ml-2 an:mt-3 an:space-y-1.5 an:border-l an:border-default an:pl-4">
