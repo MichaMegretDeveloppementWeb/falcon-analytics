@@ -102,6 +102,12 @@ final readonly class SessionListReadRepository
             $query->orderBy(in_array($sort, $sortable, true) ? $sort : 'started_at', $direction);
         }
 
+        // None of the sortable columns is unique, so the order above leaves ties
+        // to the engine: it may then answer differently for each page, showing a
+        // row twice and hiding another. The key closes the order; following the
+        // requested direction keeps it on the same index as the sort.
+        $query->orderBy('id', $direction);
+
         return $query->paginate($perPage);
     }
 

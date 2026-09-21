@@ -52,6 +52,9 @@ final readonly class VisitorProfileReadRepository
             ->where('visitor_id', $visitorId)
             ->select(['id', 'visitor_id', 'subject_type', 'subject_id', 'started_at', 'last_activity_at', 'pageview_count', 'device_type', 'browser', 'source', 'landing_route', 'landing_url', 'country', 'city'])
             ->orderByDesc('started_at')
+            // Two sessions of the same visitor can share a start: the key closes
+            // the order, which a paginated list needs to be total.
+            ->orderByDesc('id')
             ->paginate($perPage);
     }
 

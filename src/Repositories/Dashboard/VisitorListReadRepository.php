@@ -158,6 +158,11 @@ final readonly class VisitorListReadRepository
         $sortable = ['last_seen_at', 'first_seen_at', 'session_count'];
         $query->orderBy(in_array($sort, $sortable, true) ? $sort : 'last_seen_at', $direction);
 
+        // See `SessionListReadRepository`: none of the sortable columns is
+        // unique, and an order left open duplicates rows across pages. The
+        // table is named because the query joins on the sessions.
+        $query->orderBy('falcon_analytics_visitors.id', $direction);
+
         return $query->paginate($perPage);
     }
 }
