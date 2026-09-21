@@ -29,13 +29,12 @@
                     @endphp
                     <x-ui::table.row
                         wire:key="ad-{{ $ad->id }}"
-                        onclick="if (!event.target.closest('a')) window.location='{{ $adUrl }}'"
-                        class="an:cursor-pointer">
+                        class="an-row-link">
                         <x-ui::table.cell :first="true" variant="primary">
-                            <a href="{{ $adUrl }}" class="an:cursor-pointer an:text-[13px] an:font-medium an:text-primary an:hover:underline">{{ $ad->name }}</a>
+                            <a href="{{ $adUrl }}" class="an-row-link__target an:cursor-pointer an:text-[13px] an:font-medium an:text-primary an:hover:underline">{{ $ad->name }}</a>
                         </x-ui::table.cell>
                         <x-ui::table.cell>
-                            <a href="{{ $campaignUrl }}" class="an:cursor-pointer an:text-[13px] an:text-secondary an:hover:text-primary an:hover:underline">{{ $ad->campaign->name }}</a>
+                            <a href="{{ $campaignUrl }}" class="an-row-link__above an:cursor-pointer an:text-[13px] an:text-secondary an:hover:text-primary an:hover:underline">{{ $ad->campaign->name }}</a>
                         </x-ui::table.cell>
                         <x-ui::table.cell>
                             <div class="an:flex an:flex-wrap an:items-center an:gap-1.5">

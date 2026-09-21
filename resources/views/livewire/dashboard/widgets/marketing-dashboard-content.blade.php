@@ -53,9 +53,9 @@
                     <x-ui::table.body>
                         @foreach ($campaignRows as $row)
                             @php $showUrl = route('analytics.admin.marketing.campaigns.show', $row['id']); @endphp
-                            <x-ui::table.row wire:key="perf-{{ $row['id'] }}" onclick="window.location='{{ $showUrl }}'" class="an:cursor-pointer">
+                            <x-ui::table.row wire:key="perf-{{ $row['id'] }}" class="an-row-link">
                                 <x-ui::table.cell :first="true" variant="primary">
-                                    <a href="{{ $showUrl }}" class="an:cursor-pointer an:text-[13px] an:font-medium an:text-primary an:hover:underline">{{ $row['name'] }}</a>
+                                    <a href="{{ $showUrl }}" class="an-row-link__target an:cursor-pointer an:text-[13px] an:font-medium an:text-primary an:hover:underline">{{ $row['name'] }}</a>
                                 </x-ui::table.cell>
                                 <x-ui::table.cell align="right" class="an:tabular-nums">{{ number_format($row['sessions'], 0, ',', ' ') }}</x-ui::table.cell>
                                 <x-ui::table.cell align="right" class="an:tabular-nums">{{ number_format($row['visitors'], 0, ',', ' ') }}</x-ui::table.cell>
