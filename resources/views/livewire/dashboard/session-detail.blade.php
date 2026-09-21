@@ -2,6 +2,7 @@
     use Falcon\Analytics\Enums\EventType;
     use Falcon\Analytics\Support\ChartPalette;
     use Falcon\Analytics\Support\DeviceLabel;
+    use Falcon\Analytics\Support\SourceLabel;
 
     $value = fn ($raw) => filled($raw) ? $raw : null;
     $visitorLabel = $subjectLabel;
@@ -46,15 +47,6 @@
         'email' => 'envelope',
         'campaign' => 'flag',
     ][$sourceKey] ?? 'globe-alt';
-    $sourceDescription = [
-        'direct' => 'Accès direct',
-        'organic' => 'Recherche naturelle',
-        'social' => 'Social naturel',
-        'paid' => 'Trafic publicitaire',
-        'referral' => 'Site référent',
-        'email' => 'Campagne e-mail',
-        'campaign' => 'Site référent',
-    ][$sourceKey] ?? 'Provenance inconnue';
 
     // A real search query is almost never available on modern engines (they strip it
     // from the referrer for privacy). utm_term is an advertiser-set campaign
@@ -253,9 +245,9 @@
                     </span>
                     <div class="an:min-w-0 an:flex-1">
                         <p class="an:truncate an:text-[13px] an:font-semibold an:text-primary">
-                            @if ($session->source)<x-analytics::source :value="$session->source" />@else{{ __('Direct') }}@endif
+                            <x-analytics::source :value="$session->source" />
                         </p>
-                        <p class="an:truncate an:text-[11px] an:text-muted">{{ __($sourceDescription) }}</p>
+                        <p class="an:truncate an:text-[11px] an:text-muted">{{ SourceLabel::description($session->source) }}</p>
                     </div>
                 </div>
                 <dl class="an:mt-3 an:space-y-2.5">

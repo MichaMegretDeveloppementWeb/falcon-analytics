@@ -10,6 +10,8 @@ use Falcon\Analytics\Livewire\Admin\Concerns\SortsAndSearchesList;
 use Falcon\Analytics\Repositories\Dashboard\SessionListReadRepository;
 use Falcon\Analytics\Services\Dashboard\SessionSubjectAttributor;
 use Falcon\Analytics\Services\SubjectResolver;
+use Falcon\Analytics\Support\DeviceLabel;
+use Falcon\Analytics\Support\SourceLabel;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Url;
 use Livewire\WithPagination;
@@ -75,6 +77,7 @@ final class SessionsPage extends DashboardComponent
 
                 $sessions = $sessionsRepository->paginateSessions($period, $subjectType, $this->search, $device, $source, $subjects, $this->sort, $this->direction, conversionNames: $conversionNames);
                 $attributions = $attributor->attribute($sessions->items());
+                $filterOptions = $sessionsRepository->sessionFilterOptions($period, $subjectType);
 
                 return [
                     'range' => $period,
@@ -83,11 +86,32 @@ final class SessionsPage extends DashboardComponent
                     'subjectNames' => $this->resolveAttributedNames($attributions, $subjects),
                     'sort' => $this->sort,
                     'direction' => $this->direction,
-                    'filterOptions' => $sessionsRepository->sessionFilterOptions($period, $subjectType),
+                    'deviceOptions' => $this->labelled($filterOptions['devices'], __('Tous les appareils'), DeviceLabel::for(...)),
+                    'sourceOptions' => $this->labelled($filterOptions['sources'], __('Toutes les sources'), SourceLabel::for(...)),
                     ...$this->filterData(),
                 ];
             },
             fn (array $data): View => view('analytics::livewire.dashboard.sessions', $data),
         );
+    }
+
+    /**
+     * A filter's stored values turned into options, the label coming from the
+     * class that every screen reads, so the same channel or device never shows
+     * one wording in the list and another in the filter above it.
+     *
+     * @param  list<string>  $values
+     * @param  callable(string): string  $label
+     * @return array<string, string>
+     */
+    private function labelled(array $values, string $everything, callable $label): array
+    {
+        $options = ['' => $everything];
+
+        foreach ($values as $value) {
+            $options[$value] = $label($value);
+        }
+
+        return $options;
     }
 }

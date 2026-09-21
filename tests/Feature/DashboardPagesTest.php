@@ -22,6 +22,7 @@ use Falcon\Analytics\Models\Campaign;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
+use Falcon\Analytics\Support\SourceLabel;
 use Falcon\Analytics\Tests\Fixtures\Models\TestAdmin;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -231,6 +232,30 @@ final class DashboardPagesTest extends TestCase
             ->assertSeeText(__('Sessions'))
             ->assertSeeText('Genève')
             ->assertSeeText('Client #1');
+    }
+
+    public function test_the_source_filter_reads_a_channel_exactly_as_the_list_below_it_does(): void
+    {
+        $this->seedSession(['source' => 'organic']);
+
+        $this->actingAs($this->admin, 'admin')
+            ->get(route('analytics.admin.sessions'))
+            ->assertSuccessful()
+            // The filter used to carry its own table of labels, so the same
+            // channel read one way in the column and another in the select.
+            ->assertSeeText(SourceLabel::for('organic'))
+            ->assertDontSeeText('Naturel');
+    }
+
+    public function test_a_session_without_a_source_is_the_direct_channel_on_every_screen(): void
+    {
+        $this->seedSession([]);
+
+        $this->actingAs($this->admin, 'admin')
+            ->get(route('analytics.admin.sessions'))
+            ->assertSuccessful()
+            ->assertSeeText(SourceLabel::for(null))
+            ->assertDontSeeText('Directe');
     }
 
     public function test_it_renders_the_visitors_list_for_an_authenticated_admin(): void
