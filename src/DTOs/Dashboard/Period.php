@@ -53,8 +53,8 @@ final readonly class Period
      * And a window that ends mid-day cannot be read from the daily summaries,
      * which know whole days only. Read from rows it stopped at noon ; read from
      * summaries it took the whole last day · so the « previous » figure of the
-     * two summarised blocks changed on the day the erasing crossed it, which
-     * is the one thing the erasing must never do. Measured 2026-09-14.
+     * two summarised blocks would change on the day the erasing crossed it,
+     * which is the one thing the erasing must never do.
      *
      * Whole days is also what every tool of this kind compares against.
      */

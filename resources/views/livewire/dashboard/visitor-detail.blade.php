@@ -162,7 +162,7 @@
         @endif
     </div>
 
-    {{-- Zone de danger : effacement RGPD --}}
+    {{-- Danger zone --}}
     <div class="an:pt-2">
         <x-ui::section-header :title="__('Zone de danger')" :danger="true" :description="__('L\'effacement des données de ce visiteur est définitif.')" class="an:mb-4" />
 

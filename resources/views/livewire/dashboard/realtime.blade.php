@@ -5,8 +5,7 @@
     $subjectResolver = app(\Falcon\Analytics\Services\SubjectResolver::class);
 
     // The board's ink, in three weights. Tokens rather than literals, and no
-    // dark variant beside them: a token already carries both values, so the
-    // `an:dark:text-…` classes that used to sit here are gone.
+    // dark variant beside them: a token already carries both of its values.
     $ink = 'an:text-ink';
     $inkMuted = 'an:text-ink/40';
     $inkSoft = 'an:text-ink-soft';
@@ -48,7 +47,7 @@
 
         <div class="an:space-y-6 an:lg:col-span-2">
 
-            {{-- The main card, Wix style: KPI tabs, map + countries, breakdowns --}}
+            {{-- Main card --}}
             <div class="an:rounded-xl an:border an:border-default an:bg-surface" x-data="anRealtimeTabs">
 
                 {{-- Tabs --}}
@@ -114,7 +113,7 @@
 
                 <div class="an:border-t an:border-subtle"></div>
 
-                {{-- Traffic source / device: two donuts --}}
+                {{-- Traffic source and device --}}
                 <div class="an:grid an:grid-cols-1 an:md:grid-cols-2 an:md:divide-x an:md:divide-[color:var(--color-gray-100)] an:dark:md:divide-gray-800">
                     <div class="an:p-5">
                         <p class="an:mb-3 an:text-[14px] an:font-medium {{ $inkMuted }}">{{ __('Source de trafic') }}</p>

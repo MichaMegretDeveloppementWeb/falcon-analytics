@@ -21,9 +21,9 @@ use Falcon\Analytics\Repositories\EventWriteRepository;
  * **It was Artisan::call from the middleware at first, and that was wrong.**
  * Booting the console kernel inside a web request's `terminate()` disturbed the
  * session store: its handler lost the request it had been given, and the
- * session save that follows failed — on four Search Console essays, which use
+ * session save that follows fails — on the Search Console screens, which use
  * the session heavily. Nothing about analytics, everything about calling a
- * console from a request. Measured 2026-09-13.
+ * console from a request.
  *
  * @internal
  */
