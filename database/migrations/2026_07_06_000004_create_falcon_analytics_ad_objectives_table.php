@@ -7,11 +7,15 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Conversion objectives of an ad: either a funnel (the visitor completed its steps
- * in order) or a named custom event (the visitor fired it). Either way the ad is
- * credited one converting visitor, scoped to the ad's own attributed traffic so one
- * ad never scores another's conversions. (The value column added here was never used
- * for scoring and is dropped by a later migration.)
+ * Conversion objectives of an ad: either a funnel (the visitor completed its
+ * steps in order) or a named custom event (the visitor fired it).
+ *
+ * Either way the ad is credited one converting visitor, scoped to its own
+ * attributed traffic so one ad never scores another's conversions. **There is
+ * no per-objective weight**: marketing conversions count distinct converting
+ * visitors, each worth one, and a weight that no score reads would silently do
+ * nothing. The funnels screen weights its own steps, which is a different
+ * question.
  */
 return new class extends Migration
 {
@@ -24,8 +28,11 @@ return new class extends Migration
                 ->cascadeOnDelete();
             $table->string('type', 20);            // funnel | event
             $table->string('reference', 191);      // funnel key or event name
-            $table->decimal('value', 12, 2)->nullable(); // points per event (event objectives)
-            $table->timestamps();
+
+            // Written by hand rather than through the timestamps helper: see the
+            // visitors table.
+            $table->dateTime('created_at')->nullable();
+            $table->dateTime('updated_at')->nullable();
 
             $table->unique(['ad_id', 'type', 'reference'], 'fa_ad_objectives_unique');
         });

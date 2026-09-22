@@ -1,0 +1,146 @@
+COL falcon_analytics_ad_objectives.ad_id bigint unsigned null=NO def=- extra=
+COL falcon_analytics_ad_objectives.created_at datetime null=YES def=- extra=
+COL falcon_analytics_ad_objectives.id bigint unsigned null=NO def=- extra=auto_increment
+COL falcon_analytics_ad_objectives.reference varchar(191) null=NO def=- extra=
+COL falcon_analytics_ad_objectives.type varchar(20) null=NO def=- extra=
+COL falcon_analytics_ad_objectives.updated_at datetime null=YES def=- extra=
+COL falcon_analytics_ads.campaign_id bigint unsigned null=NO def=- extra=
+COL falcon_analytics_ads.created_at datetime null=YES def=- extra=
+COL falcon_analytics_ads.id bigint unsigned null=NO def=- extra=auto_increment
+COL falcon_analytics_ads.is_active tinyint(1) null=NO def=1 extra=
+COL falcon_analytics_ads.match_conditions json null=YES def=- extra=
+COL falcon_analytics_ads.name varchar(150) null=NO def=- extra=
+COL falcon_analytics_ads.updated_at datetime null=YES def=- extra=
+COL falcon_analytics_campaigns.created_at datetime null=YES def=- extra=
+COL falcon_analytics_campaigns.id bigint unsigned null=NO def=- extra=auto_increment
+COL falcon_analytics_campaigns.is_active tinyint(1) null=NO def=1 extra=
+COL falcon_analytics_campaigns.match_conditions json null=YES def=- extra=
+COL falcon_analytics_campaigns.name varchar(150) null=NO def=- extra=
+COL falcon_analytics_campaigns.platform varchar(60) null=YES def=- extra=
+COL falcon_analytics_campaigns.updated_at datetime null=YES def=- extra=
+COL falcon_analytics_daily_archives.archived_at datetime null=NO def=- extra=
+COL falcon_analytics_daily_archives.day date null=NO def=- extra=
+COL falcon_analytics_daily_archives.id bigint unsigned null=NO def=- extra=auto_increment
+COL falcon_analytics_daily_archives.pruned_at datetime null=YES def=- extra=
+COL falcon_analytics_daily_counts.day date null=NO def=- extra=
+COL falcon_analytics_daily_counts.id bigint unsigned null=NO def=- extra=auto_increment
+COL falcon_analytics_daily_counts.kind varchar(16) null=NO def=- extra=
+COL falcon_analytics_daily_counts.label text null=NO def=- extra=
+COL falcon_analytics_daily_counts.route varchar(191) null=YES def=- extra=
+COL falcon_analytics_daily_counts.signature char(64) null=NO def=- extra=
+COL falcon_analytics_daily_counts.subject_type varchar(32) null=YES def=- extra=
+COL falcon_analytics_daily_counts.total int unsigned null=NO def=0 extra=
+COL falcon_analytics_events.id bigint unsigned null=NO def=- extra=auto_increment
+COL falcon_analytics_events.name varchar(120) null=YES def=- extra=
+COL falcon_analytics_events.occurred_at datetime null=NO def=- extra=
+COL falcon_analytics_events.page varchar(2048) null=YES def=- extra=
+COL falcon_analytics_events.props json null=YES def=- extra=
+COL falcon_analytics_events.route varchar(191) null=YES def=- extra=
+COL falcon_analytics_events.session_id bigint unsigned null=NO def=- extra=
+COL falcon_analytics_events.subject_id bigint unsigned null=YES def=- extra=
+COL falcon_analytics_events.subject_type varchar(32) null=YES def=- extra=
+COL falcon_analytics_events.target_selector varchar(255) null=YES def=- extra=
+COL falcon_analytics_events.target_text varchar(255) null=YES def=- extra=
+COL falcon_analytics_events.type varchar(20) null=NO def=- extra=
+COL falcon_analytics_events.url varchar(2048) null=YES def=- extra=
+COL falcon_analytics_events.value decimal(12,2) null=YES def=- extra=
+COL falcon_analytics_events.visitor_id bigint unsigned null=NO def=- extra=
+COL falcon_analytics_search_console.access_token text null=YES def=- extra=
+COL falcon_analytics_search_console.created_at datetime null=YES def=- extra=
+COL falcon_analytics_search_console.id bigint unsigned null=NO def=- extra=auto_increment
+COL falcon_analytics_search_console.last_error varchar(255) null=YES def=- extra=
+COL falcon_analytics_search_console.last_synced_at datetime null=YES def=- extra=
+COL falcon_analytics_search_console.property varchar(255) null=YES def=- extra=
+COL falcon_analytics_search_console.refresh_token text null=NO def=- extra=
+COL falcon_analytics_search_console.status varchar(20) null=NO def=pending_property extra=
+COL falcon_analytics_search_console.token_expires_at datetime null=YES def=- extra=
+COL falcon_analytics_search_console.updated_at datetime null=YES def=- extra=
+COL falcon_analytics_search_queries.clicks int unsigned null=NO def=0 extra=
+COL falcon_analytics_search_queries.date date null=NO def=- extra=
+COL falcon_analytics_search_queries.id bigint unsigned null=NO def=- extra=auto_increment
+COL falcon_analytics_search_queries.impressions int unsigned null=NO def=0 extra=
+COL falcon_analytics_search_queries.position decimal(6,2) null=YES def=- extra=
+COL falcon_analytics_search_queries.query varchar(255) null=NO def=- extra=
+COL falcon_analytics_sessions.browser varchar(60) null=YES def=- extra=
+COL falcon_analytics_sessions.browser_key varchar(36) null=YES def=- extra=
+COL falcon_analytics_sessions.browser_version varchar(30) null=YES def=- extra=
+COL falcon_analytics_sessions.city varchar(100) null=YES def=- extra=
+COL falcon_analytics_sessions.click_count int unsigned null=NO def=0 extra=
+COL falcon_analytics_sessions.country varchar(2) null=YES def=- extra=
+COL falcon_analytics_sessions.device_brand varchar(60) null=YES def=- extra=
+COL falcon_analytics_sessions.device_model varchar(60) null=YES def=- extra=
+COL falcon_analytics_sessions.device_type varchar(20) null=YES def=- extra=
+COL falcon_analytics_sessions.ended_at datetime null=YES def=- extra=
+COL falcon_analytics_sessions.event_count int unsigned null=NO def=0 extra=
+COL falcon_analytics_sessions.id bigint unsigned null=NO def=- extra=auto_increment
+COL falcon_analytics_sessions.ip varchar(45) null=YES def=- extra=
+COL falcon_analytics_sessions.is_bot tinyint(1) null=NO def=0 extra=
+COL falcon_analytics_sessions.landing_route varchar(191) null=YES def=- extra=
+COL falcon_analytics_sessions.landing_url varchar(2048) null=YES def=- extra=
+COL falcon_analytics_sessions.last_activity_at datetime null=NO def=- extra=
+COL falcon_analytics_sessions.last_pageview_url varchar(2048) null=YES def=- extra=
+COL falcon_analytics_sessions.latitude decimal(10,7) null=YES def=- extra=
+COL falcon_analytics_sessions.longitude decimal(10,7) null=YES def=- extra=
+COL falcon_analytics_sessions.mkt_params json null=YES def=- extra=
+COL falcon_analytics_sessions.os varchar(60) null=YES def=- extra=
+COL falcon_analytics_sessions.os_version varchar(30) null=YES def=- extra=
+COL falcon_analytics_sessions.pageview_count int unsigned null=NO def=0 extra=
+COL falcon_analytics_sessions.referrer varchar(2048) null=YES def=- extra=
+COL falcon_analytics_sessions.region varchar(100) null=YES def=- extra=
+COL falcon_analytics_sessions.source varchar(60) null=YES def=- extra=
+COL falcon_analytics_sessions.started_at datetime null=NO def=- extra=
+COL falcon_analytics_sessions.subject_id bigint unsigned null=YES def=- extra=
+COL falcon_analytics_sessions.subject_type varchar(32) null=YES def=- extra=
+COL falcon_analytics_sessions.utm_campaign varchar(150) null=YES def=- extra=
+COL falcon_analytics_sessions.utm_content varchar(150) null=YES def=- extra=
+COL falcon_analytics_sessions.utm_medium varchar(150) null=YES def=- extra=
+COL falcon_analytics_sessions.utm_source varchar(150) null=YES def=- extra=
+COL falcon_analytics_sessions.utm_term varchar(150) null=YES def=- extra=
+COL falcon_analytics_sessions.visitor_id bigint unsigned null=NO def=- extra=
+COL falcon_analytics_visitors.first_seen_at datetime null=NO def=- extra=
+COL falcon_analytics_visitors.id bigint unsigned null=NO def=- extra=auto_increment
+COL falcon_analytics_visitors.last_seen_at datetime null=NO def=- extra=
+COL falcon_analytics_visitors.merged_into_id bigint unsigned null=YES def=- extra=
+COL falcon_analytics_visitors.session_count int unsigned null=NO def=0 extra=
+COL falcon_analytics_visitors.subject_id bigint unsigned null=YES def=- extra=
+COL falcon_analytics_visitors.subject_type varchar(32) null=YES def=- extra=
+COL falcon_analytics_visitors.uuid char(36) null=NO def=- extra=
+IDX falcon_analytics_ad_objectives.fa_ad_objectives_unique unique=oui (ad_id,type,reference)
+IDX falcon_analytics_ad_objectives.PRIMARY unique=oui (id)
+IDX falcon_analytics_ads.fa_ads_campaign_idx unique=non (campaign_id)
+IDX falcon_analytics_ads.PRIMARY unique=oui (id)
+IDX falcon_analytics_campaigns.PRIMARY unique=oui (id)
+IDX falcon_analytics_daily_archives.fa_daily_archives_day_unique unique=oui (day)
+IDX falcon_analytics_daily_archives.PRIMARY unique=oui (id)
+IDX falcon_analytics_daily_counts.fa_daily_counts_kind_day_idx unique=non (kind,day)
+IDX falcon_analytics_daily_counts.fa_daily_counts_unique unique=oui (day,signature)
+IDX falcon_analytics_daily_counts.PRIMARY unique=oui (id)
+IDX falcon_analytics_events.fa_events_name_occurred_idx unique=non (name,occurred_at)
+IDX falcon_analytics_events.fa_events_occurred_idx unique=non (occurred_at)
+IDX falcon_analytics_events.fa_events_route_occurred_idx unique=non (route,occurred_at)
+IDX falcon_analytics_events.fa_events_type_occurred_idx unique=non (type,occurred_at)
+IDX falcon_analytics_events.fa_events_visitor_occurred_idx unique=non (visitor_id,occurred_at)
+IDX falcon_analytics_events.falcon_analytics_events_session_id_foreign unique=non (session_id)
+IDX falcon_analytics_events.PRIMARY unique=oui (id)
+IDX falcon_analytics_search_console.PRIMARY unique=oui (id)
+IDX falcon_analytics_search_queries.fa_search_queries_date_idx unique=non (date)
+IDX falcon_analytics_search_queries.fa_search_queries_date_query_unique unique=oui (date,query)
+IDX falcon_analytics_search_queries.PRIMARY unique=oui (id)
+IDX falcon_analytics_sessions.fa_sessions_bot_started_idx unique=non (is_bot,started_at)
+IDX falcon_analytics_sessions.fa_sessions_country_idx unique=non (country)
+IDX falcon_analytics_sessions.fa_sessions_last_activity_idx unique=non (last_activity_at)
+IDX falcon_analytics_sessions.fa_sessions_subject_idx unique=non (subject_type,subject_id)
+IDX falcon_analytics_sessions.fa_sessions_visitor_activity_idx unique=non (visitor_id,last_activity_at)
+IDX falcon_analytics_sessions.fa_sessions_visitor_started_idx unique=non (visitor_id,started_at)
+IDX falcon_analytics_sessions.PRIMARY unique=oui (id)
+IDX falcon_analytics_visitors.fa_visitors_first_seen_idx unique=non (first_seen_at)
+IDX falcon_analytics_visitors.fa_visitors_subject_idx unique=non (subject_type,subject_id)
+IDX falcon_analytics_visitors.falcon_analytics_visitors_merged_into_id_foreign unique=non (merged_into_id)
+IDX falcon_analytics_visitors.falcon_analytics_visitors_uuid_unique unique=oui (uuid)
+IDX falcon_analytics_visitors.PRIMARY unique=oui (id)
+FK falcon_analytics_ad_objectives.falcon_analytics_ad_objectives_ad_id_foreign (ad_id) -> falcon_analytics_ads.id del=CASCADE upd=NO ACTION
+FK falcon_analytics_ads.falcon_analytics_ads_campaign_id_foreign (campaign_id) -> falcon_analytics_campaigns.id del=CASCADE upd=NO ACTION
+FK falcon_analytics_events.falcon_analytics_events_session_id_foreign (session_id) -> falcon_analytics_sessions.id del=CASCADE upd=NO ACTION
+FK falcon_analytics_events.falcon_analytics_events_visitor_id_foreign (visitor_id) -> falcon_analytics_visitors.id del=CASCADE upd=NO ACTION
+FK falcon_analytics_sessions.falcon_analytics_sessions_visitor_id_foreign (visitor_id) -> falcon_analytics_visitors.id del=CASCADE upd=NO ACTION
+FK falcon_analytics_visitors.falcon_analytics_visitors_merged_into_id_foreign (merged_into_id) -> falcon_analytics_visitors.id del=SET NULL upd=NO ACTION

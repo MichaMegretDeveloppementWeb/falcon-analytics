@@ -26,7 +26,10 @@ return new class extends Migration
         Schema::create('falcon_analytics_daily_archives', function (Blueprint $table): void {
             $table->id();
             $table->date('day')->unique('fa_daily_archives_day_unique');
-            $table->timestamp('archived_at');
+            // Written by hand rather than through the timestamps helper, which
+            // lays down a type the engine converts against the session time
+            // zone. See the visitors table.
+            $table->dateTime('archived_at');
 
             /*
              * When the day's anonymous detail was erased, and null while it is
@@ -44,7 +47,7 @@ return new class extends Migration
              * retention shortened yesterday moves a line that erasing has not
              * crossed yet.
              */
-            $table->timestamp('pruned_at')->nullable();
+            $table->dateTime('pruned_at')->nullable();
         });
     }
 

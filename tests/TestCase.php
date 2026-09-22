@@ -10,6 +10,7 @@ use Falcon\Analytics\Tests\Fixtures\Models\TestAdmin;
 use Falcon\Analytics\Tests\Fixtures\Models\TestClient;
 use Falcon\Analytics\Tests\Fixtures\Models\TestLessor;
 use Falcon\Ui\UiServiceProvider;
+use Illuminate\Database\Query\JoinClause;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -435,6 +436,56 @@ abstract class TestCase extends Orchestra
             $config->set('analytics.admin.middleware', ['web', 'auth:admin']);
             $config->set('analytics.layouts.admin', null);
         });
+    }
+
+    /**
+     * The package's schema as the engine holds it: one line per column, per
+     * index and per foreign key, sorted so two readings compare.
+     *
+     * Scoped to the connection's own database — `information_schema` holds
+     * every database of the server, and a listing that overflows is the defect
+     * `migrations-et-schema.md` names.
+     *
+     * @return list<string>
+     */
+    protected function schemaOfThePackage(): array
+    {
+        $columns = DB::table('information_schema.COLUMNS')
+            ->selectRaw("CONCAT('COL ', TABLE_NAME, '.', COLUMN_NAME, ' ', COLUMN_TYPE, ' null=', IS_NULLABLE, ' def=', IFNULL(COLUMN_DEFAULT, '-'), ' extra=', EXTRA) AS line")
+            ->whereRaw('TABLE_SCHEMA = DATABASE()')
+            ->where('TABLE_NAME', 'like', 'falcon\_analytics\_%')
+            ->orderBy('TABLE_NAME')
+            ->orderBy('COLUMN_NAME')
+            ->pluck('line');
+
+        $indexes = DB::table('information_schema.STATISTICS')
+            ->selectRaw("CONCAT('IDX ', TABLE_NAME, '.', INDEX_NAME, ' unique=', IF(NON_UNIQUE = 0, 'oui', 'non'), ' (', GROUP_CONCAT(COLUMN_NAME ORDER BY SEQ_IN_INDEX), ')') AS line")
+            ->whereRaw('TABLE_SCHEMA = DATABASE()')
+            ->where('TABLE_NAME', 'like', 'falcon\_analytics\_%')
+            ->groupBy('TABLE_NAME', 'INDEX_NAME', 'NON_UNIQUE')
+            ->orderBy('TABLE_NAME')
+            ->orderBy('INDEX_NAME')
+            ->pluck('line');
+
+        // The foreign keys, and what they do on delete: an index says a column
+        // is indexed, never that a constraint hangs on it, and a lost
+        // `cascadeOnDelete` would leave no trace anywhere else.
+        $keys = DB::table('information_schema.KEY_COLUMN_USAGE AS kcu')
+            ->join('information_schema.REFERENTIAL_CONSTRAINTS AS rc', function (JoinClause $join): void {
+                $join->on('rc.CONSTRAINT_SCHEMA', '=', 'kcu.CONSTRAINT_SCHEMA')
+                    ->on('rc.CONSTRAINT_NAME', '=', 'kcu.CONSTRAINT_NAME');
+            })
+            ->selectRaw("CONCAT('FK ', kcu.TABLE_NAME, '.', kcu.CONSTRAINT_NAME, ' (', kcu.COLUMN_NAME, ') -> ', kcu.REFERENCED_TABLE_NAME, '.', kcu.REFERENCED_COLUMN_NAME, ' del=', rc.DELETE_RULE, ' upd=', rc.UPDATE_RULE) AS line")
+            ->whereRaw('kcu.TABLE_SCHEMA = DATABASE()')
+            ->where('kcu.TABLE_NAME', 'like', 'falcon\_analytics\_%')
+            ->whereNotNull('kcu.REFERENCED_TABLE_NAME')
+            ->orderBy('kcu.TABLE_NAME')
+            ->orderBy('kcu.CONSTRAINT_NAME')
+            ->pluck('line');
+
+        return array_values($columns->merge($indexes)->merge($keys)
+            ->map(fn (mixed $line): string => (string) $line)
+            ->all());
     }
 
     /**

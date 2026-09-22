@@ -2,6 +2,48 @@
 
 ---
 
+## ⚠️ Monter depuis une version antérieure à la 1.0 · les statistiques repartent de zéro
+
+**Le schéma a été repris à neuf.** Les vingt-deux migrations qui l'avaient
+construit par touches successives sont devenues **dix, une par table**, chacune
+décrivant l'état final. Une installation antérieure ne peut donc pas être
+rattrapée par une migration de plus · **ses tables se suppriment et se
+rejouent**.
+
+```bash
+composer update falcon/analytics
+php artisan analytics:refresh
+php artisan vendor:publish --tag=laravel-assets --force
+php artisan view:cache
+php artisan analytics:check
+```
+
+**`analytics:refresh` ne touche que les tables du paquet.** Elle les désigne par
+leur préfixe, lu dans le catalogue du moteur, les nomme une par une avec leur
+nombre de lignes, et attend votre accord avant de supprimer quoi que ce soit.
+Vos propres tables ne sont pas concernées — c'est précisément pourquoi elle
+existe plutôt qu'un `migrate:fresh`, qui les emporterait.
+
+**Ce que vous perdez** · tout ce que l'analytique avait mesuré. Visiteurs,
+sessions, évènements, résumés quotidiens, campagnes et publicités. **Ce que vous
+ne perdez pas** · le reste de votre base, et votre configuration publiée.
+
+**Ce que vous gagnez, et qui n'était pas rattrapable autrement** · les instants
+quittent un type que le moteur convertit contre le fuseau du serveur. Le disque
+portait jusqu'ici une heure décalée du décalage de votre serveur — deux heures
+en été, une en hiver — que tout autre lecteur voyait fausse · une sauvegarde
+restaurée ailleurs, une réplique, un outil décisionnel. Et l'heure que la
+pendule locale saute au passage à l'heure d'été était **refusée par la base** ·
+le paquet ne pouvait rien enregistrer pendant cette heure-là.
+
+> **Pour une installation neuve, il n'y a rien à faire de tout cela** · la
+> procédure ordinaire ci-dessous suffit.
+
+> **`--force` saute la confirmation**, pour un déploiement automatisé. Ne
+> l'écrivez que là.
+
+---
+
 ## La procédure
 
 ```bash
