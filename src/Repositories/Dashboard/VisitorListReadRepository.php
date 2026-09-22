@@ -110,50 +110,16 @@ final readonly class VisitorListReadRepository
     ): LengthAwarePaginator {
         $direction = $direction === 'asc' ? 'asc' : 'desc';
 
-        $latest = fn (string $column): Builder => Session::query()
-            ->select($column)
-            ->whereColumn('visitor_id', 'falcon_analytics_visitors.id')
-            ->where('is_bot', false)
-            ->orderByDesc('started_at')
-            ->limit(1);
-
         $query = Visitor::query()
             ->select(['falcon_analytics_visitors.id', 'uuid', 'first_seen_at', 'last_seen_at', 'subject_type', 'subject_id', 'session_count'])
             ->whereNull('merged_into_id')
             ->when($subjectType !== null, fn (Builder $q): Builder => $q->where('subject_type', $subjectType))
             ->whereHas('sessions', fn (Builder $q): Builder => $q->where('is_bot', false))
-            ->addSelect([
-                'last_country' => $latest('country'),
-                'last_city' => $latest('city'),
-                'acquisition_source' => Session::query()
-                    ->select('source')
-                    ->whereColumn('visitor_id', 'falcon_analytics_visitors.id')
-                    ->where('is_bot', false)
-                    ->orderBy('started_at')
-                    ->limit(1),
-            ])
-            ->when($search !== null && $search !== '', function (Builder $query) use ($search, $subjects): void {
-                // See `SessionListReadRepository`: the `when()` test does not
-                // narrow the type inside the closure.
-                $needle = (string) $search;
-                $term = '%'.$needle.'%';
+            ->addSelect($this->localityAndSource());
 
-                $query->where(function (Builder $inner) use ($term, $needle, $subjects): void {
-                    $inner->where('uuid', 'like', $term);
-
-                    if (ctype_digit($needle)) {
-                        $inner->orWhere('subject_id', (int) $needle);
-                    }
-
-                    foreach ($subjects->guards() as $guard) {
-                        $ids = $subjects->matchIds($guard, $needle);
-
-                        if ($ids !== []) {
-                            $inner->orWhere(fn (Builder $q): Builder => $q->where('subject_type', $guard)->whereIn('subject_id', $ids));
-                        }
-                    }
-                });
-            });
+        if ($search !== null && $search !== '') {
+            $this->whereVisitorMatches($query, $search, $subjects);
+        }
 
         $sortable = ['last_seen_at', 'first_seen_at', 'session_count'];
         $query->orderBy(in_array($sort, $sortable, true) ? $sort : 'last_seen_at', $direction);
@@ -164,5 +130,59 @@ final readonly class VisitorListReadRepository
         $query->orderBy('falcon_analytics_visitors.id', $direction);
 
         return $query->paginate($perPage);
+    }
+
+    /**
+     * The locality of a visitor's latest real session and the source of their
+     * first, as correlated subqueries.
+     *
+     * @return array<string, Builder<Session>>
+     */
+    private function localityAndSource(): array
+    {
+        $latest = fn (string $column): Builder => Session::query()
+            ->select($column)
+            ->whereColumn('visitor_id', 'falcon_analytics_visitors.id')
+            ->where('is_bot', false)
+            ->orderByDesc('started_at')
+            ->limit(1);
+
+        return [
+            'last_country' => $latest('country'),
+            'last_city' => $latest('city'),
+            'acquisition_source' => Session::query()
+                ->select('source')
+                ->whereColumn('visitor_id', 'falcon_analytics_visitors.id')
+                ->where('is_bot', false)
+                ->orderBy('started_at')
+                ->limit(1),
+        ];
+    }
+
+    /**
+     * Keep the visitors a search term designates · by uuid, by subject id, or
+     * by a subject's resolved name.
+     *
+     * @param  Builder<Visitor>  $query
+     */
+    private function whereVisitorMatches(Builder $query, string $needle, SubjectResolver $subjects): void
+    {
+        $term = '%'.$needle.'%';
+
+        $query->where(function (Builder $inner) use ($term, $needle, $subjects): void {
+            $inner->where('uuid', 'like', $term);
+
+            if (ctype_digit($needle)) {
+                $inner->orWhere('subject_id', (int) $needle);
+            }
+
+            foreach ($subjects->guards() as $guard) {
+                $ids = $subjects->matchIds($guard, $needle);
+
+                if ($ids !== []) {
+                    $inner->orWhere(fn (Builder $q): Builder => $q->where('subject_type', $guard)->whereIn('subject_id', $ids));
+                }
+            }
+        });
     }
 }

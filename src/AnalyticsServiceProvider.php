@@ -106,17 +106,27 @@ final class AnalyticsServiceProvider extends ServiceProvider
 
         $this->registerPersistentMiddleware();
         $this->exemptTheConsentCookie();
+        $this->registerComponents();
+        $this->registerCommands();
+        $this->scheduleMaintenance();
 
-        /*
-         * The components, under a single prefix and through two mechanisms.
-         *
-         * Laravel looks for a class first, and falls back on the anonymous view
-         * when there is none: `<x-analytics::page>` reaches the class,
-         * `<x-analytics::kpi-card>` the view.
-         *
-         * Page and root are classes because they open the kit's context before
-         * their slot, and a view can do nothing before it is rendered.
-         */
+        if ($this->app->runningInConsole()) {
+            $this->offerForPublication();
+        }
+    }
+
+    /**
+     * The components, under a single prefix and through two mechanisms, and
+     * the package's only directive.
+     *
+     * Laravel looks for a class first, and falls back on the anonymous view
+     * when there is none: `<x-analytics::page>` reaches the class,
+     * `<x-analytics::kpi-card>` the view. Page and root are classes because
+     * they open the kit's context before their slot, and a view can do nothing
+     * before it is rendered.
+     */
+    private function registerComponents(): void
+    {
         Blade::componentNamespace('Falcon\\Analytics\\View\\Components', 'analytics');
         Blade::anonymousComponentNamespace('analytics::components', 'analytics');
 
@@ -158,13 +168,18 @@ final class AnalyticsServiceProvider extends ServiceProvider
          * classes live elsewhere, hence this declaration.
          */
         Livewire::addNamespace('analytics', classNamespace: 'Falcon\\Analytics\\Livewire');
+    }
 
-        // Registered OUTSIDE any runningInConsole() guard on purpose: shared
-        // hosts often trigger the scheduler through an HTTP endpoint calling
-        // Artisan::call('schedule:run'), where runningInConsole() is false. A
-        // console-only guard would silently unregister every command and every
-        // schedule below in that setup. commands() only queues an
-        // Artisan::starting callback, so ordinary HTTP requests pay nothing.
+    /**
+     * The commands, registered outside any runningInConsole() guard: shared
+     * hosts often trigger the scheduler through an HTTP endpoint calling
+     * Artisan::call('schedule:run'), where runningInConsole() is false, and a
+     * console-only guard would silently unregister every command in that
+     * setup. commands() only queues an Artisan::starting callback, so ordinary
+     * HTTP requests pay nothing.
+     */
+    private function registerCommands(): void
+    {
         $this->commands([
             InstallCommand::class,
             CheckCommand::class,
@@ -178,11 +193,16 @@ final class AnalyticsServiceProvider extends ServiceProvider
             CheckEventsCommand::class,
             SyncSearchConsoleCommand::class,
         ]);
+    }
 
-        // Self-schedule maintenance so a host only needs to trigger the
-        // standard scheduler (real cron or HTTP-called schedule:run), never a
-        // dedicated analytics cron. Lazily bound: the events register when the
-        // Schedule is actually resolved, i.e. only inside scheduler runs.
+    /**
+     * Self-schedule maintenance so a host only needs to trigger the standard
+     * scheduler (real cron or HTTP-called schedule:run), never a dedicated
+     * analytics cron. Lazily bound: the events register when the Schedule is
+     * actually resolved, i.e. only inside scheduler runs.
+     */
+    private function scheduleMaintenance(): void
+    {
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             // Close idle sessions on a fixed cadence.
             $schedule->command('analytics:sweep')->everyFiveMinutes()->withoutOverlapping();
@@ -209,24 +229,24 @@ final class AnalyticsServiceProvider extends ServiceProvider
                 ->dailyAt('05:00')
                 ->withoutOverlapping();
         });
+    }
 
-        if ($this->app->runningInConsole()) {
-            $this->publishes([
-                __DIR__.'/../config/analytics.php' => config_path('analytics.php'),
-            ], 'analytics-config');
+    /**
+     * The configuration, and the compiled files under two names ·
+     * `laravel-assets` is the one a deployment forces in every release,
+     * `analytics-assets` is for taking these and nothing else. The package
+     * compiles and ships compiled files; the host publishes and serves them,
+     * with no Node and no build of its own.
+     */
+    private function offerForPublication(): void
+    {
+        $this->publishes([
+            __DIR__.'/../config/analytics.php' => config_path('analytics.php'),
+        ], 'analytics-config');
 
-            /*
-             * The compiled files, under two names. `laravel-assets` is the one
-             * a deployment forces in every release; `analytics-assets` is for
-             * taking these and nothing else.
-             *
-             * The package compiles and ships compiled files; the host publishes
-             * and serves them, with no Node and no build of its own.
-             */
-            $this->publishes([
-                __DIR__.'/../public' => public_path($this->publicDirectory().'/analytics'),
-            ], ['analytics-assets', 'laravel-assets']);
-        }
+        $this->publishes([
+            __DIR__.'/../public' => public_path($this->publicDirectory().'/analytics'),
+        ], ['analytics-assets', 'laravel-assets']);
     }
 
     /**

@@ -39,8 +39,30 @@ final readonly class FunnelEvaluator
     public function evaluate(Funnel $funnel, Period $period, ?string $subjectType): FunnelReport
     {
         $steps = $funnel->steps();
-        $stepCount = count($steps);
-        $reached = array_fill(0, max($stepCount, 1), 0);
+        ['reached' => $reached, 'branches' => $branchReach] = $this->reach($funnel, $period, $subjectType);
+
+        $entrants = $steps !== [] ? $reached[0] : 0;
+        $results = [];
+
+        foreach ($steps as $i => $step) {
+            $results[] = $this->stepResult($step, $reached[$i], $i === 0 ? null : $reached[$i - 1], $entrants, $branchReach[$i] ?? []);
+        }
+
+        $totalScore = array_sum(array_map(fn (FunnelStepResult $result): int => $result->score, $results));
+
+        return new FunnelReport($funnel->key, $funnel->label, $entrants, $totalScore, $results);
+    }
+
+    /**
+     * How many visitors reached each step, and by which branch when a step has
+     * several ways in.
+     *
+     * @return array{reached: array<int, int>, branches: array<int, array<string, int>>}
+     */
+    private function reach(Funnel $funnel, Period $period, ?string $subjectType): array
+    {
+        $steps = $funnel->steps();
+        $reached = array_fill(0, max(count($steps), 1), 0);
 
         /** @var array<int, array<string, int>> $branchReach step index => branch label => visitors */
         $branchReach = [];
@@ -53,7 +75,6 @@ final readonly class FunnelEvaluator
             function (int $visitorId, int $stepIndex, Event $event) use (&$reached, &$branchReach, $steps): void {
                 $reached[$stepIndex]++;
 
-                // A branched step also records the way in, so the report can compare them.
                 $branch = $steps[$stepIndex]->branchFor($event);
 
                 if ($branch !== null) {
@@ -62,34 +83,32 @@ final readonly class FunnelEvaluator
             },
         );
 
-        $entrants = $stepCount > 0 ? $reached[0] : 0;
-        $results = [];
-        $totalScore = 0;
+        return ['reached' => $reached, 'branches' => $branchReach];
+    }
 
-        foreach ($steps as $i => $step) {
-            $visitors = $reached[$i];
-            $score = $visitors * $step->value;
-            $totalScore += $score;
+    /**
+     * One step's reading · every declared branch appears, including those
+     * nobody took: a zero is itself a reading, and a disappearing row would
+     * look like a bug.
+     *
+     * @param  array<string, int>  $branchReach  branch label => visitors
+     */
+    private function stepResult(FunnelStep $step, int $visitors, ?int $previous, int $entrants, array $branchReach): FunnelStepResult
+    {
+        $branches = [];
 
-            // Every declared branch appears, including those nobody took: a zero is
-            // itself a reading, and a disappearing row would look like a bug.
-            $branches = [];
-
-            foreach ($step->branches as $branch) {
-                $branches[$branch->label] = $branchReach[$i][$branch->label] ?? 0;
-            }
-
-            $results[] = new FunnelStepResult(
-                label: $step->label,
-                value: $step->value,
-                visitors: $visitors,
-                conversionFromStart: $entrants > 0 ? $visitors / $entrants : 0.0,
-                conversionFromPrevious: $i === 0 ? 1.0 : ($reached[$i - 1] > 0 ? $visitors / $reached[$i - 1] : 0.0),
-                score: $score,
-                branches: $branches,
-            );
+        foreach ($step->branches as $branch) {
+            $branches[$branch->label] = $branchReach[$branch->label] ?? 0;
         }
 
-        return new FunnelReport($funnel->key, $funnel->label, $entrants, $totalScore, $results);
+        return new FunnelStepResult(
+            label: $step->label,
+            value: $step->value,
+            visitors: $visitors,
+            conversionFromStart: $entrants > 0 ? $visitors / $entrants : 0.0,
+            conversionFromPrevious: $previous === null ? 1.0 : ($previous > 0 ? $visitors / $previous : 0.0),
+            score: $visitors * $step->value,
+            branches: $branches,
+        );
     }
 }

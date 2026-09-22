@@ -88,21 +88,33 @@ final readonly class SourceResolver
         }
 
         if ($utmMedium !== null) {
-            $medium = strtolower($utmMedium);
-
-            if (in_array($medium, self::PAID_MEDIUMS, true)) {
-                return 'paid';
-            }
-
-            return match ($medium) {
-                'organic' => 'organic',
-                'social', 'social-media' => 'social',
-                'email', 'newsletter' => 'email',
-                'referral' => 'referral',
-                default => 'campaign',
-            };
+            return $this->channelOfMedium($utmMedium);
         }
 
+        return $this->channelOfReferrer($referrer, $appHost);
+    }
+
+    /** The channel an explicit `utm_medium` names. */
+    private function channelOfMedium(string $utmMedium): string
+    {
+        $medium = strtolower($utmMedium);
+
+        if (in_array($medium, self::PAID_MEDIUMS, true)) {
+            return 'paid';
+        }
+
+        return match ($medium) {
+            'organic' => 'organic',
+            'social', 'social-media' => 'social',
+            'email', 'newsletter' => 'email',
+            'referral' => 'referral',
+            default => 'campaign',
+        };
+    }
+
+    /** The channel the referrer's host points to, when nothing in the address says. */
+    private function channelOfReferrer(?string $referrer, ?string $appHost): string
+    {
         $host = $referrer !== null ? parse_url($referrer, PHP_URL_HOST) : null;
 
         // `false` counts as absent: `parse_url` returns it on a malformed

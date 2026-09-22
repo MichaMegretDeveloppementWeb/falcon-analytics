@@ -52,47 +52,73 @@ final readonly class SessionListReadRepository
                 'events as conversions_count' => fn (Builder $q): Builder => $q->whereIn('name', $conversionNames),
             ])
             ->when($device !== null && $device !== '', fn (Builder $q): Builder => $q->where('device_type', $device))
-            ->when($source !== null && $source !== '', fn (Builder $q): Builder => $q->where('source', $source))
-            ->when($search !== null && $search !== '', function (Builder $query) use ($period, $subjectType, $search, $subjects): void {
-                // The `when()` test does not narrow the type inside the
-                // closure, so it is done once here rather than at each of the
-                // four uses below.
-                $needle = (string) $search;
-                $term = '%'.$needle.'%';
-                $countryCodes = $this->matchingCountryCodes($period, $subjectType, $needle);
+            ->when($source !== null && $source !== '', fn (Builder $q): Builder => $q->where('source', $source));
 
-                $query->where(function (Builder $inner) use ($term, $needle, $subjects, $countryCodes): void {
-                    $inner->where('city', 'like', $term)
-                        ->orWhere('country', 'like', $term)
-                        ->orWhereHas('visitor', fn (Builder $visitor): Builder => $visitor->where('uuid', 'like', $term));
+        if ($search !== null && $search !== '') {
+            $this->whereSessionMatches($query, $period, $subjectType, $search, $subjects);
+        }
 
-                    if ($countryCodes !== []) {
-                        $inner->orWhereIn('country', $countryCodes);
-                    }
+        $this->sortSessions($query, $sort, $direction);
 
-                    // Anonymous sessions display the subject stitched on their
-                    // visitor (retroactive naming), so a subject match must also
-                    // surface them: hence each subject clause below pairs a match
-                    // on the session's own subject with a match on the visitor's
-                    // stitched subject restricted to anonymous sessions.
-                    if (ctype_digit($needle)) {
-                        $inner->orWhere('subject_id', (int) $needle)
-                            ->orWhere(fn (Builder $q): Builder => $q->whereNull('subject_id')
-                                ->whereHas('visitor', fn (Builder $visitor): Builder => $visitor->where('subject_id', (int) $needle)));
-                    }
+        return $query->paginate($perPage);
+    }
 
-                    foreach ($subjects->guards() as $guard) {
-                        $ids = $subjects->matchIds($guard, $needle);
+    /**
+     * Keep the sessions a search term designates · by city, country, visitor
+     * uuid, subject id, or a subject's resolved name.
+     *
+     * Anonymous sessions display the subject stitched on their visitor
+     * (retroactive naming), so each subject clause pairs a match on the
+     * session's own subject with a match on the visitor's stitched subject,
+     * restricted to anonymous sessions.
+     *
+     * @param  Builder<Session>  $query
+     */
+    private function whereSessionMatches(Builder $query, Period $period, ?string $subjectType, string $needle, SubjectResolver $subjects): void
+    {
+        $term = '%'.$needle.'%';
+        $countryCodes = $this->matchingCountryCodes($period, $subjectType, $needle);
 
-                        if ($ids !== []) {
-                            $inner->orWhere(fn (Builder $q): Builder => $q->where('subject_type', $guard)->whereIn('subject_id', $ids))
-                                ->orWhere(fn (Builder $q): Builder => $q->whereNull('subject_id')
-                                    ->whereHas('visitor', fn (Builder $visitor): Builder => $visitor->where('subject_type', $guard)->whereIn('subject_id', $ids)));
-                        }
-                    }
-                });
-            });
+        $query->where(function (Builder $inner) use ($term, $needle, $subjects, $countryCodes): void {
+            $inner->where('city', 'like', $term)
+                ->orWhere('country', 'like', $term)
+                ->orWhereHas('visitor', fn (Builder $visitor): Builder => $visitor->where('uuid', 'like', $term));
 
+            if ($countryCodes !== []) {
+                $inner->orWhereIn('country', $countryCodes);
+            }
+
+            if (ctype_digit($needle)) {
+                $inner->orWhere('subject_id', (int) $needle)
+                    ->orWhere(fn (Builder $q): Builder => $q->whereNull('subject_id')
+                        ->whereHas('visitor', fn (Builder $visitor): Builder => $visitor->where('subject_id', (int) $needle)));
+            }
+
+            foreach ($subjects->guards() as $guard) {
+                $ids = $subjects->matchIds($guard, $needle);
+
+                if ($ids !== []) {
+                    $inner->orWhere(fn (Builder $q): Builder => $q->where('subject_type', $guard)->whereIn('subject_id', $ids))
+                        ->orWhere(fn (Builder $q): Builder => $q->whereNull('subject_id')
+                            ->whereHas('visitor', fn (Builder $visitor): Builder => $visitor->where('subject_type', $guard)->whereIn('subject_id', $ids)));
+                }
+            }
+        });
+    }
+
+    /**
+     * Order the list on the requested column, then on the key.
+     *
+     * None of the sortable columns is unique, so an order left there leaves
+     * ties to the engine: it may answer differently for each page, showing a
+     * row twice and hiding another. The key closes the order; following the
+     * requested direction keeps it on the same index as the sort.
+     *
+     * @param  Builder<Session>  $query
+     * @param  'asc'|'desc'  $direction
+     */
+    private function sortSessions(Builder $query, string $sort, string $direction): void
+    {
         if ($sort === 'duration') {
             $query->orderByRaw($this->durationSecondsExpression('started_at', 'last_activity_at').' '.$direction);
         } else {
@@ -102,13 +128,7 @@ final readonly class SessionListReadRepository
             $query->orderBy(in_array($sort, $sortable, true) ? $sort : 'started_at', $direction);
         }
 
-        // None of the sortable columns is unique, so the order above leaves ties
-        // to the engine: it may then answer differently for each page, showing a
-        // row twice and hiding another. The key closes the order; following the
-        // requested direction keeps it on the same index as the sort.
         $query->orderBy('id', $direction);
-
-        return $query->paginate($perPage);
     }
 
     /**
