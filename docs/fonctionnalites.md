@@ -689,8 +689,9 @@ faire.
 
 ## La vie privée et le RGPD
 
-- **L'adresse IP** est stockée entière au défaut, ce qui donne la localité et
-  l'historique de connexion. `privacy.anonymize_ip` la tronque.
+- **L'adresse IP** est tronquée avant d'être stockée. Le pays et la ville sont
+  lus avant, donc les écrans ne perdent que l'adresse exacte.
+  `privacy.anonymize_ip` à `false` la garde entière.
 - **Les adresses de pages** sont nettoyées de ce qui ressemble à une donnée
   personnelle — jeton, mot de passe, courriel — avant d'être stockées. Le
   paramètre reste, **sa valeur devient `redacted`** · une adresse amputée ne se
@@ -698,7 +699,9 @@ faire.
   est réglable.
 - **L'identifiant persistant d'un visiteur** n'existe que si
   `identity.consent_cookie` désigne un cookie et que ce cookie vaut `"1"`. Sinon
-  tout reste à la portée de la session.
+  tout reste à la portée de la session. Son cookie, `fa_vid`, dure **treize
+  mois au plus**, le plafond que la CNIL fixe pour un cookie de mesure, et une
+  visite suivante ne le prolonge pas.
 - **Le nom d'un sujet n'est jamais stocké** · il est lu sur votre modèle au
   moment de l'affichage.
 - **L'effacement** se fait depuis le détail d'un visiteur · il supprime le

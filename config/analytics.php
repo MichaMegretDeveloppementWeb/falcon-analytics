@@ -295,9 +295,10 @@ return [
     */
 
     'privacy' => [
-        // Raw IP is stored by default (locality + connection history). Set true
-        // to store a truncated/anonymised IP instead.
-        'anonymize_ip' => false,
+        // The IP is truncated before it is stored. The country and the city are
+        // read before that, so the screens lose nothing but the exact address.
+        // Set false to store it whole.
+        'anonymize_ip' => true,
 
         // Query parameters (case-insensitive) redacted from stored URLs. Tracking
         // params (utm_*, gclid, fbclid, custom ad params) are kept; only likely

@@ -44,7 +44,7 @@ final class SessionContextEnricherTest extends TestCase
         $this->assertSame('Firefox', $context->browser);
         $this->assertSame('Windows', $context->os);
         $this->assertFalse($context->isBot);
-        $this->assertSame('85.4.12.66', $context->ip);
+        $this->assertSame('85.4.12.0', $context->ip, 'Truncated with nothing set.');
         $this->assertSame('paid', $context->source);
         $this->assertSame('spring', $context->utmCampaign);
         $this->assertSame('home', $context->landingRoute);
@@ -64,14 +64,14 @@ final class SessionContextEnricherTest extends TestCase
         );
     }
 
-    public function test_it_anonymises_the_ip_when_configured(): void
+    public function test_it_keeps_the_whole_ip_only_when_the_host_asks_for_it(): void
     {
-        config(['analytics.privacy.anonymize_ip' => true]);
+        config(['analytics.privacy.anonymize_ip' => false]);
 
         $snapshot = new RequestSnapshot(ip: '85.4.12.66', userAgent: null, host: 'vantadrive.ch');
 
         $this->assertSame(
-            '85.4.12.0',
+            '85.4.12.66',
             app(SessionContextEnricher::class)->enrich($snapshot, $this->pageviewBatch(), null)->ip,
         );
     }

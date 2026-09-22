@@ -124,6 +124,10 @@ PHP 8.5, Laravel 13, Livewire 4.2, et une base **MySQL ou MariaDB**.
 comportement par défaut, pas une option à activer. Les données restent dans
 votre base ; aucun tiers, aucun service externe, aucun démon.
 
+**L'adresse IP est tronquée par défaut**, et le cookie d'un visiteur qui a
+consenti dure **treize mois au plus**, le plafond que la CNIL fixe · sans que
+la localité y perde, puisqu'elle est lue avant la troncature.
+
 **Le pas à pas d'une session ne se consulte que quatre-vingt-dix jours** par
 défaut · au-delà, les pages vues et les clics anonymes sont effacés. Ce qui
 porte un nom est gardé, les chiffres des écrans ne bougent pas, et l'écran de

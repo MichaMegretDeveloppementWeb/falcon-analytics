@@ -326,7 +326,7 @@ dessus.
 
 | Clé | Type | Défaut | Ce qu'elle fait |
 |---|---|---|---|
-| `privacy.anonymize_ip` | booléen | `false` | À `true`, l'IP est tronquée avant d'être stockée · **le dernier octet en IPv4**, tout ce qui suit les 48 premiers bits en IPv6. Au défaut, elle est gardée entière — ce qui donne la localité et l'historique de connexion. |
+| `privacy.anonymize_ip` | booléen | `true` | L'IP est tronquée avant d'être stockée · **le dernier octet en IPv4**, tout ce qui suit les 48 premiers bits en IPv6. Le pays et la ville sont lus avant la troncature, donc les écrans n'y perdent que l'adresse exacte. À `false`, elle est gardée entière. |
 | `privacy.redact_query_params` | liste | `token`, `access_token`, `auth`, `password`, `secret`, `apikey`, `api_key`, `otp`, `signature`, `email` | Les paramètres dont la valeur est remplacée par `redacted` dans les adresses stockées, sans tenir compte de la casse. **Le paramètre reste, c'est sa valeur qui part** · une adresse tronquée ne se relit plus. **Les paramètres de campagne sont gardés tels quels** — `utm_*`, `gclid`, `fbclid`, les vôtres. Videz la liste pour tout stocker sans rien masquer. |
 
 > **Tronquer n'aveugle pas la carte.** Le pays et la ville se lisent encore sur

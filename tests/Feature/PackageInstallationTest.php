@@ -25,7 +25,7 @@ final class PackageInstallationTest extends TestCase
         $this->assertSame(90, config('analytics.retention_days'));
         $this->assertSame(5, config('analytics.session.timeout_minutes'));
         $this->assertSame(20, config('analytics.session.heartbeat_seconds'));
-        $this->assertFalse(config('analytics.privacy.anonymize_ip'));
+        $this->assertTrue(config('analytics.privacy.anonymize_ip'));
     }
 
     public function test_it_creates_the_core_analytics_tables(): void
