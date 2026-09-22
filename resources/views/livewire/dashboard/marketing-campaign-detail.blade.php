@@ -108,7 +108,7 @@
 
     {{-- Campaign edit --}}
     <x-ui::modal name="an-campaign-form" :title="__('Modifier la campagne')">
-        <div class="an:space-y-4">
+        <form id="an-campaign-form-fields" x-on:submit.prevent="$anCloseWhenDone($wire.saveCampaign(), 'an-campaign-form')" class="an:space-y-4">
             <x-ui::form-group :label="__('Nom')" for="campaignName">
                 <x-ui::input wire:model="campaignName" id="campaignName" :error="$errors->has('campaignName')" />
             </x-ui::form-group>
@@ -122,17 +122,17 @@
                             <x-ui::input wire:model="campaignConditions.{{ $index }}.param" placeholder="{{ __('paramètre') }}" class="an:flex-1" :error="$errors->has('campaignConditions.'.$index.'.param')" />
                             <span class="an:text-muted">=</span>
                             <x-ui::input wire:model="campaignConditions.{{ $index }}.value" placeholder="{{ __('valeur') }}" class="an:flex-1" :error="$errors->has('campaignConditions.'.$index.'.value')" />
-                            <button type="button" wire:click="removeCampaignCondition({{ $index }})" @class(['an:shrink-0 an:cursor-pointer an:text-muted an:transition-colors an:hover:text-red-600', 'an:pointer-events-none an:opacity-30' => count($campaignConditions) <= 1]) aria-label="{{ __('Retirer') }}"><x-ui::icon name="x-mark" class="an:h-4 an:w-4" /></button>
+                            <button type="button" wire:click="removeCampaignCondition({{ $index }})" class="an:shrink-0 an:cursor-pointer an:text-muted an:transition-colors an:hover:text-red-600 an:disabled:pointer-events-none an:disabled:opacity-30" @disabled(count($campaignConditions) <= 1) aria-label="{{ __('Retirer') }}"><x-ui::icon name="x-mark" class="an:h-4 an:w-4" /></button>
                         </div>
                     @endforeach
                 </div>
                 <x-ui::button type="button" variant="ghost" size="compact" wire:click="addCampaignCondition" class="an:mt-2"><x-ui::icon name="plus" class="an:h-3.5 an:w-3.5" /> {{ __('Ajouter une condition') }}</x-ui::button>
             </x-ui::form-group>
-        </div>
+        </form>
 
         <x-slot:footer>
             <x-ui::button type="button" variant="ghost" x-on:click="$dispatch('ui-close-modal', 'an-campaign-form')">{{ __('Annuler') }}</x-ui::button>
-            <x-ui::button type="button" x-on:click="$anCloseWhenDone($wire.saveCampaign(), 'an-campaign-form')" :loading="true" target="saveCampaign">{{ __('Enregistrer') }}</x-ui::button>
+            <x-ui::button type="submit" form="an-campaign-form-fields" :loading="true" target="saveCampaign">{{ __('Enregistrer') }}</x-ui::button>
         </x-slot:footer>
     </x-ui::modal>
 
