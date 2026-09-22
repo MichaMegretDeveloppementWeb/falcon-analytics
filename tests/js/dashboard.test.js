@@ -140,4 +140,47 @@ describe('the objective picker', () => {
 
         expect(picker.open).toBe(false);
     });
+
+    /** An open picker as Alpine would hold it, with the button that opened it. */
+    function openPicker() {
+        const picker = anObjectivePicker();
+        const trigger = document.createElement('button');
+
+        document.body.append(trigger);
+        picker.$refs = { trigger };
+        picker.toggle();
+
+        return { picker, trigger };
+    }
+
+    test('closes on the escape key and gives the focus back to its button', () => {
+        const { picker, trigger } = openPicker();
+        const escape = new KeyboardEvent('keydown', { key: 'Escape' });
+
+        picker.closeOnEscape(escape);
+
+        expect(picker.open).toBe(false);
+        expect(document.activeElement).toBe(trigger);
+    });
+
+    test('keeps the escape key from the modal around it while it is open', () => {
+        const { picker } = openPicker();
+        const escape = new KeyboardEvent('keydown', { key: 'Escape' });
+        const stop = vi.spyOn(escape, 'stopPropagation');
+
+        picker.closeOnEscape(escape);
+
+        expect(stop).toHaveBeenCalledOnce();
+    });
+
+    test('lets the escape key through once closed, so the modal closes', () => {
+        const picker = anObjectivePicker();
+        const escape = new KeyboardEvent('keydown', { key: 'Escape' });
+        const stop = vi.spyOn(escape, 'stopPropagation');
+
+        picker.closeOnEscape(escape);
+
+        expect(stop).not.toHaveBeenCalled();
+        expect(picker.open).toBe(false);
+    });
 });

@@ -24,7 +24,7 @@
                 @if ($ad->campaign->platform)<x-ui::badge color="gray">{{ $ad->campaign->platform }}</x-ui::badge>@endif
             </div>
         </div>
-        <x-ui::button variant="secondary" wire:click="editAd"><x-ui::icon name="pencil-square" class="an:h-4 an:w-4" /> {{ __('Modifier la pub') }}</x-ui::button>
+        <x-ui::button variant="secondary" x-on:click="$anOpenWhenDone($wire.editAd(), 'an-ad-form')"><x-ui::icon name="pencil-square" class="an:h-4 an:w-4" /> {{ __('Modifier la pub') }}</x-ui::button>
     </div>
 
     {{-- Performance (deferred content) --}}
@@ -49,8 +49,6 @@
     </x-ui::card>
 
     {{-- Ad edit modal --}}
-    <div x-on:keydown.escape.window="$wire.modal !== '' && $wire.closeModal()">
-        @include('analytics::livewire.dashboard.partials.marketing-ad-form')
-    </div>
+    @include('analytics::livewire.dashboard.partials.marketing-ad-form')
 
 </x-analytics::root>

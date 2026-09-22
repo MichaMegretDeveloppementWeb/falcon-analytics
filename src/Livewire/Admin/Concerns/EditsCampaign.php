@@ -13,8 +13,8 @@ use Throwable;
  * Shared campaign-editing form (name, platform and URL conditions) used by both
  * the campaigns list and the campaign detail screens, so a campaign can be
  * created or edited from either place with identical behaviour. The host
- * component owns the `$modal` state and tells the trait which campaign is
- * being saved.
+ * component tells the trait which campaign is being saved; the modal is the
+ * kit's, and opens and closes on this form's answers.
  *
  * @internal
  */
@@ -45,11 +45,13 @@ trait EditsCampaign
     protected function blankCampaignForm(): void
     {
         $this->resetCampaignForm();
+        $this->resetValidation();
         $this->campaignConditions = [['param' => '', 'value' => '']];
     }
 
     protected function fillCampaignForm(Campaign $campaign): void
     {
+        $this->resetValidation();
         $this->campaignId = $campaign->id;
         $this->campaignName = $campaign->name;
         $this->campaignPlatform = (string) $campaign->platform;
@@ -73,7 +75,8 @@ trait EditsCampaign
         unset($this->campaignConditions[$index]);
     }
 
-    public function saveCampaign(SaveCampaignAction $action): void
+    /** Whether the campaign was saved · the modal closes on a yes, and only then. */
+    public function saveCampaign(SaveCampaignAction $action): bool
     {
         $this->validate([
             'campaignName' => ['required', 'string', 'max:150'],
@@ -113,15 +116,15 @@ trait EditsCampaign
             ]);
             $this->dispatch('ui-toast', type: 'danger', title: __('L\'enregistrement de la campagne a échoué. Réessayez.'));
 
-            return;
+            return false;
         }
 
-        // The modal only closes; the form is repopulated on the next open
-        // (newCampaign / editCampaign). Resetting the form arrays here would
-        // remove their wire:model rows during the same morph and break Alpine's
-        // pending model-update flush.
-        $this->modal = '';
+        // The form is repopulated on the next open (newCampaign / editCampaign).
+        // Resetting the form arrays here would remove their wire:model rows
+        // during the same morph and break Alpine's pending model-update flush.
         $this->afterCampaignSaved();
+
+        return true;
     }
 
     protected function afterCampaignSaved(): void {}

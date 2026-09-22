@@ -32,9 +32,6 @@ final class CampaignDetailPage extends DashboardComponent
 
     public Campaign $campaign;
 
-    /** '' | campaign | ad | delete-campaign | delete-ad */
-    public string $modal = '';
-
     public ?int $deleteAdId = null;
 
     public string $deleteAdLabel = '';
@@ -66,10 +63,12 @@ final class CampaignDetailPage extends DashboardComponent
         return $this->campaign->id;
     }
 
-    public function editCampaign(): void
+    /** Reads the campaign into the form · the modal opens on the answer. */
+    public function editCampaign(): bool
     {
         $this->fillCampaignForm($this->campaign);
-        $this->modal = 'campaign';
+
+        return true;
     }
 
     protected function afterCampaignSaved(): void
@@ -77,12 +76,8 @@ final class CampaignDetailPage extends DashboardComponent
         $this->campaign->refresh();
     }
 
-    public function confirmDeleteCampaign(): void
-    {
-        $this->modal = 'delete-campaign';
-    }
-
-    public function deleteCampaignConfirmed(DeleteCampaignAction $action): void
+    /** Whether the campaign was deleted · on a yes the page leads back to the list. */
+    public function deleteCampaignConfirmed(DeleteCampaignAction $action): bool
     {
         try {
             $action->execute($this->campaign->id);
@@ -93,19 +88,24 @@ final class CampaignDetailPage extends DashboardComponent
             ]);
             $this->dispatch('ui-toast', type: 'danger', title: __('La suppression de la campagne a échoué. Réessayez.'));
 
-            return;
+            return false;
         }
 
         $this->redirect(route('analytics.admin.marketing.campaigns'));
+
+        return true;
     }
 
-    public function newAd(): void
+    /** Opens a blank ad form · the modal opens on the answer. */
+    public function newAd(): bool
     {
         $this->blankAdForm();
-        $this->modal = 'ad';
+
+        return true;
     }
 
-    public function editAd(int $id, FunnelRegistry $funnels, EventRegistry $events): void
+    /** Whether the ad could be read into the form · the modal opens on a yes. */
+    public function editAd(int $id, FunnelRegistry $funnels, EventRegistry $events): bool
     {
         try {
             $ad = Ad::with('objectives')->where('campaign_id', $this->campaign->id)->findOrFail($id);
@@ -116,43 +116,51 @@ final class CampaignDetailPage extends DashboardComponent
             ]);
             $this->dispatch('ui-toast', type: 'danger', title: __('Cette pub est introuvable. Actualisez la page.'));
 
-            return;
+            return false;
         }
 
         $this->fillAdForm($ad, $funnels, $events);
-        $this->modal = 'ad';
+
+        return true;
     }
 
-    public function confirmDeleteAd(int $id): void
+    /** Whether there is an ad of this campaign to ask about · the confirmation opens on a yes. */
+    public function confirmDeleteAd(int $id): bool
     {
-        $this->deleteAdId = $id;
-        $this->deleteAdLabel = (string) Ad::query()->whereKey($id)->value('name');
-        $this->modal = 'delete-ad';
-    }
+        $name = Ad::query()->where('campaign_id', $this->campaign->id)->whereKey($id)->value('name');
 
-    public function deleteAdConfirmed(DeleteAdAction $action): void
-    {
-        if ($this->deleteAdId !== null) {
-            try {
-                $action->execute($this->deleteAdId, $this->campaign->id);
-            } catch (Throwable $e) {
-                Log::channel(config('analytics.log_channel'))->error('Ad.delete_failed', [
-                    'ad_id' => $this->deleteAdId,
-                    'exception' => $e,
-                ]);
-                $this->dispatch('ui-toast', type: 'danger', title: __('La suppression de la pub a échoué. Réessayez.'));
+        if (! is_string($name)) {
+            $this->dispatch('ui-toast', type: 'danger', title: __('Cette pub est introuvable. Actualisez la page.'));
 
-                return;
-            }
+            return false;
         }
 
-        $this->closeModal();
+        $this->deleteAdId = $id;
+        $this->deleteAdLabel = $name;
+
+        return true;
     }
 
-    public function closeModal(): void
+    /** Whether the ad was deleted · the confirmation closes on a yes. */
+    public function deleteAdConfirmed(DeleteAdAction $action): bool
     {
-        $this->modal = '';
-        $this->resetValidation();
+        if ($this->deleteAdId === null) {
+            return false;
+        }
+
+        try {
+            $action->execute($this->deleteAdId, $this->campaign->id);
+        } catch (Throwable $e) {
+            Log::channel(config('analytics.log_channel'))->error('Ad.delete_failed', [
+                'ad_id' => $this->deleteAdId,
+                'exception' => $e,
+            ]);
+            $this->dispatch('ui-toast', type: 'danger', title: __('La suppression de la pub a échoué. Réessayez.'));
+
+            return false;
+        }
+
+        return true;
     }
 
     /**

@@ -23,9 +23,6 @@ final class AdDetailPage extends DashboardComponent
 
     public Ad $ad;
 
-    /** '' | ad */
-    public string $modal = '';
-
     public function mount(Ad $ad): void
     {
         $this->ad = $ad->load(['campaign', 'objectives']);
@@ -36,16 +33,12 @@ final class AdDetailPage extends DashboardComponent
         return $this->ad->campaign_id;
     }
 
-    public function editAd(FunnelRegistry $funnels, EventRegistry $events): void
+    /** Reads the ad into the form · the modal opens on the answer. */
+    public function editAd(FunnelRegistry $funnels, EventRegistry $events): bool
     {
         $this->fillAdForm($this->ad, $funnels, $events);
-        $this->modal = 'ad';
-    }
 
-    public function closeModal(): void
-    {
-        $this->modal = '';
-        $this->resetValidation();
+        return true;
     }
 
     protected function afterAdSaved(): void

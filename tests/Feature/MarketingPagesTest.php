@@ -106,19 +106,62 @@ final class MarketingPagesTest extends TestCase
             ->assertSeeText(__('Performance'));
     }
 
+    /** Each window is a dialog the keyboard enters, named by its title for a screen reader. */
+    public function test_each_marketing_screen_carries_its_windows_as_the_kits_dialogs(): void
+    {
+        $campaign = $this->campaign('Été 2026');
+        $ad = Ad::create(['campaign_id' => $campaign->id, 'name' => 'Cabriolet', 'match_conditions' => [['param' => 'creative', 'value' => 'cabrio']]]);
+
+        $this->actingAs($this->admin, 'admin');
+
+        $screens = [
+            'the campaigns' => [route('analytics.admin.marketing.campaigns'), ['an-campaign-form', 'an-campaign-delete']],
+            'a campaign' => [route('analytics.admin.marketing.campaigns.show', $campaign), ['an-campaign-form', 'an-campaign-delete', 'an-ad-form', 'an-ad-delete']],
+            'an ad' => [route('analytics.admin.marketing.ads.show', $ad), ['an-ad-form']],
+        ];
+
+        foreach ($screens as $screen => [$url, $dialogs]) {
+            $page = (string) $this->get($url)->assertSuccessful()->getContent();
+
+            foreach ($dialogs as $dialog) {
+                $this->assertMatchesRegularExpression(
+                    '/role="dialog"[^>]*aria-labelledby="ui-modal-'.$dialog.'-title"/',
+                    $page,
+                    "{$screen} does not carry {$dialog} as the kit's dialog.",
+                );
+            }
+        }
+    }
+
+    /** Both objective lists of the ad form close on the escape key, and say whether they are open. */
+    public function test_the_objective_lists_close_on_escape_and_say_whether_they_are_open(): void
+    {
+        $campaign = $this->campaign();
+        $ad = Ad::create(['campaign_id' => $campaign->id, 'name' => 'Cabriolet', 'match_conditions' => [['param' => 'creative', 'value' => 'cabrio']]]);
+
+        $this->actingAs($this->admin, 'admin');
+
+        $page = (string) $this->get(route('analytics.admin.marketing.ads.show', $ad))->assertSuccessful()->getContent();
+
+        $this->assertSame(2, substr_count($page, 'x-data="anObjectivePicker"'), 'The ad form no longer draws its two lists.');
+        $this->assertSame(2, substr_count($page, 'x-on:keydown.escape="closeOnEscape($event)"'));
+        $this->assertSame(2, substr_count($page, 'x-bind:aria-expanded="open"'));
+    }
+
     public function test_it_creates_a_campaign_from_the_campaigns_table(): void
     {
         $this->actingAs($this->admin, 'admin');
 
         Livewire::test(CampaignsPage::class)
             ->call('newCampaign')
+            ->assertReturned(true)
             ->set('campaignName', 'Hiver 2026')
             ->set('campaignPlatform', 'Google')
             ->set('campaignConditions.0.param', 'utm_campaign')
             ->set('campaignConditions.0.value', 'hiver')
             ->call('saveCampaign')
             ->assertHasNoErrors()
-            ->assertSet('modal', '');
+            ->assertReturned(true);
 
         $this->assertSame(
             [['param' => 'utm_campaign', 'value' => 'hiver']],
@@ -133,7 +176,7 @@ final class MarketingPagesTest extends TestCase
 
         Livewire::test(CampaignDetailPage::class, ['campaign' => $campaign])
             ->call('editCampaign')
-            ->assertSet('modal', 'campaign')
+            ->assertReturned(true)
             ->assertSet('campaignName', 'Été')
             ->assertSet('campaignConditions', [['param' => 'src', 'value' => 'meta_ete']])
             ->set('campaignName', 'Été 2027')
@@ -142,7 +185,7 @@ final class MarketingPagesTest extends TestCase
             ->set('campaignConditions.1.value', 'cabrio')
             ->call('saveCampaign')
             ->assertHasNoErrors()
-            ->assertSet('modal', '');
+            ->assertReturned(true);
 
         $fresh = $campaign->fresh();
 
@@ -161,6 +204,7 @@ final class MarketingPagesTest extends TestCase
 
         Livewire::test(CampaignDetailPage::class, ['campaign' => $campaign])
             ->call('newAd')
+            ->assertReturned(true)
             ->set('adName', 'Cabriolet')
             ->set('adConditions.0.param', 'creative')
             ->set('adConditions.0.value', 'cabrio')
@@ -168,7 +212,7 @@ final class MarketingPagesTest extends TestCase
             ->call('addObjective', 'event', 'Lead', 'Demande de code', 3.0)
             ->call('saveAd')
             ->assertHasNoErrors()
-            ->assertSet('modal', '');
+            ->assertReturned(true);
 
         $ad = Ad::where('name', 'Cabriolet')->firstOrFail();
 
@@ -184,12 +228,12 @@ final class MarketingPagesTest extends TestCase
 
         Livewire::test(AdDetailPage::class, ['ad' => $ad])
             ->call('editAd')
-            ->assertSet('modal', 'ad')
+            ->assertReturned(true)
             ->set('adName', 'Cabriolet décapotable')
             ->call('addObjective', 'event', 'Lead', 'Lead', 2.0)
             ->call('saveAd')
             ->assertHasNoErrors()
-            ->assertSet('modal', '');
+            ->assertReturned(true);
 
         $fresh = $ad->fresh();
 
@@ -239,12 +283,31 @@ final class MarketingPagesTest extends TestCase
 
         Livewire::test(CampaignsPage::class)
             ->call('confirmDelete', $campaign->id)
-            ->call('deleteConfirmed');
+            ->assertReturned(true)
+            ->assertSet('deleteLabel', 'Été')
+            ->call('deleteConfirmed')
+            ->assertReturned(true);
 
         $this->assertFalse(Campaign::whereKey($campaign->id)->exists());
         $this->assertSame(0, Ad::count());
         $this->assertSame(0, AdObjective::count());
         $this->assertTrue(Campaign::whereKey($other->id)->exists());
+    }
+
+    public function test_it_deletes_an_ad_from_its_campaign_after_the_confirmation(): void
+    {
+        $campaign = $this->campaign('Été', null, 'meta_ete');
+        $ad = Ad::create(['campaign_id' => $campaign->id, 'name' => 'Cabrio', 'match_conditions' => [['param' => 'creative', 'value' => 'cabrio']]]);
+        $this->actingAs($this->admin, 'admin');
+
+        Livewire::test(CampaignDetailPage::class, ['campaign' => $campaign])
+            ->call('confirmDeleteAd', $ad->id)
+            ->assertReturned(true)
+            ->assertSet('deleteAdLabel', 'Cabrio')
+            ->call('deleteAdConfirmed')
+            ->assertReturned(true);
+
+        $this->assertFalse(Ad::whereKey($ad->id)->exists());
     }
 
     public function test_it_rejects_forged_objective_types_before_they_reach_the_database(): void
@@ -277,6 +340,8 @@ final class MarketingPagesTest extends TestCase
             ->set('adConditions.0.value', '')
             ->call('saveAd')
             ->assertHasErrors(['adConditions.0.param', 'adConditions.0.value'])
+            // Not a yes, so the modal stays in front of whoever fills it.
+            ->assertReturned(fn (mixed $answer): bool => $answer !== true)
             ->assertSeeText(__('Le paramètre est obligatoire.'));
 
         Livewire::test(CampaignsPage::class)
@@ -286,6 +351,7 @@ final class MarketingPagesTest extends TestCase
             ->set('campaignConditions.0.value', 'x')
             ->call('saveCampaign')
             ->assertHasErrors(['campaignConditions.0.param'])
+            ->assertReturned(fn (mixed $answer): bool => $answer !== true)
             ->assertSeeText(__('Le paramètre est obligatoire.'));
     }
 
@@ -294,14 +360,26 @@ final class MarketingPagesTest extends TestCase
         $campaign = $this->campaign('Ete', null, 'meta_ete');
         $this->actingAs($this->admin, 'admin');
 
+        // Strictly false: `assertReturned(false)` would also take a null, which
+        // is what a method that answers nothing leaves behind.
         Livewire::test(CampaignsPage::class)
             ->call('editCampaign', 999_999)
             ->assertDispatched('ui-toast', type: 'danger')
-            ->assertSet('modal', '');
+            ->assertReturned(fn (mixed $answer): bool => $answer === false);
 
         Livewire::test(CampaignDetailPage::class, ['campaign' => $campaign])
             ->call('editAd', 999_999)
             ->assertDispatched('ui-toast', type: 'danger')
-            ->assertSet('modal', '');
+            ->assertReturned(fn (mixed $answer): bool => $answer === false);
+
+        Livewire::test(CampaignsPage::class)
+            ->call('confirmDelete', 999_999)
+            ->assertDispatched('ui-toast', type: 'danger')
+            ->assertReturned(fn (mixed $answer): bool => $answer === false);
+
+        Livewire::test(CampaignDetailPage::class, ['campaign' => $campaign])
+            ->call('confirmDeleteAd', 999_999)
+            ->assertDispatched('ui-toast', type: 'danger')
+            ->assertReturned(fn (mixed $answer): bool => $answer === false);
     }
 }
