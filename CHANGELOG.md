@@ -138,7 +138,8 @@ redescendre · voir [mise-a-jour.md](docs/mise-a-jour.md#le-schéma-qui-est-la-v
 
 ### Ce qu'il exige
 
-PHP 8.5, Laravel 13, Livewire 4.2, et une base **MySQL ou MariaDB**.
+PHP 8.5 avec l'extension **intl**, Laravel 13, Livewire 4.2, et une base
+**MySQL ou MariaDB**.
 `falcon/ui-kit` vient avec le paquet.
 
 Les visites sont mesurées sur **tout navigateur sorti depuis 2018** · Chrome 39,

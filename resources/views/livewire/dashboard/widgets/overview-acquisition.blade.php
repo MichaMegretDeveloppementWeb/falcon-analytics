@@ -1,5 +1,6 @@
 @php
     use Falcon\Analytics\Support\ChartPalette;
+    use Falcon\Analytics\Support\NumberLabel;
     use Falcon\Analytics\Support\SourceLabel;
 
     $sourcesTotal = array_sum(array_column($topSources, 'total'));
@@ -24,7 +25,7 @@
                             :labels="collect($topSources)->map(fn ($s) => SourceLabel::for($s['label']))->all()"
                             :values="array_column($topSources, 'total')"
                             :colors="array_slice($sourcePalette, 0, count($topSources))"
-                            :total="number_format($sourcesTotal, 0, ',', ' ')"
+                            :total="NumberLabel::for($sourcesTotal)"
                             :caption="__('sessions')" />
                     </div>
                     <dl class="an:grid an:min-w-0 an:max-w-[19rem] an:flex-1 an:grid-cols-[minmax(0,1fr)_auto] an:items-center an:gap-x-5 an:gap-y-2.5">
@@ -35,7 +36,7 @@
                             </dt>
                             <dd class="an:flex an:shrink-0 an:items-center an:gap-2">
                                 @include('analytics::livewire.dashboard.partials.delta', ['current' => $item['total'], 'previous' => $item['previous']])
-                                <span class="an:w-8 an:text-right an:text-[13px] an:font-semibold an:tabular-nums an:text-primary">{{ number_format($item['total'], 0, ',', ' ') }}</span>
+                                <span class="an:w-8 an:text-right an:text-[13px] an:font-semibold an:tabular-nums an:text-primary">{{ NumberLabel::for($item['total']) }}</span>
                             </dd>
                         @endforeach
                     </dl>
@@ -53,7 +54,7 @@
                     it this block opened on a list with nothing to catch the eye: it is the
                     contrast in size that makes the hierarchy, and no area stood out.
                 --}}
-                <p class="an:text-2xl an:font-semibold an:tracking-tight an:text-primary">{{ number_format($localitiesTotal, 0, ',', ' ') }}</p>
+                <p class="an:text-2xl an:font-semibold an:tracking-tight an:text-primary">{{ NumberLabel::for($localitiesTotal) }}</p>
                 <p class="an:mb-4 an:text-[11px] an:uppercase an:tracking-wider an:text-muted">{{ __('sessions localisées') }}</p>
 
                 <dl class="an:grid an:max-w-[22rem] an:grid-cols-[minmax(0,1fr)_auto] an:items-center an:gap-x-5 an:gap-y-2.5">
@@ -63,7 +64,7 @@
                         </dt>
                         <dd class="an:flex an:shrink-0 an:items-center an:gap-2">
                             @include('analytics::livewire.dashboard.partials.delta', ['current' => $item['total'], 'previous' => $item['previous']])
-                            <span class="an:w-8 an:text-right an:text-[13px] an:font-semibold an:tabular-nums an:text-primary">{{ number_format($item['total'], 0, ',', ' ') }}</span>
+                            <span class="an:w-8 an:text-right an:text-[13px] an:font-semibold an:tabular-nums an:text-primary">{{ NumberLabel::for($item['total']) }}</span>
                         </dd>
                     @endforeach
                 </dl>

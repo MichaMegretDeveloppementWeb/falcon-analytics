@@ -1,5 +1,6 @@
 import { anAreaChart } from './admin/components/area-chart.js';
 import { anCopyButton } from './admin/components/copy-button.js';
+import { anCopyList } from './admin/components/copy-list.js';
 import { anDonut } from './admin/components/donut.js';
 import { anLiveDonut } from './admin/components/live-donut.js';
 import { anLiveLine } from './admin/components/live-line.js';
@@ -15,6 +16,7 @@ import { anCloseWhenDone, anOpenWhenDone } from './admin/modal-actions.js';
 const components = {
     anAreaChart,
     anCopyButton,
+    anCopyList,
     anDonut,
     anLiveDonut,
     anLiveLine,

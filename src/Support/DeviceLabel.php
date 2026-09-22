@@ -7,8 +7,9 @@ namespace Falcon\Analytics\Support;
 use Illuminate\Support\Str;
 
 /**
- * Human, translated label for a device type, shared by every screen so the same
- * device never reads "Ordinateur" on one and "Desktop" on another.
+ * The device a session was opened on, named and drawn the same way on every
+ * screen · from the names the user-agent library records, which call a phone
+ * `smartphone`.
  *
  * @internal
  */
@@ -16,18 +17,44 @@ final class DeviceLabel
 {
     public static function for(?string $type): string
     {
-        // Normalised once, and it is that value the last case uses: an absent
-        // type then falls on the empty case, and the default can no longer
-        // receive null. `Str::title` gives the same label either way, its
-        // conversion already going through a lowercasing.
-        $normalised = $type !== null ? strtolower($type) : '';
+        $normalised = self::normalised($type);
 
         return match ($normalised) {
             'desktop' => __('Ordinateur'),
-            'mobile' => __('Mobile'),
+            'smartphone', 'mobile' => __('Mobile'),
+            'feature phone' => __('Téléphone simple'),
+            'phablet' => __('Phablette'),
             'tablet' => __('Tablette'),
+            'tv' => __('Télévision'),
+            'smart display' => __('Écran connecté'),
+            'camera' => __('Appareil photo'),
+            'smart speaker' => __('Enceinte connectée'),
+            'console' => __('Console'),
+            'car browser' => __('Voiture'),
+            'portable media player' => __('Baladeur'),
+            'wearable' => __('Objet connecté'),
+            'peripheral' => __('Périphérique'),
             '' => __('Inconnu'),
             default => Str::title($normalised),
         };
+    }
+
+    /** The drawing of the device · a question mark when there is none for it. */
+    public static function icon(?string $type): string
+    {
+        return match (self::normalised($type)) {
+            'desktop' => 'computer-desktop',
+            'smartphone', 'mobile', 'feature phone', 'phablet' => 'device-phone-mobile',
+            'tablet' => 'device-tablet',
+            'tv', 'smart display' => 'tv',
+            'camera' => 'camera',
+            'smart speaker' => 'speaker-wave',
+            default => 'question-mark-circle',
+        };
+    }
+
+    private static function normalised(?string $type): string
+    {
+        return $type !== null ? strtolower($type) : '';
     }
 }

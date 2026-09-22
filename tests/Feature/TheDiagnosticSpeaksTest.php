@@ -438,7 +438,15 @@ final class TheDiagnosticSpeaksTest extends TestCase
         config(['analytics.marketing.max_sessions' => 50000]);
 
         $this->artisan('analytics:check')
-            ->expectsOutputToContain('50 000')
+            ->expectsOutputToContain("50\u{202F}000")
+            ->assertSuccessful();
+    }
+
+    /** The screens write their numbers through intl, which the package requires and the diagnostic reads again. */
+    public function test_it_says_the_intl_extension_is_there(): void
+    {
+        $this->artisan('analytics:check')
+            ->expectsOutputToContain('Extension intl')
             ->assertSuccessful();
     }
 

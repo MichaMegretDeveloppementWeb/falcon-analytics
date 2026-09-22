@@ -8,7 +8,7 @@ Une commande, puis trois choses à écrire vous-même. Comptez un quart d'heure.
 
 | | |
 |---|---|
-| **PHP** | 8.5 ou plus |
+| **PHP** | 8.5 ou plus, avec l'extension **intl** · les écrans écrivent leurs nombres dans la langue du site. Composer refuse d'installer sans elle, et `analytics:check` la relit |
 | **Laravel** | 13 |
 | **Livewire** | 4.2 ou plus · dépendance partagée, jamais embarquée |
 | **Une base** | **MySQL ou MariaDB**, et rien d'autre · le paquet crée dix tables préfixées `falcon_analytics_`, dont huit portent vos mesures |
@@ -327,8 +327,8 @@ portée de ce qui réagit. **Aucun des deux ne couvre l'autre** · un
 `analytics:check` vert ne dit rien de ce que le second vérifie, et c'est lui qui
 nomme la ligne manquante.
 
-Le premier rend un tableau de **seize points** et s'arrête en échec s'il en trouve un
-bloquant · le moteur de la base, les migrations passées, l'interrupteur général,
+Le premier rend un tableau de **dix-sept points** et s'arrête en échec s'il en trouve un
+bloquant · le moteur de la base, l'extension intl, les migrations passées, l'interrupteur général,
 la directive posée dans vos vues, le point de collecte joignable, la session
 qu'il ouvre, le middleware des écrans, le gabarit que vous avez nommé, la
 feuille publiée à jour, l'identité, les fichiers de déclarations lus en entier,

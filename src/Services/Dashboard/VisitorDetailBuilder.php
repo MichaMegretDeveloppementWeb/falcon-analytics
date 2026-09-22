@@ -7,16 +7,20 @@ namespace Falcon\Analytics\Services\Dashboard;
 use Falcon\Analytics\DTOs\Dashboard\Visitor\DeviceShare;
 use Falcon\Analytics\DTOs\Dashboard\Visitor\SourceShare;
 use Falcon\Analytics\DTOs\Dashboard\Visitor\VisitorDetail;
+use Falcon\Analytics\DTOs\Dashboard\Visitor\VisitorSessionRow;
+use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Services\SubjectResolver;
 use Falcon\Analytics\Support\ChartPalette;
 use Falcon\Analytics\Support\DeviceLabel;
 use Falcon\Analytics\Support\DurationLabel;
+use Falcon\Analytics\Support\NumberLabel;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 /**
- * Prepares the detail screen of a visitor from the visitor and the aggregates
- * of their sessions, already read · the view receives values, and reads
- * nothing.
+ * Prepares the detail screen of a visitor from the visitor, the aggregates of
+ * their sessions and a page of them, already read · the view receives values,
+ * and reads nothing.
  *
  * @internal
  */
@@ -43,11 +47,32 @@ final readonly class VisitorDetailBuilder
             sessionCount: $visitor->session_count,
             pageviewCount: $engagement['pageviews'],
             averageDuration: DurationLabel::for($sessions > 0 ? (int) round($engagement['seconds'] / $sessions) : 0),
-            pagesPerSession: number_format($sessions > 0 ? round($engagement['pageviews'] / $sessions, 1) : 0.0, 1, ',', ' '),
+            pagesPerSession: NumberLabel::for($sessions > 0 ? $engagement['pageviews'] / $sessions : 0, 1),
             deviceSessions: array_sum($engagement['devices']),
             devices: self::devices($engagement['devices']),
             sources: self::sources($engagement['sources']),
         );
+    }
+
+    /**
+     * The lines of the visitor's sessions, from a page of them already read.
+     *
+     * @param  LengthAwarePaginator<int, Session>  $sessions
+     * @return LengthAwarePaginator<int, VisitorSessionRow>
+     */
+    public function sessions(LengthAwarePaginator $sessions): LengthAwarePaginator
+    {
+        return $sessions->through(static fn (Session $session): VisitorSessionRow => new VisitorSessionRow(
+            id: $session->id,
+            startedAt: $session->started_at,
+            signedIn: filled($session->subject_type),
+            duration: DurationLabel::for((int) $session->started_at->diffInSeconds($session->last_activity_at)),
+            pageviewCount: $session->pageview_count,
+            device: DeviceLabel::for($session->device_type),
+            source: $session->source,
+            country: $session->country,
+            city: $session->city,
+        ));
     }
 
     /**
@@ -63,9 +88,10 @@ final readonly class VisitorDetailBuilder
             return [__('Visiteur #:id', ['id' => $visitor->id]), __('Visiteur anonyme')];
         }
 
-        $label = $this->subjects->label($type);
+        $id = (int) $visitor->subject_id;
+        $subject = $this->subjects->shownNames([[$type, $id]])[$type.':'.$id];
 
-        return [$this->subjects->name($type, (int) $visitor->subject_id) ?? $label.' #'.$visitor->subject_id, $label];
+        return [$subject->name, $subject->label];
     }
 
     private static function isIdentified(Visitor $visitor): bool

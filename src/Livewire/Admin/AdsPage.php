@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Livewire\Admin;
 
-use Falcon\Analytics\Events\EventRegistry;
-use Falcon\Analytics\Funnels\FunnelRegistry;
+use Falcon\Analytics\DTOs\Dashboard\Marketing\AdRow;
 use Falcon\Analytics\Livewire\Admin\Concerns\RecoversFromReadFailure;
 use Falcon\Analytics\Models\Ad;
+use Falcon\Analytics\Services\Dashboard\ObjectiveLabels;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Component;
@@ -33,12 +33,12 @@ final class AdsPage extends Component
         $this->resetPage();
     }
 
-    public function render(FunnelRegistry $funnels, EventRegistry $events): View
+    public function render(ObjectiveLabels $objectives): View
     {
         return $this->guardedRender(
-            function () use ($funnels, $events): array {
+            function () use ($objectives): array {
                 $ads = Ad::query()
-                    ->with(['campaign', 'objectives'])
+                    ->with(['campaign:id,name', 'objectives:id,ad_id,type,reference'])
                     ->when($this->search !== '', function (Builder $query): void {
                         $term = '%'.$this->search.'%';
                         $query->where('name', 'like', $term)
@@ -50,17 +50,8 @@ final class AdsPage extends Component
                     ->orderBy('id')
                     ->paginate(self::PER_PAGE);
 
-                $labels = [];
-                foreach ($funnels->all() as $funnel) {
-                    $labels['funnel:'.$funnel->key] = $funnel->label;
-                }
-                foreach ($events->all() as $event) {
-                    $labels['event:'.$event->name] = $event->label;
-                }
-
                 return [
-                    'ads' => $ads,
-                    'objectiveLabels' => $labels,
+                    'ads' => $ads->through(fn (Ad $ad): AdRow => AdRow::of($ad, $ad->campaign->name, $objectives->tagsOf($ad->objectives))),
                     'total' => Ad::query()->count(),
                 ];
             },

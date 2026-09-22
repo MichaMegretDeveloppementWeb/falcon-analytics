@@ -42,7 +42,7 @@ final class AdDetailContent extends Component
     public function render(FunnelRegistry $funnels, EventRegistry $events, MarketingReportBuilder $marketing, MarketingMetricsCalculator $metrics): View
     {
         return $this->guardedWidget(function () use ($funnels, $events, $marketing, $metrics): array {
-            $ad = Ad::query()->findOrFail($this->refId);
+            $ad = Ad::query()->with('objectives')->findOrFail($this->refId);
             $period = Period::ofDays($this->period);
             $subjectType = $this->subject !== '' ? $this->subject : null;
 

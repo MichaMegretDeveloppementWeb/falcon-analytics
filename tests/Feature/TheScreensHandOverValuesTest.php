@@ -11,9 +11,14 @@ use Falcon\Analytics\DTOs\Dashboard\Session\SessionDetail;
 use Falcon\Analytics\DTOs\Dashboard\Visitor\VisitorDetail;
 use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Livewire\Admin\AdDetailPage;
+use Falcon\Analytics\Livewire\Admin\AdsPage;
 use Falcon\Analytics\Livewire\Admin\CampaignDetailPage;
+use Falcon\Analytics\Livewire\Admin\CampaignsPage;
+use Falcon\Analytics\Livewire\Admin\RealtimePage;
 use Falcon\Analytics\Livewire\Admin\SessionDetailPage;
+use Falcon\Analytics\Livewire\Admin\SessionsPage;
 use Falcon\Analytics\Livewire\Admin\VisitorDetailPage;
+use Falcon\Analytics\Livewire\Admin\VisitorsPage;
 use Falcon\Analytics\Models\Ad;
 use Falcon\Analytics\Models\Campaign;
 use Falcon\Analytics\Models\Event;
@@ -27,7 +32,9 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
+use Livewire\Component;
 use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
+use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 use PHPUnit\Framework\Attributes\DataProvider;
 use ReflectionClass;
@@ -36,14 +43,15 @@ use ReflectionProperty;
 use Symfony\Component\Finder\Finder;
 
 /**
- * A detail screen hands its view values prepared for it, never a record.
+ * A screen hands its view values prepared for it, never a record · a detail
+ * page its fiche, a list one row per line.
  *
  * A record reaching a view lets the view read whatever it likes, relations
  * included, and each of those reads is a query the screen never planned · the
  * record a screen keeps between two clicks is read back bare, so every relation
  * the view touches is read again on every click.
  */
-final class TheDetailScreensHandOverValuesTest extends TestCase
+final class TheScreensHandOverValuesTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -89,15 +97,54 @@ final class TheDetailScreensHandOverValuesTest extends TestCase
         return ['a session' => ['session'], 'a visitor' => ['visitor'], 'a campaign' => ['campaign'], 'an ad' => ['ad']];
     }
 
-    /**
-     * Nothing handed to the view is a record, on the first render and after a
-     * click · except the rows a detail screen lists, which are a list's.
-     */
+    /** Nothing handed to the view is a record, on the first render and after a click, the rows it lists included. */
     #[DataProvider('screens')]
     public function test_a_detail_view_receives_no_record(string $screen): void
     {
-        [$component, $parameters, $view, $listed, $fiche] = $this->screen($screen);
+        [$component, $parameters, $view, $fiche] = $this->screen($screen);
 
+        $page = $this->renderedTwice($component, $parameters, $view);
+
+        $this->assertInstanceOf($fiche, $page->viewData('detail'));
+    }
+
+    /** @return array<string, array{class-string, string}> */
+    public static function lists(): array
+    {
+        return [
+            'the sessions' => [SessionsPage::class, 'analytics::livewire.dashboard.sessions'],
+            'the visitors' => [VisitorsPage::class, 'analytics::livewire.dashboard.visitors'],
+            'the realtime board' => [RealtimePage::class, 'analytics::livewire.dashboard.realtime'],
+            'the campaigns' => [CampaignsPage::class, 'analytics::livewire.dashboard.marketing-campaigns'],
+            'the ads' => [AdsPage::class, 'analytics::livewire.dashboard.marketing-ads'],
+        ];
+    }
+
+    /**
+     * A list hands its view one prepared row per line · a record would let the
+     * row read what it likes, once per line.
+     *
+     * @param  class-string  $component
+     */
+    #[DataProvider('lists')]
+    public function test_a_list_view_receives_no_record(string $component, string $view): void
+    {
+        $this->aSession();
+        $this->anAd();
+
+        $this->renderedTwice($component, [], $view);
+    }
+
+    /**
+     * Renders the screen, then clicks it once, and says whether either render
+     * handed its view a record.
+     *
+     * @param  class-string  $component
+     * @param  array<string, mixed>  $parameters
+     * @return Testable<Component>
+     */
+    private function renderedTwice(string $component, array $parameters, string $view): Testable
+    {
         $handed = [];
         View::composer($view, function ($rendered) use (&$handed): void {
             $handed[] = $rendered->getData();
@@ -107,11 +154,12 @@ final class TheDetailScreensHandOverValuesTest extends TestCase
         $page->call('$refresh');
 
         $this->assertCount(2, $handed, 'The view was not rendered twice: the sweep below would hold on nothing.');
-        $this->assertInstanceOf($fiche, $page->viewData('detail'));
 
         foreach ($handed as $render => $data) {
-            $this->assertSame([], $this->recordsIn(array_diff_key($data, array_flip($listed)), ''), "Render {$render} handed a record to its view.");
+            $this->assertSame([], $this->recordsIn($data, ''), "Render {$render} handed a record to its view.");
         }
+
+        return $page;
     }
 
     /** The number the screen keeps cannot be changed from the browser. */
@@ -127,18 +175,17 @@ final class TheDetailScreensHandOverValuesTest extends TestCase
     }
 
     /**
-     * The component, its mount parameters, its view, the keys it lists, and the
-     * fiche it hands over.
+     * The component, its mount parameters, its view, and the fiche it hands over.
      *
-     * @return array{class-string, array<string, Model>, string, list<string>, class-string}
+     * @return array{class-string, array<string, Model>, string, class-string}
      */
     private function screen(string $screen): array
     {
         return match ($screen) {
-            'session' => [SessionDetailPage::class, ['session' => $this->aSession()], 'analytics::livewire.dashboard.session-detail', [], SessionDetail::class],
-            'visitor' => [VisitorDetailPage::class, ['visitor' => $this->aSession()->visitor()->firstOrFail()], 'analytics::livewire.dashboard.visitor-detail', ['sessions'], VisitorDetail::class],
-            'campaign' => [CampaignDetailPage::class, ['campaign' => $this->anAd()->campaign()->firstOrFail()], 'analytics::livewire.dashboard.marketing-campaign-detail', ['ads'], CampaignDetail::class],
-            'ad' => [AdDetailPage::class, ['ad' => $this->anAd()], 'analytics::livewire.dashboard.marketing-ad-detail', [], AdDetail::class],
+            'session' => [SessionDetailPage::class, ['session' => $this->aSession()], 'analytics::livewire.dashboard.session-detail', SessionDetail::class],
+            'visitor' => [VisitorDetailPage::class, ['visitor' => $this->aSession()->visitor()->firstOrFail()], 'analytics::livewire.dashboard.visitor-detail', VisitorDetail::class],
+            'campaign' => [CampaignDetailPage::class, ['campaign' => $this->anAd()->campaign()->firstOrFail()], 'analytics::livewire.dashboard.marketing-campaign-detail', CampaignDetail::class],
+            'ad' => [AdDetailPage::class, ['ad' => $this->anAd()], 'analytics::livewire.dashboard.marketing-ad-detail', AdDetail::class],
             default => $this->fail("No screen named {$screen}."),
         };
     }

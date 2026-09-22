@@ -137,6 +137,7 @@ final class AnalyticsServiceProvider extends ServiceProvider
             'analytics::components.page-url',
             'analytics::components.country',
             'analytics::components.condition-chip',
+            'analytics::components.row-uuid',
         );
 
         /*

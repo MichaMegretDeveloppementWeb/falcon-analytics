@@ -202,7 +202,7 @@ réellement — pas un motif qui pourrait attraper une des vôtres.
 php artisan analytics:check
 ```
 
-Seize contrôles, tous sur des défauts qui échouent en silence. **Il doit dire
+Dix-sept contrôles, tous sur des défauts qui échouent en silence. **Il doit dire
 « Installation valide ».** S'il rend un point bloquant, il nomme ce qui manque
 et la commande qui le pose.
 

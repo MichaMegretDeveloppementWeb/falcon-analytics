@@ -8,8 +8,8 @@ use Falcon\Analytics\DTOs\Dashboard\Period;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Repositories\Concerns\ScopesSessionQueries;
 use Falcon\Analytics\Services\SubjectResolver;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Log;
 
 /**

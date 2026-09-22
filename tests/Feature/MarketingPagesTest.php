@@ -77,6 +77,26 @@ final class MarketingPagesTest extends TestCase
             ->assertSeeText(__('Taux de conversion'));
     }
 
+    /**
+     * A campaign with several ads reads their objectives with them · read one ad
+     * at a time, the performance block costs a query per ad, and the strict
+     * bench turns it into the block's error state.
+     */
+    public function test_the_campaign_performance_reads_the_objectives_of_its_ads_with_them(): void
+    {
+        $campaign = $this->campaign();
+        foreach (['Cabriolet', 'Berline'] as $name) {
+            $ad = Ad::create(['campaign_id' => $campaign->id, 'name' => $name, 'match_conditions' => [['param' => 'creative', 'value' => strtolower($name)]]]);
+            AdObjective::create(['ad_id' => $ad->id, 'type' => 'event', 'reference' => 'Lead']);
+        }
+
+        $this->actingAs($this->admin, 'admin');
+
+        Livewire::test(CampaignDetailContent::class, ['refId' => $campaign->id, 'period' => 30])
+            ->call('$refresh')
+            ->assertSeeText(__('Taux de conversion'));
+    }
+
     public function test_it_fills_its_inline_ads_table_metrics_from_the_dispatched_event(): void
     {
         $campaign = $this->campaign();

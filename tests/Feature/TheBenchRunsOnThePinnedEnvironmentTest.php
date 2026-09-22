@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Tests\Feature;
 
+use Carbon\CarbonImmutable;
 use Falcon\Analytics\Tests\TestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 
@@ -45,6 +46,7 @@ final class TheBenchRunsOnThePinnedEnvironmentTest extends TestCase
             'le pilote de session' => ['SESSION_DRIVER', 'array', 'session.driver'],
             'le magasin de cache' => ['CACHE_STORE', 'array', 'cache.default'],
             'la file d’attente' => ['QUEUE_CONNECTION', 'sync', 'queue.default'],
+            'la langue' => ['APP_LOCALE', 'fr', 'app.locale'],
         ];
     }
 
@@ -63,6 +65,12 @@ final class TheBenchRunsOnThePinnedEnvironmentTest extends TestCase
             "L’application tourne avec un autre {$key} que celui qu’on a épinglé. ".
             'Si un `.env` traîne dans le squelette du banc, c’est qu’il n’est plus neutralisé.',
         );
+    }
+
+    /** The dates speak the bench's language, as they speak the host's. */
+    public function test_the_dates_speak_the_pinned_language(): void
+    {
+        $this->assertSame('juil.', CarbonImmutable::parse('2026-07-09')->translatedFormat('M'));
     }
 
     /**

@@ -9,6 +9,7 @@ use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Services\DailyCountArchiver;
 use Falcon\Analytics\Services\SubjectResolver;
 use Falcon\Analytics\Support\DatabaseEngine;
+use Falcon\Analytics\Support\NumberLabel;
 use Falcon\Ui\Assets;
 use Falcon\Ui\Exceptions\UiException;
 use Illuminate\Console\Command;
@@ -81,6 +82,7 @@ final class CheckCommand extends Command
     {
         return [
             $this->checkDatabaseEngine(),
+            $this->checkIntl(),
             $this->checkMigrations(),
             $this->checkMasterSwitch($config),
             $this->checkCollector(),
@@ -185,7 +187,7 @@ final class CheckCommand extends Command
         return [
             'Marketing',
             'OK',
-            'Les écrans marketing lisent au plus '.number_format($ceiling, 0, ',', ' ').' sessions par période.',
+            'Les écrans marketing lisent au plus '.NumberLabel::for($ceiling).' sessions par période.',
         ];
     }
 
@@ -272,6 +274,22 @@ final class CheckCommand extends Command
         }
 
         return ['Base de données', 'OK', "La connexion est en « {$driver} », que le paquet prend en charge."];
+    }
+
+    /**
+     * The extension the screens write their numbers with · required by the
+     * manifest, and read again here because a server can lose it after the
+     * installation.
+     *
+     * @return array{0: string, 1: string, 2: string}
+     */
+    private function checkIntl(): array
+    {
+        if (! extension_loaded('intl')) {
+            return ['Extension intl', 'KO', 'L\'extension PHP intl est absente, et les écrans en ont besoin pour écrire leurs nombres. Activez-la dans la configuration de PHP.'];
+        }
+
+        return ['Extension intl', 'OK', 'Les écrans écrivent leurs nombres dans la langue du site.'];
     }
 
     /**

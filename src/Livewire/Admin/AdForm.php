@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Livewire\Admin;
 
 use Falcon\Analytics\Actions\SaveAdAction;
+use Falcon\Analytics\DTOs\Dashboard\Marketing\ObjectiveTag;
 use Falcon\Analytics\Enums\ObjectiveType;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Models\Ad;
-use Falcon\Analytics\Models\AdObjective;
+use Falcon\Analytics\Services\Dashboard\ObjectiveLabels;
 use Falcon\Analytics\Support\UrlConditions;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Log;
@@ -57,7 +58,7 @@ final class AdForm extends Component
      * an ad that could not be read, or that belongs to another campaign, never
      * opens as a new one.
      */
-    public function editAd(FunnelRegistry $funnels, EventRegistry $events, ?int $adId = null): bool
+    public function editAd(ObjectiveLabels $labels, ?int $adId = null): bool
     {
         $this->resetValidation();
         $this->reset(self::FORM_FIELDS);
@@ -83,7 +84,7 @@ final class AdForm extends Component
         $this->adId = $ad->id;
         $this->adName = $ad->name;
         $this->adConditions = UrlConditions::toEdit($ad->match_conditions);
-        $this->objectives = $this->objectivesOf($ad, $funnels, $events);
+        $this->objectives = $this->objectivesOf($ad, $labels);
 
         return true;
     }
@@ -207,26 +208,16 @@ final class AdForm extends Component
     }
 
     /**
-     * The ad's objectives as the form lists them, each named by its declared
-     * tunnel or event, or by its reference once no longer declared.
+     * The ad's objectives as the form lists them, named.
      *
-     * @return array<int, array{type: string, reference: string, label: string}>
+     * @return list<array{type: string, reference: string, label: string}>
      */
-    private function objectivesOf(Ad $ad, FunnelRegistry $funnels, EventRegistry $events): array
+    private function objectivesOf(Ad $ad, ObjectiveLabels $labels): array
     {
-        $labels = [];
-        foreach ($funnels->all() as $funnel) {
-            $labels['funnel:'.$funnel->key] = $funnel->label;
-        }
-        foreach ($events->all() as $event) {
-            $labels['event:'.$event->name] = $event->label;
-        }
-
-        return $ad->objectives->map(fn (AdObjective $objective): array => [
-            'type' => $objective->type->value,
-            'reference' => $objective->reference,
-            'label' => $labels[$objective->type->value.':'.$objective->reference] ?? $objective->reference,
-        ])->all();
+        return array_map(
+            static fn (ObjectiveTag $tag): array => ['type' => $tag->type->value, 'reference' => $tag->reference, 'label' => $tag->label],
+            $labels->tagsOf($ad->objectives),
+        );
     }
 
     /**

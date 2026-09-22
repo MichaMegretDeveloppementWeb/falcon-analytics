@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Services\Dashboard;
 
 use Falcon\Analytics\DTOs\Dashboard\Period;
+use Falcon\Analytics\Support\NumberLabel;
 
 /**
  * Pure marketing metric maths, kept out of the Livewire widgets: the conversion
@@ -25,7 +26,7 @@ final class MarketingMetricsCalculator
 
     public function rateLabel(float $rate): string
     {
-        return number_format($rate, 1, ',', ' ')."\u{00A0}%";
+        return NumberLabel::percent($rate, 1);
     }
 
     /**

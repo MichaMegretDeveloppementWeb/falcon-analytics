@@ -1,12 +1,7 @@
 @php
-    use Falcon\Analytics\Support\DeviceLabel;
-    use Falcon\Analytics\Support\DurationLabel;
+    use Falcon\Analytics\Support\NumberLabel;
 
-    $subjectResolver = app(\Falcon\Analytics\Services\SubjectResolver::class);
-
-    $percent = fn ($v): string => number_format((float) $v, 1, ',', ' ')."\u{00A0}%";
-
-    $sessionsTotal = number_format($sessions->total(), 0, ',', ' ');
+    $sessionsTotal = NumberLabel::for($sessions->total());
     $sessionsCount = $sessions->total() <= 1
         ? __(':count session', ['count' => $sessionsTotal])
         : __(':count sessions', ['count' => $sessionsTotal]);
@@ -47,7 +42,7 @@
             :title="__('Aucune session')"
             :description="__('Aucune session ne correspond aux filtres.')" />
     @else
-        <x-ui::table>
+        <x-ui::table x-data="anCopyList">
             <x-ui::table.head>
                 <x-ui::table.header-cell :first="true">{{ __('Visiteur') }}</x-ui::table.header-cell>
                 <x-ui::table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'started_at', 'label' => __('Début')])</x-ui::table.header-cell>
@@ -62,34 +57,20 @@
             </x-ui::table.head>
             <x-ui::table.body>
                 @foreach ($sessions as $session)
-                    @php
-                        $duration = DurationLabel::for((int) $session->started_at->diffInSeconds($session->last_activity_at));
-                    @endphp
-                    @php $sessionUrl = route('analytics.admin.sessions.show', $session); @endphp
                     <x-ui::table.row
                         wire:key="session-{{ $session->id }}"
                         class="an-row-link">
                         <x-ui::table.cell :first="true" variant="primary">
                             <div class="an:flex an:flex-col">
-                                @php $attribution = $attributions[$session->id] ?? null; @endphp
-                                @if ($attribution)
-                                    @php
-                                        $subjectName = $subjectNames[$attribution->guard.':'.$attribution->id] ?? null;
-                                        $subjectLabel = $subjectResolver->label($attribution->guard);
-                                    @endphp
-                                    <a href="{{ $sessionUrl }}" class="an-row-link__target an:cursor-pointer an:text-[13px] an:font-medium an:text-primary an:hover:underline">{{ $subjectName ?? $subjectLabel.' #'.$attribution->id }}</a>
-                                    <span class="an:text-[11px] an:text-muted">@if ($subjectName){{ $subjectLabel }} · @endif{{ substr($session->visitor?->uuid ?? '', 0, 8) }}@if ($attribution->viaVisitor) · {{ __('Non connecté') }}@endif</span>
-                                @else
-                                    <a href="{{ $sessionUrl }}" class="an-row-link__target an:cursor-pointer an:text-[13px] an:font-medium an:text-primary an:hover:underline">{{ __('Visiteur #:id', ['id' => $session->visitor_id]) }}</a>
-                                    <span class="an:text-[11px] an:text-muted">{{ substr($session->visitor?->uuid ?? '', 0, 8) }}</span>
-                                @endif
+                                <a href="{{ route('analytics.admin.sessions.show', $session->id) }}" class="an-row-link__target an:cursor-pointer an:text-[13px] an:font-medium an:text-primary an:hover:underline">{{ $session->name }}</a>
+                                <span class="an:text-[11px] an:text-muted">@if ($session->label !== null){{ $session->label }} · @endif<x-analytics::row-uuid :uuid="$session->visitorUuid" />@if ($session->notConnected) · {{ __('Non connecté') }}@endif</span>
                             </div>
                         </x-ui::table.cell>
-                        <x-ui::table.cell class="an:whitespace-nowrap">{{ $session->started_at->translatedFormat('d M, H:i') }}</x-ui::table.cell>
-                        <x-ui::table.cell class="an:whitespace-nowrap">{{ $duration }}</x-ui::table.cell>
-                        <x-ui::table.cell class="an:tabular-nums">{{ $session->pageview_count }}</x-ui::table.cell>
-                        <x-ui::table.cell class="an:tabular-nums an:text-secondary">{{ $session->events_count }}</x-ui::table.cell>
-                        <x-ui::table.cell class="an:tabular-nums an:font-medium {{ $session->conversions_count > 0 ? 'an:text-emerald-600 an:dark:text-emerald-400' : 'an:text-muted' }}">{{ $session->conversions_count }}</x-ui::table.cell>
+                        <x-ui::table.cell class="an:whitespace-nowrap">{{ $session->startedAt->translatedFormat('d M, H:i') }}</x-ui::table.cell>
+                        <x-ui::table.cell class="an:whitespace-nowrap">{{ $session->duration }}</x-ui::table.cell>
+                        <x-ui::table.cell class="an:tabular-nums">{{ $session->pageviewCount }}</x-ui::table.cell>
+                        <x-ui::table.cell class="an:tabular-nums an:text-secondary">{{ $session->eventsCount }}</x-ui::table.cell>
+                        <x-ui::table.cell class="an:tabular-nums an:font-medium {{ $session->conversionsCount > 0 ? 'an:text-emerald-600 an:dark:text-emerald-400' : 'an:text-muted' }}">{{ $session->conversionsCount }}</x-ui::table.cell>
                         <x-ui::table.cell>
                             <x-ui::badge color="gray"><x-analytics::source :value="$session->source" /></x-ui::badge>
                         </x-ui::table.cell>
@@ -97,17 +78,16 @@
                              hover, so the table never widens past its container. --}}
                         <x-ui::table.cell>
                             <div class="an:max-w-56 an:truncate">
-                                @if ($session->landing_route || $session->landing_url)
-                                    <x-analytics::page-url :route="$session->landing_route" :url="$session->landing_url" />
+                                @if ($session->landingRoute || $session->landingUrl)
+                                    <x-analytics::page-url :route="$session->landingRoute" :url="$session->landingUrl" />
                                 @else
                                     <span class="an:text-muted">·</span>
                                 @endif
                             </div>
                         </x-ui::table.cell>
                         <x-ui::table.cell>
-                            @if ($session->device_type || $session->browser)
-                                @php $deviceLine = ($session->device_type ? DeviceLabel::for($session->device_type) : __('Inconnu')).($session->browser ? ' · '.$session->browser : ''); @endphp
-                                <div class="an:max-w-40 an:truncate" data-an-tooltip="{{ $deviceLine }}">{{ $deviceLine }}</div>
+                            @if ($session->device !== null)
+                                <div class="an:max-w-40 an:truncate" data-an-tooltip="{{ $session->device }}">{{ $session->device }}</div>
                             @else
                                 <span class="an:text-muted">{{ __('Inconnu') }}</span>
                             @endif

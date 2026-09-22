@@ -8,6 +8,8 @@
 ])
 
 @php
+    use Falcon\Analytics\Support\NumberLabel;
+
     // Delta badge computed here so the arrow always follows the value's direction
     // while the colour follows whether that direction is good, the two are
     // independent (the ui-kit stat-card couples them, which misreads inverse
@@ -28,7 +30,7 @@
             $badge = [
                 'up' => $up,
                 'good' => $inverse ? ! $up : $up,
-                'text' => ($pct > 0 ? '+' : '−').number_format(abs($pct), 0, ',', ' ')."\u{00A0}%",
+                'text' => ($pct > 0 ? '+' : '−').NumberLabel::percent(abs($pct)),
             ];
         }
     }
