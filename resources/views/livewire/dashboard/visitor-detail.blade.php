@@ -1,21 +1,11 @@
 @php
     use Falcon\Analytics\Support\ChartPalette;
     use Falcon\Analytics\Support\DeviceLabel;
+    use Falcon\Analytics\Support\DurationLabel;
 
     $visitorPrimary = $subjectName
         ?? ($visitor->subject_type ? $subjectLabel.' #'.$visitor->subject_id : __('Visiteur #:id', ['id' => $visitor->id]));
     $isReturning = $visitor->session_count > 1;
-
-    $formatSeconds = function (int $seconds): string {
-        $minutes = intdiv($seconds, 60);
-        $rest = $seconds % 60;
-
-        if ($minutes > 0) {
-            return $rest > 0 ? "{$minutes}\u{00A0}min\u{00A0}{$rest}\u{00A0}s" : "{$minutes}\u{00A0}min";
-        }
-
-        return "{$seconds}\u{00A0}s";
-    };
 
     $palette = ChartPalette::SERIES;
     $deviceTotal = array_sum($devices);
@@ -50,7 +40,7 @@
     <div class="an:grid an:grid-cols-2 an:gap-3 an:sm:grid-cols-4 an:sm:gap-4">
         <x-ui::stat-card :label="__('Sessions')" :value="(string) $visitor->session_count" icon="rectangle-stack" />
         <x-ui::stat-card :label="__('Pages vues')" :value="(string) $totalPageviews" icon="document-text" />
-        <x-ui::stat-card :label="__('Durée moy.')" :value="$formatSeconds($avgSeconds)" icon="clock" />
+        <x-ui::stat-card :label="__('Durée moy.')" :value="DurationLabel::for($avgSeconds)" icon="clock" />
         <x-ui::stat-card :label="__('Pages / session')" :value="number_format($pagesPerSession, 1, ',', ' ')" icon="chart-bar" />
     </div>
 
@@ -136,7 +126,7 @@
                                     @endif
                                 </span>
                             </x-ui::table.cell>
-                            <x-ui::table.cell class="an:whitespace-nowrap">{{ $formatSeconds($seconds) }}</x-ui::table.cell>
+                            <x-ui::table.cell class="an:whitespace-nowrap">{{ DurationLabel::for($seconds) }}</x-ui::table.cell>
                             <x-ui::table.cell class="an:tabular-nums">{{ $s->pageview_count }}</x-ui::table.cell>
                             <x-ui::table.cell>{{ DeviceLabel::for($s->device_type) }}</x-ui::table.cell>
                             <x-ui::table.cell>

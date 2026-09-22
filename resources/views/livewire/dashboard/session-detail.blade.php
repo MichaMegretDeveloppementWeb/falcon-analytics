@@ -2,6 +2,7 @@
     use Falcon\Analytics\Enums\EventType;
     use Falcon\Analytics\Support\ChartPalette;
     use Falcon\Analytics\Support\DeviceLabel;
+    use Falcon\Analytics\Support\DurationLabel;
     use Falcon\Analytics\Support\SourceLabel;
 
     $value = fn ($raw) => filled($raw) ? $raw : null;
@@ -9,22 +10,11 @@
     $visitorName = $subjectName;
     $visitorPrimary = $visitorName ?? ($visitorLabel !== null ? $visitorLabel.' #'.$subjectId : __('Visiteur anonyme'));
 
-    $formatSeconds = function (int $seconds): string {
-        $minutes = intdiv($seconds, 60);
-        $rest = $seconds % 60;
-
-        if ($minutes > 0) {
-            return $rest > 0 ? "{$minutes}\u{00A0}min\u{00A0}{$rest}\u{00A0}s" : "{$minutes}\u{00A0}min";
-        }
-
-        return "{$seconds}\u{00A0}s";
-    };
-
     $eventLabel = fn ($event) => $value($event->target_text) ?? $value($event->name)
         ?? ($event->type === EventType::Click ? __('Clic') : __('Évènement'));
 
     $seconds = (int) $session->started_at->diffInSeconds($session->last_activity_at);
-    $duration = $formatSeconds($seconds);
+    $duration = DurationLabel::for($seconds);
     $avgPageSeconds = $session->pageview_count > 0 ? (int) round($seconds / $session->pageview_count) : 0;
 
     $deviceIcon = match (strtolower((string) $session->device_type)) {
@@ -130,7 +120,7 @@
         <x-ui::stat-card :label="__('Clics')" :value="(string) $clicksCount" icon="cursor-arrow-rays" />
         <x-ui::stat-card :label="__('Événements')" :value="(string) $eventsCount" icon="bolt" />
         <x-ui::stat-card :label="__('Conversions')" :value="(string) $conversionsCount" icon="check-circle" />
-        <x-ui::stat-card :label="__('Temps moy./page')" :value="$formatSeconds($avgPageSeconds)" icon="clock" />
+        <x-ui::stat-card :label="__('Temps moy./page')" :value="DurationLabel::for($avgPageSeconds)" icon="clock" />
     </div>
 
     {{-- Body: journey + details. Below lg the aside stacks, so we switch to tabs. --}}
@@ -209,7 +199,7 @@
                                             <div class="an:h-1 an:flex-1 an:overflow-hidden an:rounded-full an:bg-elevated">
                                                 <div class="an:h-full an:rounded-full an:bg-series-1" style="width: {{ $barPct }}%"></div>
                                             </div>
-                                            <span class="an:w-14 an:shrink-0 an:text-right an:text-[11px] an:tabular-nums an:text-muted">{{ $formatSeconds($step['seconds']) }}</span>
+                                            <span class="an:w-14 an:shrink-0 an:text-right an:text-[11px] an:tabular-nums an:text-muted">{{ DurationLabel::for($step['seconds']) }}</span>
                                         </div>
                                     @endif
 
@@ -274,7 +264,7 @@
                                 :labels="array_keys($segments)"
                                 :values="array_values($segments)"
                                 :colors="array_slice($palette, 0, count($segments))"
-                                :total="$formatSeconds($totalPageSeconds)"
+                                :total="DurationLabel::for($totalPageSeconds)"
                                 :caption="__('total')"
                                 size="an:h-24 an:w-24" />
                         </div>
@@ -283,7 +273,7 @@
                                 <div class="an:flex an:items-center an:gap-2">
                                     <span class="an:h-2 an:w-2 an:shrink-0 an:rounded-full" style="background: var({{ $palette[$loop->index] ?? '--an-series-6' }})"></span>
                                     <span class="an:min-w-0 an:flex-1 an:truncate an:text-[12px] an:text-secondary">{{ $pageLabel }}</span>
-                                    <span class="an:shrink-0 an:text-[12px] an:font-medium an:text-primary">{{ $formatSeconds($pageSeconds) }}</span>
+                                    <span class="an:shrink-0 an:text-[12px] an:font-medium an:text-primary">{{ DurationLabel::for($pageSeconds) }}</span>
                                 </div>
                             @endforeach
                         </div>

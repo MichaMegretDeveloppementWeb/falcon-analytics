@@ -1,15 +1,5 @@
 @php
-    $formatSeconds = function (float $seconds): string {
-        $total = (int) round($seconds);
-        $minutes = intdiv($total, 60);
-        $rest = $total % 60;
-
-        if ($minutes > 0) {
-            return $rest > 0 ? "{$minutes}\u{00A0}min\u{00A0}{$rest}\u{00A0}s" : "{$minutes}\u{00A0}min";
-        }
-
-        return "{$total}\u{00A0}s";
-    };
+    use Falcon\Analytics\Support\DurationLabel;
 
     $percent = fn ($v): string => number_format((float) $v, 1, ',', ' ')."\u{00A0}%";
 @endphp
@@ -19,7 +9,7 @@
         :metric="$headline['sessions']">
         <div wire:key="spark-s-sessions-{{ $period }}-{{ $subject }}" class="an:mt-3"><x-analytics::sparkline :values="$sparklines['sessions']" /></div>
     </x-analytics::kpi-card>
-    <x-analytics::kpi-card :label="__('Durée moy. session')" :value="$formatSeconds($headline['avgSeconds']->current)" icon="clock"
+    <x-analytics::kpi-card :label="__('Durée moy. session')" :value="DurationLabel::for($headline['avgSeconds']->current)" icon="clock"
         :metric="$headline['avgSeconds']">
         <div wire:key="spark-s-duration-{{ $period }}-{{ $subject }}" class="an:mt-3"><x-analytics::sparkline :values="$sparklines['avgSeconds']" /></div>
     </x-analytics::kpi-card>
