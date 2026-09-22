@@ -19,11 +19,12 @@ final readonly class FunnelStepResult
     /** @param  array<string, int>  $branches branch label => visitors who came through it */
     public function __construct(
         public string $label,
-        public float $value,
+        public int $value,
         public int $visitors,
+        // Rates, and floats by nature: they are not scores.
         public float $conversionFromStart,
         public float $conversionFromPrevious,
-        public float $score,
+        public int $score,
         public array $branches = [],
     ) {}
 }

@@ -204,8 +204,8 @@ final class MarketingPagesTest extends TestCase
         // an empty list would pass the test while proving nothing.
         $this->app->forgetInstance(EventRegistry::class);
         $registry = app(EventRegistry::class);
-        $registry->register(new TrackedEvent('Lead', 'Demande de contact', 3.0));
-        $registry->register(new TrackedEvent('Devis', 'Demande de devis', 5.0));
+        $registry->register(new TrackedEvent('Lead', 'Demande de contact', 3));
+        $registry->register(new TrackedEvent('Devis', 'Demande de devis', 5));
 
         $campaign = $this->campaign('Été', null, 'meta_ete');
         $this->actingAs($this->admin, 'admin');
@@ -231,7 +231,7 @@ final class MarketingPagesTest extends TestCase
     {
         $campaign = $this->campaign('Été', null, 'meta_ete');
         $ad = Ad::create(['campaign_id' => $campaign->id, 'name' => 'Cabrio', 'match_conditions' => [['param' => 'creative', 'value' => 'cabrio']]]);
-        AdObjective::create(['ad_id' => $ad->id, 'type' => 'event', 'reference' => 'Lead', 'value' => 3]);
+        AdObjective::create(['ad_id' => $ad->id, 'type' => 'event', 'reference' => 'Lead']);
 
         $other = $this->campaign('Hiver', null, 'meta_hiver');
 

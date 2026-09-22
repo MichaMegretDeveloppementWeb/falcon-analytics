@@ -80,7 +80,7 @@ final class ModelsTest extends TestCase
         $this->assertSame(EventType::Click, $fresh->type);
         $this->assertSame(['listing_id' => 42], $fresh->props);
         $this->assertInstanceOf(CarbonImmutable::class, $fresh->getAttribute('occurred_at'));
-        $this->assertSame(3.0, $fresh->value);
+        $this->assertSame(3, $fresh->value);
     }
 
     public function test_it_wires_the_relationships_in_both_directions(): void

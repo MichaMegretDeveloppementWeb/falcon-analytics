@@ -50,7 +50,10 @@ return new class extends Migration
             $table->string('target_selector', 255)->nullable();
             $table->string('target_text', 255)->nullable();
             $table->json('props')->nullable();
-            $table->decimal('value', 12, 2)->nullable();
+
+            // A score in points, never an amount: a whole number, signed so a
+            // penalty can be written down.
+            $table->integer('value')->nullable();
 
             $table->string('subject_type', 32)->nullable();
             $table->unsignedBigInteger('subject_id')->nullable();

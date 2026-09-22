@@ -27,7 +27,7 @@ final class EventReadRepository
      * Per-event occurrence counts and unique visitors over the period, joined with
      * the declared registry (label, value, conversion). Sorted by count, desc.
      *
-     * @return list<array{name: string, label: string, isConversion: bool, value: float|null, count: int, visitors: int, valueTotal: float}>
+     * @return list<array{name: string, label: string, isConversion: bool, value: int|null, count: int, visitors: int, valueTotal: int}>
      */
     public function eventBreakdown(Period $period, ?string $subjectType, EventRegistry $events): array
     {
@@ -55,7 +55,7 @@ final class EventReadRepository
                 'value' => $value,
                 'count' => $count,
                 'visitors' => (int) $row->getAttribute('visitors'),
-                'valueTotal' => $value !== null ? $value * $count : 0.0,
+                'valueTotal' => $value !== null ? $value * $count : 0,
             ];
         }
 
@@ -67,7 +67,7 @@ final class EventReadRepository
     /**
      * Headline totals over the period.
      *
-     * @return array{events: int, conversions: int, value: float}
+     * @return array{events: int, conversions: int, value: int}
      */
     public function headline(Period $period, ?string $subjectType, EventRegistry $events): array
     {
@@ -78,14 +78,14 @@ final class EventReadRepository
      * Headline totals derived from an already-computed breakdown, so a caller that
      * also needs the breakdown does not pay for a second aggregation query.
      *
-     * @param  list<array{name: string, label: string, isConversion: bool, value: float|null, count: int, visitors: int, valueTotal: float}>  $breakdown
-     * @return array{events: int, conversions: int, value: float}
+     * @param  list<array{name: string, label: string, isConversion: bool, value: int|null, count: int, visitors: int, valueTotal: int}>  $breakdown
+     * @return array{events: int, conversions: int, value: int}
      */
     public function totals(array $breakdown): array
     {
         $eventsTotal = 0;
         $conversionsTotal = 0;
-        $value = 0.0;
+        $value = 0;
 
         foreach ($breakdown as $row) {
             $eventsTotal += $row['count'];

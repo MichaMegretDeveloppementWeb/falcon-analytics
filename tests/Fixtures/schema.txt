@@ -43,7 +43,7 @@ COL falcon_analytics_events.target_selector varchar(255) null=YES def=- extra=
 COL falcon_analytics_events.target_text varchar(255) null=YES def=- extra=
 COL falcon_analytics_events.type varchar(20) null=NO def=- extra=
 COL falcon_analytics_events.url varchar(2048) null=YES def=- extra=
-COL falcon_analytics_events.value decimal(12,2) null=YES def=- extra=
+COL falcon_analytics_events.value int null=YES def=- extra=
 COL falcon_analytics_events.visitor_id bigint unsigned null=NO def=- extra=
 COL falcon_analytics_search_console.access_token text null=YES def=- extra=
 COL falcon_analytics_search_console.created_at datetime null=YES def=- extra=

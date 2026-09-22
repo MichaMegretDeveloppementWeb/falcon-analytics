@@ -227,7 +227,7 @@ visitées, les clics rangés sous la page où ils ont eu lieu, et le temps pass�
 | **adresse** | `{admin.route_prefix}/events` |
 | **paramètres** | aucun |
 
-Les volumes, les valeurs et les conversions de vos [événements
+Les volumes, les scores et les conversions de vos [événements
 nommés](#les-événements-nommés-et-les-conversions) · les chiffres de tête avec
 leurs courbes, la tendance, et le détail par événement.
 
@@ -240,7 +240,7 @@ leurs courbes, la tendance, et le détail par événement.
 | **paramètres** | aucun |
 
 Pour chaque [tunnel déclaré](#les-tunnels) · les volumes par étape, les taux de
-conversion entre étapes, et la valeur totale sur la période.
+conversion entre étapes, et le score de chaque étape et du tunnel sur la période.
 
 **Sans fichier de tunnels, l'écran est vide et le dit** · ce n'est pas une
 panne.
@@ -279,8 +279,8 @@ garde, **ou ne pas les proposer du tout**.
 | **paramètres** | aucun |
 
 La performance des campagnes et des publicités sur la période · portée,
-conversions et valeur. **Les dépenses ne sont pas suivies** · le paquet n'appelle
-aucune régie.
+conversions et taux de conversion. **Les dépenses ne sont pas suivies** · le
+paquet n'appelle aucune régie.
 
 ### Campagnes · **écriture**
 
@@ -454,7 +454,7 @@ ce qui précède, déclarez-le avec `data-track-event`. Sur un `<form>`,
 | Attribut | Effet |
 |---|---|
 | `data-track-event="domaine.action"` | nomme l'action · c'est la clé de l'événement déclaré et de la jointure des tunnels |
-| `data-track-value="3"` | une valeur de base · l'étape du tunnel prime |
+| `data-track-value="3"` | un score, en points entiers · un nombre décimal est ignoré, et l'étape du tunnel prime |
 | `data-track-prop-*="…"` | des propriétés libres · `data-track-prop-listing-id` devient `props.listing_id` |
 | `data-track-section="hero"` | une zone logique, appliquée à tout le sous-arbre |
 | `data-track-label="…"` | un libellé humain · sinon le texte détecté |
@@ -464,7 +464,7 @@ ce qui précède, déclarez-le avec `data-track-event`. Sur un `<form>`,
 qui les rend praticables · vous taguez le bouton, pas le `<span>` qu'il
 contient, et pas chaque cellule d'une ligne.
 
-- pour le **nom**, la **valeur** et la **zone**, le premier rencontré en
+- pour le **nom**, le **score** et la **zone**, le premier rencontré en
   remontant gagne · le plus proche du clic ;
 - les **propriétés** s'accumulent tout le long de la remontée, et là encore la
   plus proche gagne en cas de doublon · une ligne de tableau peut donc porter
@@ -486,8 +486,8 @@ Déclarez-les dans `app/Analytics/events.php` — chemin réglable par
 ```php
 use Falcon\Analytics\Events\TrackedEvent;
 
-TrackedEvent::define('auth.client.register.submit', 'Inscription client (soumission)', value: 5.0);
-TrackedEvent::define('listing.publish.submit', 'Publication d\'une annonce', value: 15.0);
+TrackedEvent::define('auth.client.register.submit', 'Inscription client (soumission)', value: 5);
+TrackedEvent::define('listing.publish.submit', 'Publication d\'une annonce', value: 15);
 TrackedEvent::define('review.submit', 'Avis déposé', conversion: true);
 TrackedEvent::define('nav.catalog.click', 'Accès au catalogue');
 ```
@@ -496,8 +496,12 @@ TrackedEvent::define('nav.catalog.click', 'Accès au catalogue');
 |---|---|
 | `name` | la clé technique, telle qu'employée par `data-track-event` ou `Analytics::record()`. Convention · `domaine.action` |
 | `label` | ce que le tableau de bord affiche |
-| `value` | une valeur attachée par défaut à chaque occurrence |
+| `value` | le score que rapporte chaque occurrence, **en points entiers** · jamais un montant. Un événement qui en porte un est une conversion, sauf `conversion: false` |
 | `conversion` | marque l'événement comme une conversion |
+
+> **Un score, pas un montant.** Le tableau de bord additionne des points et les
+> affiche en « pts ». Un nombre décimal est refusé dès la déclaration · une
+> erreur de type, au premier chargement du fichier.
 
 `php artisan analytics:events:scan` compare cette liste à ce que votre code
 emploie réellement, et `--fix` ajoute les manquants.
@@ -510,7 +514,7 @@ validée, un paiement abouti ·
 ```php
 use Falcon\Analytics\Facades\Analytics;
 
-Analytics::record('CompleteRegistration', value: 5.0, props: ['plan' => 'pro']);
+Analytics::record('CompleteRegistration', value: 5, props: ['plan' => 'pro']);
 ```
 
 Même visiteur, même session, même stockage, mêmes tunnels. **L'appel est
@@ -524,7 +528,7 @@ l'appelant**.
 
 Déclarez-les dans `app/Analytics/funnels.php` — chemin réglable par
 `funnels_path`. Chaque étape correspond à un événement nommé **ou** à une route
-de page vue, jamais aux deux, et porte son propre poids ·
+de page vue, jamais aux deux, et rapporte ses propres points ·
 
 ```php
 use Falcon\Analytics\Funnels\Funnel;
@@ -534,7 +538,7 @@ Funnel::define('acquisition_client', 'Acquisition client')
     ->step('Soumission',       value: 5, event: 'auth.client.register.submit');
 ```
 
-Le même événement peut appartenir à plusieurs tunnels avec une valeur différente
+Le même événement peut appartenir à plusieurs tunnels avec un score différent
 dans chacun.
 
 ### Les branches parallèles
@@ -578,7 +582,7 @@ paramètres d'URL que portent les liens.
   `utm_source=facebook` et `utm_campaign=summer`.
 - **Les objectifs se déclarent par publicité**, en choisissant parmi les
   événements déclarés et les tunnels. Le module rapporte alors la portée, les
-  conversions et la valeur, par publicité et par campagne.
+  conversions et le taux de conversion, par publicité et par campagne.
 - **Rien n'est stocké sur la session au moment de la visite**, que les paramètres
   d'URL eux-mêmes. Le rapprochement se refait **à chaque lecture d'écran**, ce qui
   rend l'attribution **rétroactive** · une campagne définie aujourd'hui retrouve

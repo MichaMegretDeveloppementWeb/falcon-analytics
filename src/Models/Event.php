@@ -23,7 +23,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $target_selector
  * @property string|null $target_text
  * @property array<string, mixed>|null $props
- * @property float|null $value
+ * @property int|null $value
  * @property string|null $subject_type
  * @property int|null $subject_id
  * @property-read Session $session
@@ -83,7 +83,7 @@ final class Event extends Model
             'occurred_at' => 'immutable_datetime',
             'type' => EventType::class,
             'props' => 'array',
-            'value' => 'float',
+            'value' => 'integer',
             'session_id' => 'integer',
             'visitor_id' => 'integer',
             'subject_id' => 'integer',

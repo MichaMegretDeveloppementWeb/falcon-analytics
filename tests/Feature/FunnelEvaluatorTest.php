@@ -36,9 +36,9 @@ final class FunnelEvaluatorTest extends TestCase
         $this->evaluator = app(FunnelEvaluator::class);
         $this->period = Period::ofDays(30);
         $this->funnel = (new Funnel('test', 'Test'))
-            ->step('Vue', 1.0, event: 'ViewContent')
-            ->step('Lead', 3.0, event: 'Lead')
-            ->step('Inscription', 5.0, event: 'CompleteRegistration');
+            ->step('Vue', 1, event: 'ViewContent')
+            ->step('Lead', 3, event: 'Lead')
+            ->step('Inscription', 5, event: 'CompleteRegistration');
     }
 
     /**
@@ -105,8 +105,8 @@ final class FunnelEvaluatorTest extends TestCase
         $this->assertSame(0.25, $report->steps[2]->conversionFromStart);
         $this->assertSame(0.75, $report->steps[1]->conversionFromPrevious);
         $this->assertSame(1 / 3, $report->steps[2]->conversionFromPrevious);
-        $this->assertSame(5.0, $report->steps[2]->score);
-        $this->assertSame(18.0, $report->totalScore);
+        $this->assertSame(5, $report->steps[2]->score);
+        $this->assertSame(18, $report->totalScore);
     }
 
     public function test_it_scopes_a_funnel_to_the_subject_identity_keeping_anonymous_early_steps(): void
@@ -125,8 +125,8 @@ final class FunnelEvaluatorTest extends TestCase
     public function test_it_matches_pageview_steps_by_route_and_event_steps_by_name(): void
     {
         $funnel = (new Funnel('reg', 'Inscription'))
-            ->step('Page', 1.0, route: 'reg.page')
-            ->step('Envoi', 5.0, event: 'reg.submit');
+            ->step('Page', 1, route: 'reg.page')
+            ->step('Envoi', 5, event: 'reg.submit');
 
         $this->journey([['route' => 'reg.page'], 'reg.submit']); // atteint l'etape 2
         $this->journey(['reg.submit']);                          // n'entre jamais, pas de page
@@ -173,12 +173,12 @@ final class FunnelEvaluatorTest extends TestCase
     public function test_it_advances_a_branched_step_whichever_branch_the_visitor_takes(): void
     {
         $funnel = (new Funnel('branched', 'Branched'))
-            ->step('Vue', 1.0, event: 'ViewContent')
-            ->step('Formulaire', 8.0, anyOf: [
+            ->step('Vue', 1, event: 'ViewContent')
+            ->step('Formulaire', 8, anyOf: [
                 FunnelBranch::event('Questionnaire', 'form.quiz'),
                 FunnelBranch::route('Contact', 'contact'),
             ])
-            ->step('Envoi', 100.0, event: 'Lead');
+            ->step('Envoi', 100, event: 'Lead');
 
         $this->journey(['ViewContent', 'form.quiz', 'Lead']);            // par le questionnaire
         $this->journey(['ViewContent', ['route' => 'contact'], 'Lead']); // par la page de contact
@@ -195,7 +195,7 @@ final class FunnelEvaluatorTest extends TestCase
     public function test_it_reports_how_many_visitors_came_through_each_branch(): void
     {
         $funnel = (new Funnel('branched', 'Branched'))
-            ->step('Formulaire', 8.0, anyOf: [
+            ->step('Formulaire', 8, anyOf: [
                 FunnelBranch::event('Questionnaire', 'form.quiz'),
                 FunnelBranch::route('Contact', 'contact'),
             ]);
@@ -216,7 +216,7 @@ final class FunnelEvaluatorTest extends TestCase
     public function test_it_keeps_an_untaken_branch_in_the_report_at_zero(): void
     {
         $funnel = (new Funnel('branched', 'Branched'))
-            ->step('Formulaire', 8.0, anyOf: [
+            ->step('Formulaire', 8, anyOf: [
                 FunnelBranch::event('Questionnaire', 'form.quiz'),
                 FunnelBranch::route('Contact', 'contact'),
             ]);
@@ -231,11 +231,11 @@ final class FunnelEvaluatorTest extends TestCase
     public function test_it_counts_a_visitor_once_even_when_several_branches_match(): void
     {
         $funnel = (new Funnel('branched', 'Branched'))
-            ->step('Formulaire', 8.0, anyOf: [
+            ->step('Formulaire', 8, anyOf: [
                 FunnelBranch::event('Questionnaire', 'form.quiz'),
                 FunnelBranch::route('Contact', 'contact'),
             ])
-            ->step('Envoi', 100.0, event: 'Lead');
+            ->step('Envoi', 100, event: 'Lead');
 
         $this->journey(['form.quiz', ['route' => 'contact'], 'Lead']);
 
@@ -258,7 +258,7 @@ final class FunnelEvaluatorTest extends TestCase
     public function test_it_refuses_a_step_that_mixes_branches_with_a_single_matcher(): void
     {
         $this->assertThrows(
-            fn () => (new Funnel('bad', 'Bad'))->step('Mixte', 1.0, event: 'a', anyOf: [
+            fn () => (new Funnel('bad', 'Bad'))->step('Mixte', 1, event: 'a', anyOf: [
                 FunnelBranch::event('Un', 'b'),
                 FunnelBranch::event('Deux', 'c'),
             ]),
@@ -269,7 +269,7 @@ final class FunnelEvaluatorTest extends TestCase
     public function test_it_refuses_a_branched_step_with_a_single_branch(): void
     {
         $this->assertThrows(
-            fn () => (new Funnel('bad', 'Bad'))->step('Seule', 1.0, anyOf: [
+            fn () => (new Funnel('bad', 'Bad'))->step('Seule', 1, anyOf: [
                 FunnelBranch::event('Un', 'b'),
             ]),
             InvalidArgumentException::class,

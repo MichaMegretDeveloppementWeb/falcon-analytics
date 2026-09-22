@@ -19,6 +19,8 @@
   var MAX_NAME = 120;
   var MAX_TEXT = 120;
   var MAX_SELECTOR = 255;
+  var MIN_SCORE = -2147483648;
+  var MAX_SCORE = 2147483647;
   var MAX_BATCH = 100;
   var MAX_BUFFER = 500; // drop oldest beyond this if the endpoint is unreachable
 
@@ -103,6 +105,19 @@
     return Object.prototype.hasOwnProperty.call(object, key);
   }
 
+  /**
+   * The score an element declares, as a whole number of points, or null. The
+   * server refuses a batch holding any other score, so one bad attribute must
+   * not cost the events sent with it.
+   */
+  function scoreOf(raw) {
+    if (raw == null || raw === '') {
+      return null;
+    }
+    var parsed = Number(raw);
+    return Number.isInteger(parsed) && parsed >= MIN_SCORE && parsed <= MAX_SCORE ? parsed : null;
+  }
+
   function readProps(data, props) {
     for (var key in data) {
       // data-track-prop-<name> -> dataset key trackProp<Name>; require the camel
@@ -182,11 +197,8 @@
       if (label === null && data.trackLabel) {
         label = cap(data.trackLabel, MAX_TEXT);
       }
-      if (value === null && data.trackValue != null && data.trackValue !== '') {
-        var parsed = Number(data.trackValue);
-        if (Number.isFinite(parsed)) {
-          value = parsed;
-        }
+      if (value === null) {
+        value = scoreOf(data.trackValue);
       }
       if (section === null && data.trackSection) {
         section = data.trackSection;
@@ -263,11 +275,9 @@
     var event = baseEvent('click');
     event.name = cap(data.trackEvent, MAX_NAME);
 
-    if (data.trackValue != null && data.trackValue !== '') {
-      var parsed = Number(data.trackValue);
-      if (Number.isFinite(parsed)) {
-        event.value = parsed;
-      }
+    var score = scoreOf(data.trackValue);
+    if (score !== null) {
+      event.value = score;
     }
 
     var props = readProps(data, null);

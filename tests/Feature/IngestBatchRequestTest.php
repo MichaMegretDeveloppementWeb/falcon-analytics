@@ -59,7 +59,7 @@ final class IngestBatchRequestTest extends TestCase
         $this->assertSame('2026-07-01 12:00:00', $batch->events[0]->occurredAt->toDateTimeString());
         $this->assertSame(EventType::Click, $batch->events[1]->type);
         $this->assertSame('2026-07-01 11:59:57', $batch->events[1]->occurredAt->toDateTimeString());
-        $this->assertSame(3.0, $batch->events[1]->value);
+        $this->assertSame(3, $batch->events[1]->value);
         $this->assertSame(['listing_id' => 42], $batch->events[1]->props);
     }
 
@@ -102,6 +102,22 @@ final class IngestBatchRequestTest extends TestCase
     public function test_it_accepts_a_well_formed_batch(): void
     {
         $this->assertFalse($this->ingestFails(['sent_at' => 1, 'events' => [['type' => 'pageview', 'ts' => 1]]]));
+    }
+
+    public function test_it_takes_a_whole_score_and_a_penalty(): void
+    {
+        $this->assertFalse($this->ingestFails(['sent_at' => 1, 'events' => [['type' => 'click', 'ts' => 1, 'value' => 3]]]));
+        $this->assertFalse($this->ingestFails(['sent_at' => 1, 'events' => [['type' => 'click', 'ts' => 1, 'value' => -2]]]));
+    }
+
+    public function test_it_refuses_a_score_with_a_fraction(): void
+    {
+        $this->assertTrue($this->ingestFails(['sent_at' => 1, 'events' => [['type' => 'click', 'ts' => 1, 'value' => 3.5]]]));
+    }
+
+    public function test_it_refuses_a_score_the_column_cannot_hold(): void
+    {
+        $this->assertTrue($this->ingestFails(['sent_at' => 1, 'events' => [['type' => 'click', 'ts' => 1, 'value' => 2_147_483_648]]]));
     }
 
     public function test_it_redacts_sensitive_query_parameters_while_keeping_tracking_params(): void

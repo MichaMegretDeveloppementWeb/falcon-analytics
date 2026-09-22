@@ -43,7 +43,7 @@ final class Funnel
      *
      * @param  list<FunnelBranch>|null  $anyOf
      */
-    public function step(string $label, float $value, ?string $event = null, ?string $route = null, ?array $anyOf = null): self
+    public function step(string $label, int $value, ?string $event = null, ?string $route = null, ?array $anyOf = null): self
     {
         $declared = count(array_filter([$event, $route, $anyOf], static fn (mixed $value): bool => $value !== null));
 

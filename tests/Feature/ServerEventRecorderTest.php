@@ -24,7 +24,7 @@ final class ServerEventRecorderTest extends TestCase
         parent::setUp();
 
         Route::get('/_analytics_record_test', function (ServerEventRecorder $recorder) {
-            $recorder->record('Lead', value: 3.0, props: ['listing_id' => 42]);
+            $recorder->record('Lead', value: 3, props: ['listing_id' => 42]);
 
             return response()->noContent();
         })->middleware('web');
@@ -41,7 +41,7 @@ final class ServerEventRecorderTest extends TestCase
 
         $this->assertSame(EventType::Custom, $event->type);
         $this->assertSame('Lead', $event->name);
-        $this->assertSame(3.0, $event->value);
+        $this->assertSame(3, $event->value);
         $this->assertSame(['listing_id' => 42], $event->props);
     }
 
@@ -70,7 +70,7 @@ final class ServerEventRecorderTest extends TestCase
         // One argument only: `assertDoesntThrow` takes just the closure, and it
         // already catches every `Throwable`. The second argument served no
         // purpose but to suggest it chose what gets caught.
-        $this->assertDoesntThrow(fn () => app(ServerEventRecorder::class)->record('X', value: 1.0));
+        $this->assertDoesntThrow(fn () => app(ServerEventRecorder::class)->record('X', value: 1));
 
         $this->assertSame(0, Event::count());
     }
@@ -78,7 +78,7 @@ final class ServerEventRecorderTest extends TestCase
     public function test_it_is_callable_through_the_analytics_facade(): void
     {
         Route::get('/_analytics_record_facade', function () {
-            Analytics::record('CompleteRegistration', value: 5.0);
+            Analytics::record('CompleteRegistration', value: 5);
 
             return response()->noContent();
         })->middleware('web');
@@ -88,7 +88,7 @@ final class ServerEventRecorderTest extends TestCase
         $event = Event::firstOrFail();
 
         $this->assertSame('CompleteRegistration', $event->name);
-        $this->assertSame(5.0, $event->value);
+        $this->assertSame(5, $event->value);
         $this->assertSame(EventType::Custom, $event->type);
     }
 }

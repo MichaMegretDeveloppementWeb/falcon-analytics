@@ -8,7 +8,7 @@
         <x-analytics::kpi-card :label="__('Conversions')" :value="number_format($conversions, 0, ',', ' ')" icon="check-circle" :metric="$conversionsDelta">
             <div wire:key="ev-spark-conv-{{ $period }}-{{ $subject }}" class="an:mt-3"><x-analytics::sparkline :values="$conversionsData" color="--an-conversion" /></div>
         </x-analytics::kpi-card>
-        <x-analytics::kpi-card :label="__('Valeur des conversions')" :value="number_format($value, 0, ',', ' ').' pts'" icon="sparkles" :metric="$valueDelta" :description="__('somme des valeurs des conversions')" />
+        <x-analytics::kpi-card :label="__('Score des conversions')" :value="number_format($value, 0, ',', ' ').' pts'" icon="sparkles" :metric="$valueDelta" :description="__('la somme des points rapportés par les conversions')" />
     </div>
 
     {{-- Trend --}}
@@ -35,8 +35,8 @@
                     <x-ui::table.header-cell>{{ __('Type') }}</x-ui::table.header-cell>
                     <x-ui::table.header-cell align="right">{{ __('Occurrences') }}</x-ui::table.header-cell>
                     <x-ui::table.header-cell align="right">{{ __('Visiteurs') }}</x-ui::table.header-cell>
-                    <x-ui::table.header-cell align="right">{{ __('Valeur unit.') }}</x-ui::table.header-cell>
-                    <x-ui::table.header-cell :last="true" align="right">{{ __('Valeur totale') }}</x-ui::table.header-cell>
+                    <x-ui::table.header-cell align="right">{{ __('Points par occurrence') }}</x-ui::table.header-cell>
+                    <x-ui::table.header-cell :last="true" align="right">{{ __('Score') }}</x-ui::table.header-cell>
                 </x-ui::table.head>
                 <x-ui::table.body>
                     @foreach ($breakdown as $row)

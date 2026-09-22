@@ -443,8 +443,8 @@ abstract class TestCase extends Orchestra
      * index and per foreign key, sorted so two readings compare.
      *
      * Scoped to the connection's own database — `information_schema` holds
-     * every database of the server, and a listing that overflows is the defect
-     * `migrations-et-schema.md` names.
+     * every database of the server, and an unscoped listing would read the
+     * tables of every other project on it.
      *
      * @return list<string>
      */

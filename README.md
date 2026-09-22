@@ -109,11 +109,12 @@ inscription validée ·
 ```php
 use Falcon\Analytics\Facades\Analytics;
 
-Analytics::record('commande.payee', value: $order->total);
+Analytics::record('commande.payee', value: 10);
 ```
 
-**L'appel est différé** · il ne bloque jamais la réponse, et il ne lève jamais
-rien vers l'appelant.
+**`value` est un score, en points entiers**, jamais un montant · le tableau de
+bord additionne des points. **L'appel est différé** · il ne bloque jamais la
+réponse, et il ne lève jamais rien vers l'appelant.
 
 Les événements nommés se déclarent dans un fichier à vous, ce qui permet de les
 marquer comme conversions et de les enchaîner en tunnels. Le détail est dans

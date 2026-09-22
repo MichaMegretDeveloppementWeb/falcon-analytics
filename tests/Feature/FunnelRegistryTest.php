@@ -27,9 +27,9 @@ final class FunnelRegistryTest extends TestCase
         $this->assertCount(2, $funnel->steps());
         $this->assertSame('home', $funnel->steps()[0]->route);
         $this->assertNull($funnel->steps()[0]->event);
-        $this->assertSame(1.0, $funnel->steps()[0]->value);
+        $this->assertSame(1, $funnel->steps()[0]->value);
         $this->assertSame('sample.action', $funnel->steps()[1]->event);
-        $this->assertSame(5.0, $funnel->steps()[1]->value);
+        $this->assertSame(5, $funnel->steps()[1]->value);
     }
 
     public function test_it_rejects_a_step_matching_neither_or_both_of_event_and_route(): void
