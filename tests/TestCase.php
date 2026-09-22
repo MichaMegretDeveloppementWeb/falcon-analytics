@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Tests;
 
+use Carbon\Laravel\ServiceProvider as CarbonServiceProvider;
 use Dotenv\Dotenv;
 use Falcon\Analytics\AnalyticsServiceProvider;
 use Falcon\Analytics\Tests\Fixtures\Models\TestAdmin;
@@ -220,7 +221,10 @@ abstract class TestCase extends Orchestra
      */
     protected function getPackageProviders($app): array
     {
+        // Carbon's provider is discovered in every application, and makes the
+        // dates speak the application's language · the bench discovers nothing.
         return [
+            CarbonServiceProvider::class,
             LivewireServiceProvider::class,
             UiServiceProvider::class,
             AnalyticsServiceProvider::class,
