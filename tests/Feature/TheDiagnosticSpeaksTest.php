@@ -9,9 +9,13 @@ use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Tests\TestCase;
+use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
+use Illuminate\Cookie\Middleware\EncryptCookies;
+use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
+use Orchestra\Testbench\Attributes\DefineEnvironment;
 
 /**
  * `analytics:check` · what a host learns about its installation.
@@ -258,6 +262,51 @@ final class TheDiagnosticSpeaksTest extends TestCase
         $this->artisan('analytics:check')
             ->expectsOutputToContain('route:clear')
             ->assertFailed();
+    }
+
+    /**
+     * The collector's stack without a session, and every beacon then fails.
+     *
+     * Without consent — the default — the visitor's identifier lives in the
+     * session. The stack is fixed when the routes load, so the configuration is
+     * laid before the application boots, and the route itself is what is read.
+     */
+    #[DefineEnvironment('withACollectorStackWithoutSession')]
+    public function test_it_says_when_the_collector_stack_carries_no_session(): void
+    {
+        $this->artisan('analytics:check')
+            ->expectsOutputToContain('StartSession')
+            ->assertFailed();
+    }
+
+    #[DefineEnvironment('withAnEmptyCollectorStack')]
+    public function test_it_says_when_the_collector_stack_is_empty(): void
+    {
+        $this->artisan('analytics:check')
+            ->expectsOutputToContain('StartSession')
+            ->assertFailed();
+    }
+
+    /** A group that carries the session counts for what it carries. */
+    #[DefineEnvironment('withTheWebGroupOnTheCollector')]
+    public function test_it_accepts_a_collector_stack_named_by_its_group(): void
+    {
+        $this->artisan('analytics:check')->assertSuccessful();
+    }
+
+    protected function withACollectorStackWithoutSession(Application $app): void
+    {
+        $app['config']->set('analytics.web.middleware', [EncryptCookies::class, AddQueuedCookiesToResponse::class]);
+    }
+
+    protected function withAnEmptyCollectorStack(Application $app): void
+    {
+        $app['config']->set('analytics.web.middleware', []);
+    }
+
+    protected function withTheWebGroupOnTheCollector(Application $app): void
+    {
+        $app['config']->set('analytics.web.middleware', ['web']);
     }
 
     /**

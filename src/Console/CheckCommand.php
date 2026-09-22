@@ -12,11 +12,13 @@ use Falcon\Ui\Exceptions\UiException;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Database\Migrations\Migrator;
+use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\Str;
 use Illuminate\View\Compilers\ComponentTagCompiler;
 use Illuminate\View\FileViewFinder;
 use InvalidArgumentException;
@@ -81,6 +83,7 @@ final class CheckCommand extends Command
             $this->checkMasterSwitch($config),
             $this->checkCollector(),
             $this->checkEndpoint($config),
+            $this->checkCollectorSession(),
             $this->checkModuleMiddleware($config),
             $this->checkAreaLayout($config),
             $this->checkPublishedAssets(),
@@ -386,6 +389,41 @@ final class CheckCommand extends Command
             'Point d’entrée',
             'KO',
             'Aucune route POST ne répond sur /'.$endpoint.'. Videz le cache des routes (php artisan route:clear).',
+        ];
+    }
+
+    /**
+     * Whether the collector's route opens a session.
+     *
+     * Without consent — the default — the visitor's identifier lives in the
+     * session, so a stack without one answers every beacon with an error: the
+     * visitor's page does not suffer, and the screens stay empty with nothing
+     * to say why. The router is asked what the route really runs, so a group
+     * or an alias counts for what it carries.
+     *
+     * @return array{0: string, 1: string, 2: string}
+     */
+    private function checkCollectorSession(): array
+    {
+        $route = Route::getRoutes()->getByName('analytics.web.ingest');
+
+        if ($route === null) {
+            return ['Session du collecteur', 'À voir', 'Vérifiée une fois la route du collecteur montée · voir le point d’entrée.'];
+        }
+
+        foreach (Route::gatherRouteMiddleware($route) as $middleware) {
+            $class = is_string($middleware) ? Str::before($middleware, ':') : null;
+
+            if ($class !== null && is_a($class, StartSession::class, true)) {
+                return ['Session du collecteur', 'OK', 'La route du collecteur ouvre une session.'];
+            }
+        }
+
+        return [
+            'Session du collecteur',
+            'KO',
+            'La route du collecteur n’ouvre aucune session : sans consentement, l’identifiant du visiteur y vit, '
+            .'et chaque envoi répond en erreur. Remettez StartSession, ou le groupe web, dans analytics.web.middleware.',
         ];
     }
 
