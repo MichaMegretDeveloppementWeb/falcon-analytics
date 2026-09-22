@@ -27,7 +27,10 @@ final class EventReadRepository
      * Per-event occurrence counts and unique visitors over the period, joined with
      * the declared registry (label, value, conversion). Sorted by count, desc.
      *
-     * @return list<array{name: string, label: string, isConversion: bool, value: int|null, count: int, visitors: int, valueTotal: int}>
+     * The score of an occurrence is the one it carries, and the declared one
+     * for the occurrences that carry none: both are added up in the same read.
+     *
+     * @return list<array{name: string, label: string, isConversion: bool, value: int|null, count: int, visitors: int, valueTotal: int, isScored: bool}>
      */
     public function eventBreakdown(Period $period, ?string $subjectType, EventRegistry $events): array
     {
@@ -37,7 +40,7 @@ final class EventReadRepository
         }
 
         $rows = $this->namedEvents($period, $subjectType)
-            ->selectRaw('name, COUNT(*) as total, COUNT(DISTINCT visitor_id) as visitors')
+            ->selectRaw('name, COUNT(*) as total, COUNT(DISTINCT visitor_id) as visitors, SUM(value) as carried, COUNT(value) as scored')
             ->groupBy('name')
             ->get();
 
@@ -47,6 +50,7 @@ final class EventReadRepository
             $definition = $declared[$name] ?? null;
             $value = $definition instanceof TrackedEvent ? $definition->value : null;
             $count = (int) $row->getAttribute('total');
+            $scored = (int) $row->getAttribute('scored');
 
             $result[] = [
                 'name' => $name,
@@ -55,7 +59,8 @@ final class EventReadRepository
                 'value' => $value,
                 'count' => $count,
                 'visitors' => (int) $row->getAttribute('visitors'),
-                'valueTotal' => $value !== null ? $value * $count : 0,
+                'valueTotal' => (int) $row->getAttribute('carried') + ($value ?? 0) * ($count - $scored),
+                'isScored' => $value !== null || $scored > 0,
             ];
         }
 
@@ -78,7 +83,7 @@ final class EventReadRepository
      * Headline totals derived from an already-computed breakdown, so a caller that
      * also needs the breakdown does not pay for a second aggregation query.
      *
-     * @param  list<array{name: string, label: string, isConversion: bool, value: int|null, count: int, visitors: int, valueTotal: int}>  $breakdown
+     * @param  list<array{name: string, label: string, isConversion: bool, value: int|null, count: int, visitors: int, valueTotal: int, isScored: bool}>  $breakdown
      * @return array{events: int, conversions: int, value: int}
      */
     public function totals(array $breakdown): array

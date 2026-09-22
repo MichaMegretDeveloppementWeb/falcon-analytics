@@ -61,7 +61,7 @@
                             <x-ui::table.cell align="right" class="an:font-medium an:tabular-nums an:text-primary">{{ number_format($row['count'], 0, ',', ' ') }}</x-ui::table.cell>
                             <x-ui::table.cell align="right" class="an:tabular-nums">{{ number_format($row['visitors'], 0, ',', ' ') }}</x-ui::table.cell>
                             <x-ui::table.cell align="right" class="an:tabular-nums an:text-secondary">{{ $row['value'] !== null ? number_format($row['value'], 0, ',', ' ')."\u{00A0}pts" : '·' }}</x-ui::table.cell>
-                            <x-ui::table.cell :last="true" align="right" class="an:tabular-nums">{{ $row['value'] !== null ? number_format($row['valueTotal'], 0, ',', ' ')."\u{00A0}pts" : '·' }}</x-ui::table.cell>
+                            <x-ui::table.cell :last="true" align="right" class="an:tabular-nums">{{ $row['isScored'] ? number_format($row['valueTotal'], 0, ',', ' ')."\u{00A0}pts" : '·' }}</x-ui::table.cell>
                         </x-ui::table.row>
                     @endforeach
                 </x-ui::table.body>

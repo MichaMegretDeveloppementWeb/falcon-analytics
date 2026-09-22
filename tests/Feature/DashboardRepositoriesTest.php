@@ -272,6 +272,33 @@ final class DashboardRepositoriesTest extends TestCase
         $this->assertFalse($breakdown[1]['isConversion']);
     }
 
+    /**
+     * The score an occurrence carries is its own; the declared one is the
+     * default for the occurrences that carry none. An event nobody declared
+     * still adds up what its occurrences were given.
+     */
+    public function test_an_occurrence_counts_the_score_it_carries_before_the_declared_one(): void
+    {
+        $session = $this->makeSession();
+        $this->makeEvent($session, EventType::Click, ['name' => 'Lead', 'value' => 10]);
+        $this->makeEvent($session, EventType::Click, ['name' => 'Lead']);
+        $this->makeEvent($session, EventType::Custom, ['name' => 'bonus', 'value' => 2]);
+        $this->makeEvent($session, EventType::Custom, ['name' => 'bonus', 'value' => 4]);
+
+        $registry = new EventRegistry;
+        $registry->register(new TrackedEvent('Lead', 'Demande de code', 3));
+
+        $repository = new EventReadRepository;
+        $breakdown = collect($repository->eventBreakdown($this->period, null, $registry))->keyBy('name');
+
+        $this->assertSame(13, $breakdown['Lead']['valueTotal'], 'Its own ten, and the declared three for the other.');
+        $this->assertSame(6, $breakdown['bonus']['valueTotal']);
+        $this->assertNull($breakdown['bonus']['value'], 'Nothing was declared for it.');
+
+        // The headline adds up the conversions only, and the undeclared event is none.
+        $this->assertSame(13, $repository->totals($breakdown->values()->all())['value']);
+    }
+
     public function test_it_counts_named_events_and_conversions_per_session_in_the_list(): void
     {
         $session = $this->makeSession();

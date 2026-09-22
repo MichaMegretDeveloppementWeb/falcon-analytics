@@ -454,7 +454,7 @@ ce qui précède, déclarez-le avec `data-track-event`. Sur un `<form>`,
 | Attribut | Effet |
 |---|---|
 | `data-track-event="domaine.action"` | nomme l'action · c'est la clé de l'événement déclaré et de la jointure des tunnels |
-| `data-track-value="3"` | un score, en points entiers · un nombre décimal est ignoré, et l'étape du tunnel prime |
+| `data-track-value="3"` | le score de ce clic, en points entiers · il remplace, pour ce clic, celui de la déclaration. Un nombre décimal est ignoré, et dans un tunnel ce sont les points de l'étape qui comptent |
 | `data-track-prop-*="…"` | des propriétés libres · `data-track-prop-listing-id` devient `props.listing_id` |
 | `data-track-section="hero"` | une zone logique, appliquée à tout le sous-arbre |
 | `data-track-label="…"` | un libellé humain · sinon le texte détecté |
@@ -496,7 +496,7 @@ TrackedEvent::define('nav.catalog.click', 'Accès au catalogue');
 |---|---|
 | `name` | la clé technique, telle qu'employée par `data-track-event` ou `Analytics::record()`. Convention · `domaine.action` |
 | `label` | ce que le tableau de bord affiche |
-| `value` | le score que rapporte chaque occurrence, **en points entiers** · jamais un montant. Un événement qui en porte un est une conversion, sauf `conversion: false` |
+| `value` | le score que rapporte chaque occurrence **par défaut**, en points entiers · jamais un montant. Une occurrence qui porte le sien — `data-track-value`, `Analytics::record(value:)` — compte le sien. Un événement déclaré avec un score est une conversion, sauf `conversion: false` |
 | `conversion` | marque l'événement comme une conversion |
 
 > **Un score, pas un montant.** Le tableau de bord additionne des points et les
