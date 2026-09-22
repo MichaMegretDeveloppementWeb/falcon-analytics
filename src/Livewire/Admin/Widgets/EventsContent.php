@@ -67,6 +67,7 @@ final class EventsContent extends Component
                 'eventsData' => $eventsData,
                 'conversionsData' => $conversionsData,
                 'breakdown' => $breakdown,
+                'declarationsIncomplete' => $events->failure() !== null,
             ];
         }, fn (array $data): View => view('analytics::livewire.dashboard.widgets.events-content', $data));
     }

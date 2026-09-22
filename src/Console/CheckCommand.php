@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Console;
 
+use Falcon\Analytics\Events\EventRegistry;
+use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Services\DailyCountArchiver;
 use Falcon\Analytics\Services\SubjectResolver;
 use Falcon\Analytics\Support\DatabaseEngine;
@@ -88,10 +90,38 @@ final class CheckCommand extends Command
             $this->checkAreaLayout($config),
             $this->checkPublishedAssets(),
             $this->checkIdentity($config),
+            $this->checkDeclarations(),
             $this->checkRetention($config),
             $this->checkSummaries(),
             $this->checkProxy(),
             $this->checkGeoip($config),
+        ];
+    }
+
+    /**
+     * Whether the events and funnels files load whole.
+     *
+     * A file that stops on an error keeps what came before it and ignores the
+     * rest, so the conversions declared after the error vanish from the
+     * screens. Loading never raises, by design, which is why it is said here.
+     *
+     * @return array{0: string, 1: string, 2: string}
+     */
+    private function checkDeclarations(): array
+    {
+        $failures = array_values(array_filter([
+            app(EventRegistry::class)->failure(),
+            app(FunnelRegistry::class)->failure(),
+        ]));
+
+        if ($failures === []) {
+            return ['Déclarations', 'OK', 'Les fichiers des événements et des tunnels se lisent en entier.'];
+        }
+
+        return [
+            'Déclarations',
+            'KO',
+            'Lecture arrêtée sur une erreur, et tout ce qui est déclaré ensuite est ignoré · '.implode(' · ', $failures),
         ];
     }
 

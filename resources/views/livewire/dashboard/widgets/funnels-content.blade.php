@@ -1,4 +1,8 @@
 <x-analytics::root area="admin" class="an:grid an:grid-cols-1 an:gap-6 an:lg:grid-cols-2">
+    @if ($declarationsIncomplete)
+        <x-ui::alert type="warning" class="an:lg:col-span-2">{{ __('Le fichier qui déclare les tunnels du site n\'a pas pu être lu en entier : ceux déclarés après l\'erreur n\'apparaissent pas ici. Signalez-le à la personne qui maintient le site.') }}</x-ui::alert>
+    @endif
+
     @forelse ($reports as $report)
         @php
             $lastStep = $report->steps === [] ? null : $report->steps[array_key_last($report->steps)];

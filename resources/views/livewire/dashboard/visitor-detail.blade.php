@@ -163,7 +163,7 @@
         <x-ui::section-header :title="__('Zone de danger')" :danger="true" :description="__('L\'effacement des données de ce visiteur est définitif.')" class="an:mb-4" />
 
         @error('visitor-erasure-failed')
-            <x-ui::alert variant="danger" class="an:mb-4">{{ $message }}</x-ui::alert>
+            <x-ui::alert type="error" class="an:mb-4">{{ $message }}</x-ui::alert>
         @enderror
 
         <div class="an:flex an:flex-col an:gap-3 an:rounded-xl an:border an:border-red-200 an:bg-red-50/40 an:px-5 an:py-4 an:dark:border-red-500/20 an:dark:bg-red-500/[0.06] an:sm:flex-row an:sm:items-center an:sm:justify-between">

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Tests\Feature;
 
 use Falcon\Analytics\Enums\EventType;
+use Falcon\Analytics\Events\EventRegistry;
+use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
@@ -292,6 +294,33 @@ final class TheDiagnosticSpeaksTest extends TestCase
     public function test_it_accepts_a_collector_stack_named_by_its_group(): void
     {
         $this->artisan('analytics:check')->assertSuccessful();
+    }
+
+    /**
+     * A declarations file that stops on an error.
+     *
+     * What came before the error is kept and the rest is ignored, so the
+     * conversions declared after it vanish from the screens, and the log is
+     * the only other place that says so.
+     */
+    public function test_it_names_an_events_file_that_does_not_load_whole(): void
+    {
+        config(['analytics.events_path' => __DIR__.'/../Fixtures/analytics-events-broken.php']);
+        $this->app->forgetInstance(EventRegistry::class);
+
+        $this->artisan('analytics:check')
+            ->expectsOutputToContain('analytics-events-broken.php')
+            ->assertFailed();
+    }
+
+    public function test_it_names_a_funnels_file_that_does_not_load_whole(): void
+    {
+        config(['analytics.funnels_path' => __DIR__.'/../Fixtures/analytics-funnels-broken.php']);
+        $this->app->forgetInstance(FunnelRegistry::class);
+
+        $this->artisan('analytics:check')
+            ->expectsOutputToContain('analytics-funnels-broken.php')
+            ->assertFailed();
     }
 
     protected function withACollectorStackWithoutSession(Application $app): void
