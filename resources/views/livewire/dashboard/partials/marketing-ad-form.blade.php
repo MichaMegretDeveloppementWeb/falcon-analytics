@@ -85,6 +85,6 @@
 
     <x-slot:footer>
         <x-ui::button type="button" variant="ghost" x-on:click="$dispatch('ui-close-modal', 'an-ad-form')">{{ __('Annuler') }}</x-ui::button>
-        <x-ui::button type="button" x-on:click="$anCloseWhenDone($wire.saveAd(), 'an-ad-form')">{{ __('Enregistrer') }}</x-ui::button>
+        <x-ui::button type="button" x-on:click="$anCloseWhenDone($wire.saveAd(), 'an-ad-form')" :loading="true" target="saveAd">{{ __('Enregistrer') }}</x-ui::button>
     </x-slot:footer>
 </x-ui::modal>

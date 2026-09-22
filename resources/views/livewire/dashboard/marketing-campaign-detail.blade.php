@@ -132,7 +132,7 @@
 
         <x-slot:footer>
             <x-ui::button type="button" variant="ghost" x-on:click="$dispatch('ui-close-modal', 'an-campaign-form')">{{ __('Annuler') }}</x-ui::button>
-            <x-ui::button type="button" x-on:click="$anCloseWhenDone($wire.saveCampaign(), 'an-campaign-form')">{{ __('Enregistrer') }}</x-ui::button>
+            <x-ui::button type="button" x-on:click="$anCloseWhenDone($wire.saveCampaign(), 'an-campaign-form')" :loading="true" target="saveCampaign">{{ __('Enregistrer') }}</x-ui::button>
         </x-slot:footer>
     </x-ui::modal>
 
@@ -145,7 +145,7 @@
 
         <x-slot:actions>
             <x-ui::button type="button" variant="ghost" x-on:click="$dispatch('ui-close-modal', 'an-campaign-delete')">{{ __('Annuler') }}</x-ui::button>
-            <x-ui::button type="button" variant="danger" x-on:click="$anCloseWhenDone($wire.deleteCampaignConfirmed(), 'an-campaign-delete')">{{ __('Supprimer') }}</x-ui::button>
+            <x-ui::button type="button" variant="danger" x-on:click="$anCloseWhenDone($wire.deleteCampaignConfirmed(), 'an-campaign-delete')" :loading="true" target="deleteCampaignConfirmed">{{ __('Supprimer') }}</x-ui::button>
         </x-slot:actions>
     </x-ui::modal>
 
@@ -155,7 +155,7 @@
 
         <x-slot:actions>
             <x-ui::button type="button" variant="ghost" x-on:click="$dispatch('ui-close-modal', 'an-ad-delete')">{{ __('Annuler') }}</x-ui::button>
-            <x-ui::button type="button" variant="danger" x-on:click="$anCloseWhenDone($wire.deleteAdConfirmed(), 'an-ad-delete')">{{ __('Supprimer') }}</x-ui::button>
+            <x-ui::button type="button" variant="danger" x-on:click="$anCloseWhenDone($wire.deleteAdConfirmed(), 'an-ad-delete')" :loading="true" target="deleteAdConfirmed">{{ __('Supprimer') }}</x-ui::button>
         </x-slot:actions>
     </x-ui::modal>
 </x-analytics::root>

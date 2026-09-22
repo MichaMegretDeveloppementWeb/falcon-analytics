@@ -145,7 +145,7 @@
 
         <x-slot:actions>
             <x-ui::button type="button" variant="ghost" x-on:click="$dispatch('ui-close-modal', 'an-search-console-disconnect')">{{ __('Annuler') }}</x-ui::button>
-            <x-ui::button type="button" variant="danger" x-on:click="$anCloseWhenDone($wire.disconnectConfirmed(), 'an-search-console-disconnect')">{{ __('Déconnecter') }}</x-ui::button>
+            <x-ui::button type="button" variant="danger" x-on:click="$anCloseWhenDone($wire.disconnectConfirmed(), 'an-search-console-disconnect')" :loading="true" target="disconnectConfirmed">{{ __('Déconnecter') }}</x-ui::button>
         </x-slot:actions>
     </x-ui::modal>
 </x-analytics::root>
