@@ -6,7 +6,7 @@ namespace Falcon\Analytics\Repositories\Dashboard;
 
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Repositories\Concerns\ScopesSessionQueries;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 /**
  * Read model for the visitor profile: whole-history engagement aggregates (in

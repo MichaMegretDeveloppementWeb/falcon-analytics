@@ -1,6 +1,4 @@
 @php
-    use Falcon\Analytics\Support\DeviceLabel;
-    use Falcon\Analytics\Support\DurationLabel;
     use Falcon\Analytics\Support\NumberLabel;
 @endphp
 
@@ -103,29 +101,25 @@
                     <x-ui::table.header-cell :last="true">{{ __('Localité') }}</x-ui::table.header-cell>
                 </x-ui::table.head>
                 <x-ui::table.body>
-                    @foreach ($sessions as $s)
-                        @php
-                            $sessionUrl = route('analytics.admin.sessions.show', $s);
-                            $seconds = (int) $s->started_at->diffInSeconds($s->last_activity_at);
-                        @endphp
-                        <x-ui::table.row wire:key="session-{{ $s->id }}" class="an-row-link">
+                    @foreach ($sessions as $session)
+                        <x-ui::table.row wire:key="session-{{ $session->id }}" class="an-row-link">
                             <x-ui::table.cell :first="true" variant="primary" class="an:whitespace-nowrap">
                                 <span class="an:inline-flex an:items-center an:gap-x-2">
-                                    <a href="{{ $sessionUrl }}" class="an-row-link__target an:cursor-pointer an:hover:underline">{{ $s->started_at->translatedFormat('d M Y, H:i') }}</a>
-                                    @if ($detail->isIdentified && $s->subject_type)
+                                    <a href="{{ route('analytics.admin.sessions.show', $session->id) }}" class="an-row-link__target an:cursor-pointer an:hover:underline">{{ $session->startedAt->translatedFormat('d M Y, H:i') }}</a>
+                                    @if ($detail->isIdentified && $session->signedIn)
                                         <x-ui::badge color="blue">{{ __('Connecté') }}</x-ui::badge>
                                     @endif
                                 </span>
                             </x-ui::table.cell>
-                            <x-ui::table.cell class="an:whitespace-nowrap">{{ DurationLabel::for($seconds) }}</x-ui::table.cell>
-                            <x-ui::table.cell class="an:tabular-nums">{{ $s->pageview_count }}</x-ui::table.cell>
-                            <x-ui::table.cell>{{ DeviceLabel::for($s->device_type) }}</x-ui::table.cell>
+                            <x-ui::table.cell class="an:whitespace-nowrap">{{ $session->duration }}</x-ui::table.cell>
+                            <x-ui::table.cell class="an:tabular-nums">{{ $session->pageviewCount }}</x-ui::table.cell>
+                            <x-ui::table.cell>{{ $session->device }}</x-ui::table.cell>
                             <x-ui::table.cell>
-                                <x-ui::badge color="gray"><x-analytics::source :value="$s->source" /></x-ui::badge>
+                                <x-ui::badge color="gray"><x-analytics::source :value="$session->source" /></x-ui::badge>
                             </x-ui::table.cell>
                             <x-ui::table.cell :last="true" class="an:whitespace-nowrap">
-                                @if ($s->country || $s->city)
-                                    <x-analytics::country :code="$s->country" :city="$s->city" />
+                                @if ($session->country || $session->city)
+                                    <x-analytics::country :code="$session->country" :city="$session->city" />
                                 @else
                                     <span class="an:text-muted">{{ __('Inconnu') }}</span>
                                 @endif

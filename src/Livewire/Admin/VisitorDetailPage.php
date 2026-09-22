@@ -80,7 +80,7 @@ final class VisitorDetailPage extends Component
         return $this->guardedRender(
             fn (): array => [
                 'detail' => $details->build($this->visitor(), $repository->engagement($this->visitorId)),
-                'sessions' => $repository->paginateSessions($this->visitorId, self::PER_PAGE),
+                'sessions' => $details->sessions($repository->paginateSessions($this->visitorId, self::PER_PAGE)),
             ],
             fn (array $data): View => view('analytics::livewire.dashboard.visitor-detail', $data),
         );

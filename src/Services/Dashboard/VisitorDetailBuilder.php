@@ -7,17 +7,20 @@ namespace Falcon\Analytics\Services\Dashboard;
 use Falcon\Analytics\DTOs\Dashboard\Visitor\DeviceShare;
 use Falcon\Analytics\DTOs\Dashboard\Visitor\SourceShare;
 use Falcon\Analytics\DTOs\Dashboard\Visitor\VisitorDetail;
+use Falcon\Analytics\DTOs\Dashboard\Visitor\VisitorSessionRow;
+use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Services\SubjectResolver;
 use Falcon\Analytics\Support\ChartPalette;
 use Falcon\Analytics\Support\DeviceLabel;
 use Falcon\Analytics\Support\DurationLabel;
 use Falcon\Analytics\Support\NumberLabel;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 /**
- * Prepares the detail screen of a visitor from the visitor and the aggregates
- * of their sessions, already read · the view receives values, and reads
- * nothing.
+ * Prepares the detail screen of a visitor from the visitor, the aggregates of
+ * their sessions and a page of them, already read · the view receives values,
+ * and reads nothing.
  *
  * @internal
  */
@@ -49,6 +52,27 @@ final readonly class VisitorDetailBuilder
             devices: self::devices($engagement['devices']),
             sources: self::sources($engagement['sources']),
         );
+    }
+
+    /**
+     * The lines of the visitor's sessions, from a page of them already read.
+     *
+     * @param  LengthAwarePaginator<int, Session>  $sessions
+     * @return LengthAwarePaginator<int, VisitorSessionRow>
+     */
+    public function sessions(LengthAwarePaginator $sessions): LengthAwarePaginator
+    {
+        return $sessions->through(static fn (Session $session): VisitorSessionRow => new VisitorSessionRow(
+            id: $session->id,
+            startedAt: $session->started_at,
+            signedIn: filled($session->subject_type),
+            duration: DurationLabel::for((int) $session->started_at->diffInSeconds($session->last_activity_at)),
+            pageviewCount: $session->pageview_count,
+            device: DeviceLabel::for($session->device_type),
+            source: $session->source,
+            country: $session->country,
+            city: $session->city,
+        ));
     }
 
     /**
