@@ -160,6 +160,69 @@ final class MarketingPagesTest extends TestCase
         }
     }
 
+    /**
+     * A form window is a real form its button submits · the kit brings the
+     * cursor to the first refused field of a submitted form, and to none other.
+     */
+    public function test_each_form_window_is_a_form_its_button_submits(): void
+    {
+        $campaign = $this->campaign('Été 2026');
+        $ad = Ad::create(['campaign_id' => $campaign->id, 'name' => 'Cabriolet', 'match_conditions' => [['param' => 'creative', 'value' => 'cabrio']]]);
+
+        $this->actingAs($this->admin, 'admin');
+
+        $screens = [
+            'the campaigns' => [route('analytics.admin.marketing.campaigns'), ['an-campaign-form' => 'saveCampaign']],
+            'a campaign' => [route('analytics.admin.marketing.campaigns.show', $campaign), ['an-campaign-form' => 'saveCampaign', 'an-ad-form' => 'saveAd']],
+            'an ad' => [route('analytics.admin.marketing.ads.show', $ad), ['an-ad-form' => 'saveAd']],
+        ];
+
+        foreach ($screens as $screen => [$url, $forms]) {
+            $page = (string) $this->get($url)->assertSuccessful()->getContent();
+
+            foreach ($forms as $modal => $call) {
+                $this->assertStringContainsString(
+                    '<form id="'.$modal.'-fields" x-on:submit.prevent="$anCloseWhenDone($wire.'.$call.'(), \''.$modal.'\')"',
+                    $page,
+                    "On {$screen}, {$modal} is not a form that saves on submit.",
+                );
+                $this->assertMatchesRegularExpression(
+                    '/<button(?=[^>]*\stype="submit")(?=[^>]*\sform="'.$modal.'-fields")[^>]*>/',
+                    $page,
+                    "On {$screen}, the button of {$modal} does not submit its form.",
+                );
+            }
+        }
+    }
+
+    /** The last URL condition of a form cannot be removed · by the pointer or by the keyboard. */
+    public function test_the_last_url_condition_cannot_be_removed(): void
+    {
+        $campaign = $this->campaign();
+
+        $this->actingAs($this->admin, 'admin');
+
+        $campaigns = Livewire::test(CampaignsPage::class)->call('newCampaign');
+        $this->assertSame([true], $this->removalsDisabled($campaigns->html(), 'removeCampaignCondition'));
+        $this->assertSame([false, false], $this->removalsDisabled($campaigns->call('addCampaignCondition')->html(), 'removeCampaignCondition'));
+
+        $ads = Livewire::test(CampaignDetailPage::class, ['campaign' => $campaign])->call('newAd');
+        $this->assertSame([true], $this->removalsDisabled($ads->html(), 'removeAdCondition'));
+        $this->assertSame([false, false], $this->removalsDisabled($ads->call('addAdCondition')->html(), 'removeAdCondition'));
+    }
+
+    /**
+     * Whether each removal button of a form is disabled, in page order.
+     *
+     * @return list<bool>
+     */
+    private function removalsDisabled(string $html, string $method): array
+    {
+        preg_match_all('/<button[^>]*wire:click="'.$method.'\(\d+\)"[^>]*>/', $html, $buttons);
+
+        return array_map(fn (string $button): bool => (bool) preg_match('/\sdisabled(\s|>|=)/', $button), $buttons[0]);
+    }
+
     /** Both objective lists of the ad form close on the escape key, and say whether they are open. */
     public function test_the_objective_lists_close_on_escape_and_say_whether_they_are_open(): void
     {
@@ -173,6 +236,7 @@ final class MarketingPagesTest extends TestCase
         $this->assertSame(2, substr_count($page, 'x-data="anObjectivePicker"'), 'The ad form no longer draws its two lists.');
         $this->assertSame(2, substr_count($page, 'x-on:keydown.escape="closeOnEscape($event)"'));
         $this->assertSame(2, substr_count($page, 'x-bind:aria-expanded="open"'));
+        $this->assertSame(2, substr_count($page, 'x-on:keydown.enter.prevent'), 'The Enter key in a list search would submit the whole ad form.');
     }
 
     public function test_it_creates_a_campaign_from_the_campaigns_table(): void

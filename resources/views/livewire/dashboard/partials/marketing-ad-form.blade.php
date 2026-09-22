@@ -2,7 +2,7 @@
 
 {{-- Ad create/edit modal, shared by the campaign detail and ad detail screens. --}}
 <x-ui::modal name="an-ad-form" :title="$adId ? __('Modifier la pub') : __('Nouvelle pub')">
-    <div class="an:space-y-4">
+    <form id="an-ad-form-fields" x-on:submit.prevent="$anCloseWhenDone($wire.saveAd(), 'an-ad-form')" class="an:space-y-4">
         <x-ui::form-group :label="__('Nom')" for="adName">
             <x-ui::input wire:model="adName" id="adName" placeholder="{{ __('Ex. Cabriolet') }}" :error="$errors->has('adName')" />
         </x-ui::form-group>
@@ -14,7 +14,7 @@
                         <x-ui::input wire:model="adConditions.{{ $index }}.param" placeholder="{{ __('paramètre') }}" class="an:flex-1" :error="$errors->has('adConditions.'.$index.'.param')" />
                         <span class="an:text-muted">=</span>
                         <x-ui::input wire:model="adConditions.{{ $index }}.value" placeholder="{{ __('valeur') }}" class="an:flex-1" :error="$errors->has('adConditions.'.$index.'.value')" />
-                        <button type="button" wire:click="removeAdCondition({{ $index }})" @class(['an:shrink-0 an:cursor-pointer an:text-muted an:transition-colors an:hover:text-red-600', 'an:pointer-events-none an:opacity-30' => count($adConditions) <= 1]) aria-label="{{ __('Retirer') }}"><x-ui::icon name="x-mark" class="an:h-4 an:w-4" /></button>
+                        <button type="button" wire:click="removeAdCondition({{ $index }})" class="an:shrink-0 an:cursor-pointer an:text-muted an:transition-colors an:hover:text-red-600 an:disabled:pointer-events-none an:disabled:opacity-30" @disabled(count($adConditions) <= 1) aria-label="{{ __('Retirer') }}"><x-ui::icon name="x-mark" class="an:h-4 an:w-4" /></button>
                     </div>
                 @endforeach
             </div>
@@ -47,7 +47,7 @@
                     <x-ui::button type="button" variant="secondary" size="compact" x-ref="trigger" x-bind:aria-expanded="open" x-on:click="toggle()"><x-ui::icon name="funnel" class="an:h-3.5 an:w-3.5" /> {{ __('Tunnel') }}</x-ui::button>
                     <div x-show="open" x-cloak x-transition.opacity class="an:absolute an:bottom-full an:left-0 an:z-30 an:mb-1 an:w-72 an:overflow-hidden an:rounded-lg an:border an:border-default an:bg-surface an:shadow-xl">
                         <div class="an:border-b an:border-subtle an:p-2">
-                            <input x-model="search" x-on:click.stop type="text" placeholder="{{ __('Rechercher un tunnel...') }}" class="an:w-full an:rounded-lg an:border an:border-default an:bg-elevated an:px-2.5 an:py-1.5 an:text-[13px] an:text-primary an:placeholder:text-muted an:focus:outline-none an:focus:ring-2 an:focus:ring-gray-900/10 an:dark:focus:ring-white/10">
+                            <input x-model="search" x-on:click.stop x-on:keydown.enter.prevent type="text" placeholder="{{ __('Rechercher un tunnel...') }}" class="an:w-full an:rounded-lg an:border an:border-default an:bg-elevated an:px-2.5 an:py-1.5 an:text-[13px] an:text-primary an:placeholder:text-muted an:focus:outline-none an:focus:ring-2 an:focus:ring-gray-900/10 an:dark:focus:ring-white/10">
                         </div>
                         <div class="an:max-h-52 an:overflow-y-auto an:p-1">
                             @forelse ($funnelOptions as $option)
@@ -66,7 +66,7 @@
                     <x-ui::button type="button" variant="secondary" size="compact" x-ref="trigger" x-bind:aria-expanded="open" x-on:click="toggle()"><x-ui::icon name="bolt" class="an:h-3.5 an:w-3.5" /> {{ __('Événement') }}</x-ui::button>
                     <div x-show="open" x-cloak x-transition.opacity class="an:absolute an:bottom-full an:left-0 an:z-30 an:mb-1 an:w-72 an:overflow-hidden an:rounded-lg an:border an:border-default an:bg-surface an:shadow-xl">
                         <div class="an:border-b an:border-subtle an:p-2">
-                            <input x-model="search" x-on:click.stop type="text" placeholder="{{ __('Rechercher un événement...') }}" class="an:w-full an:rounded-lg an:border an:border-default an:bg-elevated an:px-2.5 an:py-1.5 an:text-[13px] an:text-primary an:placeholder:text-muted an:focus:outline-none an:focus:ring-2 an:focus:ring-gray-900/10 an:dark:focus:ring-white/10">
+                            <input x-model="search" x-on:click.stop x-on:keydown.enter.prevent type="text" placeholder="{{ __('Rechercher un événement...') }}" class="an:w-full an:rounded-lg an:border an:border-default an:bg-elevated an:px-2.5 an:py-1.5 an:text-[13px] an:text-primary an:placeholder:text-muted an:focus:outline-none an:focus:ring-2 an:focus:ring-gray-900/10 an:dark:focus:ring-white/10">
                         </div>
                         <div class="an:max-h-52 an:overflow-y-auto an:p-1">
                             @forelse ($eventOptions as $option)
@@ -81,10 +81,10 @@
                 </div>
             </div>
         </div>
-    </div>
+    </form>
 
     <x-slot:footer>
         <x-ui::button type="button" variant="ghost" x-on:click="$dispatch('ui-close-modal', 'an-ad-form')">{{ __('Annuler') }}</x-ui::button>
-        <x-ui::button type="button" x-on:click="$anCloseWhenDone($wire.saveAd(), 'an-ad-form')" :loading="true" target="saveAd">{{ __('Enregistrer') }}</x-ui::button>
+        <x-ui::button type="submit" form="an-ad-form-fields" :loading="true" target="saveAd">{{ __('Enregistrer') }}</x-ui::button>
     </x-slot:footer>
 </x-ui::modal>
