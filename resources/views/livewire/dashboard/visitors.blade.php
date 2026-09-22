@@ -1,8 +1,5 @@
 @php
     use Falcon\Analytics\Support\NumberLabel;
-    use Illuminate\Support\Str;
-
-    $subjectResolver = app(\Falcon\Analytics\Services\SubjectResolver::class);
 @endphp
 
 <x-analytics::root area="admin" class="an:space-y-6">
@@ -56,7 +53,7 @@
             :title="__('Aucun visiteur')"
             :description="__('Aucun visiteur ne correspond aux filtres.')" />
     @else
-        <x-ui::table>
+        <x-ui::table x-data="anCopyList">
             <x-ui::table.head>
                 <x-ui::table.header-cell :first="true">{{ __('Visiteur') }}</x-ui::table.header-cell>
                 <x-ui::table.header-cell>{{ __('Type') }}</x-ui::table.header-cell>
@@ -68,47 +65,36 @@
             </x-ui::table.head>
             <x-ui::table.body>
                 @foreach ($visitors as $visitor)
-                    @php
-                        $subjectName = $visitor->subject_type ? ($subjectNames[$visitor->subject_type.':'.$visitor->subject_id] ?? null) : null;
-                        $subjectLabel = $visitor->subject_type ? $subjectResolver->label($visitor->subject_type) : null;
-                        $visitorUrl = route('analytics.admin.visitors.show', $visitor);
-                    @endphp
                     <x-ui::table.row wire:key="visitor-{{ $visitor->id }}" class="an-row-link">
                         <x-ui::table.cell :first="true">
                             <div class="an:flex an:flex-col an:gap-0.5">
-                                <a href="{{ $visitorUrl }}" class="an-row-link__target an:cursor-pointer an:text-[13px] an:font-medium an:text-primary an:hover:underline">
-                                    @if ($visitor->subject_type)
-                                        {{ $subjectName ?? $subjectLabel.' #'.$visitor->subject_id }}
-                                    @else
-                                        {{ __('Visiteur #:id', ['id' => $visitor->id]) }}
-                                    @endif
-                                </a>
-                                <span class="an:text-[11px] an:text-muted">{{ Str::limit($visitor->uuid, 16, '') }}</span>
+                                <a href="{{ route('analytics.admin.visitors.show', $visitor->id) }}" class="an-row-link__target an:cursor-pointer an:text-[13px] an:font-medium an:text-primary an:hover:underline">{{ $visitor->name }}</a>
+                                <span class="an:text-[11px] an:text-muted"><x-analytics::row-uuid :uuid="$visitor->uuid" /></span>
                             </div>
                         </x-ui::table.cell>
                         <x-ui::table.cell>
-                            @if ($visitor->subject_type)
-                                <x-ui::badge color="blue">{{ $subjectLabel }}</x-ui::badge>
+                            @if ($visitor->kind !== null)
+                                <x-ui::badge color="blue">{{ $visitor->kind }}</x-ui::badge>
                             @else
                                 <x-ui::badge color="gray">{{ __('Anonyme') }}</x-ui::badge>
                             @endif
                         </x-ui::table.cell>
-                        <x-ui::table.cell class="an:tabular-nums">{{ NumberLabel::for((int) $visitor->session_count) }}</x-ui::table.cell>
-                        <x-ui::table.cell class="an:whitespace-nowrap">{{ $visitor->first_seen_at->translatedFormat('d M Y') }}</x-ui::table.cell>
-                        <x-ui::table.cell class="an:whitespace-nowrap an:text-secondary">{{ $visitor->last_seen_at->diffForHumans() }}</x-ui::table.cell>
+                        <x-ui::table.cell class="an:tabular-nums">{{ NumberLabel::for($visitor->sessionCount) }}</x-ui::table.cell>
+                        <x-ui::table.cell class="an:whitespace-nowrap">{{ $visitor->firstSeenAt->translatedFormat('d M Y') }}</x-ui::table.cell>
+                        <x-ui::table.cell class="an:whitespace-nowrap an:text-secondary">{{ $visitor->lastSeenAt->diffForHumans() }}</x-ui::table.cell>
                         <x-ui::table.cell>
                             {{-- Bounded: truncates with the full text on hover, so the
                                  table never widens past its container. --}}
                             <div class="an:max-w-44 an:truncate">
-                                @if ($visitor->last_country || $visitor->last_city)
-                                    <x-analytics::country :code="$visitor->last_country" :city="$visitor->last_city" />
+                                @if ($visitor->country || $visitor->city)
+                                    <x-analytics::country :code="$visitor->country" :city="$visitor->city" />
                                 @else
                                     <span class="an:text-muted">{{ __('Inconnu') }}</span>
                                 @endif
                             </div>
                         </x-ui::table.cell>
                         <x-ui::table.cell :last="true" class="an:whitespace-nowrap">
-                            <x-ui::badge color="gray"><x-analytics::source :value="$visitor->acquisition_source" /></x-ui::badge>
+                            <x-ui::badge color="gray"><x-analytics::source :value="$visitor->source" /></x-ui::badge>
                         </x-ui::table.cell>
                     </x-ui::table.row>
                 @endforeach

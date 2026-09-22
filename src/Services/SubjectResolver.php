@@ -173,8 +173,8 @@ final class SubjectResolver
 
             foreach ($ids as $id) {
                 $shown[$guard.':'.$id] = isset($names[$id])
-                    ? new SubjectName($names[$id], $label)
-                    : new SubjectName($label.' #'.$id, null);
+                    ? new SubjectName($names[$id], $label, true)
+                    : new SubjectName($label.' #'.$id, $label, false);
             }
         }
 

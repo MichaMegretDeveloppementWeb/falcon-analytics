@@ -64,9 +64,10 @@ final readonly class VisitorDetailBuilder
             return [__('Visiteur #:id', ['id' => $visitor->id]), __('Visiteur anonyme')];
         }
 
-        $label = $this->subjects->label($type);
+        $id = (int) $visitor->subject_id;
+        $subject = $this->subjects->shownNames([[$type, $id]])[$type.':'.$id];
 
-        return [$this->subjects->name($type, (int) $visitor->subject_id) ?? $label.' #'.$visitor->subject_id, $label];
+        return [$subject->name, $subject->label];
     }
 
     private static function isIdentified(Visitor $visitor): bool

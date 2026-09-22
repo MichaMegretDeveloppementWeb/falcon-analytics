@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Livewire\Admin;
 
-use Falcon\Analytics\Livewire\Admin\Concerns\ResolvesSubjectNames;
 use Falcon\Analytics\Livewire\Admin\Concerns\SortsAndSearchesList;
 use Falcon\Analytics\Repositories\Dashboard\VisitorListReadRepository;
+use Falcon\Analytics\Services\Dashboard\VisitorRowBuilder;
 use Falcon\Analytics\Services\SubjectResolver;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Url;
@@ -22,7 +22,6 @@ use Livewire\WithPagination;
  */
 final class VisitorsPage extends DashboardComponent
 {
-    use ResolvesSubjectNames;
     use SortsAndSearchesList;
     use WithPagination;
 
@@ -35,18 +34,15 @@ final class VisitorsPage extends DashboardComponent
     #[Url]
     public string $direction = 'desc';
 
-    public function render(VisitorListReadRepository $repository, SubjectResolver $subjects): View
+    public function render(VisitorListReadRepository $repository, SubjectResolver $subjects, VisitorRowBuilder $rows): View
     {
         return $this->guardedRender(
-            function () use ($repository, $subjects): array {
-                $subjectType = $this->subjectType();
-
-                $visitors = $repository->paginateVisitors($subjectType, $this->search, $subjects, $this->sort, $this->direction);
+            function () use ($repository, $subjects, $rows): array {
+                $visitors = $repository->paginateVisitors($this->subjectType(), $this->search, $subjects, $this->sort, $this->direction);
 
                 return [
                     'range' => $this->currentPeriod(),
-                    'visitors' => $visitors,
-                    'subjectNames' => $this->resolveSubjectNames($visitors, $subjects),
+                    'visitors' => $rows->build($visitors),
                     'sort' => $this->sort,
                     'direction' => $this->direction,
                     ...$this->filterData(),

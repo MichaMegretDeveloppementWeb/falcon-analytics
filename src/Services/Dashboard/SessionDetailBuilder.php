@@ -102,7 +102,7 @@ final readonly class SessionDetailBuilder
             id: $session->visitor_id,
             uuid: self::filled($uuid),
             name: $subject->name,
-            label: $subject->label,
+            label: $subject->labelBesideName(),
             viaVisitor: $attribution->viaVisitor,
             isReturning: $isReturning,
         );

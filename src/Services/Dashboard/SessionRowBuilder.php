@@ -51,7 +51,7 @@ final readonly class SessionRowBuilder
         return new SessionRow(
             id: $session->id,
             name: $subject->name ?? __('Visiteur #:id', ['id' => $session->visitor_id]),
-            label: $subject?->label,
+            label: $subject?->labelBesideName(),
             visitorUuid: $session->visitor->uuid,
             notConnected: $attribution !== null && $attribution->viaVisitor,
             startedAt: $session->started_at,
