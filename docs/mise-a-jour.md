@@ -2,6 +2,22 @@
 
 ---
 
+## ⚠️ Vous montez un projet installé avant la reprise du schéma ?
+
+**Alors la procédure ci-dessous ne suffit pas**, et `migrate` ne rattrapera
+rien · les vingt-deux migrations qui construisaient le schéma par touches
+successives sont devenues dix, une par table. **Les tables du paquet se
+suppriment et se rejouent**, et ce qu'il avait mesuré est perdu.
+
+> **Tout est dans [`reprise-du-schema.md`](reprise-du-schema.md)** · ce qui
+> change, ce que vous perdez, et la procédure **en local puis en production**,
+> qui ne se jouent pas pareil.
+
+**Pour une installation neuve, il n'y a rien de tout cela à faire** · la
+procédure ordinaire ci-dessous suffit, et suffira toujours.
+
+---
+
 ## La procédure
 
 ```bash
@@ -28,7 +44,7 @@ une colonne, un écran qui la lit doit la trouver. Entre les deux commandes, le
 pire qui arrive est une feuille d'hier ; dans l'autre ordre, c'est une requête
 sur une colonne absente.
 
-`analytics:check` remplace le tour de l'application à la main · douze contrôles,
+`analytics:check` remplace le tour de l'application à la main · treize contrôles,
 tous sur des défauts qui échouent en silence.
 
 > **La configuration publiée n'est jamais écrasée.** Une clé ajoutée par une

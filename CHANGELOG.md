@@ -94,9 +94,24 @@ la conservation, et ne sont pas une interface.
 Elles sont toutes réversibles. Ce qui ne veut pas dire qu'il faille les
 redescendre · voir [mise-a-jour.md](docs/mise-a-jour.md#le-schéma-qui-est-la-vraie-question).
 
+> **⚠️ Un projet installé avant cette version ne se monte pas par `migrate`.**
+> Le schéma a été repris à neuf · les vingt-deux migrations qui le construisaient
+> par touches successives sont devenues dix, une par table. **Les tables du
+> paquet se suppriment et se rejouent**, par `php artisan analytics:refresh`, et
+> ce qu'il avait mesuré est perdu.
+>
+> **La procédure, en local puis en production** ·
+> [reprise-du-schema.md](docs/reprise-du-schema.md). Ce fichier est temporaire
+> et disparaîtra quand tous les projets existants seront montés.
+>
+> Ce que la reprise ferme · les instants quittent un type que le moteur
+> convertit contre le fuseau du serveur, qui faisait lire au disque une heure
+> décalée, et refusait l'heure que la pendule locale saute au passage à l'heure
+> d'été.
+
 ### Ce qu'il exige
 
-PHP 8.5, Laravel 13, Livewire 4.2, et une base MySQL, MariaDB ou PostgreSQL.
+PHP 8.5, Laravel 13, Livewire 4.2, et une base **MySQL ou MariaDB**.
 `falcon/ui-kit` vient avec le paquet.
 
 > **Le plancher est celui de toute la suite**, pas une exigence de ce paquet

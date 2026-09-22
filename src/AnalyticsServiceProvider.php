@@ -11,6 +11,7 @@ use Falcon\Analytics\Console\GeoipCheckCommand;
 use Falcon\Analytics\Console\GeoipDownloadCommand;
 use Falcon\Analytics\Console\InstallCommand;
 use Falcon\Analytics\Console\PruneCommand;
+use Falcon\Analytics\Console\RefreshCommand;
 use Falcon\Analytics\Console\ScanEventsCommand;
 use Falcon\Analytics\Console\SweepCommand;
 use Falcon\Analytics\Console\SyncSearchConsoleCommand;
@@ -169,6 +170,7 @@ final class AnalyticsServiceProvider extends ServiceProvider
             GeoipCheckCommand::class,
             ArchiveCommand::class,
             PruneCommand::class,
+            RefreshCommand::class,
             SweepCommand::class,
             ScanEventsCommand::class,
             CheckEventsCommand::class,
