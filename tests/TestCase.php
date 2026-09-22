@@ -10,6 +10,7 @@ use Falcon\Analytics\Tests\Fixtures\Models\TestAdmin;
 use Falcon\Analytics\Tests\Fixtures\Models\TestClient;
 use Falcon\Analytics\Tests\Fixtures\Models\TestLessor;
 use Falcon\Ui\UiServiceProvider;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Query\JoinClause;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Collection;
@@ -38,6 +39,9 @@ abstract class TestCase extends Orchestra
         // in the same process, and the first render of each is the one that
         // inherits it.
         Livewire::flushState();
+
+        // The host runs Eloquent strict outside production, and so does the bench.
+        Model::shouldBeStrict();
     }
 
     /**
