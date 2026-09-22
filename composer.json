@@ -23,6 +23,7 @@
     ],
     "require": {
         "php": "^8.5",
+        "ext-intl": "*",
         "falcon/ui-kit": "^1.0",
         "geoip2/geoip2": "^3.0",
         "laravel/framework": "^13.12",

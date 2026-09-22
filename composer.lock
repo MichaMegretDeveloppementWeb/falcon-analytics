@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "5af352491c2e2b21fa57ee333a7e0c5d",
+    "content-hash": "89659f54d7a7accbc29185fa058f7468",
     "packages": [
         {
             "name": "brick/math",
@@ -590,7 +590,7 @@
             "dist": {
                 "type": "path",
                 "url": "../falcon-ui-kit",
-                "reference": "b6fec2c1a0673690c12608051996b9fe7f83c00a"
+                "reference": "8408f01526f230b2cfd4621c3fd7f11f9ce8fd01"
             },
             "require": {
                 "laravel/framework": "^13.12",
@@ -651,11 +651,18 @@
                 ],
                 "qa:lowest": [
                     "@composer update --prefer-lowest --prefer-stable --no-interaction",
+                    "@php vendor/bin/pint --test",
+                    "@php vendor/bin/phpstan analyse --no-progress --memory-limit=2G",
                     "@php vendor/bin/phpunit"
                 ]
             },
             "license": [
                 "proprietary"
+            ],
+            "authors": [
+                {
+                    "name": "Micha Megret"
+                }
             ],
             "description": "Infrastructure de rendu et système visuel de la suite Falcon.",
             "transport-options": {
@@ -9934,7 +9941,8 @@
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
-        "php": "^8.5"
+        "php": "^8.5",
+        "ext-intl": "*"
     },
     "platform-dev": {},
     "plugin-api-version": "2.9.0"

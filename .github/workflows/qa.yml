@@ -148,7 +148,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          extensions: pdo_mysql
+          extensions: pdo_mysql, intl
           coverage: none
 
       # First, and on its own: a manifest that does not validate resolves by
@@ -198,6 +198,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.5'
+          extensions: intl
           coverage: none
 
       # **The node chain needs `vendor/`**, which the kit's own does not. The

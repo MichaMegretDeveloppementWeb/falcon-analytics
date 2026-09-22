@@ -45,6 +45,7 @@ final class TheBenchRunsOnThePinnedEnvironmentTest extends TestCase
             'le pilote de session' => ['SESSION_DRIVER', 'array', 'session.driver'],
             'le magasin de cache' => ['CACHE_STORE', 'array', 'cache.default'],
             'la file d’attente' => ['QUEUE_CONNECTION', 'sync', 'queue.default'],
+            'la langue' => ['APP_LOCALE', 'fr', 'app.locale'],
         ];
     }
 
