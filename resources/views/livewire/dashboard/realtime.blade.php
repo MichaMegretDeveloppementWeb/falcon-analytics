@@ -1,9 +1,5 @@
 @php
-    use Falcon\Analytics\Enums\EventType;
-    use Falcon\Analytics\Support\DeviceLabel;
     use Falcon\Analytics\Support\NumberLabel;
-
-    $subjectResolver = app(\Falcon\Analytics\Services\SubjectResolver::class);
 
     // The board's ink, in three weights. Tokens rather than literals, and no
     // dark variant beside them: a token already carries both of its values.
@@ -11,19 +7,9 @@
     $inkMuted = 'an:text-ink/40';
     $inkSoft = 'an:text-ink-soft';
 
-    $feedIcon = fn ($event): string => match (true) {
-        in_array($event->name, $conversionNames, true) => 'check-circle',
-        $event->type === EventType::Pageview => 'document-text',
-        $event->type === EventType::Click => 'cursor-arrow-rays',
-        default => 'bolt',
-    };
-
-    $onlineThreshold = now()->subSeconds(max(1, (int) config('analytics.realtime.online_seconds', 60)));
     $peakMinute = max($minuteSeries ?: [0]);
     $maxPages = max(array_column($topPages, 'total') ?: [0]);
     $countriesOnline = array_values(array_filter($countries, fn (array $row): bool => $row['online'] > 0));
-
-    $listTime = fn ($moment) => $moment->isToday() ? $moment->format('H:i') : $moment->translatedFormat('j M, H:i');
 @endphp
 
 {{-- The root wraps rather than replaces: the interval sits in the directive's
@@ -210,30 +196,23 @@
                 </div>
                 <div class="an:border-t an:border-subtle"></div>
 
-                @if ($recentSessions->isEmpty())
+                @if ($recentVisitors === [])
                     <p class="an:px-5 an:py-10 an:text-center an:text-[13px] {{ $inkSoft }}">{{ __('Aucun visiteur sur les 24 dernières heures.') }}</p>
                 @else
                     <ul class="an:max-h-[24rem] an:divide-y an:divide-[color:var(--color-gray-100)] an:overflow-y-auto an:dark:divide-gray-800">
-                        @foreach ($recentSessions as $session)
-                            @php
-                                $attribution = $attributions[$session->id] ?? null;
-                                $who = $attribution !== null
-                                    ? ($subjectNames[$attribution->guard.':'.$attribution->id] ?? $subjectResolver->label($attribution->guard).' #'.$attribution->id)
-                                    : __('Visiteur #:id', ['id' => $session->visitor_id]);
-                                $isOnline = $session->last_activity_at->greaterThanOrEqualTo($onlineThreshold);
-                            @endphp
-                            <li wire:key="rt-session-{{ $session->id }}">
-                                <a href="{{ route('analytics.admin.sessions.show', $session) }}" class="an:flex an:cursor-pointer an:items-center an:gap-3 an:px-5 an:py-3 an:transition-colors an:hover:bg-elevated/50">
-                                    <x-ui::icon :name="DeviceLabel::icon($session->device_type)" class="an:h-5 an:w-5 an:shrink-0 {{ $inkSoft }}" />
+                        @foreach ($recentVisitors as $visitor)
+                            <li wire:key="rt-session-{{ $visitor->sessionId }}">
+                                <a href="{{ route('analytics.admin.sessions.show', $visitor->sessionId) }}" class="an:flex an:cursor-pointer an:items-center an:gap-3 an:px-5 an:py-3 an:transition-colors an:hover:bg-elevated/50">
+                                    <x-ui::icon :name="$visitor->deviceIcon" class="an:h-5 an:w-5 an:shrink-0 {{ $inkSoft }}" />
                                     <span class="an:min-w-0 an:flex-1">
                                         <span class="an:flex an:items-center an:gap-x-1.5">
-                                            <span class="an:truncate an:text-[14px] an:font-medium {{ $ink }}">{{ $who }}</span>
-                                            @if ($isOnline)
+                                            <span class="an:truncate an:text-[14px] an:font-medium {{ $ink }}">{{ $visitor->name }}</span>
+                                            @if ($visitor->isOnline)
                                                 <span class="an:h-1.5 an:w-1.5 an:shrink-0 an:rounded-full an:bg-online"></span>
                                             @endif
                                         </span>
                                         <span class="an:block an:truncate an:text-[12px] {{ $inkMuted }}">
-                                            {{ $listTime($session->last_activity_at) }}@if ($session->city) · {{ $session->city }}@endif
+                                            {{ $visitor->lastSeen }}@if ($visitor->city !== null) · {{ $visitor->city }}@endif
                                         </span>
                                     </span>
                                     <span class="an:flex an:h-8 an:w-8 an:shrink-0 an:items-center an:justify-center an:rounded-full an:border an:border-accent/30 an:text-accent">
@@ -254,35 +233,22 @@
                 </div>
                 <div class="an:border-t an:border-subtle"></div>
 
-                @if ($feed->isEmpty())
+                @if ($feed === [])
                     <p class="an:px-5 an:py-10 an:text-center an:text-[13px] {{ $inkSoft }}">{{ __('Aucune activité sur les :count dernières minutes.', ['count' => $windowMinutes]) }}</p>
                 @else
                     <ul class="an:max-h-[24rem] an:divide-y an:divide-[color:var(--color-gray-100)] an:overflow-y-auto an:dark:divide-gray-800">
-                        @foreach ($feed as $event)
-                            @php
-                                $attribution = $event->session !== null ? ($attributions[$event->session->id] ?? null) : null;
-                                $who = $attribution !== null
-                                    ? ($subjectNames[$attribution->guard.':'.$attribution->id] ?? $subjectResolver->label($attribution->guard).' #'.$attribution->id)
-                                    : __('Visiteur #:id', ['id' => $event->visitor_id]);
-                                $isConversion = in_array($event->name, $conversionNames, true);
-                                $action = match (true) {
-                                    $event->type === EventType::Pageview => __('Page vue'),
-                                    filled($event->name) => $eventLabels[$event->name] ?? $event->name,
-                                    filled($event->target_text) => $event->target_text,
-                                    default => __('Clic'),
-                                };
-                            @endphp
-                            <li wire:key="rt-feed-{{ $event->id }}">
-                                <a href="{{ $event->session_id !== null ? route('analytics.admin.sessions.show', $event->session_id) : '#' }}"
+                        @foreach ($feed as $entry)
+                            <li wire:key="rt-feed-{{ $entry->id }}">
+                                <a href="{{ route('analytics.admin.sessions.show', $entry->sessionId) }}"
                                    class="an:flex an:cursor-pointer an:items-start an:gap-3 an:px-5 an:py-3 an:transition-colors an:hover:bg-elevated/50">
-                                    <span class="an:mt-0.5 an:flex an:h-7 an:w-7 an:shrink-0 an:items-center an:justify-center an:rounded-lg {{ $isConversion ? 'an:bg-online/15' : 'an:bg-elevated' }}">
-                                        <x-ui::icon :name="$feedIcon($event)" class="an:h-3.5 an:w-3.5 {{ $isConversion ? 'an:text-online-strong' : $inkSoft }}" />
+                                    <span class="an:mt-0.5 an:flex an:h-7 an:w-7 an:shrink-0 an:items-center an:justify-center an:rounded-lg {{ $entry->isConversion ? 'an:bg-online/15' : 'an:bg-elevated' }}">
+                                        <x-ui::icon :name="$entry->icon" class="an:h-3.5 an:w-3.5 {{ $entry->isConversion ? 'an:text-online-strong' : $inkSoft }}" />
                                     </span>
                                     <span class="an:min-w-0 an:flex-1">
-                                        <span class="an:block an:truncate an:text-[14px] an:font-medium {{ $isConversion ? 'an:text-online-strong' : $ink }}">
-                                            {{ $action }}@if ($event->type === EventType::Pageview && filled($event->url)) · <x-analytics::page-url :url="$event->url" />@endif
+                                        <span class="an:block an:truncate an:text-[14px] an:font-medium {{ $entry->isConversion ? 'an:text-online-strong' : $ink }}">
+                                            {{ $entry->action }}@if ($entry->url !== null) · <x-analytics::page-url :url="$entry->url" />@endif
                                         </span>
-                                        <span class="an:block an:truncate an:text-[12px] {{ $inkMuted }}">{{ $who }} · {{ $listTime($event->occurred_at) }}</span>
+                                        <span class="an:block an:truncate an:text-[12px] {{ $inkMuted }}">{{ $entry->name }} · {{ $entry->occurredAt }}</span>
                                     </span>
                                 </a>
                             </li>
