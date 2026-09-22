@@ -33,14 +33,15 @@ final class MarketingReportBuilderTest extends TestCase
     /**
      * @param  array<string, string>  $params
      */
-    private function taggedSession(array $params, ?Visitor $visitor = null): Session
+    private function taggedSession(array $params, ?Visitor $visitor = null, ?CarbonImmutable $startedAt = null): Session
     {
         $visitor ??= $this->newVisitor();
+        $startedAt ??= CarbonImmutable::now();
 
         return Session::create([
             'visitor_id' => $visitor->id,
-            'started_at' => now(),
-            'last_activity_at' => now(),
+            'started_at' => $startedAt,
+            'last_activity_at' => $startedAt,
             'is_bot' => false,
             'mkt_params' => $params,
         ]);
@@ -118,6 +119,88 @@ final class MarketingReportBuilderTest extends TestCase
 
         $this->assertSame(['sessions' => 3, 'visitors' => 2], $performance['campaigns'][$ete->id]);
         $this->assertSame(['sessions' => 2, 'visitors' => 1], $performance['ads'][$cabrio->id]);
+    }
+
+    /**
+     * One campaign and one ad, each read over the period · its sessions, its
+     * distinct visitors, its sessions per day and, for a campaign, the share of
+     * each of its ads, all under most-specific attribution.
+     */
+    public function test_a_campaign_and_an_ad_report_their_own_traffic(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-06-15 12:00:00'));
+
+        $ete = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
+        $hiver = Campaign::create(['name' => 'Hiver', 'match_conditions' => [['param' => 'src', 'value' => 'meta_hiver']]]);
+        $generic = Ad::create(['campaign_id' => $ete->id, 'name' => 'Été générique', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
+        $cabrio = Ad::create(['campaign_id' => $ete->id, 'name' => 'Cabriolet', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete'], ['param' => 'creative', 'value' => 'cabrio']]]);
+        $neige = Ad::create(['campaign_id' => $hiver->id, 'name' => 'Neige', 'match_conditions' => [['param' => 'src', 'value' => 'meta_hiver']]]);
+
+        $loyal = $this->newVisitor();
+        $matched = [
+            $this->taggedSession(['src' => 'meta_ete', 'creative' => 'cabrio'], $loyal, CarbonImmutable::parse('2026-06-10 09:00')),
+            $this->taggedSession(['src' => 'meta_ete', 'creative' => 'cabrio'], $loyal, CarbonImmutable::parse('2026-06-11 09:00')),
+            $this->taggedSession(['src' => 'meta_ete', 'creative' => 'other'], null, CarbonImmutable::parse('2026-06-11 10:00')),
+            $this->taggedSession(['src' => 'meta_ete'], null, CarbonImmutable::parse('2026-06-12 10:00')),
+            $this->taggedSession(['src' => 'meta_hiver'], null, CarbonImmutable::parse('2026-06-12 11:00')),
+        ];
+        $this->taggedSession(['src' => 'other'], null, CarbonImmutable::parse('2026-06-12 12:00'));
+
+        $builder = new MarketingReportBuilder;
+        $period = Period::ofDays(30);
+
+        // The whole of it first · every session a campaign claims, and no other.
+        $this->assertSame(['sessions' => 5, 'visitors' => 4], $builder->headline($period, null));
+        $daily = $builder->dailySessions($period, null);
+        ksort($daily);
+        $this->assertSame(['2026-06-10' => 1, '2026-06-11' => 2, '2026-06-12' => 2], $daily);
+        $sources = $builder->matchedSessionSources($period, null);
+        ksort($sources);
+        $this->assertSame(array_fill_keys(array_map(fn (Session $session): int => $session->id, $matched), 'direct'), $sources);
+
+        $this->assertSame([
+            'sessions' => 4,
+            'visitors' => 3,
+            'daily' => ['2026-06-10' => 1, '2026-06-11' => 2, '2026-06-12' => 1],
+            'ads' => [
+                $generic->id => ['sessions' => 2, 'visitors' => 2],
+                $cabrio->id => ['sessions' => 2, 'visitors' => 1],
+            ],
+        ], $this->sortedReport($builder->campaignReport($period, null, $ete)));
+
+        $this->assertSame([
+            'sessions' => 1,
+            'visitors' => 1,
+            'daily' => ['2026-06-12' => 1],
+            'ads' => [$neige->id => ['sessions' => 1, 'visitors' => 1]],
+        ], $this->sortedReport($builder->campaignReport($period, null, $hiver)));
+
+        $this->assertSame(
+            ['sessions' => 2, 'visitors' => 1, 'daily' => ['2026-06-10' => 1, '2026-06-11' => 1]],
+            $this->sortedReport($builder->adReport($period, null, $cabrio)),
+        );
+
+        $this->assertSame(
+            ['sessions' => 2, 'visitors' => 2, 'daily' => ['2026-06-11' => 1, '2026-06-12' => 1]],
+            $this->sortedReport($builder->adReport($period, null, $generic)),
+        );
+    }
+
+    /**
+     * A report with its keyed lists in key order, so two readings compare.
+     *
+     * @param  array<string, mixed>  $report
+     * @return array<string, mixed>
+     */
+    private function sortedReport(array $report): array
+    {
+        foreach (['daily', 'ads'] as $list) {
+            if (is_array($report[$list] ?? null)) {
+                ksort($report[$list]);
+            }
+        }
+
+        return $report;
     }
 
     public function test_it_credits_an_ad_with_a_conversion_when_its_visitor_completes_an_event_objective(): void

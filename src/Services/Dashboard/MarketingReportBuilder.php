@@ -6,14 +6,10 @@ namespace Falcon\Analytics\Services\Dashboard;
 
 use Falcon\Analytics\DTOs\Dashboard\Period;
 use Falcon\Analytics\DTOs\Dashboard\TaggedSessions;
-use Falcon\Analytics\Enums\ObjectiveType;
 use Falcon\Analytics\Events\EventRegistry;
-use Falcon\Analytics\Funnels\Funnel;
-use Falcon\Analytics\Funnels\FunnelEventWalker;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Models\Ad;
 use Falcon\Analytics\Models\Campaign;
-use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Repositories\Dashboard\MarketingReadRepository;
 use Illuminate\Database\Eloquent\Collection;
@@ -23,9 +19,10 @@ use Illuminate\Database\Eloquent\Collection;
  * the raw landing-URL parameters (mkt_params); campaigns and ads are matched to
  * them by their conditions (all must hold, AND; the most specific rule wins) at
  * report time, so an ad defined after the fact still sees its full history.
- * Attribution, the crediting of conversions per objective and every aggregate
- * (headline, daily trend, performance, campaign/ad reports) live here; the
- * repository only reads.
+ * Attribution and every aggregate (headline, daily trend, performance,
+ * campaign/ad reports) live here; crediting the conversions is
+ * `MarketingConversionCrediter`'s, handed the attribution. The repository only
+ * reads.
  *
  * @internal
  */
@@ -58,7 +55,7 @@ final class MarketingReportBuilder
     public function __construct(
         private MarketingReadRepository $repository = new MarketingReadRepository,
         private AttributionResolver $attribution = new AttributionResolver,
-        private FunnelEventWalker $walker = new FunnelEventWalker,
+        private MarketingConversionCrediter $crediter = new MarketingConversionCrediter,
     ) {}
 
     /**
@@ -158,20 +155,9 @@ final class MarketingReportBuilder
      */
     public function headline(Period $period, ?string $subjectType): array
     {
-        $campaigns = $this->activeCampaigns();
+        $traffic = $this->traffic($this->matchingACampaign($period, $subjectType, $this->activeCampaigns()));
 
-        $sessions = 0;
-        /** @var array<int, true> $visitors */
-        $visitors = [];
-
-        foreach ($this->taggedSessionRows($period, $subjectType) as $session) {
-            if ($this->attribution->mostSpecific($campaigns, $session->mkt_params ?? []) instanceof Campaign) {
-                $sessions++;
-                $visitors[$session->visitor_id] = true;
-            }
-        }
-
-        return ['sessions' => $sessions, 'visitors' => count($visitors)];
+        return ['sessions' => $traffic['sessions'], 'visitors' => $traffic['visitors']];
     }
 
     /**
@@ -181,19 +167,7 @@ final class MarketingReportBuilder
      */
     public function dailySessions(Period $period, ?string $subjectType): array
     {
-        $campaigns = $this->activeCampaigns();
-
-        /** @var array<string, int> $daily */
-        $daily = [];
-
-        foreach ($this->taggedSessionRows($period, $subjectType) as $session) {
-            if ($this->attribution->mostSpecific($campaigns, $session->mkt_params ?? []) instanceof Campaign) {
-                $day = $session->started_at->toDateString();
-                $daily[$day] = ($daily[$day] ?? 0) + 1;
-            }
-        }
-
-        return $daily;
+        return $this->traffic($this->matchingACampaign($period, $subjectType, $this->activeCampaigns()))['daily'];
     }
 
     /**
@@ -206,16 +180,26 @@ final class MarketingReportBuilder
      */
     public function matchedSessionSources(Period $period, ?string $subjectType, ?array $campaigns = null): array
     {
-        $campaigns ??= $this->activeCampaigns();
-
         $sources = [];
-        foreach ($this->taggedSessionRows($period, $subjectType) as $session) {
-            if ($this->attribution->mostSpecific($campaigns, $session->mkt_params ?? []) instanceof Campaign) {
-                $sources[$session->id] = $session->source ?? 'direct';
-            }
+        foreach ($this->matchingACampaign($period, $subjectType, $campaigns ?? $this->activeCampaigns()) as $session) {
+            $sources[$session->id] = $session->source ?? 'direct';
         }
 
         return $sources;
+    }
+
+    /**
+     * The period's tagged sessions that one of the given campaigns claims.
+     *
+     * @param  list<Campaign>  $campaigns
+     * @return list<Session>
+     */
+    private function matchingACampaign(Period $period, ?string $subjectType, array $campaigns): array
+    {
+        return array_values(array_filter(
+            $this->taggedSessionRows($period, $subjectType)->all(),
+            fn (Session $session): bool => $this->attribution->mostSpecific($campaigns, $session->mkt_params ?? []) instanceof Campaign,
+        ));
     }
 
     /**
@@ -270,44 +254,26 @@ final class MarketingReportBuilder
     public function campaignReport(Period $period, ?string $subjectType, Campaign $campaign): array
     {
         $campaigns = $this->activeCampaigns();
-        $ads = $this->repository->activeCampaignAds($campaign);
+        $sessions = array_values(array_filter(
+            $this->taggedSessionRows($period, $subjectType)->all(),
+            fn (Session $session): bool => $this->attribution->mostSpecific($campaigns, $session->mkt_params ?? [])?->id === $campaign->id,
+        ));
 
-        $sessions = 0;
-        /** @var array<int, true> $visitors */
-        $visitors = [];
-        /** @var array<string, int> $daily */
-        $daily = [];
+        $ads = $this->repository->activeCampaignAds($campaign);
         /** @var array<int, int> $adSessions */
         $adSessions = [];
         /** @var array<int, array<int, true>> $adVisitors */
         $adVisitors = [];
 
-        foreach ($this->taggedSessionRows($period, $subjectType) as $session) {
-            $params = $session->mkt_params ?? [];
-
-            $bestCampaign = $this->attribution->mostSpecific($campaigns, $params);
-            if (! ($bestCampaign instanceof Campaign) || $bestCampaign->id !== $campaign->id) {
-                continue;
-            }
-
-            $visitor = $session->visitor_id;
-            $sessions++;
-            $visitors[$visitor] = true;
-            $daily[$session->started_at->toDateString()] = ($daily[$session->started_at->toDateString()] ?? 0) + 1;
-
-            $bestAd = $this->attribution->mostSpecific($ads, $params);
+        foreach ($sessions as $session) {
+            $bestAd = $this->attribution->mostSpecific($ads, $session->mkt_params ?? []);
             if ($bestAd instanceof Ad) {
                 $adSessions[$bestAd->id] = ($adSessions[$bestAd->id] ?? 0) + 1;
-                $adVisitors[$bestAd->id][$visitor] = true;
+                $adVisitors[$bestAd->id][$session->visitor_id] = true;
             }
         }
 
-        return [
-            'sessions' => $sessions,
-            'visitors' => count($visitors),
-            'daily' => $daily,
-            'ads' => $this->buildRows($adSessions, $adVisitors),
-        ];
+        return [...$this->traffic($sessions), 'ads' => $this->buildRows($adSessions, $adVisitors)];
     }
 
     /**
@@ -320,24 +286,32 @@ final class MarketingReportBuilder
     {
         $ads = $this->activeAds();
 
-        $sessions = 0;
+        return $this->traffic(array_values(array_filter(
+            $this->taggedSessionRows($period, $subjectType)->all(),
+            fn (Session $session): bool => $this->attribution->mostSpecific($ads, $session->mkt_params ?? [])?->id === $ad->id,
+        )));
+    }
+
+    /**
+     * How many sessions, how many distinct visitors, and how many sessions per
+     * day, keyed by Y-m-d.
+     *
+     * @param  list<Session>  $sessions
+     * @return array{sessions: int, visitors: int, daily: array<string, int>}
+     */
+    private function traffic(array $sessions): array
+    {
         /** @var array<int, true> $visitors */
         $visitors = [];
         /** @var array<string, int> $daily */
         $daily = [];
 
-        foreach ($this->taggedSessionRows($period, $subjectType) as $session) {
-            $bestAd = $this->attribution->mostSpecific($ads, $session->mkt_params ?? []);
-            if (! ($bestAd instanceof Ad) || $bestAd->id !== $ad->id) {
-                continue;
-            }
-
-            $sessions++;
+        foreach ($sessions as $session) {
             $visitors[$session->visitor_id] = true;
             $daily[$session->started_at->toDateString()] = ($daily[$session->started_at->toDateString()] ?? 0) + 1;
         }
 
-        return ['sessions' => $sessions, 'visitors' => count($visitors), 'daily' => $daily];
+        return ['sessions' => count($sessions), 'visitors' => count($visitors), 'daily' => $daily];
     }
 
     /**
@@ -354,19 +328,7 @@ final class MarketingReportBuilder
         $ads = $this->activeAdsWithObjectives();
         $visitorAds = $this->visitorAdMap($period, $subjectType, array_values($ads->all()));
 
-        if ($visitorAds === []) {
-            return ['total' => 0, 'campaigns' => [], 'ads' => [], 'objectives' => [], 'daily' => [], 'campaignDaily' => [], 'adDaily' => []];
-        }
-
-        $visitorIds = array_keys($visitorAds);
-        ['events' => $eventNames, 'funnels' => $funnelKeys] = $this->objectiveReferences($ads);
-
-        return $this->creditConversions(
-            $ads->keyBy('id'),
-            $visitorAds,
-            $this->eventCompletionDays($visitorIds, $eventNames, $period),
-            $this->funnelCompletionDays($funnelKeys, $funnels, $period, $subjectType, $visitorIds),
-        );
+        return $this->crediter->credit($ads, $visitorAds, $period, $subjectType, $funnels);
     }
 
     /**
@@ -392,210 +354,6 @@ final class MarketingReportBuilder
     }
 
     /**
-     * The distinct event names and funnel keys referenced by the ads' objectives.
-     *
-     * @param  Collection<int, Ad>  $ads
-     * @return array{events: list<string>, funnels: list<string>}
-     */
-    private function objectiveReferences(Collection $ads): array
-    {
-        /** @var array<string, true> $eventNames */
-        $eventNames = [];
-        /** @var array<string, true> $funnelKeys */
-        $funnelKeys = [];
-
-        foreach ($ads as $ad) {
-            foreach ($ad->objectives as $objective) {
-                if ($objective->type === ObjectiveType::Event) {
-                    $eventNames[$objective->reference] = true;
-                } else {
-                    $funnelKeys[$objective->reference] = true;
-                }
-            }
-        }
-
-        return ['events' => array_keys($eventNames), 'funnels' => array_keys($funnelKeys)];
-    }
-
-    /**
-     * Event-objective phase: the earliest completion day of each referenced
-     * event per visitor, from one batched read.
-     *
-     * @param  list<int>  $visitorIds
-     * @param  list<string>  $names
-     * @return array<string, array<int, string>> event name => visitor id => day (Y-m-d)
-     */
-    private function eventCompletionDays(array $visitorIds, array $names, Period $period): array
-    {
-        if ($names === []) {
-            return [];
-        }
-
-        /** @var array<string, array<int, string>> $completers */
-        $completers = [];
-
-        foreach ($this->repository->objectiveEventRows($visitorIds, $names, $period) as $row) {
-            $name = (string) $row->name;
-            $visitorId = $row->visitor_id;
-            $day = $row->occurred_at->toDateString();
-            if (! isset($completers[$name][$visitorId]) || $day < $completers[$name][$visitorId]) {
-                $completers[$name][$visitorId] = $day;
-            }
-        }
-
-        return $completers;
-    }
-
-    /**
-     * Funnel-objective phase: the completion day of each referenced funnel per
-     * visitor, walking each funnel once over the given visitors.
-     *
-     * @param  list<string>  $keys
-     * @param  list<int>  $visitorIds
-     * @return array<string, array<int, string>> funnel key => visitor id => day (Y-m-d)
-     */
-    private function funnelCompletionDays(array $keys, FunnelRegistry $funnels, Period $period, ?string $subjectType, array $visitorIds): array
-    {
-        /** @var array<string, array<int, string>> $completers */
-        $completers = [];
-
-        foreach ($keys as $key) {
-            $funnel = $funnels->get($key);
-            if ($funnel instanceof Funnel) {
-                $completers[$key] = $this->funnelCompleters($funnel, $period, $subjectType, $visitorIds);
-            }
-        }
-
-        return $completers;
-    }
-
-    /**
-     * Crediting phase: mark each ad-driven visitor who completed one of the
-     * ad's objectives as a converter for that ad, its campaign and the
-     * objective, keeping the earliest completion day at every level for the
-     * daily series.
-     *
-     * @param  Collection<int, Ad>  $adById
-     * @param  array<int, array<int, true>>  $visitorAds
-     * @param  array<string, array<int, string>>  $eventCompleters
-     * @param  array<string, array<int, string>>  $funnelCompleters
-     * @return array{total: int, campaigns: array<int, int>, ads: array<int, int>, objectives: array<int, array<string, int>>, daily: array<string, int>, campaignDaily: array<int, array<string, int>>, adDaily: array<int, array<string, int>>}
-     */
-    private function creditConversions(Collection $adById, array $visitorAds, array $eventCompleters, array $funnelCompleters): array
-    {
-        /** @var array<int, array<int, true>> $adConverters */
-        $adConverters = [];
-        /** @var array<int, array<int, true>> $campaignConverters */
-        $campaignConverters = [];
-        /** @var array<int, array<string, array<int, true>>> $objectiveConverters */
-        $objectiveConverters = [];
-        /** @var array<int, true> $totalConverters */
-        $totalConverters = [];
-        /** @var array<int, string> $visitorDay earliest conversion day per visitor, any ad */
-        $visitorDay = [];
-        /** @var array<int, array<int, string>> $adVisitorDay */
-        $adVisitorDay = [];
-        /** @var array<int, array<int, string>> $campaignVisitorDay */
-        $campaignVisitorDay = [];
-
-        foreach ($visitorAds as $visitorId => $adIds) {
-            foreach (array_keys($adIds) as $adId) {
-                $ad = $adById->get($adId);
-                if (! ($ad instanceof Ad)) {
-                    continue;
-                }
-
-                $day = null;
-                foreach ($ad->objectives as $objective) {
-                    $completedOn = $objective->type === ObjectiveType::Event
-                        ? ($eventCompleters[$objective->reference][$visitorId] ?? null)
-                        : ($funnelCompleters[$objective->reference][$visitorId] ?? null);
-
-                    if ($completedOn !== null) {
-                        $objectiveConverters[$adId][$objective->reference][$visitorId] = true;
-                        if ($day === null || $completedOn < $day) {
-                            $day = $completedOn;
-                        }
-                    }
-                }
-
-                if ($day !== null) {
-                    $adConverters[$adId][$visitorId] = true;
-                    $campaignConverters[$ad->campaign_id][$visitorId] = true;
-                    $totalConverters[$visitorId] = true;
-                    $adVisitorDay[$adId][$visitorId] = $day;
-
-                    if (! isset($campaignVisitorDay[$ad->campaign_id][$visitorId]) || $day < $campaignVisitorDay[$ad->campaign_id][$visitorId]) {
-                        $campaignVisitorDay[$ad->campaign_id][$visitorId] = $day;
-                    }
-                    if (! isset($visitorDay[$visitorId]) || $day < $visitorDay[$visitorId]) {
-                        $visitorDay[$visitorId] = $day;
-                    }
-                }
-            }
-        }
-
-        return [
-            'total' => count($totalConverters),
-            'campaigns' => array_map(fn (array $visitors): int => count($visitors), $campaignConverters),
-            'ads' => array_map(fn (array $visitors): int => count($visitors), $adConverters),
-            'objectives' => array_map(
-                fn (array $refs): array => array_map(fn (array $visitors): int => count($visitors), $refs),
-                $objectiveConverters,
-            ),
-            'daily' => $this->dailyFromDays($visitorDay),
-            'campaignDaily' => array_map(fn (array $days): array => $this->dailyFromDays($days), $campaignVisitorDay),
-            'adDaily' => array_map(fn (array $days): array => $this->dailyFromDays($days), $adVisitorDay),
-        ];
-    }
-
-    /**
-     * Counts of converting visitors per day.
-     *
-     * @param  array<int, string>  $daysByVisitor
-     * @return array<string, int>
-     */
-    private function dailyFromDays(array $daysByVisitor): array
-    {
-        $daily = [];
-        foreach ($daysByVisitor as $day) {
-            $daily[$day] = ($daily[$day] ?? 0) + 1;
-        }
-
-        return $daily;
-    }
-
-    /**
-     * The subset of the given visitors who completed the funnel (reached its
-     * last step in chronological order) over the period, mirroring the funnels
-     * screen.
-     *
-     * @param  list<int>  $visitorIds
-     * @return array<int, string> visitor id => completion day (Y-m-d)
-     */
-    private function funnelCompleters(Funnel $funnel, Period $period, ?string $subjectType, array $visitorIds): array
-    {
-        $lastIndex = count($funnel->steps()) - 1;
-
-        /** @var array<int, string> $completers */
-        $completers = [];
-
-        $this->walker->walk(
-            $funnel,
-            $period,
-            $subjectType,
-            $visitorIds,
-            function (int $visitorId, int $stepIndex, Event $event) use (&$completers, $lastIndex): void {
-                if ($stepIndex === $lastIndex) {
-                    $completers[$visitorId] = $event->occurred_at->toDateString();
-                }
-            },
-        );
-
-        return $completers;
-    }
-
-    /**
      * The detailed conversion elements for a set of ads (a campaign's ads, or a
      * single ad): each objective with its conversions and, for a funnel, its
      * per-step reach. Sorted by conversions, descending.
@@ -609,6 +367,19 @@ final class MarketingReportBuilder
             return [];
         }
 
+        return $this->crediter->elements($ads, $this->adVisitors($period, $subjectType, $ads), $period, $subjectType, $funnels, $events);
+    }
+
+    /**
+     * Attribution phase for a set of ads: the visitors each of them drove, from
+     * the tagged sessions of the period under most-specific matching among all
+     * active ads.
+     *
+     * @param  list<Ad>  $ads
+     * @return array<int, array<int, true>> ad id => set of visitor ids
+     */
+    private function adVisitors(Period $period, ?string $subjectType, array $ads): array
+    {
         $allAds = $this->activeAds();
         $wantedIds = array_map(fn (Ad $ad): int => $ad->id, $ads);
 
@@ -621,138 +392,7 @@ final class MarketingReportBuilder
             }
         }
 
-        $eventLabels = [];
-        foreach ($events->all() as $event) {
-            $eventLabels[$event->name] = $event->label;
-        }
-        $funnelLabels = [];
-        foreach ($funnels->all() as $funnel) {
-            $funnelLabels[$funnel->key] = $funnel->label;
-        }
-
-        $eventVisitors = $this->objectiveEventVisitors($period, $ads, $adVisitors);
-
-        $elements = [];
-        foreach ($ads as $ad) {
-            $visitorIds = array_keys($adVisitors[$ad->id] ?? []);
-
-            foreach ($ad->objectives as $objective) {
-                if ($objective->type === ObjectiveType::Event) {
-                    $refVisitors = $eventVisitors[$objective->reference] ?? [];
-                    $count = 0;
-                    foreach ($visitorIds as $visitorId) {
-                        if (isset($refVisitors[$visitorId])) {
-                            $count++;
-                        }
-                    }
-
-                    $elements[] = [
-                        'type' => 'event',
-                        'reference' => $objective->reference,
-                        'label' => $eventLabels[$objective->reference] ?? $objective->reference,
-                        'adId' => $ad->id,
-                        'adName' => $ad->name,
-                        'conversions' => $count,
-                        'steps' => null,
-                    ];
-
-                    continue;
-                }
-
-                $funnel = $funnels->get($objective->reference);
-                if (! ($funnel instanceof Funnel)) {
-                    continue;
-                }
-
-                $reach = $this->funnelStepReach($funnel, $period, $subjectType, $visitorIds);
-                $steps = [];
-                foreach ($funnel->steps() as $index => $step) {
-                    $steps[] = ['label' => $step->label, 'count' => $reach[$index] ?? 0];
-                }
-
-                $elements[] = [
-                    'type' => 'funnel',
-                    'reference' => $objective->reference,
-                    'label' => $funnelLabels[$objective->reference] ?? $objective->reference,
-                    'adId' => $ad->id,
-                    'adName' => $ad->name,
-                    'conversions' => $reach === [] ? 0 : end($reach),
-                    'steps' => $steps,
-                ];
-            }
-        }
-
-        usort($elements, fn (array $a, array $b): int => $b['conversions'] <=> $a['conversions']);
-
-        return $elements;
-    }
-
-    /**
-     * Batch every event-objective completion into one read: the visitors who
-     * fired each referenced event, instead of a count query per ad per
-     * objective.
-     *
-     * @param  list<Ad>  $ads
-     * @param  array<int, array<int, true>>  $adVisitors
-     * @return array<string, array<int, true>> event name => set of visitor ids
-     */
-    private function objectiveEventVisitors(Period $period, array $ads, array $adVisitors): array
-    {
-        /** @var array<string, true> $eventRefs */
-        $eventRefs = [];
-        foreach ($ads as $ad) {
-            foreach ($ad->objectives as $objective) {
-                if ($objective->type === ObjectiveType::Event) {
-                    $eventRefs[$objective->reference] = true;
-                }
-            }
-        }
-
-        /** @var array<int, true> $allVisitorIds */
-        $allVisitorIds = [];
-        foreach ($adVisitors as $visitors) {
-            foreach (array_keys($visitors) as $visitorId) {
-                $allVisitorIds[$visitorId] = true;
-            }
-        }
-
-        if ($eventRefs === [] || $allVisitorIds === []) {
-            return [];
-        }
-
-        /** @var array<string, array<int, true>> $eventVisitors */
-        $eventVisitors = [];
-        foreach ($this->repository->distinctObjectiveEventRows(array_keys($allVisitorIds), array_keys($eventRefs), $period) as $row) {
-            $eventVisitors[(string) $row->name][$row->visitor_id] = true;
-        }
-
-        return $eventVisitors;
-    }
-
-    /**
-     * How many of the given visitors reached each funnel step (monotonically
-     * decreasing), over the period. Index i = visitors who reached step i.
-     *
-     * @param  list<int>  $visitorIds
-     * @return list<int>
-     */
-    private function funnelStepReach(Funnel $funnel, Period $period, ?string $subjectType, array $visitorIds): array
-    {
-        $reached = array_fill(0, count($funnel->steps()), 0);
-
-        $this->walker->walk(
-            $funnel,
-            $period,
-            $subjectType,
-            $visitorIds,
-            function (int $visitorId, int $stepIndex, Event $event) use (&$reached): void {
-                $reached[$stepIndex]++;
-            },
-        );
-
-        // `array_values` because incrementing the counter by reference loses
-        // the list type `array_fill` gave it.
-        return array_values($reached);
+        return $adVisitors;
     }
 
     /**
