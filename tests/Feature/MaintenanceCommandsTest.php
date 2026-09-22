@@ -211,6 +211,41 @@ final class MaintenanceCommandsTest extends TestCase
         $this->assertNull($freshActive->ended_at);
     }
 
+    public function test_the_sweep_costs_the_same_whether_it_closes_five_sessions_or_fifty(): void
+    {
+        $now = CarbonImmutable::parse('2026-07-03 12:00:00');
+        CarbonImmutable::setTestNow($now);
+        config(['analytics.session.timeout_minutes' => 5]);
+
+        $visitor = $this->visitor();
+        $idleSession = fn (): Session => Session::create([
+            'visitor_id' => $visitor->id,
+            'started_at' => $now->subMinutes(20),
+            'last_activity_at' => $now->subMinutes(10),
+            'is_bot' => false,
+        ]);
+
+        foreach (range(1, 5) as $ignored) {
+            $idleSession();
+        }
+
+        $forFive = $this->statementsFor(fn () => $this->artisan('analytics:sweep')->run());
+
+        foreach (range(1, 45) as $ignored) {
+            $idleSession();
+        }
+
+        $forFifty = $this->statementsFor(fn () => $this->artisan('analytics:sweep')->run());
+
+        $this->assertSame(
+            $forFive['count'],
+            $forFifty['count'],
+            sprintf('The sweep writes per row: %d statements for 5 sessions, %d for 45.', $forFive['count'], $forFifty['count']),
+        );
+
+        $this->assertSame(0, Session::query()->whereNull('ended_at')->count(), 'every idle session is closed');
+    }
+
     public function test_it_does_not_re_close_an_already_closed_session(): void
     {
         $now = CarbonImmutable::parse('2026-07-03 12:00:00');

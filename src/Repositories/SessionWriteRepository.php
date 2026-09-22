@@ -8,12 +8,14 @@ use Carbon\CarbonImmutable;
 use Falcon\Analytics\DTOs\IngestionContext;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 /** @internal */
 final readonly class SessionWriteRepository
 {
+    /** How many sessions one sweep statement closes at a time. */
+    private const SWEEP_BATCH = 500;
+
     public function start(Visitor $visitor, IngestionContext $context, CarbonImmutable $startedAt, string $browserKey): Session
     {
         return Session::create([
@@ -98,24 +100,33 @@ final readonly class SessionWriteRepository
      * Close sessions idle past the timeout by stamping ended_at deterministically
      * at last_activity_at + timeout (never the sweep time), in bounded batches.
      * Returns the number of sessions closed.
+     *
+     * One statement per batch, and the batch stays bounded: a single statement
+     * over the whole backlog would hold its locks for as long as it runs.
      */
     public function closeIdleSessions(CarbonImmutable $idleBefore, int $timeoutMinutes): int
     {
+        // Same shape as `recordActivity()` above: literal end to end, values
+        // bound. The engine adds the timeout to the column it just read, so the
+        // stamp never travels through PHP; both columns are of the same type,
+        // so the session time zone applies symmetrically on read and on write.
+        $statement = 'UPDATE '.Session::TABLE.' SET '
+            .'ended_at = DATE_ADD(last_activity_at, INTERVAL ? MINUTE) '
+            .'WHERE ended_at IS NULL AND last_activity_at < ? '
+            .'LIMIT '.self::SWEEP_BATCH;
+
         $closed = 0;
 
-        Session::query()
-            ->whereNull('ended_at')
-            ->where('last_activity_at', '<', $idleBefore)
-            ->select(['id', 'last_activity_at'])
-            ->chunkById(500, function (Collection $sessions) use ($timeoutMinutes, &$closed): void {
-                foreach ($sessions as $session) {
-                    Session::query()
-                        ->whereKey($session->id)
-                        ->update(['ended_at' => $session->last_activity_at->addMinutes($timeoutMinutes)]);
+        do {
+            // Each pass replays the predicate rather than moving an offset, so
+            // the rows it just closed drop out of the next one.
+            $affected = DB::update($statement, [$timeoutMinutes, $idleBefore->toDateTimeString()]);
 
-                    $closed++;
-                }
-            });
+            $closed += $affected;
+
+            // A pass that is not full means fewer rows matched than the batch
+            // allows, so none are left: no empty pass is needed to find out.
+        } while ($affected === self::SWEEP_BATCH);
 
         return $closed;
     }
