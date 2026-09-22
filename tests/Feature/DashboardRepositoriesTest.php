@@ -289,14 +289,22 @@ final class DashboardRepositoriesTest extends TestCase
         $registry->register(new TrackedEvent('Lead', 'Demande de code', 3));
 
         $repository = new EventReadRepository;
-        $breakdown = collect($repository->eventBreakdown($this->period, null, $registry))->keyBy('name');
+        $breakdown = $repository->eventBreakdown($this->period, null, $registry);
 
-        $this->assertSame(13, $breakdown['Lead']['valueTotal'], 'Its own ten, and the declared three for the other.');
-        $this->assertSame(6, $breakdown['bonus']['valueTotal']);
-        $this->assertNull($breakdown['bonus']['value'], 'Nothing was declared for it.');
+        $scores = [];
+        $declared = [];
+        foreach ($breakdown as $row) {
+            $scores[$row['name']] = $row['valueTotal'];
+            $declared[$row['name']] = $row['value'];
+        }
+        ksort($scores);
+
+        // Lead · its own ten, and the declared three for the occurrence that carries none.
+        $this->assertSame(['Lead' => 13, 'bonus' => 6], $scores);
+        $this->assertNull($declared['bonus'] ?? null, 'Nothing was declared for it.');
 
         // The headline adds up the conversions only, and the undeclared event is none.
-        $this->assertSame(13, $repository->totals($breakdown->values()->all())['value']);
+        $this->assertSame(13, $repository->totals($breakdown)['value']);
     }
 
     public function test_it_counts_named_events_and_conversions_per_session_in_the_list(): void

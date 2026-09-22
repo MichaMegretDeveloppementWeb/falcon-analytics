@@ -322,12 +322,13 @@ portée de ce qui réagit. **Aucun des deux ne couvre l'autre** · un
 `analytics:check` vert ne dit rien de ce que le second vérifie, et c'est lui qui
 nomme la ligne manquante.
 
-Le premier rend un tableau de **treize points** et s'arrête en échec s'il en trouve un
+Le premier rend un tableau de **seize points** et s'arrête en échec s'il en trouve un
 bloquant · le moteur de la base, les migrations passées, l'interrupteur général,
-la directive posée dans vos vues, le point de collecte joignable, le middleware
-des écrans, le gabarit que vous avez nommé, la feuille publiée à jour,
-l'identité, la durée de conservation, les résumés à jour, le proxy et la
-géolocalisation.
+la directive posée dans vos vues, le point de collecte joignable, la session
+qu'il ouvre, le middleware des écrans, le gabarit que vous avez nommé, la
+feuille publiée à jour, l'identité, les fichiers de déclarations lus en entier,
+la durée de conservation, le plafond du marketing, les résumés à jour, le proxy
+et la géolocalisation.
 
 Le moteur vient en premier, et il est relu à chaque passage · une connexion
 change en cours de vie, quand on déplace une base ou qu'on en pointe une seconde

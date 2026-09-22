@@ -85,7 +85,7 @@ final class TheDiagnosticSpeaksTest extends TestCase
     }
 
     /**
-     * Le premier des treize points, et il nomme le moteur trouvé.
+     * Le premier des points, et il nomme le moteur trouvé.
      *
      * Avant les migrations, parce que le moteur décide si elles veulent seulement
      * dire quelque chose. Et à chaque déploiement plutôt qu'une seule fois : une

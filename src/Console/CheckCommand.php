@@ -110,10 +110,10 @@ final class CheckCommand extends Command
      */
     private function checkDeclarations(): array
     {
-        $failures = array_values(array_filter([
-            app(EventRegistry::class)->failure(),
-            app(FunnelRegistry::class)->failure(),
-        ]));
+        $failures = array_values(array_filter(
+            [app(EventRegistry::class)->failure(), app(FunnelRegistry::class)->failure()],
+            fn (?string $failure): bool => $failure !== null,
+        ));
 
         if ($failures === []) {
             return ['Déclarations', 'OK', 'Les fichiers des événements et des tunnels se lisent en entier.'];
@@ -254,7 +254,7 @@ final class CheckCommand extends Command
     }
 
     /**
-     * First of the thirteen, and before the migrations on purpose: the engine
+     * First of the checks, and before the migrations on purpose: the engine
      * decides whether they mean anything at all.
      *
      * A connection can change after an install — a host moves its database, or

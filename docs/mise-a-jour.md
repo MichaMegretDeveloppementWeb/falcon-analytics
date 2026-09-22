@@ -44,7 +44,7 @@ une colonne, un écran qui la lit doit la trouver. Entre les deux commandes, le
 pire qui arrive est une feuille d'hier ; dans l'autre ordre, c'est une requête
 sur une colonne absente.
 
-`analytics:check` remplace le tour de l'application à la main · treize contrôles,
+`analytics:check` remplace le tour de l'application à la main · seize contrôles,
 tous sur des défauts qui échouent en silence.
 
 > **La configuration publiée n'est jamais écrasée.** Une clé ajoutée par une
