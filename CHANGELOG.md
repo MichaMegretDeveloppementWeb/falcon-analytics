@@ -101,6 +101,10 @@ automatiquement · un `php artisan migrate` suffit, et `analytics:install` le
 lance pour vous. Huit portent vos mesures ; les deux autres sont la mécanique de
 la conservation, et ne sont pas une interface.
 
+Les deux colonnes qui ne prennent qu'une liste fermée — le type d'un événement,
+la sorte d'un résumé — sont gardées **par la base elle-même**, par une
+contrainte nommée que MySQL (depuis 8.0.16) et MariaDB (depuis 10.2) appliquent.
+
 Elles sont toutes réversibles. Ce qui ne veut pas dire qu'il faille les
 redescendre · voir [mise-a-jour.md](docs/mise-a-jour.md#le-schéma-qui-est-la-vraie-question).
 

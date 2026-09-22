@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
@@ -28,7 +29,7 @@ return new class extends Migration
             // visitors table.
             $table->dateTime('occurred_at');
 
-            $table->string('type', 20);            // pageview | click | custom
+            $table->string('type', 20);
             $table->string('name', 120)->nullable(); // data-track-event, funnel join key
             $table->string('route', 191)->nullable();
             $table->string('url', 2048)->nullable();
@@ -70,6 +71,10 @@ return new class extends Migration
             $table->index(['route', 'occurred_at'], 'fa_events_route_occurred_idx');
             $table->index(['visitor_id', 'occurred_at'], 'fa_events_visitor_occurred_idx');
         });
+
+        // The engine keeps the list the code keeps · the types that become a
+        // row, `EventType::isStored()`. Named, so a refusal says which rule.
+        DB::statement("ALTER TABLE falcon_analytics_events ADD CONSTRAINT fa_events_type_check CHECK (`type` IN ('pageview', 'click', 'custom'))");
     }
 
     public function down(): void
