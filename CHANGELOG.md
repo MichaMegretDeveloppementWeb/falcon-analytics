@@ -42,7 +42,7 @@ architecture qui n'existe plus.
   s'efface au bout de 90 jours, et c'est tout ce qui s'efface · les pages et
   clics les plus vus sont comptés d'avance chaque nuit, et **tout ce qui porte un
   nom est gardé pour toujours**. Aucune période maximale d'affichage ;
-- **trente-six réglages**, tous facultatifs · le paquet fonctionne sans qu'on en
+- **trente-sept réglages**, tous facultatifs · le paquet fonctionne sans qu'on en
   touche un seul, et un essai le tient ;
 - **des fichiers déjà compilés** · aucun Node n'est requis chez l'hôte. Le
   script des écrans, `analytics-admin.js`, ne part que vers les écrans

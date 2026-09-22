@@ -1,5 +1,7 @@
 <x-analytics::root area="admin" class="an:space-y-8">
 
+    @include('analytics::livewire.dashboard.partials.attribution-ceiling')
+
     {{-- KPIs with integrated sparklines --}}
     <div class="an:grid an:grid-cols-2 an:gap-4 an:lg:grid-cols-4">
         <x-analytics::kpi-card :label="__('Sessions issues de pubs')" :value="number_format($sessions, 0, ',', ' ')" icon="cursor-arrow-rays" :metric="$sessionsDelta">

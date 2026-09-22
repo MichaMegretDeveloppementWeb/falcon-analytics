@@ -247,6 +247,26 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Marketing attribution
+    |--------------------------------------------------------------------------
+    |
+    | The marketing screens match sessions to campaigns and ads in memory, and
+    | read for that every session of the period that arrived with parameters in
+    | its address — a single fbclid is enough. Past this many, the rest are not
+    | read: the figures then under-count, and the screens say so.
+    |
+    | Raise it if the server has the memory for it. A whole number of at least
+    | one; anything else stops the marketing screens and analytics:check says
+    | why.
+    |
+    */
+
+    'marketing' => [
+        'max_sessions' => 20000,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Google Search Console (organic search queries)
     |--------------------------------------------------------------------------
     |

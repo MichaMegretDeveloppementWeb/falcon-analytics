@@ -92,6 +92,7 @@ final class CheckCommand extends Command
             $this->checkIdentity($config),
             $this->checkDeclarations(),
             $this->checkRetention($config),
+            $this->checkMarketingCeiling($config),
             $this->checkSummaries(),
             $this->checkProxy(),
             $this->checkGeoip($config),
@@ -157,6 +158,34 @@ final class CheckCommand extends Command
             'OK',
             "Le pas à pas des sessions est gardé {$days} jours. Au-delà, seuls les pages vues et clics "
             .'anonymes sont effacés ; les événements nommés restent, et aucun autre écran ne bouge.',
+        ];
+    }
+
+    /**
+     * The marketing ceiling, read the way the marketing screens read it.
+     *
+     * A value that is not a whole number of sessions is refused there rather
+     * than replaced by one nobody chose, so those screens stop · this says why.
+     *
+     * @return array{0: string, 1: string, 2: string}
+     */
+    private function checkMarketingCeiling(Config $config): array
+    {
+        $ceiling = $config->get('analytics.marketing.max_sessions');
+
+        if (! is_int($ceiling) || $ceiling < 1) {
+            return [
+                'Marketing',
+                'KO',
+                'analytics.marketing.max_sessions doit être un nombre de sessions d’au moins 1. '
+                .'Tant que ce n’est pas le cas, les écrans marketing ne s’affichent pas.',
+            ];
+        }
+
+        return [
+            'Marketing',
+            'OK',
+            'Les écrans marketing lisent au plus '.number_format($ceiling, 0, ',', ' ').' sessions par période.',
         ];
     }
 

@@ -420,6 +420,28 @@ final class TheDiagnosticSpeaksTest extends TestCase
             ->assertFailed();
     }
 
+    /**
+     * A marketing ceiling that means nothing stops the marketing screens, and
+     * this is where it is said.
+     */
+    public function test_it_blocks_on_a_marketing_ceiling_that_is_not_a_number_of_sessions(): void
+    {
+        config(['analytics.marketing.max_sessions' => 0]);
+
+        $this->artisan('analytics:check')
+            ->expectsOutputToContain('marketing.max_sessions')
+            ->assertFailed();
+    }
+
+    public function test_it_names_the_marketing_ceiling_it_found(): void
+    {
+        config(['analytics.marketing.max_sessions' => 50000]);
+
+        $this->artisan('analytics:check')
+            ->expectsOutputToContain('50 000')
+            ->assertSuccessful();
+    }
+
     /** Never erasing is a choice, not a defect. */
     public function test_it_accepts_an_installation_that_never_erases(): void
     {

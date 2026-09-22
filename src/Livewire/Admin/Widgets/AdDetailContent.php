@@ -72,6 +72,7 @@ final class AdDetailContent extends Component
                 'conversionElements' => $marketing->conversionElements($period, $subjectType, $funnels, $events, [$ad]),
                 'trendLabels' => $trend['labels'],
                 'trendData' => $trend['sessions'],
+                'truncatedAt' => $marketing->truncatedAt($period, $subjectType) ?? $marketing->truncatedAt($period->previous(), $subjectType),
             ];
         }, fn (array $data): View => view('analytics::livewire.dashboard.widgets.ad-detail-content', $data));
     }

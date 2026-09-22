@@ -107,6 +107,7 @@ final class MarketingDashboardContent extends Component
                 'trendData' => $trend['sessions'],
                 'campaignRows' => $campaignRows,
                 'adRows' => array_slice($adRows, 0, 6),
+                'truncatedAt' => $marketing->truncatedAt($period, $subjectType) ?? $marketing->truncatedAt($previous, $subjectType),
             ];
         }, fn (array $data): View => view('analytics::livewire.dashboard.widgets.marketing-dashboard-content', $data));
     }
