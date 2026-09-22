@@ -8,10 +8,10 @@ use Falcon\Analytics\Actions\ForgetVisitorAction;
 use Falcon\Analytics\Livewire\Admin\Concerns\RecoversFromReadFailure;
 use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Repositories\Dashboard\VisitorProfileReadRepository;
-use Falcon\Analytics\Services\Dashboard\VisitorEngagementCalculator;
-use Falcon\Analytics\Services\SubjectResolver;
+use Falcon\Analytics\Services\Dashboard\VisitorDetailBuilder;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Log;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -29,11 +29,16 @@ final class VisitorDetailPage extends Component
 
     private const PER_PAGE = 20;
 
-    public Visitor $visitor;
+    #[Locked]
+    public int $visitorId;
+
+    /** The visitor as this request read it · kept for the request, never between two. */
+    private ?Visitor $read = null;
 
     public function mount(Visitor $visitor): void
     {
-        $this->visitor = $visitor;
+        $this->visitorId = $visitor->id;
+        $this->read = $visitor;
 
         // A folded profile has no data of its own anymore: an old link or
         // bookmark lands on the canonical profile instead.
@@ -50,10 +55,10 @@ final class VisitorDetailPage extends Component
     public function forget(ForgetVisitorAction $action): void
     {
         try {
-            $action->execute($this->visitor);
+            $action->execute($this->visitor());
         } catch (\Throwable $e) {
             Log::channel(config('analytics.log_channel'))->error('Analytics visitor erasure failed.', [
-                'visitor_id' => $this->visitor->id,
+                'visitor_id' => $this->visitorId,
                 'exception' => $e,
             ]);
 
@@ -63,28 +68,26 @@ final class VisitorDetailPage extends Component
         }
 
         Log::channel(config('analytics.log_channel'))->notice('Visitor.erased', [
-            'visitor_id' => $this->visitor->id,
+            'visitor_id' => $this->visitorId,
             'actor_user_id' => auth()->id(),
         ]);
 
         $this->redirect(route('analytics.admin.visitors'));
     }
 
-    public function render(SubjectResolver $subjects, VisitorProfileReadRepository $repository, VisitorEngagementCalculator $engagement): View
+    public function render(VisitorDetailBuilder $details, VisitorProfileReadRepository $repository): View
     {
         return $this->guardedRender(
-            function () use ($subjects, $repository, $engagement): array {
-                $subjectType = $this->visitor->subject_type;
-
-                return [
-                    'visitor' => $this->visitor,
-                    'sessions' => $repository->paginateSessions($this->visitor->id, self::PER_PAGE),
-                    ...$engagement->summarize($repository->engagement($this->visitor->id)),
-                    'subjectLabel' => $subjectType !== null ? $subjects->label($subjectType) : null,
-                    'subjectName' => $subjectType !== null ? $subjects->name($subjectType, (int) $this->visitor->subject_id) : null,
-                ];
-            },
+            fn (): array => [
+                'detail' => $details->build($this->visitor(), $repository->engagement($this->visitorId)),
+                'sessions' => $repository->paginateSessions($this->visitorId, self::PER_PAGE),
+            ],
             fn (array $data): View => view('analytics::livewire.dashboard.visitor-detail', $data),
         );
+    }
+
+    private function visitor(): Visitor
+    {
+        return $this->read ??= Visitor::query()->findOrFail($this->visitorId);
     }
 }
