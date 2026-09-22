@@ -124,6 +124,36 @@ abstract class TestCase extends Orchestra
     }
 
     /**
+     * Where a worker publishes the compiled files.
+     *
+     * **The third of the three things a parallel run has to give each worker**,
+     * next to its database and its bootstrap cache above — and the one that was
+     * missed. Every worker boots the same test application, so `public_path()`
+     * is ONE directory for the four of them.
+     *
+     * On a workstation the copies are already in place, nobody publishes, and
+     * nothing collides. On a fresh checkout the directory is empty: the four
+     * workers publish at once, and one of them renders a page while another is
+     * still copying `icons.svg`. The kit's staleness guard reads half a file,
+     * refuses to build the address, and the test that falls is about something
+     * else entirely — `test_it_renders_a_session_detail…`, which touches none
+     * of this.
+     *
+     * **Measured on the integration chain** · green, red, green on the same
+     * code, only on the line that resolves the floor. That is what an unshared
+     * directory looks like from the outside: chance.
+     *
+     * The copies are kept rather than dropped at the end: they are what makes
+     * the next run publish nothing at all.
+     */
+    private static function publishedDirectoryFor(string $token): string
+    {
+        $base = dirname(__DIR__).'/vendor/orchestra/testbench-core/laravel/public';
+
+        return $token === '' ? $base : $base.'-'.$token;
+    }
+
+    /**
      * Publish the compiled files whenever the copy is not the shipped one.
      *
      * **The kit refuses to build the address of a file the host has not
@@ -374,6 +404,8 @@ abstract class TestCase extends Orchestra
 
     protected function defineEnvironment($app): void
     {
+        $app->usePublicPath(self::publishedDirectoryFor(self::parallelToken()));
+
         tap($app['config'], function ($config): void {
             // MySQL, and nothing else. SQLite in memory held the suite in
             // twenty seconds and proved nothing of what the schema promises.

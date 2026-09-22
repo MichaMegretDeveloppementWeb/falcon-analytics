@@ -117,6 +117,11 @@ final class PackageInstallationTest extends TestCase
         File::put($base.DIRECTORY_SEPARATOR.'.env.example', "APP_NAME=Host\n");
 
         $this->app->setBasePath($base);
+        // Said rather than inherited: the bench pins its own published
+        // directory, one per parallel worker, and `setBasePath()` does not
+        // undo a public path that was chosen. A host installing for real moves
+        // both, so this test moves both.
+        $this->app->usePublicPath($base.DIRECTORY_SEPARATOR.'public');
         // The provider is registered again so the publication target follows
         // the new root.
         $this->app->register(AnalyticsServiceProvider::class, force: true);
