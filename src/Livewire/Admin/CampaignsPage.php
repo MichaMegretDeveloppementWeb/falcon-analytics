@@ -112,6 +112,9 @@ final class CampaignsPage extends Component
                     ->withCount('ads')
                     ->when($this->search !== '', fn ($query) => $query->where('name', 'like', '%'.$this->search.'%'))
                     ->orderBy('name')
+                    // Two campaigns can share a name: the key closes the order,
+                    // which a paginated list needs to be total.
+                    ->orderBy('id')
                     ->paginate(self::PER_PAGE);
 
                 return [

@@ -107,11 +107,7 @@
                             </div>
                         </x-ui::table.cell>
                         <x-ui::table.cell :last="true" class="an:whitespace-nowrap">
-                            @if ($visitor->acquisition_source)
-                                <x-ui::badge color="gray"><x-analytics::source :value="$visitor->acquisition_source" /></x-ui::badge>
-                            @else
-                                <span class="an:text-muted">{{ __('Directe') }}</span>
-                            @endif
+                            <x-ui::badge color="gray"><x-analytics::source :value="$visitor->acquisition_source" /></x-ui::badge>
                         </x-ui::table.cell>
                     </x-ui::table.row>
                 @endforeach

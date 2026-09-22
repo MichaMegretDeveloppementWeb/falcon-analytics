@@ -88,7 +88,7 @@
                         @php $pct = (int) round($c / $sourceTotal * 100); @endphp
                         <div>
                             <div class="an:mb-1 an:flex an:items-center an:justify-between an:text-[13px]">
-                                <span class="an:text-secondary">@if ($source === 'direct'){{ __('Directe') }}@else<x-analytics::source :value="$source" />@endif</span>
+                                <span class="an:text-secondary"><x-analytics::source :value="$source" /></span>
                                 <span><span class="an:font-semibold an:text-primary">{{ $pct."\u{00A0}%" }}</span> <span class="an:text-muted">{{ $c }}</span></span>
                             </div>
                             <div class="an:h-1 an:w-full an:overflow-hidden an:rounded-full an:bg-elevated">
@@ -140,11 +140,7 @@
                             <x-ui::table.cell class="an:tabular-nums">{{ $s->pageview_count }}</x-ui::table.cell>
                             <x-ui::table.cell>{{ DeviceLabel::for($s->device_type) }}</x-ui::table.cell>
                             <x-ui::table.cell>
-                                @if ($s->source)
-                                    <x-ui::badge color="gray"><x-analytics::source :value="$s->source" /></x-ui::badge>
-                                @else
-                                    <span class="an:text-muted">{{ __('Directe') }}</span>
-                                @endif
+                                <x-ui::badge color="gray"><x-analytics::source :value="$s->source" /></x-ui::badge>
                             </x-ui::table.cell>
                             <x-ui::table.cell :last="true" class="an:whitespace-nowrap">
                                 @if ($s->country || $s->city)

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Tests\Feature;
 
 use Carbon\CarbonImmutable;
+use Closure;
 use Falcon\Analytics\DTOs\Dashboard\Period;
 use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Events\EventRegistry;
@@ -87,6 +88,26 @@ final class DashboardRepositoriesTest extends TestCase
         $this->assertNotSame([], $rows, 'The expected page is empty.');
 
         return $rows[0];
+    }
+
+    /**
+     * The keys of one page, the pagination reading its number where it always
+     * reads it: the current request.
+     *
+     * @template TModel of Model
+     *
+     * @param  Closure(): LengthAwarePaginator<int, TModel>  $read
+     * @return list<int>
+     */
+    private function idsOnPage(int $number, Closure $read): array
+    {
+        request()->merge(['page' => $number]);
+
+        try {
+            return array_map(static fn (Model $row): int => (int) $row->getKey(), $this->rows($read()));
+        } finally {
+            request()->merge(['page' => 1]);
+        }
     }
 
     private function makeVisitor(): Visitor
@@ -427,6 +448,45 @@ final class DashboardRepositoriesTest extends TestCase
 
         $this->assertSame(1, $found->total());
         $this->assertSame($visitor->id, $this->firstRow($found)->visitor_id);
+    }
+
+    public function test_it_keeps_the_session_list_in_a_total_order_when_the_sorted_column_ties(): void
+    {
+        // Six sessions the requested sort cannot tell apart: the tiebreaker is
+        // the only thing left to decide, and without one the engine is free to
+        // answer differently on each page, showing a row twice and hiding
+        // another.
+        $ids = [];
+        foreach (range(1, 6) as $minutes) {
+            $ids[] = $this->makeSession(['device_type' => 'desktop', 'started_at' => now()->subMinutes($minutes)])->id;
+        }
+
+        $subjects = new SubjectResolver;
+        $page = fn (int $number, string $direction): array => $this->idsOnPage(
+            $number,
+            fn (): LengthAwarePaginator => $this->sessions->paginateSessions($this->period, null, null, null, null, $subjects, 'device_type', $direction, 3),
+        );
+
+        $this->assertSame($ids, [...$page(1, 'asc'), ...$page(2, 'asc')]);
+        $this->assertSame(array_reverse($ids), [...$page(1, 'desc'), ...$page(2, 'desc')]);
+    }
+
+    public function test_it_keeps_the_visitor_directory_in_a_total_order_when_the_sorted_column_ties(): void
+    {
+        $ids = [];
+        foreach (range(1, 6) as $ignored) {
+            $visitor = $this->makeVisitor();
+            $this->makeSession([], $visitor);
+            $ids[] = $visitor->id;
+        }
+
+        $page = fn (int $number, string $direction): array => $this->idsOnPage(
+            $number,
+            fn (): LengthAwarePaginator => $this->visitors->paginateVisitors(null, null, new SubjectResolver, 'session_count', $direction, 3),
+        );
+
+        $this->assertSame($ids, [...$page(1, 'asc'), ...$page(2, 'asc')]);
+        $this->assertSame(array_reverse($ids), [...$page(1, 'desc'), ...$page(2, 'desc')]);
     }
 
     public function test_it_searches_sessions_by_country_name_resolving_the_stored_iso_code(): void

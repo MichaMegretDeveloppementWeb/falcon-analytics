@@ -1,6 +1,5 @@
 @php
     use Falcon\Analytics\Support\DeviceLabel;
-    use Illuminate\Support\Str;
 
     $subjectResolver = app(\Falcon\Analytics\Services\SubjectResolver::class);
 
@@ -22,17 +21,6 @@
     $sessionsCount = $sessions->total() <= 1
         ? __(':count session', ['count' => $sessionsTotal])
         : __(':count sessions', ['count' => $sessionsTotal]);
-
-    $deviceOptions = ['' => __('Tous les appareils')];
-    foreach ($filterOptions['devices'] as $deviceType) {
-        $deviceOptions[$deviceType] = DeviceLabel::for($deviceType);
-    }
-
-    $sourceLabels = ['direct' => 'Direct', 'organic' => 'Naturel', 'social' => 'Réseaux sociaux', 'paid' => 'Payant', 'referral' => 'Référent', 'email' => 'E-mail', 'campaign' => 'Campagne'];
-    $sourceOptions = ['' => __('Toutes les sources')];
-    foreach ($filterOptions['sources'] as $sourceName) {
-        $sourceOptions[$sourceName] = __($sourceLabels[strtolower($sourceName)] ?? Str::headline($sourceName));
-    }
 @endphp
 
 <x-analytics::root area="admin" class="an:space-y-6">
@@ -114,11 +102,7 @@
                         <x-ui::table.cell class="an:tabular-nums an:text-secondary">{{ $session->events_count }}</x-ui::table.cell>
                         <x-ui::table.cell class="an:tabular-nums an:font-medium {{ $session->conversions_count > 0 ? 'an:text-emerald-600 an:dark:text-emerald-400' : 'an:text-muted' }}">{{ $session->conversions_count }}</x-ui::table.cell>
                         <x-ui::table.cell>
-                            @if ($session->source)
-                                <x-ui::badge color="gray"><x-analytics::source :value="$session->source" /></x-ui::badge>
-                            @else
-                                <span class="an:text-muted">{{ __('Directe') }}</span>
-                            @endif
+                            <x-ui::badge color="gray"><x-analytics::source :value="$session->source" /></x-ui::badge>
                         </x-ui::table.cell>
                         {{-- Bounded cells: long values truncate with the full text on
                              hover, so the table never widens past its container. --}}

@@ -45,6 +45,9 @@ final class AdsPage extends Component
                             ->orWhereHas('campaign', fn (Builder $campaign): Builder => $campaign->where('name', 'like', $term));
                     })
                     ->orderBy('name')
+                    // Two ads can share a name: the key closes the order, which
+                    // a paginated list needs to be total.
+                    ->orderBy('id')
                     ->paginate(self::PER_PAGE);
 
                 $labels = [];
