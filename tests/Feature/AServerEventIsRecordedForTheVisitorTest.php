@@ -9,14 +9,13 @@ use Falcon\Analytics\Facades\Analytics;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
-use Falcon\Analytics\Services\ServerEventRecorder;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Throwable;
 
-final class ServerEventRecorderTest extends TestCase
+final class AServerEventIsRecordedForTheVisitorTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -24,8 +23,8 @@ final class ServerEventRecorderTest extends TestCase
     {
         parent::setUp();
 
-        Route::get('/_analytics_record_test', function (ServerEventRecorder $recorder) {
-            $recorder->record('Lead', value: 3, props: ['listing_id' => 42]);
+        Route::get('/_analytics_record_test', function () {
+            Analytics::record('Lead', value: 3, props: ['listing_id' => 42]);
 
             return response()->noContent();
         })->middleware('web');
@@ -71,7 +70,7 @@ final class ServerEventRecorderTest extends TestCase
         // One argument only: `assertDoesntThrow` takes just the closure, and it
         // already catches every `Throwable`. The second argument served no
         // purpose but to suggest it chose what gets caught.
-        $this->assertDoesntThrow(fn () => app(ServerEventRecorder::class)->record('X', value: 1));
+        $this->assertDoesntThrow(fn () => Analytics::record('X', value: 1));
 
         $this->assertSame(0, Event::count());
     }
@@ -88,8 +87,8 @@ final class ServerEventRecorderTest extends TestCase
         Analytics::consentUsing(fn (): bool => true);
 
         $this->withoutDefer();
-        app(ServerEventRecorder::class)->record('Lead', value: 3);
-        app(ServerEventRecorder::class)->record('Lead', value: 3);
+        Analytics::record('Lead', value: 3);
+        Analytics::record('Lead', value: 3);
 
         $this->assertSame(0, Visitor::count());
         $this->assertSame(0, Event::count());
@@ -102,7 +101,7 @@ final class ServerEventRecorderTest extends TestCase
             ->once()
             ->withArgs(fn (string $message): bool => str_contains($message, 'outside a visitor'));
 
-        app(ServerEventRecorder::class)->record('Lead');
+        Analytics::record('Lead');
     }
 
     public function test_it_is_callable_through_the_analytics_facade(): void

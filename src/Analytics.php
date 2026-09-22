@@ -4,8 +4,20 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics;
 
+use Carbon\CarbonImmutable;
 use Closure;
-use Falcon\Analytics\Services\ServerEventRecorder;
+use Falcon\Analytics\Actions\IngestEventsAction;
+use Falcon\Analytics\DTOs\IncomingBatch;
+use Falcon\Analytics\DTOs\IncomingEvent;
+use Falcon\Analytics\DTOs\RequestSnapshot;
+use Falcon\Analytics\Enums\EventType;
+use Falcon\Analytics\Services\VisitorIdentityResolver;
+use Falcon\Analytics\Support\UrlRedactor;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Throwable;
+
+use function Illuminate\Support\defer;
 
 /**
  * Integration surface between the host application and the package.
@@ -51,10 +63,17 @@ final class Analytics
     }
 
     /**
-     * Record a server-emitted event for the current visitor (thin delegate to
-     * ServerEventRecorder). Like any event, it belongs to a funnel by its name.
-     * A no-op when tracking is off, the context is excluded, or there is no
-     * visitor's web request to record it for.
+     * Record a server-emitted event for the current visitor · same visitor and
+     * session, same storage, same funnels as the collector's: a code-sent event
+     * is just an event whose source is the server. Like any event, it belongs
+     * to a funnel by its name.
+     *
+     * A no-op when tracking is off or the context is excluded (e.g. an admin),
+     * and deferred so it never blocks the response. Outside a web request that
+     * carries a session — a queued job, a command — there is no visitor to
+     * record it for: nothing is recorded, and the log says so. Nothing here
+     * ever throws to the caller: analytics must never break the code that
+     * emits an event.
      *
      * The score is a whole number of points, not an amount: see TrackedEvent.
      *
@@ -62,7 +81,37 @@ final class Analytics
      */
     public function record(string $name, ?int $value = null, array $props = []): void
     {
-        app(ServerEventRecorder::class)->record($name, $value, $props);
+        if (config('analytics.enabled') !== true) {
+            return;
+        }
+
+        try {
+            $request = request();
+
+            if (! $request->hasSession()) {
+                Log::channel(config('analytics.log_channel'))->warning(
+                    'Analytics server event not recorded: it was sent outside a visitor\'s web request.',
+                    ['event' => $name],
+                );
+
+                return;
+            }
+
+            if ($this->isExcluded()) {
+                return;
+            }
+
+            $this->ingestAfterTheResponse(
+                app(VisitorIdentityResolver::class)->resolve($request, $this->hasConsent()),
+                $this->subject(),
+                new RequestSnapshot(ip: $request->ip(), userAgent: $request->userAgent(), host: $request->getHost()),
+                $this->serverBatch($request, $name, $value, $props),
+            );
+        } catch (Throwable $e) {
+            Log::channel(config('analytics.log_channel'))->error('Analytics server event could not be recorded.', [
+                'exception' => $e,
+            ]);
+        }
     }
 
     /**
@@ -175,5 +224,44 @@ final class Analytics
         }
 
         return ['type' => $type, 'id' => (int) $id];
+    }
+
+    /**
+     * One custom event, as the server saw the request it was emitted in.
+     *
+     * @param  array<string, scalar|null>  $props
+     */
+    private function serverBatch(Request $request, string $name, ?int $value, array $props): IncomingBatch
+    {
+        return new IncomingBatch(events: [new IncomingEvent(
+            type: EventType::Custom,
+            occurredAt: CarbonImmutable::now(),
+            name: $name,
+            route: $request->route()?->getName(),
+            url: app(UrlRedactor::class)->redact($request->fullUrl()),
+            props: $props === [] ? null : $props,
+            value: $value,
+        )]);
+    }
+
+    /**
+     * Hand the batch to the ingestion once the response has gone · a failure
+     * there is logged, never thrown to the code that emitted the event.
+     *
+     * @param  array{type: string, id: int}|null  $subject
+     */
+    private function ingestAfterTheResponse(string $uuid, ?array $subject, RequestSnapshot $snapshot, IncomingBatch $batch): void
+    {
+        $action = app(IngestEventsAction::class);
+
+        defer(function () use ($action, $uuid, $subject, $snapshot, $batch): void {
+            try {
+                $action->execute($uuid, $subject, $snapshot, $batch);
+            } catch (Throwable $e) {
+                Log::channel(config('analytics.log_channel'))->error('Analytics server event failed.', [
+                    'exception' => $e,
+                ]);
+            }
+        });
     }
 }
