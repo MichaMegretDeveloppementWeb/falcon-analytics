@@ -257,7 +257,7 @@ final class DashboardRepositoriesTest extends TestCase
         $this->makeEvent($session, EventType::Click, ['name' => 'cta.contact']);
 
         $registry = new EventRegistry;
-        $registry->register(new TrackedEvent('Lead', 'Demande de code', 3.0));
+        $registry->register(new TrackedEvent('Lead', 'Demande de code', 3));
 
         $breakdown = (new EventReadRepository)->eventBreakdown($this->period, null, $registry);
 
@@ -266,7 +266,7 @@ final class DashboardRepositoriesTest extends TestCase
         $this->assertSame('Demande de code', $breakdown[0]['label']);
         $this->assertSame(2, $breakdown[0]['count']);
         $this->assertTrue($breakdown[0]['isConversion']);
-        $this->assertSame(6.0, $breakdown[0]['valueTotal']);
+        $this->assertSame(6, $breakdown[0]['valueTotal']);
         $this->assertSame('cta.contact', $breakdown[1]['name']);
         $this->assertSame(1, $breakdown[1]['count']);
         $this->assertFalse($breakdown[1]['isConversion']);

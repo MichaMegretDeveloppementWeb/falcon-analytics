@@ -19,7 +19,7 @@ final readonly class FunnelReport
         public string $key,
         public string $label,
         public int $entrants,
-        public float $totalScore,
+        public int $totalScore,
         public array $steps,
     ) {}
 }

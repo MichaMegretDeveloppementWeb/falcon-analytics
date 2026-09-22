@@ -22,6 +22,6 @@ final readonly class IncomingEvent
         public ?string $targetSelector = null,
         public ?string $targetText = null,
         public ?array $props = null,
-        public ?float $value = null,
+        public ?int $value = null,
     ) {}
 }

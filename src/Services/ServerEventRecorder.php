@@ -42,7 +42,7 @@ final readonly class ServerEventRecorder
      *
      * @param  array<string, scalar|null>  $props
      */
-    public function record(string $name, ?float $value = null, array $props = []): void
+    public function record(string $name, ?int $value = null, array $props = []): void
     {
         if (config('analytics.enabled') !== true) {
             return;

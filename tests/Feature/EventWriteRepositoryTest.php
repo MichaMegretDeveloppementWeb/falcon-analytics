@@ -36,7 +36,7 @@ final class EventWriteRepositoryTest extends TestCase
         $this->assertSame(EventType::Click, $click->type);
         $this->assertSame('listing.contact_click', $click->name);
         $this->assertSame(['listing_id' => 42], $click->props);
-        $this->assertSame(3.0, $click->value);
+        $this->assertSame(3, $click->value);
         $this->assertSame('2026-06-30 09:00:00', $click->occurred_at->toDateTimeString());
     }
 

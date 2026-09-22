@@ -55,9 +55,11 @@ final class Analytics
      * ServerEventRecorder). Like any event, it belongs to a funnel by its name.
      * A no-op when tracking is off or the context is excluded.
      *
+     * The score is a whole number of points, not an amount: see TrackedEvent.
+     *
      * @param  array<string, scalar|null>  $props
      */
-    public function record(string $name, ?float $value = null, array $props = []): void
+    public function record(string $name, ?int $value = null, array $props = []): void
     {
         app(ServerEventRecorder::class)->record($name, $value, $props);
     }

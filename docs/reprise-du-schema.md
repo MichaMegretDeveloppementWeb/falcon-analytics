@@ -57,6 +57,29 @@ n'enregistrait rien du tout.
 
 ---
 
+## Ce qu'il faut changer dans votre code, avant
+
+**Un score s'écrit désormais en points entiers.** Partout où votre projet en
+déclare un · `value: 80.0` devient `value: 80`.
+
+| Où le chercher | Ce qui arrive sinon |
+|---|---|
+| `app/Analytics/events.php` · chaque `TrackedEvent::define(…, value: …)` | si le fichier déclare `strict_types`, il cesse de se charger à la première valeur décimale · les événements qui suivent disparaissent des écrans, **sans autre trace qu'une ligne du journal** |
+| `app/Analytics/funnels.php` · chaque `->step(…, value: …)` | la même chose pour les tunnels |
+| vos appels `Analytics::record(…, value: …)` | par la façade, un nombre décimal perd ce qui suit la virgule, avec un avertissement de PHP |
+| vos attributs `data-track-value` | un nombre décimal est ignoré · l'évènement part, sans son score |
+
+**Le site public n'est pas touché** · ces deux fichiers ne se lisent que sur
+les écrans d'analytique et dans les tâches d'entretien. **Et rien ne lève**,
+d'où l'importance de chercher · une conversion absente de l'écran des
+événements est le seul signe visible.
+
+> **Un score n'est pas un montant.** Si vous passiez un prix à `value`, c'est
+> l'occasion de le retirer · le tableau de bord additionne des points et les
+> affiche en « pts ».
+
+---
+
 ## En local, sur le projet en développement
 
 **C'est ici qu'on regarde ce que la commande fait**, avant de le faire en
@@ -186,7 +209,10 @@ reste et rejoue les migrations · elle ne suppose rien de l'état où elle vous
 trouve.
 
 **Les migrations refusent de jouer** · lisez `analytics:check` au point « Base
-de données ». Le paquet exige InnoDB, et le dit.
+de données ». Il dit si la connexion est bien en MySQL ou MariaDB, la seule chose
+que le paquet demande. Si elle l'est, c'est le message du moteur qui nomme ce qui
+a refusé · le plus souvent un index, sur une base locale en MyISAM, comme dit
+plus haut.
 
 **Vous avez lancé la commande sur le mauvais projet** · restaurez la sauvegarde.
 C'est précisément pour ça qu'elle est demandée.

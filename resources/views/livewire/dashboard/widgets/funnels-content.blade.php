@@ -18,7 +18,7 @@
                         @endif
                     </p>
                 </div>
-                <x-ui::badge color="gray" class="an:shrink-0">{{ __('Score') }} {{ number_format($report->totalScore, 0, ',', ' ') }}</x-ui::badge>
+                <x-ui::badge color="gray" class="an:shrink-0">{{ __('Score') }} {{ number_format($report->totalScore, 0, ',', ' ')."\u{00A0}pts" }}</x-ui::badge>
             </div>
 
             @if ($report->entrants === 0)
@@ -81,9 +81,9 @@
                                 </div>
                             @endif
 
-                            <p class="an:mt-1 an:text-[11px] an:text-muted">{{ __('Valeur :v · score :s', [
-                                'v' => number_format($step->value, 0, ',', ' '),
-                                's' => number_format($step->score, 0, ',', ' '),
+                            <p class="an:mt-1 an:text-[11px] an:text-muted">{{ __(':v par visiteur · score :s', [
+                                'v' => number_format($step->value, 0, ',', ' ')."\u{00A0}pts",
+                                's' => number_format($step->score, 0, ',', ' ')."\u{00A0}pts",
                             ]) }}</p>
                         </div>
                     @endforeach

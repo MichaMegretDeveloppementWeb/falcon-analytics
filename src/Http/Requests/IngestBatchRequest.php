@@ -42,8 +42,9 @@ final class IngestBatchRequest extends FormRequest
             'events.*.selector' => ['nullable', 'string', 'max:255'],
             'events.*.text' => ['nullable', 'string', 'max:255'],
             'events.*.props' => ['nullable', 'array'],
-            // Bounded to the decimal(12,2) column so an overflow cannot fail the insert.
-            'events.*.value' => ['nullable', 'numeric', 'between:-9999999999.99,9999999999.99'],
+            // A score is a whole number of points, bounded to the signed integer
+            // column so an overflow cannot fail the insert.
+            'events.*.value' => ['nullable', 'integer', 'between:-2147483648,2147483647'],
         ];
     }
 
@@ -72,7 +73,7 @@ final class IngestBatchRequest extends FormRequest
                     targetSelector: $raw['selector'] ?? null,
                     targetText: $raw['text'] ?? null,
                     props: $raw['props'] ?? null,
-                    value: isset($raw['value']) ? (float) $raw['value'] : null,
+                    value: isset($raw['value']) ? (int) $raw['value'] : null,
                 );
             },
             $this->validated('events'),

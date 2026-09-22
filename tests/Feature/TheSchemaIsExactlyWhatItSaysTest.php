@@ -10,20 +10,10 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 /**
  * The schema the migrations build, written down in full.
  *
- * **This is the net that made folding the migrations safe.** Twenty-two
- * migrations became ten, one per table describing its final state; nothing but
- * a line-for-line comparison of what the engine ends up holding could show that
- * the fold changed nothing it was not meant to change.
- *
- * `migrations-et-schema.md` asks for exactly this: "comparer le schéma avant et
- * après par les tables système du moteur · colonnes, types, nullabilité,
- * défauts, clés, index, contraintes. Le diff doit être vide, sauf ce qui était
- * l'objet du changement."
- *
- * The fixture was taken from the schema the twenty-two built, with the one
- * intended change applied to it — the eighteen instants leaving the type the
- * engine converts — and **written down before the fold**, so the test could be
- * seen failing on those eighteen lines first.
+ * What the engine ends up holding — columns, types, nullability, defaults,
+ * indexes, foreign keys — is read from its own tables and compared line for line
+ * with the fixture. The difference must be empty, save what a change was meant
+ * to change.
  *
  * **When a migration legitimately changes the schema**, this fixture is
  * rewritten in the same commit. It is not a chore: it is the one place a

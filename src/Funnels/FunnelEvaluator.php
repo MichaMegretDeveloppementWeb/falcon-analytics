@@ -64,7 +64,7 @@ final readonly class FunnelEvaluator
 
         $entrants = $stepCount > 0 ? $reached[0] : 0;
         $results = [];
-        $totalScore = 0.0;
+        $totalScore = 0;
 
         foreach ($steps as $i => $step) {
             $visitors = $reached[$i];

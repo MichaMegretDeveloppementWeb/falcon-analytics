@@ -158,7 +158,7 @@ final class ThePurgeChangesNoFigureTest extends TestCase
 
             // Named: the funnel's second step, the events screen, and the ad's
             // objective all read this one.
-            $this->event($session, EventType::Custom, $when->setTime(9, 20), ['name' => 'sample.action', 'value' => 5.0]);
+            $this->event($session, EventType::Custom, $when->setTime(9, 20), ['name' => 'sample.action', 'value' => 5]);
 
             $signed = $this->newSession($this->visitor(), $when, 'client');
             $this->event($signed, EventType::Pageview, $when->setTime(10, 0), ['url' => 'https://exemple.fr/tarifs', 'route' => 'tarifs']);

@@ -62,7 +62,7 @@ final class EventsContent extends Component
                 'value' => $headline['value'],
                 'eventsDelta' => new MetricDelta((float) $headline['events'], (float) $headlinePrevious['events']),
                 'conversionsDelta' => new MetricDelta((float) $headline['conversions'], (float) $headlinePrevious['conversions']),
-                'valueDelta' => new MetricDelta($headline['value'], $headlinePrevious['value']),
+                'valueDelta' => new MetricDelta((float) $headline['value'], (float) $headlinePrevious['value']),
                 'labels' => $labels,
                 'eventsData' => $eventsData,
                 'conversionsData' => $conversionsData,

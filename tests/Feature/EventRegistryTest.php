@@ -23,7 +23,7 @@ final class EventRegistryTest extends TestCase
 
         $this->assertNotNull($event);
         $this->assertSame('Sample action', $event->label);
-        $this->assertSame(5.0, $event->value);
+        $this->assertSame(5, $event->value);
         $other = $registry->get('sample.other');
 
         $this->assertNotNull($other);
