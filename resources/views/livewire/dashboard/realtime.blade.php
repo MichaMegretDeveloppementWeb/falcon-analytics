@@ -11,12 +11,6 @@
     $inkMuted = 'an:text-ink/40';
     $inkSoft = 'an:text-ink-soft';
 
-    $deviceIcon = fn (?string $type): string => match (strtolower((string) $type)) {
-        'mobile' => 'device-phone-mobile',
-        'tablet' => 'device-tablet',
-        default => 'computer-desktop',
-    };
-
     $feedIcon = fn ($event): string => match (true) {
         in_array($event->name, $conversionNames, true) => 'check-circle',
         $event->type === EventType::Pageview => 'document-text',
@@ -230,7 +224,7 @@
                             @endphp
                             <li wire:key="rt-session-{{ $session->id }}">
                                 <a href="{{ route('analytics.admin.sessions.show', $session) }}" class="an:flex an:cursor-pointer an:items-center an:gap-3 an:px-5 an:py-3 an:transition-colors an:hover:bg-elevated/50">
-                                    <x-ui::icon :name="$deviceIcon($session->device_type)" class="an:h-5 an:w-5 an:shrink-0 {{ $inkSoft }}" />
+                                    <x-ui::icon :name="DeviceLabel::icon($session->device_type)" class="an:h-5 an:w-5 an:shrink-0 {{ $inkSoft }}" />
                                     <span class="an:min-w-0 an:flex-1">
                                         <span class="an:flex an:items-center an:gap-x-1.5">
                                             <span class="an:truncate an:text-[14px] an:font-medium {{ $ink }}">{{ $who }}</span>

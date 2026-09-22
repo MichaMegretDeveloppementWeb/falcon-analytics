@@ -78,7 +78,7 @@ final readonly class SessionDetailBuilder
             country: $session->country,
             city: self::filled($session->city),
             ip: self::filled($session->ip),
-            deviceIcon: self::deviceIcon($session->device_type),
+            deviceIcon: DeviceLabel::icon($session->device_type),
             deviceLabel: $session->device_type !== null && $session->device_type !== '' ? DeviceLabel::for($session->device_type) : null,
             browser: self::joined($session->browser, $session->browser_version),
             system: self::joined($session->os, $session->os_version),
@@ -249,16 +249,6 @@ final readonly class SessionDetailBuilder
         return self::filled($event->target_text)
             ?? self::filled($event->name)
             ?? ($event->type === EventType::Click ? __('Clic') : __('Évènement'));
-    }
-
-    private static function deviceIcon(?string $type): string
-    {
-        return match (strtolower((string) $type)) {
-            'mobile' => 'device-phone-mobile',
-            'tablet' => 'device-tablet',
-            'desktop' => 'computer-desktop',
-            default => 'question-mark-circle',
-        };
     }
 
     /** A name and its version on one line · null when both are missing. */

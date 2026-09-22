@@ -6,20 +6,51 @@ namespace Falcon\Analytics\Tests\Feature;
 
 use Falcon\Analytics\Support\DeviceLabel;
 use Falcon\Analytics\Tests\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
+/**
+ * The device a session was opened on, named and drawn · from the names the
+ * user-agent library records, which call a phone `smartphone` and not
+ * `mobile`.
+ */
 final class DeviceLabelTest extends TestCase
 {
-    public function test_it_maps_known_device_types_to_their_translated_label_case_insensitively(): void
+    /** @return array<string, array{string|null, string, string}> */
+    public static function devices(): array
     {
-        $this->assertSame('Ordinateur', DeviceLabel::for('desktop'));
-        $this->assertSame('Mobile', DeviceLabel::for('MOBILE'));
-        $this->assertSame('Tablette', DeviceLabel::for('tablet'));
+        return [
+            'a computer' => ['desktop', 'Ordinateur', 'computer-desktop'],
+            'a phone, as recorded' => ['smartphone', 'Mobile', 'device-phone-mobile'],
+            'a phone, by its short name' => ['mobile', 'Mobile', 'device-phone-mobile'],
+            'a phone without a touch screen' => ['feature phone', 'Téléphone simple', 'device-phone-mobile'],
+            'a large phone' => ['phablet', 'Phablette', 'device-phone-mobile'],
+            'a tablet' => ['tablet', 'Tablette', 'device-tablet'],
+            'a television' => ['tv', 'Télévision', 'tv'],
+            'a smart display' => ['smart display', 'Écran connecté', 'tv'],
+            'a camera' => ['camera', 'Appareil photo', 'camera'],
+            'a smart speaker' => ['smart speaker', 'Enceinte connectée', 'speaker-wave'],
+            'a console' => ['console', 'Console', 'question-mark-circle'],
+            'a car' => ['car browser', 'Voiture', 'question-mark-circle'],
+            'a media player' => ['portable media player', 'Baladeur', 'question-mark-circle'],
+            'a wearable' => ['wearable', 'Objet connecté', 'question-mark-circle'],
+            'a peripheral' => ['peripheral', 'Périphérique', 'question-mark-circle'],
+            'whatever the case' => ['SmartPhone', 'Mobile', 'device-phone-mobile'],
+            'nothing recorded' => ['', 'Inconnu', 'question-mark-circle'],
+            'no value' => [null, 'Inconnu', 'question-mark-circle'],
+        ];
     }
 
-    public function test_it_falls_back_to_a_title_cased_label_or_inconnu_for_empty_and_null(): void
+    #[DataProvider('devices')]
+    public function test_a_device_is_named_and_drawn(?string $type, string $label, string $icon): void
     {
-        $this->assertSame('Console', DeviceLabel::for('console'));
-        $this->assertSame('Inconnu', DeviceLabel::for(''));
-        $this->assertSame('Inconnu', DeviceLabel::for(null));
+        $this->assertSame($label, DeviceLabel::for($type));
+        $this->assertSame($icon, DeviceLabel::icon($type));
+    }
+
+    /** A name the library adds tomorrow still reads, rather than disappearing. */
+    public function test_a_name_not_yet_known_reads_as_recorded(): void
+    {
+        $this->assertSame('Hologram', DeviceLabel::for('hologram'));
+        $this->assertSame('question-mark-circle', DeviceLabel::icon('hologram'));
     }
 }
