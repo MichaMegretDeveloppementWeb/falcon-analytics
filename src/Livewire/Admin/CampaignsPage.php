@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Livewire\Admin;
 
 use Falcon\Analytics\Actions\DeleteCampaignAction;
+use Falcon\Analytics\DTOs\Dashboard\Marketing\CampaignRow;
 use Falcon\Analytics\Livewire\Admin\Concerns\RecoversFromReadFailure;
 use Falcon\Analytics\Models\Campaign;
 use Illuminate\Contracts\View\View;
@@ -97,7 +98,7 @@ final class CampaignsPage extends Component
                     ->paginate(self::PER_PAGE);
 
                 return [
-                    'campaigns' => $campaigns,
+                    'campaigns' => $campaigns->through(CampaignRow::of(...)),
                     'total' => Campaign::query()->count(),
                 ];
             },

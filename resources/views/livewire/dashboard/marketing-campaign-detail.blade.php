@@ -51,7 +51,7 @@
             <x-ui::button variant="secondary" size="compact" x-on:click="$anOpenWhenDone($wire.$refs.adForm.$wire.editAd(), 'an-ad-form')"><x-ui::icon name="plus" class="an:h-3.5 an:w-3.5" /> {{ __('Nouvelle pub') }}</x-ui::button>
         </div>
 
-        @if ($ads->isEmpty())
+        @if ($ads === [])
             <x-ui::empty-state icon="rectangle-stack" :title="__('Aucune pub')" :description="__('Ajoutez une pub à cette campagne pour la suivre.')" />
         @else
             <x-ui::table>
@@ -65,16 +65,15 @@
                 </x-ui::table.head>
                 <x-ui::table.body>
                     @foreach ($ads as $ad)
-                        @php $adUrl = route('analytics.admin.marketing.ads.show', $ad->id); @endphp
                         <x-ui::table.row
                             wire:key="ad-{{ $ad->id }}"
                             class="an-row-link">
                             <x-ui::table.cell :first="true" variant="primary">
-                                <a href="{{ $adUrl }}" class="an-row-link__target an:cursor-pointer an:text-[13px] an:font-medium an:text-primary an:hover:underline">{{ $ad->name }}</a>
+                                <a href="{{ route('analytics.admin.marketing.ads.show', $ad->id) }}" class="an-row-link__target an:cursor-pointer an:text-[13px] an:font-medium an:text-primary an:hover:underline">{{ $ad->name }}</a>
                             </x-ui::table.cell>
                             <x-ui::table.cell>
                                 <div class="an:flex an:flex-wrap an:items-center an:gap-1.5">
-                                    @foreach ($ad->match_conditions ?? [] as $condition)
+                                    @foreach ($ad->conditions as $condition)
                                         <x-analytics::condition-chip :param="$condition['param']" :value="$condition['value']" />
                                     @endforeach
                                 </div>
@@ -84,7 +83,7 @@
                                     @forelse ($ad->objectives as $objective)
                                         <x-ui::badge :color="$objective->type->value === 'funnel' ? 'blue' : 'emerald'">
                                             <x-ui::icon :name="$objective->type->value === 'funnel' ? 'funnel' : 'bolt'" class="an:h-3 an:w-3" />
-                                            {{ $objectiveLabels[$objective->type->value.':'.$objective->reference] ?? $objective->reference }}
+                                            {{ $objective->label }}
                                         </x-ui::badge>
                                     @empty
                                         <span class="an:text-[11px] an:text-muted">{{ __('aucun') }}</span>

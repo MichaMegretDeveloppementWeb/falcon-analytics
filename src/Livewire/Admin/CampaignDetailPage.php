@@ -6,11 +6,11 @@ namespace Falcon\Analytics\Livewire\Admin;
 
 use Falcon\Analytics\Actions\DeleteAdAction;
 use Falcon\Analytics\Actions\DeleteCampaignAction;
+use Falcon\Analytics\DTOs\Dashboard\Marketing\AdRow;
 use Falcon\Analytics\DTOs\Dashboard\Marketing\CampaignDetail;
-use Falcon\Analytics\Events\EventRegistry;
-use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Models\Ad;
 use Falcon\Analytics\Models\Campaign;
+use Falcon\Analytics\Services\Dashboard\ObjectiveLabels;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Locked;
@@ -130,37 +130,22 @@ final class CampaignDetailPage extends DashboardComponent
         $this->adConversions = $adConversions;
     }
 
-    public function render(FunnelRegistry $funnels, EventRegistry $events): View
+    public function render(ObjectiveLabels $objectives): View
     {
         return $this->guardedRender(
-            function () use ($funnels, $events): array {
+            function () use ($objectives): array {
                 $campaign = $this->read ??= Campaign::query()->findOrFail($this->campaignId);
 
                 return [
                     'detail' => CampaignDetail::of($campaign),
                     'range' => $this->currentPeriod(),
-                    'ads' => $campaign->ads()->with('objectives')->orderBy('name')->get(),
-                    'objectiveLabels' => $this->objectiveLabels($funnels, $events),
+                    'ads' => $campaign->ads()->with('objectives:id,ad_id,type,reference')->orderBy('name')->get()
+                        ->map(fn (Ad $ad): AdRow => AdRow::of($ad, $campaign->name, $objectives->tagsOf($ad->objectives)))
+                        ->all(),
                     ...$this->filterData(),
                 ];
             },
             fn (array $data): View => view('analytics::livewire.dashboard.marketing-campaign-detail', $data),
         );
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    private function objectiveLabels(FunnelRegistry $funnels, EventRegistry $events): array
-    {
-        $labels = [];
-        foreach ($funnels->all() as $funnel) {
-            $labels['funnel:'.$funnel->key] = $funnel->label;
-        }
-        foreach ($events->all() as $event) {
-            $labels['event:'.$event->name] = $event->label;
-        }
-
-        return $labels;
     }
 }
