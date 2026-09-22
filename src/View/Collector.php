@@ -38,7 +38,7 @@ final class Collector
             }
 
             return json_encode([
-                'endpoint' => '/'.ltrim((string) config('analytics.endpoint'), '/'),
+                'endpoint' => route('analytics.web.ingest', [], absolute: false),
                 'route' => Route::currentRouteName(),
                 'heartbeat' => (int) config('analytics.session.heartbeat_seconds') * 1000,
                 'flush' => (int) config('analytics.session.flush_seconds') * 1000,

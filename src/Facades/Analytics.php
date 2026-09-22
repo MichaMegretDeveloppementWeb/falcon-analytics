@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static array{type: string, id: int}|null subject()
  * @method static bool hasConsent()
  * @method static bool isExcluded()
+ * @method static void record(string $name, ?int $value = null, array<string, scalar|null> $props = [])
  *
  * @see \Falcon\Analytics\Analytics
  */

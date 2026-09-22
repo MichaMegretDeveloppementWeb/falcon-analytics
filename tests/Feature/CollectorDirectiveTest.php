@@ -6,6 +6,7 @@ namespace Falcon\Analytics\Tests\Feature;
 
 use Falcon\Analytics\Facades\Analytics;
 use Falcon\Analytics\Tests\TestCase;
+use Falcon\Analytics\View\Collector;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
@@ -34,6 +35,25 @@ final class CollectorDirectiveTest extends TestCase
 
         $this->assertStringContainsString('window.__falconAnalytics', $html);
         $this->assertStringContainsString('__analytics', $html);
+    }
+
+    /**
+     * The collector posts where the ingestion route answers, read from the
+     * route itself · a second derivation of the address would part from the
+     * route the day they disagree, and the only trace would be visits that stop
+     * arriving.
+     */
+    public function test_the_collector_posts_where_the_ingestion_route_answers(): void
+    {
+        config(['analytics.enabled' => true]);
+        $mounted = route('analytics.web.ingest', [], absolute: false);
+
+        config(['analytics.endpoint' => 'somewhere-else']);
+
+        $configuration = json_decode((string) Collector::configuration(), true, flags: JSON_THROW_ON_ERROR);
+
+        $this->assertIsArray($configuration);
+        $this->assertSame($mounted, $configuration['endpoint'] ?? null);
     }
 
     /**
