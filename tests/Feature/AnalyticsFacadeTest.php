@@ -7,6 +7,7 @@ namespace Falcon\Analytics\Tests\Feature;
 use Falcon\Analytics\Analytics;
 use Falcon\Analytics\Facades\Analytics as AnalyticsFacade;
 use Falcon\Analytics\Tests\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 final class AnalyticsFacadeTest extends TestCase
 {
@@ -23,5 +24,40 @@ final class AnalyticsFacadeTest extends TestCase
         $this->assertTrue(AnalyticsFacade::hasConsent());
         $this->assertTrue(app(Analytics::class)->hasConsent());
         $this->assertSame(['type' => 'client', 'id' => 5], app(Analytics::class)->subject());
+    }
+
+    public function test_it_accepts_a_numeric_string_key_from_a_host_resolver(): void
+    {
+        AnalyticsFacade::resolveSubjectUsing(fn () => ['type' => 'client', 'id' => '42']);
+
+        $this->assertSame(['type' => 'client', 'id' => 42], app(Analytics::class)->subject());
+    }
+
+    /**
+     * @param  array<string, mixed>  $resolved
+     */
+    #[DataProvider('subjectsAHostCannotStore')]
+    public function test_it_leaves_the_visitor_anonymous_rather_than_collapsing_a_key_it_cannot_store(array $resolved): void
+    {
+        AnalyticsFacade::resolveSubjectUsing(fn () => $resolved);
+
+        // Casting any of these would attach the visit to subject 0, a subject
+        // that does not exist and that would gather everybody's journeys.
+        $this->assertNull(app(Analytics::class)->subject());
+    }
+
+    /**
+     * @return array<string, array{array<string, mixed>}>
+     */
+    public static function subjectsAHostCannotStore(): array
+    {
+        return [
+            'a uuid key' => [['type' => 'client', 'id' => '9f1c-4b2a-8e77']],
+            'a key with a numeric prefix' => [['type' => 'client', 'id' => '12abc']],
+            'a float key' => [['type' => 'client', 'id' => 4.5]],
+            'an empty key' => [['type' => 'client', 'id' => '']],
+            'a type that is not a string' => [['type' => ['client'], 'id' => 5]],
+            'an empty type' => [['type' => '', 'id' => 5]],
+        ];
     }
 }
