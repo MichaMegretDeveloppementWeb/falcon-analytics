@@ -7,7 +7,9 @@ namespace Falcon\Analytics\Tests\Feature;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Events\TrackedEvent;
 use Falcon\Analytics\Livewire\Admin\AdDetailPage;
+use Falcon\Analytics\Livewire\Admin\AdForm;
 use Falcon\Analytics\Livewire\Admin\CampaignDetailPage;
+use Falcon\Analytics\Livewire\Admin\CampaignForm;
 use Falcon\Analytics\Livewire\Admin\CampaignsPage;
 use Falcon\Analytics\Livewire\Admin\Widgets\CampaignDetailContent;
 use Falcon\Analytics\Models\Ad;
@@ -17,7 +19,9 @@ use Falcon\Analytics\Tests\Fixtures\Models\TestAdmin;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
+use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
 use Livewire\Livewire;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 final class MarketingPagesTest extends TestCase
 {
@@ -202,11 +206,11 @@ final class MarketingPagesTest extends TestCase
 
         $this->actingAs($this->admin, 'admin');
 
-        $campaigns = Livewire::test(CampaignsPage::class)->call('newCampaign');
+        $campaigns = Livewire::test(CampaignForm::class)->call('editCampaign');
         $this->assertSame([true], $this->removalsDisabled($campaigns->html(), 'removeCampaignCondition'));
         $this->assertSame([false, false], $this->removalsDisabled($campaigns->call('addCampaignCondition')->html(), 'removeCampaignCondition'));
 
-        $ads = Livewire::test(CampaignDetailPage::class, ['campaign' => $campaign])->call('newAd');
+        $ads = Livewire::test(AdForm::class, ['campaignId' => $campaign->id])->call('editAd');
         $this->assertSame([true], $this->removalsDisabled($ads->html(), 'removeAdCondition'));
         $this->assertSame([false, false], $this->removalsDisabled($ads->call('addAdCondition')->html(), 'removeAdCondition'));
     }
@@ -239,35 +243,38 @@ final class MarketingPagesTest extends TestCase
         $this->assertSame(2, substr_count($page, 'x-on:keydown.enter.prevent'), 'The Enter key in a list search would submit the whole ad form.');
     }
 
-    public function test_it_creates_a_campaign_from_the_campaigns_table(): void
+    public function test_it_creates_a_campaign_and_says_so(): void
     {
         $this->actingAs($this->admin, 'admin');
 
-        Livewire::test(CampaignsPage::class)
-            ->call('newCampaign')
+        Livewire::test(CampaignForm::class)
+            ->call('editCampaign')
             ->assertReturned(true)
             ->set('campaignName', 'Hiver 2026')
             ->set('campaignPlatform', 'Google')
             ->set('campaignConditions.0.param', 'utm_campaign')
-            ->set('campaignConditions.0.value', 'hiver')
+            ->set('campaignConditions.0.value', ' hiver ')
             ->call('saveCampaign')
             ->assertHasNoErrors()
-            ->assertReturned(true);
+            ->assertReturned(true)
+            ->assertDispatched('an-campaigns-changed');
 
         $this->assertSame(
             [['param' => 'utm_campaign', 'value' => 'hiver']],
             Campaign::where('name', 'Hiver 2026')->first()?->match_conditions,
+            'The value is saved trimmed.',
         );
     }
 
-    public function test_it_edits_the_campaign_in_place_from_its_detail_page_through_the_shared_form(): void
+    public function test_it_edits_a_campaign_through_its_form(): void
     {
         $campaign = $this->campaign('Été', 'Meta', 'meta_ete');
         $this->actingAs($this->admin, 'admin');
 
-        Livewire::test(CampaignDetailPage::class, ['campaign' => $campaign])
-            ->call('editCampaign')
+        Livewire::test(CampaignForm::class)
+            ->call('editCampaign', $campaign->id)
             ->assertReturned(true)
+            ->assertSet('campaignId', $campaign->id)
             ->assertSet('campaignName', 'Été')
             ->assertSet('campaignConditions', [['param' => 'src', 'value' => 'meta_ete']])
             ->set('campaignName', 'Été 2027')
@@ -288,13 +295,13 @@ final class MarketingPagesTest extends TestCase
         ], $fresh->match_conditions);
     }
 
-    public function test_it_manages_ads_and_objectives_from_the_campaign_detail_in_one_save(): void
+    public function test_it_creates_an_ad_with_its_objectives_in_one_save_and_says_so(): void
     {
         $campaign = $this->campaign('Été', null, 'meta_ete');
         $this->actingAs($this->admin, 'admin');
 
-        Livewire::test(CampaignDetailPage::class, ['campaign' => $campaign])
-            ->call('newAd')
+        Livewire::test(AdForm::class, ['campaignId' => $campaign->id])
+            ->call('editAd')
             ->assertReturned(true)
             ->set('adName', 'Cabriolet')
             ->set('adConditions.0.param', 'creative')
@@ -303,7 +310,8 @@ final class MarketingPagesTest extends TestCase
             ->call('addObjective', 'event', 'Lead', 'Demande de code', 3.0)
             ->call('saveAd')
             ->assertHasNoErrors()
-            ->assertReturned(true);
+            ->assertReturned(true)
+            ->assertDispatched('an-ads-changed');
 
         $ad = Ad::where('name', 'Cabriolet')->firstOrFail();
 
@@ -311,15 +319,16 @@ final class MarketingPagesTest extends TestCase
         $this->assertSame(2, AdObjective::where('ad_id', $ad->id)->count());
     }
 
-    public function test_it_edits_an_ad_and_its_objectives_in_place_from_the_ad_detail(): void
+    public function test_it_edits_an_ad_and_its_objectives_through_its_form(): void
     {
         $campaign = $this->campaign('Été', null, 'meta_ete');
         $ad = Ad::create(['campaign_id' => $campaign->id, 'name' => 'Cabrio', 'match_conditions' => [['param' => 'creative', 'value' => 'cabrio']]]);
         $this->actingAs($this->admin, 'admin');
 
-        Livewire::test(AdDetailPage::class, ['ad' => $ad])
-            ->call('editAd')
+        Livewire::test(AdForm::class, ['campaignId' => $campaign->id])
+            ->call('editAd', $ad->id)
             ->assertReturned(true)
+            ->assertSet('adId', $ad->id)
             ->set('adName', 'Cabriolet décapotable')
             ->call('addObjective', 'event', 'Lead', 'Lead', 2.0)
             ->call('saveAd')
@@ -345,8 +354,8 @@ final class MarketingPagesTest extends TestCase
         $campaign = $this->campaign('Été', null, 'meta_ete');
         $this->actingAs($this->admin, 'admin');
 
-        $component = Livewire::test(CampaignDetailPage::class, ['campaign' => $campaign])
-            ->call('newAd')
+        $component = Livewire::test(AdForm::class, ['campaignId' => $campaign->id])
+            ->call('editAd')
             ->call('addObjective', 'event', 'Lead', 'Lead', 3.0);
 
         // `viewData()` and not `get()`: the options are view data, not a
@@ -406,8 +415,8 @@ final class MarketingPagesTest extends TestCase
         $campaign = $this->campaign('Ete', null, 'meta_ete');
         $this->actingAs($this->admin, 'admin');
 
-        Livewire::test(CampaignDetailPage::class, ['campaign' => $campaign])
-            ->call('newAd')
+        Livewire::test(AdForm::class, ['campaignId' => $campaign->id])
+            ->call('editAd')
             ->set('adName', 'Cabriolet')
             ->set('adConditions.0.param', 'creative')
             ->set('adConditions.0.value', 'cabrio')
@@ -424,8 +433,8 @@ final class MarketingPagesTest extends TestCase
         $campaign = $this->campaign('Ete', null, 'meta_ete');
         $this->actingAs($this->admin, 'admin');
 
-        Livewire::test(CampaignDetailPage::class, ['campaign' => $campaign])
-            ->call('newAd')
+        Livewire::test(AdForm::class, ['campaignId' => $campaign->id])
+            ->call('editAd')
             ->set('adName', 'Cabriolet')
             ->set('adConditions.0.param', '')
             ->set('adConditions.0.value', '')
@@ -435,8 +444,8 @@ final class MarketingPagesTest extends TestCase
             ->assertReturned(fn (mixed $answer): bool => $answer !== true)
             ->assertSeeText(__('Le paramètre est obligatoire.'));
 
-        Livewire::test(CampaignsPage::class)
-            ->call('newCampaign')
+        Livewire::test(CampaignForm::class)
+            ->call('editCampaign')
             ->set('campaignName', 'Hiver')
             ->set('campaignConditions.0.param', '')
             ->set('campaignConditions.0.value', 'x')
@@ -453,12 +462,12 @@ final class MarketingPagesTest extends TestCase
 
         // Strictly false: `assertReturned(false)` would also take a null, which
         // is what a method that answers nothing leaves behind.
-        Livewire::test(CampaignsPage::class)
+        Livewire::test(CampaignForm::class)
             ->call('editCampaign', 999_999)
             ->assertDispatched('ui-toast', type: 'danger')
             ->assertReturned(fn (mixed $answer): bool => $answer === false);
 
-        Livewire::test(CampaignDetailPage::class, ['campaign' => $campaign])
+        Livewire::test(AdForm::class, ['campaignId' => $campaign->id])
             ->call('editAd', 999_999)
             ->assertDispatched('ui-toast', type: 'danger')
             ->assertReturned(fn (mixed $answer): bool => $answer === false);
@@ -472,5 +481,91 @@ final class MarketingPagesTest extends TestCase
             ->call('confirmDeleteAd', 999_999)
             ->assertDispatched('ui-toast', type: 'danger')
             ->assertReturned(fn (mixed $answer): bool => $answer === false);
+    }
+
+    /** The ad form edits the ads of the campaign it is laid for, and of no other. */
+    public function test_the_ad_form_opens_no_ad_of_another_campaign(): void
+    {
+        $campaign = $this->campaign('Été', null, 'meta_ete');
+        $other = $this->campaign('Hiver', null, 'meta_hiver');
+        $theirs = Ad::create(['campaign_id' => $other->id, 'name' => 'Luge', 'match_conditions' => [['param' => 'creative', 'value' => 'luge']]]);
+        $this->actingAs($this->admin, 'admin');
+
+        Livewire::test(AdForm::class, ['campaignId' => $campaign->id])
+            ->call('editAd', $theirs->id)
+            ->assertReturned(fn (mixed $answer): bool => $answer === false)
+            ->assertSet('adId', null)
+            ->assertSet('adName', '');
+    }
+
+    /**
+     * What a form saves under is decided by the server · the browser can
+     * change neither the record being edited nor the campaign an ad goes to.
+     *
+     * @return array<string, array{class-string, string}>
+     */
+    public static function lockedNumbers(): array
+    {
+        return [
+            'the campaign being edited' => [CampaignForm::class, 'campaignId'],
+            'the ad being edited' => [AdForm::class, 'adId'],
+            'the campaign an ad goes to' => [AdForm::class, 'campaignId'],
+        ];
+    }
+
+    /** @param  class-string  $form */
+    #[DataProvider('lockedNumbers')]
+    public function test_a_form_keeps_what_it_saves_under_locked(string $form, string $property): void
+    {
+        $campaign = $this->campaign();
+        $this->actingAs($this->admin, 'admin');
+
+        $this->expectException(CannotUpdateLockedPropertyException::class);
+
+        Livewire::test($form, $form === AdForm::class ? ['campaignId' => $campaign->id] : [])->set($property, $campaign->id + 1);
+    }
+
+    /**
+     * Each screen listens for what its forms announce, and reads itself again
+     * then · a screen that does not listen is never drawn again in the
+     * browser, whatever the test harness redraws.
+     */
+    public function test_the_screens_read_themselves_again_when_a_form_writes(): void
+    {
+        $campaign = $this->campaign('Été', null, 'meta_ete');
+        $ad = Ad::create(['campaign_id' => $campaign->id, 'name' => 'Cabrio', 'match_conditions' => [['param' => 'creative', 'value' => 'cabrio']]]);
+        $this->actingAs($this->admin, 'admin');
+
+        $list = Livewire::test(CampaignsPage::class)->assertDontSeeText('Automne');
+        $detail = Livewire::test(CampaignDetailPage::class, ['campaign' => $campaign])->assertDontSeeText('Été 2027');
+        $adPage = Livewire::test(AdDetailPage::class, ['ad' => $ad])->assertDontSeeText('Cabriolet');
+
+        $this->assertSame(['an-campaigns-changed'], $this->listenersOf($list->html()));
+        $this->assertEqualsCanonicalizing(['an-campaign-metrics-loaded', 'an-campaigns-changed', 'an-ads-changed'], $this->listenersOf($detail->html()));
+        $this->assertSame(['an-ads-changed'], $this->listenersOf($adPage->html()));
+
+        $this->campaign('Automne');
+        $campaign->update(['name' => 'Été 2027']);
+        Ad::create(['campaign_id' => $campaign->id, 'name' => 'Berline', 'match_conditions' => [['param' => 'creative', 'value' => 'berline']]]);
+        $ad->update(['name' => 'Cabriolet']);
+
+        $list->dispatch('an-campaigns-changed')->assertSeeText('Automne');
+        $detail->dispatch('an-campaigns-changed')->assertSeeText('Été 2027');
+        $detail->dispatch('an-ads-changed')->assertSeeText('Berline');
+        $adPage->dispatch('an-ads-changed')->assertSeeText('Cabriolet');
+    }
+
+    /**
+     * The events a first render tells the browser to listen for.
+     *
+     * @return list<string>
+     */
+    private function listenersOf(string $html): array
+    {
+        $this->assertSame(1, preg_match('/wire:effects="([^"]*)"/', $html, $effects), 'The render carries no effects.');
+
+        $decoded = json_decode(html_entity_decode($effects[1], ENT_QUOTES | ENT_HTML5), true);
+
+        return is_array($decoded) && is_array($decoded['listeners'] ?? null) ? array_values($decoded['listeners']) : [];
     }
 }

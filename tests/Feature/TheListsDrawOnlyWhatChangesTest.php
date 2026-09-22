@@ -6,7 +6,9 @@ namespace Falcon\Analytics\Tests\Feature;
 
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\Enums\EventType;
+use Falcon\Analytics\Livewire\Admin\AdForm;
 use Falcon\Analytics\Livewire\Admin\AdsPage;
+use Falcon\Analytics\Livewire\Admin\CampaignForm;
 use Falcon\Analytics\Livewire\Admin\CampaignsPage;
 use Falcon\Analytics\Livewire\Admin\RealtimePage;
 use Falcon\Analytics\Livewire\Admin\SessionsPage;
@@ -24,6 +26,7 @@ use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\Livewire;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Symfony\Component\Finder\Finder;
 
 /**
  * A row of a list costs no view: a full page of sessions, visitors, campaigns
@@ -160,5 +163,65 @@ final class TheListsDrawOnlyWhatChangesTest extends TestCase
         $this->assertSame(20, Ad::query()->count());
         $this->assertSame($campaigns, $this->viewsOf(CampaignsPage::class));
         $this->assertSame($ads, $this->viewsOf(AdsPage::class));
+    }
+
+    /** A form is a component of its own · opening it draws the form, and nothing of the screen it sits on. */
+    public function test_opening_a_form_draws_nothing_of_its_screen(): void
+    {
+        $campaign = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta']]]);
+        $ad = Ad::create(['campaign_id' => $campaign->id, 'name' => 'Cabriolet', 'match_conditions' => [['param' => 'creative', 'value' => 'cabrio']]]);
+        $screens = '/^analytics::livewire\.dashboard\.marketing-(campaigns|campaign-detail|ad-detail)$/';
+
+        $this->assertNotSame([], preg_grep($screens, array_keys($this->viewsOf(CampaignsPage::class))), 'The pattern names none of the screen views: the sweep below would pass on anything.');
+
+        $campaignForm = Livewire::test(CampaignForm::class);
+        $adForm = Livewire::test(AdForm::class, ['campaignId' => $campaign->id]);
+
+        $drawn = $this->viewsDrawnDuring(function () use ($campaignForm, $adForm, $campaign, $ad): void {
+            $campaignForm->call('editCampaign', $campaign->id)->call('addCampaignCondition');
+            $adForm->call('editAd', $ad->id)->call('addObjective', 'event', 'Lead', 'Lead');
+        });
+
+        $this->assertContains('analytics::livewire.dashboard.marketing-ad-form', $drawn, 'The forms drew nothing: the sweep below would pass on an empty list.');
+        $this->assertSame([], preg_grep($screens, $drawn));
+    }
+
+    /**
+     * A component reached by its reference carries a written key · a generated
+     * one depends on what was drawn before it, and changes when its parent is
+     * drawn in part.
+     */
+    public function test_every_nested_component_reached_by_its_reference_carries_a_key(): void
+    {
+        $tags = [];
+
+        foreach ((new Finder)->files()->in(dirname(__DIR__, 2).'/resources/views/livewire')->name('*.blade.php') as $file) {
+            preg_match_all('/<livewire:[^>]*wire:ref="[^"]*"[^>]*>/', $file->getContents(), $found);
+            $tags = [...$tags, ...$found[0]];
+        }
+
+        $this->assertNotSame([], $tags, 'No component reached by its reference: the sweep would prove nothing.');
+
+        foreach ($tags as $tag) {
+            $this->assertStringContainsString('wire:key="', $tag, "{$tag} lets Livewire generate its key.");
+        }
+    }
+
+    /**
+     * The views drawn while the gesture runs, in order.
+     *
+     * @return list<string>
+     */
+    private function viewsDrawnDuring(callable $gesture): array
+    {
+        $drawn = [];
+
+        Events::listen('composing:*', static function (string $event) use (&$drawn): void {
+            $drawn[] = substr($event, strlen('composing: '));
+        });
+
+        $gesture();
+
+        return $drawn;
     }
 }

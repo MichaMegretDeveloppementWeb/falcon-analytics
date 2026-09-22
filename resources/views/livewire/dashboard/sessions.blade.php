@@ -1,19 +1,8 @@
 @php
     use Falcon\Analytics\Support\DeviceLabel;
+    use Falcon\Analytics\Support\DurationLabel;
 
     $subjectResolver = app(\Falcon\Analytics\Services\SubjectResolver::class);
-
-    $formatSeconds = function (float $seconds): string {
-        $total = (int) round($seconds);
-        $minutes = intdiv($total, 60);
-        $rest = $total % 60;
-
-        if ($minutes > 0) {
-            return $rest > 0 ? "{$minutes}\u{00A0}min\u{00A0}{$rest}\u{00A0}s" : "{$minutes}\u{00A0}min";
-        }
-
-        return "{$total}\u{00A0}s";
-    };
 
     $percent = fn ($v): string => number_format((float) $v, 1, ',', ' ')."\u{00A0}%";
 
@@ -74,7 +63,7 @@
             <x-ui::table.body>
                 @foreach ($sessions as $session)
                     @php
-                        $duration = $formatSeconds((int) $session->started_at->diffInSeconds($session->last_activity_at));
+                        $duration = DurationLabel::for((int) $session->started_at->diffInSeconds($session->last_activity_at));
                     @endphp
                     @php $sessionUrl = route('analytics.admin.sessions.show', $session); @endphp
                     <x-ui::table.row

@@ -18,11 +18,11 @@
                 <x-ui::icon name="megaphone" class="an:h-3.5 an:w-3.5" /> {{ __('Campagne') }}
             </div>
             <div class="an:flex an:items-center an:gap-2">
-                <h1 class="an:text-2xl an:font-semibold an:tracking-tight an:text-primary">{{ $campaign->name }}</h1>
-                @if ($campaign->platform)<x-ui::badge color="gray">{{ $campaign->platform }}</x-ui::badge>@endif
+                <h1 class="an:text-2xl an:font-semibold an:tracking-tight an:text-primary">{{ $detail->name }}</h1>
+                @if ($detail->platform !== null)<x-ui::badge color="gray">{{ $detail->platform }}</x-ui::badge>@endif
             </div>
             <div class="an:mt-1.5 an:flex an:flex-wrap an:items-center an:gap-1.5">
-                @forelse ($campaign->match_conditions ?? [] as $condition)
+                @forelse ($detail->conditions as $condition)
                     <x-analytics::condition-chip :param="$condition['param']" :value="$condition['value']" />
                 @empty
                     <span class="an:inline-flex an:items-center an:gap-1 an:text-[11px] an:text-amber-600 an:dark:text-amber-400"><x-ui::icon name="exclamation-triangle" class="an:h-3.5 an:w-3.5" /> {{ __('Aucune condition : ne correspondra à aucun trafic') }}</span>
@@ -30,7 +30,7 @@
             </div>
         </div>
         <div class="an:flex an:shrink-0 an:items-center an:gap-2">
-            <x-ui::button variant="secondary" x-on:click="$anOpenWhenDone($wire.editCampaign(), 'an-campaign-form')"><x-ui::icon name="pencil-square" class="an:h-4 an:w-4" /> {{ __('Modifier') }}</x-ui::button>
+            <x-ui::button variant="secondary" x-on:click="$anOpenWhenDone($wire.$refs.campaignForm.$wire.editCampaign({{ $detail->id }}), 'an-campaign-form')"><x-ui::icon name="pencil-square" class="an:h-4 an:w-4" /> {{ __('Modifier') }}</x-ui::button>
             <x-ui::button variant="ghost" x-on:click="$dispatch('ui-open-modal', 'an-campaign-delete')" aria-label="{{ __('Supprimer') }}"><x-ui::icon name="trash" class="an:h-4 an:w-4" /></x-ui::button>
         </div>
     </div>
@@ -41,14 +41,14 @@
             <x-ui::section-header :title="__('Performance')" :description="__('du :from au :to', ['from' => $range->from->isoFormat('D MMM'), 'to' => $range->to->isoFormat('D MMM YYYY')])" />
             @include('analytics::livewire.dashboard.partials.filters')
         </div>
-        <livewire:analytics::admin.widgets.campaign-detail-content :period="$period" :subject="$subject" :ref-id="$campaign->id" :key="'campaign-content-'.$campaign->id.'-'.$period.'-'.$subject" />
+        <livewire:analytics::admin.widgets.campaign-detail-content :period="$period" :subject="$subject" :ref-id="$detail->id" :key="'campaign-content-'.$detail->id.'-'.$period.'-'.$subject" />
     </div>
 
     {{-- Ads --}}
     <div>
         <div class="an:mb-4 an:flex an:items-center an:justify-between">
             <x-ui::section-header :title="__('Pubs')" :description="__('Les objectifs de conversion se définissent par pub.')" />
-            <x-ui::button variant="secondary" size="compact" x-on:click="$anOpenWhenDone($wire.newAd(), 'an-ad-form')"><x-ui::icon name="plus" class="an:h-3.5 an:w-3.5" /> {{ __('Nouvelle pub') }}</x-ui::button>
+            <x-ui::button variant="secondary" size="compact" x-on:click="$anOpenWhenDone($wire.$refs.adForm.$wire.editAd(), 'an-ad-form')"><x-ui::icon name="plus" class="an:h-3.5 an:w-3.5" /> {{ __('Nouvelle pub') }}</x-ui::button>
         </div>
 
         @if ($ads->isEmpty())
@@ -95,7 +95,7 @@
                             <x-ui::table.cell align="right" class="an:font-medium an:tabular-nums an:text-primary">@if ($adMetrics === [])<span class="an:inline-block an:h-3 an:w-6 an:animate-pulse an:rounded an:bg-elevated an:align-middle"></span>@else{{ number_format($adConversions[$ad->id] ?? 0, 0, ',', ' ') }}@endif</x-ui::table.cell>
                             <x-ui::table.cell :last="true" align="right">
                                 <div class="an-row-link__above an:flex an:items-center an:justify-end an:gap-1">
-                                    <x-ui::button variant="ghost" size="compact" x-on:click="$anOpenWhenDone($wire.editAd({{ $ad->id }}), 'an-ad-form')" aria-label="{{ __('Modifier') }}"><x-ui::icon name="pencil-square" class="an:h-3.5 an:w-3.5" /></x-ui::button>
+                                    <x-ui::button variant="ghost" size="compact" x-on:click="$anOpenWhenDone($wire.$refs.adForm.$wire.editAd({{ $ad->id }}), 'an-ad-form')" aria-label="{{ __('Modifier') }}"><x-ui::icon name="pencil-square" class="an:h-3.5 an:w-3.5" /></x-ui::button>
                                     <x-ui::button variant="ghost" size="compact" x-on:click="$anOpenWhenDone($wire.confirmDeleteAd({{ $ad->id }}), 'an-ad-delete')" aria-label="{{ __('Supprimer') }}"><x-ui::icon name="trash" class="an:h-3.5 an:w-3.5" /></x-ui::button>
                                 </div>
                             </x-ui::table.cell>
@@ -106,42 +106,15 @@
         @endif
     </div>
 
-    {{-- Campaign edit --}}
-    <x-ui::modal name="an-campaign-form" :title="__('Modifier la campagne')">
-        <form id="an-campaign-form-fields" x-on:submit.prevent="$anCloseWhenDone($wire.saveCampaign(), 'an-campaign-form')" class="an:space-y-4">
-            <x-ui::form-group :label="__('Nom')" for="campaignName">
-                <x-ui::input wire:model="campaignName" id="campaignName" :error="$errors->has('campaignName')" />
-            </x-ui::form-group>
-            <x-ui::form-group :label="__('Plateforme')" for="campaignPlatform" :hint="__('Optionnel : Meta, Google...')">
-                <x-ui::input wire:model="campaignPlatform" id="campaignPlatform" :error="$errors->has('campaignPlatform')" />
-            </x-ui::form-group>
-            <x-ui::form-group :label="__('Conditions d\'URL')" :hint="__('La campagne correspond si TOUS ces paramètres sont présents dans l\'URL.')" :error="$errors->first('campaignConditions.*') ?: $errors->first('campaignConditions')">
-                <div class="an:space-y-2">
-                    @foreach ($campaignConditions as $index => $condition)
-                        <div wire:key="cc-{{ $index }}" class="an:flex an:items-center an:gap-2">
-                            <x-ui::input wire:model="campaignConditions.{{ $index }}.param" placeholder="{{ __('paramètre') }}" class="an:flex-1" :error="$errors->has('campaignConditions.'.$index.'.param')" />
-                            <span class="an:text-muted">=</span>
-                            <x-ui::input wire:model="campaignConditions.{{ $index }}.value" placeholder="{{ __('valeur') }}" class="an:flex-1" :error="$errors->has('campaignConditions.'.$index.'.value')" />
-                            <button type="button" wire:click="removeCampaignCondition({{ $index }})" class="an:shrink-0 an:cursor-pointer an:text-muted an:transition-colors an:hover:text-red-600 an:disabled:pointer-events-none an:disabled:opacity-30" @disabled(count($campaignConditions) <= 1) aria-label="{{ __('Retirer') }}"><x-ui::icon name="x-mark" class="an:h-4 an:w-4" /></button>
-                        </div>
-                    @endforeach
-                </div>
-                <x-ui::button type="button" variant="ghost" size="compact" wire:click="addCampaignCondition" class="an:mt-2"><x-ui::icon name="plus" class="an:h-3.5 an:w-3.5" /> {{ __('Ajouter une condition') }}</x-ui::button>
-            </x-ui::form-group>
-        </form>
+    {{-- Campaign form --}}
+    <livewire:analytics::admin.campaign-form wire:ref="campaignForm" wire:key="campaign-form" />
 
-        <x-slot:footer>
-            <x-ui::button type="button" variant="ghost" x-on:click="$dispatch('ui-close-modal', 'an-campaign-form')">{{ __('Annuler') }}</x-ui::button>
-            <x-ui::button type="submit" form="an-campaign-form-fields" :loading="true" target="saveCampaign">{{ __('Enregistrer') }}</x-ui::button>
-        </x-slot:footer>
-    </x-ui::modal>
-
-    {{-- Ad create/edit --}}
-    @include('analytics::livewire.dashboard.partials.marketing-ad-form')
+    {{-- Ad form --}}
+    <livewire:analytics::admin.ad-form :campaign-id="$detail->id" wire:ref="adForm" wire:key="ad-form" />
 
     {{-- Delete campaign --}}
     <x-ui::modal name="an-campaign-delete" variant="confirm" :title="__('Supprimer la campagne ?')">
-        {{ __('« :name » et toutes ses pubs et objectifs seront supprimés. Le trafic déjà capté reste en base.', ['name' => $campaign->name]) }}
+        {{ __('« :name » et toutes ses pubs et objectifs seront supprimés. Le trafic déjà capté reste en base.', ['name' => $detail->name]) }}
 
         <x-slot:actions>
             <x-ui::button type="button" variant="ghost" x-on:click="$dispatch('ui-close-modal', 'an-campaign-delete')">{{ __('Annuler') }}</x-ui::button>
