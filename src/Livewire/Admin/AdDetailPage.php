@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Livewire\Admin;
 
+use Falcon\Analytics\DTOs\Dashboard\Marketing\AdDetail;
 use Falcon\Analytics\Models\Ad;
 use Illuminate\Contracts\View\View;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 
 /**
@@ -18,24 +20,30 @@ use Livewire\Attributes\On;
  */
 final class AdDetailPage extends DashboardComponent
 {
-    public Ad $ad;
+    /** What the screen shows of the ad's campaign. */
+    private const CAMPAIGN = 'campaign:id,name,platform';
+
+    #[Locked]
+    public int $adId;
+
+    /** The ad as this request read it · kept for the request, never between two. */
+    private ?Ad $read = null;
 
     public function mount(Ad $ad): void
     {
-        $this->ad = $ad->load(['campaign', 'objectives']);
+        $this->adId = $ad->id;
+        $this->read = $ad->load(self::CAMPAIGN);
     }
 
-    /** Reads the ad again once its form has written to it. */
+    /** Draws the page again once its form has written · the render reads the ad afresh. */
     #[On('an-ads-changed')]
-    public function refreshAd(): void
-    {
-        $this->ad->refresh()->load(['campaign', 'objectives']);
-    }
+    public function refresh(): void {}
 
     public function render(): View
     {
         return $this->guardedRender(
             fn (): array => [
+                'detail' => AdDetail::of($this->read ??= Ad::query()->with(self::CAMPAIGN)->findOrFail($this->adId)),
                 'range' => $this->currentPeriod(),
                 ...$this->filterData(),
             ],
