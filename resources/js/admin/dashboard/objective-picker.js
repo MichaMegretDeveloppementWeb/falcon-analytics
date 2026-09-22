@@ -8,5 +8,16 @@ export function anObjectivePicker() {
             this.open = ! this.open;
             this.search = '';
         },
+
+        /** Closes on the escape key and gives the focus back to the button, leaving the modal around it open. */
+        closeOnEscape(event) {
+            if (! this.open) {
+                return;
+            }
+
+            event.stopPropagation();
+            this.open = false;
+            this.$refs.trigger.focus();
+        },
     };
 }

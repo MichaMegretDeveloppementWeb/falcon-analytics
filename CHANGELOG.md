@@ -64,7 +64,8 @@ architecture qui n'existe plus.
   ferme et rend le focus, et un lecteur d'écran l'annonce par son titre. Elle
   ne s'ouvre que si le serveur a pu lire ce qu'elle montre, et ne se ferme
   qu'une fois l'enregistrement fait · un refus la laisse ouverte, avec ses
-  erreurs. **Rien à faire pour cela.**
+  erreurs. Les deux listes d'objectifs d'une pub se ferment à l'échappement de
+  même, et disent si elles sont ouvertes. **Rien à faire pour cela.**
 
 ### Ce que l'intégrateur a à faire
 

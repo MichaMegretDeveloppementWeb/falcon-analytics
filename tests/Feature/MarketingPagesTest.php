@@ -133,6 +133,21 @@ final class MarketingPagesTest extends TestCase
         }
     }
 
+    /** Both objective lists of the ad form close on the escape key, and say whether they are open. */
+    public function test_the_objective_lists_close_on_escape_and_say_whether_they_are_open(): void
+    {
+        $campaign = $this->campaign();
+        $ad = Ad::create(['campaign_id' => $campaign->id, 'name' => 'Cabriolet', 'match_conditions' => [['param' => 'creative', 'value' => 'cabrio']]]);
+
+        $this->actingAs($this->admin, 'admin');
+
+        $page = (string) $this->get(route('analytics.admin.marketing.ads.show', $ad))->assertSuccessful()->getContent();
+
+        $this->assertSame(2, substr_count($page, 'x-data="anObjectivePicker"'), 'The ad form no longer draws its two lists.');
+        $this->assertSame(2, substr_count($page, 'x-on:keydown.escape="closeOnEscape($event)"'));
+        $this->assertSame(2, substr_count($page, 'x-bind:aria-expanded="open"'));
+    }
+
     public function test_it_creates_a_campaign_from_the_campaigns_table(): void
     {
         $this->actingAs($this->admin, 'admin');
