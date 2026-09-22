@@ -6,7 +6,9 @@ namespace Falcon\Analytics\Tests\Feature;
 
 use Falcon\Analytics\AnalyticsServiceProvider;
 use Falcon\Analytics\Tests\TestCase;
+use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
@@ -72,14 +74,15 @@ final class PackageInstallationTest extends TestCase
     public function test_it_registers_the_configured_module_middleware_as_livewire_persistent(): void
     {
         // The bench mounts the dashboard behind ['web', 'auth:admin'] and the
-        // marketing module keeps its default ['web', 'auth']; both have to
-        // replay on /livewire/update, while "web" stays out, Livewire always
-        // running it.
+        // marketing module keeps its default ['web', 'auth']; both replay on
+        // /livewire/update by their class, which is what Livewire compares,
+        // while the session stack stays out, Livewire always running it.
         $persistent = Livewire::getPersistentMiddleware();
 
-        $this->assertContains('auth:admin', $persistent);
-        $this->assertContains('auth', $persistent);
-        $this->assertNotContains('web', $persistent);
+        $this->assertContains(Authenticate::class, $persistent);
+        $this->assertNotContains('auth:admin', $persistent);
+        $this->assertNotContains('auth', $persistent);
+        $this->assertNotContains(StartSession::class, $persistent);
     }
 
     /**

@@ -290,6 +290,11 @@ concerne que votre propre habillage.
 `admin.middleware`, et `admin.marketing.middleware` pour les écrans marketing,
 qui peuvent répondre à un autre garde.
 
+**Il protège aussi chaque action d'un écran**, pas seulement son ouverture · le
+paquet le fait rejouer à chaque clic, qu'il soit nommé par sa classe, par un
+alias ou par un groupe. La pile de session (`web`) n'est pas rejouée une
+seconde fois, elle l'est déjà.
+
 ### Un écran en particulier
 
 **Les écrans ne se publient pas** · ils appartiennent au paquet, qui les met à

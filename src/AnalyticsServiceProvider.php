@@ -19,12 +19,14 @@ use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Http\Middleware\CatchesUpTheMaintenance;
 use Falcon\Analytics\Support\GeoResolver;
+use Falcon\Analytics\Support\PersistentMiddlewareResolver;
 use Falcon\Ui\AssetRegistry;
 use Falcon\Ui\Config\CompletesDefaults;
 use Falcon\Ui\View\Leaves;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Cookie\Middleware\EncryptCookies;
+use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
@@ -366,23 +368,30 @@ final class AnalyticsServiceProvider extends ServiceProvider
     /**
      * Replay the host's administration middleware on every Livewire component
      * update (/livewire/update). Livewire only re-runs middleware registered as
-     * persistent, so without this a signed component snapshot from a formerly
-     * authorized session could keep triggering actions (GDPR erasure, campaign
-     * CRUD) after the host middleware would deny the page. The 'web' stack is
-     * excluded: Livewire already runs it on updates.
+     * persistent, and compares them by class, so without this a signed
+     * component snapshot from a formerly authorized session could keep
+     * triggering actions (GDPR erasure, campaign CRUD) after the host
+     * middleware would deny the page.
      */
     private function registerPersistentMiddleware(): void
     {
-        $middleware = array_values(array_unique(array_filter(
+        $configured = array_values(array_filter(
             [
                 ...(array) config('analytics.admin.middleware', []),
                 ...(array) config('analytics.admin.marketing.middleware', []),
             ],
-            fn (mixed $entry): bool => is_string($entry) && $entry !== '' && $entry !== 'web',
-        )));
+            fn (mixed $entry): bool => is_string($entry),
+        ));
 
-        if ($middleware !== []) {
-            Livewire::addPersistentMiddleware($middleware);
+        $router = $this->app->make(Router::class);
+
+        $resolved = (new PersistentMiddlewareResolver(
+            aliases: $router->getMiddleware(),
+            groups: $router->getMiddlewareGroups(),
+        ))->resolve($configured);
+
+        if ($resolved !== []) {
+            Livewire::addPersistentMiddleware($resolved);
         }
     }
 }
