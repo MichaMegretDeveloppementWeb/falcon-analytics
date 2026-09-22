@@ -229,15 +229,16 @@ Cinq règles tiennent l'ensemble, et chacune a son essai ·
 
 | | |
 |---|---|
-| **le résumé dit la même chose que le brut** | comparé sur un jour où les deux existent · c'est ce que la fenêtre de conservation permet, et `TheSummaryAgreesWithTheDetail` s'en sert |
+| **le résumé dit la même chose que le brut** | la lecture brute d'un jour est prise, puis le jour est résumé, et les deux sont comparés · `TheSummaryAgreesWithTheDetail` |
 | **l'effacement refuse un jour non résumé** | ce qui rend une panne d'ordonnanceur inoffensive · pas de résumé, pas d'effacement |
-| **la lecture coupe sur une frontière enregistrée**, jamais déduite de la conservation | les deux divergent dès qu'un ordonnanceur s'arrête ou qu'une durée est raccourcie · une ligne au mauvais endroit doublerait un chiffre ou en perdrait un |
-| **la frontière est écrite avant que la première ligne ne parte** | l'effacement supprime par lots, donc il peut s'arrêter au milieu · marquée après, la journée serait lue sur ce qu'il reste de ses lignes et les deux blocs maigriraient en silence. Marquée avant, la même interruption ne coûte rien · le résumé tient la journée entière |
+| **la lecture coupe sur le dernier jour résumé**, que l'archivage enregistre, jamais déduit de la conservation | l'archivage avance sans laisser de trou, donc tout jour jusqu'à celui-là a son résumé · une ligne au mauvais endroit doublerait un chiffre ou en perdrait un |
+| **un jour résumé se lit dans son résumé, et nulle part ailleurs** | les lignes ne sont lues que pour la journée en cours, donc une période de 90 jours coûte un jour de trafic et non 90 · et un effacement interrompu au milieu ne coûte rien, le résumé tenant la journée entière |
 | **effacer ne change aucun chiffre** | `ThePurgeChangesNoFigure` mesure sept lectures, efface, remesure, et nomme le bloc qui a bougé — y compris sur un effacement interrompu |
 
-> **Le piège de cette partie** · un jour vidé garde ses lignes **nommées**, que
-> le résumé a comptées aussi. Lire les deux compterait deux fois un clic nommé,
-> d'où une coupure stricte plutôt qu'un recouvrement.
+> **Le piège de cette partie** · un jour résumé garde ses lignes — toutes tant
+> qu'il n'est pas vidé, les **nommées** ensuite — que le résumé a comptées
+> aussi. Lire les deux compterait deux fois, d'où une coupure stricte plutôt
+> qu'un recouvrement.
 
 ### Le reste
 

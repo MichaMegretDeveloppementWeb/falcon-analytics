@@ -42,6 +42,12 @@ architecture qui n'existe plus.
   s'efface au bout de 90 jours, et c'est tout ce qui s'efface · les pages et
   clics les plus vus sont comptés d'avance chaque nuit, et **tout ce qui porte un
   nom est gardé pour toujours**. Aucune période maximale d'affichage ;
+- **deux classements rapides quel que soit le trafic** · les pages et clics les
+  plus vus lisent chaque journée close dans les compteurs de la nuit, et seule
+  la journée en cours se compte visite par visite. Sur un site à 10 000 pages
+  vues par jour, le bloc des pages passe ainsi de plusieurs secondes à une
+  fraction de seconde. Une journée y reste comptée telle que la nuit l'a
+  comptée · un visiteur effacé ensuite y demeure, anonymement ;
 - **trente-sept réglages**, tous facultatifs · le paquet fonctionne sans qu'on en
   touche un seul, et un essai le tient ;
 - **des fichiers déjà compilés** · aucun Node n'est requis chez l'hôte. Le

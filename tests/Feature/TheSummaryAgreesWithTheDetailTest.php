@@ -22,17 +22,14 @@ use Illuminate\Support\Str;
 /**
  * The one essay the whole retention rests on.
  *
- * Two blocks of the overview count rows the purge is allowed to erase — the
- * most seen pages and the most clicked elements — so their figures are read
- * from a daily summary once those rows are gone. **If the summary and the raw
- * reading ever disagreed, the two blocks would jump on the day the purge
- * crossed them**, and nothing would say why.
+ * Two blocks of the overview — the most seen pages and the most clicked
+ * elements — read a closed day from its summary, and the day under way from its
+ * rows. **If the summary and the raw reading ever disagreed, the two blocks
+ * would jump the night a day was summarised**, and nothing would say why.
  *
- * So both are computed over the same day, while both still exist, and compared.
- * That window is the whole point: for the length of the retention the detail
- * and its summary sit side by side, and this is what uses that overlap.
- *
- * Written 2026-09-13, with the summaries themselves.
+ * So the raw reading is taken first, then the day is summarised, and the two
+ * are compared · read afterwards, the screen would answer from the summary and
+ * the comparison would hold against itself.
  */
 final class TheSummaryAgreesWithTheDetailTest extends TestCase
 {
@@ -174,7 +171,6 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
     {
         $day = CarbonImmutable::parse('2026-06-10');
         $this->aBusyDay($day);
-        $this->archiver->archive($day);
 
         $oneDay = new Period($day->startOfDay(), $day->endOfDay(), 1);
 
@@ -183,6 +179,7 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
             $this->overview->topPages($oneDay, null, 20),
         ));
 
+        $this->archiver->archive($day);
         $fromSummary = $this->summarised($day, DailyCount::KIND_PAGE, withRoute: false);
 
         $this->assertSame($fromDetail, $fromSummary);
@@ -193,7 +190,6 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
     {
         $day = CarbonImmutable::parse('2026-06-10');
         $this->aBusyDay($day);
-        $this->archiver->archive($day);
 
         $oneDay = new Period($day->startOfDay(), $day->endOfDay(), 1);
 
@@ -202,6 +198,7 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
             $this->overview->topClicks($oneDay, null, 20),
         ));
 
+        $this->archiver->archive($day);
         $fromSummary = $this->summarised($day, DailyCount::KIND_CLICK, withRoute: true);
 
         $this->assertSame($fromDetail, $fromSummary);
@@ -218,7 +215,6 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
     {
         $day = CarbonImmutable::parse('2026-06-10');
         $this->aBusyDay($day);
-        $this->archiver->archive($day);
 
         $oneDay = new Period($day->startOfDay(), $day->endOfDay(), 1);
 
@@ -227,10 +223,47 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
             $this->overview->topPages($oneDay, 'client', 20),
         ));
 
+        $this->archiver->archive($day);
         $fromSummary = $this->summarised($day, DailyCount::KIND_PAGE, withRoute: false, subjectType: 'client');
 
         $this->assertSame($fromDetail, $fromSummary);
         $this->assertNotSame([], $fromDetail);
+    }
+
+    /**
+     * A day once summarised is read from its summary, whatever its rows still
+     * hold · the reading of a long period then costs a day of rows, not ninety.
+     *
+     * A row erased after the night — a visitor erased on request — leaves the
+     * two blocks as the night counted them.
+     */
+    public function test_a_summarised_day_is_read_from_its_summary(): void
+    {
+        $day = CarbonImmutable::parse('2026-06-10');
+        $this->aBusyDay($day);
+        $this->archiver->archive($day);
+
+        $oneDay = new Period($day->startOfDay(), $day->endOfDay(), 1);
+        $summarised = $this->overview->topPages($oneDay, null, 20);
+
+        Event::query()->where('type', EventType::Pageview->value)->where('occurred_at', '>=', $day)->firstOrFail()->delete();
+
+        $this->assertSame($summarised, $this->overview->topPages($oneDay, null, 20), 'The rows answered for a day its summary holds.');
+    }
+
+    /** And the day under way, which no summary holds yet, is read from its rows as they come. */
+    public function test_the_day_under_way_is_read_from_its_rows(): void
+    {
+        $yesterday = CarbonImmutable::now()->subDay()->startOfDay();
+        $this->aBusyDay($yesterday);
+        $this->archiver->archive($yesterday);
+
+        $twoDays = new Period($yesterday, CarbonImmutable::now(), 2);
+        $before = collect($this->overview->topPages($twoDays, null, 20))->sum('total');
+
+        $this->pageview($this->newSession(), 'https://exemple.fr/contact', CarbonImmutable::now()->subMinute());
+
+        $this->assertSame($before + 1, collect($this->overview->topPages($twoDays, null, 20))->sum('total'));
     }
 
     /**
