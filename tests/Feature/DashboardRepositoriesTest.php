@@ -28,7 +28,6 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 final class DashboardRepositoriesTest extends TestCase
@@ -575,25 +574,19 @@ final class DashboardRepositoriesTest extends TestCase
 
     public function test_it_fetches_the_visitors_screen_data_within_its_query_budget(): void
     {
-        foreach (range(1, 5) as $i) {
-            $this->makeSession(['city' => 'Paris']);
-        }
-
-        DB::enableQueryLog();
-        DB::flushQueryLog();
-
-        $this->visitors->paginateVisitors(null, null, new SubjectResolver);
-        $this->visitors->visitorCounts($this->period, null);
-        $this->visitors->visitorCounts($this->period->previous(), null);
-        $this->visitors->visitorDailyRows($this->period, null);
-
-        $queries = DB::getQueryLog();
-        $signatures = array_map(fn (array $q): string => $q['query'].'|'.json_encode($q['bindings']), $queries);
-
         // Fixed plan: pagination (count + selection) + counters twice (totals +
         // new) + daily (active + new) = 8.
-        $this->assertCount(8, $queries);
-        $this->assertSame(array_values(array_unique($signatures)), $signatures, 'nothing is read twice');
+        $budget = $this->assertCostIsFlat(
+            fn () => $this->makeSession(['city' => 'Paris']),
+            function (): void {
+                $this->visitors->paginateVisitors(null, null, new SubjectResolver);
+                $this->visitors->visitorCounts($this->period, null);
+                $this->visitors->visitorCounts($this->period->previous(), null);
+                $this->visitors->visitorDailyRows($this->period, null);
+            },
+        );
+
+        $this->assertSame(8, $budget['count']);
     }
 
     public function test_it_aggregates_a_visitor_engagement_over_all_their_sessions_and_scopes_to_them(): void
