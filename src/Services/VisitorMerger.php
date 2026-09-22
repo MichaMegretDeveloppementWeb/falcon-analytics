@@ -8,6 +8,7 @@ use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
 use Illuminate\Support\Facades\DB;
+use LogicException;
 
 /**
  * Identity merging: one known person = one visitor profile. When a subject turns
@@ -16,6 +17,9 @@ use Illuminate\Support\Facades\DB;
  * row becomes an alias whose uuid keeps routing future beacons from that browser
  * to the canonical profile. Sessions keep their `browser_key`, so the physical
  * device separation survives the merge.
+ *
+ * Every write here stands or falls with the others, so it runs inside the
+ * caller's transaction and refuses to run without one.
  *
  * @internal
  */
@@ -28,21 +32,21 @@ final readonly class VisitorMerger
      */
     public function execute(Visitor $alias, Visitor $canonical): Visitor
     {
-        DB::transaction(function () use ($alias, $canonical): void {
-            Event::query()->where('visitor_id', $alias->id)->update(['visitor_id' => $canonical->id]);
-            Session::query()->where('visitor_id', $alias->id)->update(['visitor_id' => $canonical->id]);
+        $this->assertInsideATransaction(__FUNCTION__);
 
-            $alias->update([
-                'merged_into_id' => $canonical->id,
-                'session_count' => 0,
-            ]);
+        Event::query()->where('visitor_id', $alias->id)->update(['visitor_id' => $canonical->id]);
+        Session::query()->where('visitor_id', $alias->id)->update(['visitor_id' => $canonical->id]);
 
-            $canonical->update([
-                'first_seen_at' => $canonical->first_seen_at->min($alias->first_seen_at),
-                'last_seen_at' => $canonical->last_seen_at->max($alias->last_seen_at),
-                'session_count' => Session::query()->where('visitor_id', $canonical->id)->count(),
-            ]);
-        });
+        $alias->update([
+            'merged_into_id' => $canonical->id,
+            'session_count' => 0,
+        ]);
+
+        $canonical->update([
+            'first_seen_at' => $canonical->first_seen_at->min($alias->first_seen_at),
+            'last_seen_at' => $canonical->last_seen_at->max($alias->last_seen_at),
+            'session_count' => Session::query()->where('visitor_id', $canonical->id)->count(),
+        ]);
 
         return $canonical->refresh();
     }
@@ -55,6 +59,8 @@ final readonly class VisitorMerger
      */
     public function relocateForeignSessions(string $subjectType, int $subjectId, Visitor $canonical): void
     {
+        $this->assertInsideATransaction(__FUNCTION__);
+
         $sessionIds = Session::query()
             ->where('subject_type', $subjectType)
             ->where('subject_id', $subjectId)
@@ -65,45 +71,23 @@ final readonly class VisitorMerger
             return;
         }
 
-        DB::transaction(function () use ($sessionIds, $canonical): void {
-            $previousVisitorIds = Session::query()
-                ->whereIn('id', $sessionIds)
-                ->distinct()
-                ->pluck('visitor_id');
+        $previousVisitorIds = Session::query()
+            ->whereIn('id', $sessionIds)
+            ->distinct()
+            ->pluck('visitor_id');
 
-            Event::query()->whereIn('session_id', $sessionIds)->update(['visitor_id' => $canonical->id]);
-            Session::query()->whereIn('id', $sessionIds)->update(['visitor_id' => $canonical->id]);
+        Event::query()->whereIn('session_id', $sessionIds)->update(['visitor_id' => $canonical->id]);
+        Session::query()->whereIn('id', $sessionIds)->update(['visitor_id' => $canonical->id]);
 
-            foreach ([$canonical->id, ...$previousVisitorIds] as $visitorId) {
-                $this->recountSessions((int) $visitorId);
-            }
-        });
+        foreach ([$canonical->id, ...$previousVisitorIds] as $visitorId) {
+            $this->recountSessions((int) $visitorId);
+        }
     }
 
-    /**
-     * One-shot consolidation of pre-merge data, run by the migration that
-     * introduces identity merging: fold the duplicate profiles of every subject
-     * into their oldest one, then apply the identified-session invariant.
-     */
-    public function consolidateExisting(): void
+    private function assertInsideATransaction(string $method): void
     {
-        $groups = Visitor::query()
-            ->whereNotNull('subject_id')
-            ->whereNull('merged_into_id')
-            ->orderBy('first_seen_at')
-            ->orderBy('id')
-            ->get()
-            ->groupBy(fn (Visitor $visitor): string => $visitor->subject_type.':'.$visitor->subject_id);
-
-        foreach ($groups as $visitors) {
-            /** @var Visitor $canonical */
-            $canonical = $visitors->shift();
-
-            foreach ($visitors as $alias) {
-                $canonical = $this->execute($alias, $canonical);
-            }
-
-            $this->relocateForeignSessions((string) $canonical->subject_type, (int) $canonical->subject_id, $canonical);
+        if (DB::transactionLevel() === 0) {
+            throw new LogicException(self::class."::{$method}() writes rows that stand or fall together: call it inside the caller's transaction.");
         }
     }
 

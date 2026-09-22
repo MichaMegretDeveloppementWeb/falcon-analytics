@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Tests\Feature;
 
 use Carbon\CarbonImmutable;
+use Falcon\Analytics\Actions\ArchiveClosedDaysAction;
 use Falcon\Analytics\DTOs\Dashboard\Period;
 use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Models\DailyArchive;
@@ -16,8 +17,11 @@ use Falcon\Analytics\Repositories\Dashboard\OverviewReadRepository;
 use Falcon\Analytics\Services\DailyCountArchiver;
 use Falcon\Analytics\Services\Dashboard\MarketingReportBuilder;
 use Falcon\Analytics\Tests\TestCase;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use RuntimeException;
 
 /**
  * The one essay the whole retention rests on.
@@ -39,6 +43,8 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
 
     private DailyCountArchiver $archiver;
 
+    private ArchiveClosedDaysAction $archiveClosedDays;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -46,6 +52,7 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
         $this->travelTo(CarbonImmutable::parse('2026-06-15 12:00:00'));
         $this->overview = new OverviewReadRepository(new MarketingReportBuilder);
         $this->archiver = new DailyCountArchiver;
+        $this->archiveClosedDays = new ArchiveClosedDaysAction($this->archiver);
     }
 
     private function newSession(bool $isBot = false, ?string $subjectType = null): Session
@@ -362,7 +369,7 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
     {
         $this->pageview($this->newSession(), 'https://exemple.fr/', CarbonImmutable::parse('2026-06-12 10:00'));
 
-        $done = $this->archiver->run();
+        $done = $this->archiveClosedDays->execute();
 
         $this->assertSame(['2026-06-12', '2026-06-13', '2026-06-14'], $done);
         $this->assertFalse($this->archiver->isArchived(CarbonImmutable::parse('2026-06-15')), 'Today is not closed.');
@@ -373,10 +380,39 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
     {
         $this->pageview($this->newSession(), 'https://exemple.fr/', CarbonImmutable::parse('2026-06-12 10:00'));
 
-        $this->assertSame(['2026-06-12'], $this->archiver->run(1));
-        $this->assertSame(['2026-06-13'], $this->archiver->run(1));
-        $this->assertSame(['2026-06-14'], $this->archiver->run(1));
-        $this->assertSame([], $this->archiver->run(1));
+        $this->assertSame(['2026-06-12'], $this->archiveClosedDays->execute(1));
+        $this->assertSame(['2026-06-13'], $this->archiveClosedDays->execute(1));
+        $this->assertSame(['2026-06-14'], $this->archiveClosedDays->execute(1));
+        $this->assertSame([], $this->archiveClosedDays->execute(1));
+    }
+
+    /**
+     * Each day is summarised in its own transaction · a day that fails is
+     * undone whole, and the days before it stay summarised, so the next run
+     * resumes at the one that failed rather than starting over.
+     */
+    public function test_a_day_that_fails_leaves_the_days_before_it_summarised(): void
+    {
+        $this->pageview($this->newSession(), 'https://exemple.fr/', CarbonImmutable::parse('2026-06-12 10:00'));
+        $this->pageview($this->newSession(), 'https://exemple.fr/', CarbonImmutable::parse('2026-06-13 10:00'));
+
+        DB::listen(function (QueryExecuted $query): void {
+            if (str_starts_with($query->sql, 'insert into `falcon_analytics_daily_archives`') && in_array('2026-06-13', $query->bindings, true)) {
+                throw new RuntimeException('The 13th fails here.');
+            }
+        });
+
+        try {
+            $this->archiveClosedDays->execute();
+            $this->fail('The 13th was meant to fail.');
+        } catch (RuntimeException $failure) {
+            $this->assertSame('The 13th fails here.', $failure->getMessage());
+        }
+
+        $this->assertTrue($this->archiver->isArchived(CarbonImmutable::parse('2026-06-12')));
+        $this->assertFalse($this->archiver->isArchived(CarbonImmutable::parse('2026-06-13')));
+        $this->assertSame(0, DailyCount::query()->where('day', '2026-06-13')->count(), 'The failed day kept half its summary.');
+        $this->assertSame(1, DailyCount::query()->where('day', '2026-06-12')->count());
     }
 
     /**
@@ -398,7 +434,7 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
         $this->travelTo(CarbonImmutable::parse('2026-06-15 00:00:30'));
         $this->pageview($this->newSession(), 'https://exemple.fr/', CarbonImmutable::parse('2026-06-13 10:00'));
 
-        $this->assertSame(['2026-06-13'], $this->archiver->run(), 'Only the day before yesterday is closed at 00:00:30.');
+        $this->assertSame(['2026-06-13'], $this->archiveClosedDays->execute(), 'Only the day before yesterday is closed at 00:00:30.');
         $this->assertFalse($this->archiver->isArchived(CarbonImmutable::parse('2026-06-14')), 'Yesterday is still open.');
     }
 
@@ -408,7 +444,7 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
         $this->travelTo(CarbonImmutable::parse('2026-06-15 01:00:00'));
         $this->pageview($this->newSession(), 'https://exemple.fr/', CarbonImmutable::parse('2026-06-13 10:00'));
 
-        $this->assertSame(['2026-06-13', '2026-06-14'], $this->archiver->run());
+        $this->assertSame(['2026-06-13', '2026-06-14'], $this->archiveClosedDays->execute());
     }
 
     /**
@@ -432,14 +468,14 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
 
         // 00:00:01 · an administrator opens a screen, which tries to catch up.
         $this->travelTo(CarbonImmutable::parse('2026-06-15 00:00:01'));
-        $this->archiver->run();
+        $this->archiveClosedDays->execute();
 
         // 00:00:05 · the row lands, stamped with the moment it happened.
         $this->pageview($session, 'https://exemple.fr/tarifs', $day->setTime(23, 59, 58));
 
         // 03:00 · the nightly run.
         $this->travelTo(CarbonImmutable::parse('2026-06-15 03:00:00'));
-        $this->archiver->run();
+        $this->archiveClosedDays->execute();
 
         $counted = DailyCount::query()
             ->where('day', '2026-06-14')

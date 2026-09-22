@@ -9,16 +9,17 @@ use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Repositories\VisitorWriteRepository;
 
 /**
- * Resolves the visitor profile a batch belongs to, enforcing "one known person =
- * one profile". The browser's uuid finds (or creates) its profile; when the
- * request carries an authenticated subject, the profile converges on the
- * person's canonical one:
+ * Converges a browser's profile on the person a batch is identified as,
+ * enforcing "one known person = one profile":
  *
  * - the browser's profile is unowned and the person already has a profile
  *   elsewhere -> the two fold together (oldest survives);
  * - the browser belongs to someone else (shared device) -> the batch is routed
  *   to the person's own profile, the browser keeps its owner;
  * - first identification ever -> the browser's profile simply becomes theirs.
+ *
+ * A fold and the sessions it pulls in stand or fall together, so this runs
+ * inside the caller's transaction.
  *
  * @internal
  */
@@ -30,16 +31,12 @@ final readonly class VisitorProfileResolver
     ) {}
 
     /**
-     * @param  array{type: string, id: int}|null  $subject
+     * The canonical profile the batch lands on.
+     *
+     * @param  array{type: string, id: int}  $subject
      */
-    public function resolve(string $uuid, CarbonImmutable $seenAt, ?array $subject): Visitor
+    public function converge(Visitor $browser, CarbonImmutable $seenAt, array $subject): Visitor
     {
-        $browser = $this->visitors->resolve($uuid, $seenAt, $subject);
-
-        if ($subject === null) {
-            return $browser;
-        }
-
         if ($browser->subject_type === $subject['type'] && $browser->subject_id === $subject['id']) {
             $other = $this->visitors->canonicalFor($subject['type'], $subject['id'], excludeId: $browser->id);
 

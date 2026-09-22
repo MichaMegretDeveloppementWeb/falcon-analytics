@@ -17,7 +17,10 @@ use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Services\VisitorMerger;
 use Falcon\Analytics\Tests\Fixtures\Models\TestAdmin;
 use Falcon\Analytics\Tests\TestCase;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use RuntimeException;
 
 final class VisitorIdentityMergeTest extends TestCase
 {
@@ -185,32 +188,44 @@ final class VisitorIdentityMergeTest extends TestCase
         $this->assertSame(0, $shared->refresh()->session_count);
     }
 
-    // ── Consolidation (a migration) ──────────────────────────────────────
-
-    public function test_it_consolidates_pre_existing_duplicate_profiles_into_the_oldest_one(): void
+    /**
+     * Folding a browser into the person's profile and pulling in their stray
+     * sessions are one operation · if the second fails, the first is undone.
+     *
+     * The relocation is made to fail on its first write, after the fold has
+     * already moved the browser's rows. Committed apart, the fold would stay ·
+     * a profile merged without the sessions the merge promises to bring.
+     */
+    public function test_a_fold_and_the_sessions_it_pulls_in_stand_or_fall_together(): void
     {
-        $oldest = $this->visitor('uuid-a', ['type' => 'client', 'id' => 7], '2026-06-01 10:00:00');
-        $this->sessionRow($oldest, '2026-06-01 10:00:00', ['type' => 'client', 'id' => 7]);
+        $canonical = $this->visitor('uuid-pc', ['type' => 'client', 'id' => 7], '2026-07-01 10:00:00');
+        $phone = $this->visitor('uuid-phone', null, '2026-07-05 09:00:00');
+        $this->sessionRow($phone, '2026-07-05 09:00:00', null, withEvent: true);
 
-        $newer = $this->visitor('uuid-b', ['type' => 'client', 'id' => 7], '2026-06-10 10:00:00');
-        $this->sessionRow($newer, '2026-06-10 10:00:00', ['type' => 'client', 'id' => 7], withEvent: true);
-        $this->sessionRow($newer, '2026-06-11 10:00:00');
+        $shared = $this->visitor('uuid-shared', ['type' => 'lessor', 'id' => 2], '2026-07-02 10:00:00');
+        $stray = $this->sessionRow($shared, '2026-07-03 10:00:00', ['type' => 'client', 'id' => 7], withEvent: true);
 
-        $foreign = $this->visitor('uuid-c', ['type' => 'lessor', 'id' => 2], '2026-06-05 10:00:00');
-        $strayOnForeign = $this->sessionRow($foreign, '2026-06-05 10:00:00', ['type' => 'client', 'id' => 7]);
+        DB::listen(function (QueryExecuted $query): void {
+            if (str_starts_with($query->sql, 'update') && str_contains($query->sql, '`session_id` in')) {
+                throw new RuntimeException('The relocation fails here.');
+            }
+        });
 
-        app(VisitorMerger::class)->consolidateExisting();
+        try {
+            $this->ingest('uuid-phone', ['type' => 'client', 'id' => 7]);
+            $this->fail('The relocation was meant to fail.');
+        } catch (RuntimeException $failure) {
+            $this->assertSame('The relocation fails here.', $failure->getMessage());
+        }
 
-        $oldest->refresh();
-
-        $this->assertSame($oldest->id, $newer->refresh()->merged_into_id);
-        $this->assertNull($oldest->merged_into_id);
-        $this->assertSame(4, Session::query()->where('visitor_id', $oldest->id)->count());
-        $this->assertSame(4, $oldest->session_count);
-        $this->assertSame($oldest->id, $strayOnForeign->refresh()->visitor_id);
-        $this->assertNull($foreign->refresh()->merged_into_id);
-        $this->assertSame(0, $foreign->session_count);
+        $this->assertNull($phone->refresh()->merged_into_id, 'The fold stood while the relocation fell.');
+        $this->assertSame(1, Session::query()->where('visitor_id', $phone->id)->count());
+        $this->assertSame(1, Event::query()->where('visitor_id', $phone->id)->count());
+        $this->assertSame($shared->id, $stray->refresh()->visitor_id);
+        $this->assertSame(0, Session::query()->where('visitor_id', $canonical->id)->count());
     }
+
+    // ── The merge itself ─────────────────────────────────────────────────
 
     public function test_it_widens_the_canonical_seen_window_when_merging(): void
     {
