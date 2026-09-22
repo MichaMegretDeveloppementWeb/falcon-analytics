@@ -5,10 +5,9 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Livewire\Admin;
 
 use Falcon\Analytics\Events\EventRegistry;
-use Falcon\Analytics\Livewire\Admin\Concerns\ResolvesSubjectNames;
 use Falcon\Analytics\Livewire\Admin\Concerns\SortsAndSearchesList;
 use Falcon\Analytics\Repositories\Dashboard\SessionListReadRepository;
-use Falcon\Analytics\Services\Dashboard\SessionSubjectAttributor;
+use Falcon\Analytics\Services\Dashboard\SessionRowBuilder;
 use Falcon\Analytics\Services\SubjectResolver;
 use Falcon\Analytics\Support\DeviceLabel;
 use Falcon\Analytics\Support\SourceLabel;
@@ -24,7 +23,6 @@ use Livewire\WithPagination;
  */
 final class SessionsPage extends DashboardComponent
 {
-    use ResolvesSubjectNames;
     use SortsAndSearchesList;
     use WithPagination;
 
@@ -56,11 +54,11 @@ final class SessionsPage extends DashboardComponent
     public function render(
         SessionListReadRepository $sessionsRepository,
         SubjectResolver $subjects,
-        SessionSubjectAttributor $attributor,
+        SessionRowBuilder $rows,
         EventRegistry $events,
     ): View {
         return $this->guardedRender(
-            function () use ($sessionsRepository, $subjects, $attributor, $events): array {
+            function () use ($sessionsRepository, $subjects, $rows, $events): array {
                 $period = $this->currentPeriod();
                 $subjectType = $this->subjectType();
 
@@ -76,14 +74,11 @@ final class SessionsPage extends DashboardComponent
                 $source = $this->source === '' ? null : $this->source;
 
                 $sessions = $sessionsRepository->paginateSessions($period, $subjectType, $this->search, $device, $source, $subjects, $this->sort, $this->direction, conversionNames: $conversionNames);
-                $attributions = $attributor->attribute($sessions->items());
                 $filterOptions = $sessionsRepository->sessionFilterOptions($period, $subjectType);
 
                 return [
                     'range' => $period,
-                    'sessions' => $sessions,
-                    'attributions' => $attributions,
-                    'subjectNames' => $this->resolveAttributedNames($attributions, $subjects),
+                    'sessions' => $rows->build($sessions),
                     'sort' => $this->sort,
                     'direction' => $this->direction,
                     'deviceOptions' => $this->labelled($filterOptions['devices'], __('Tous les appareils'), DeviceLabel::for(...)),

@@ -28,6 +28,7 @@ use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 final class DashboardPagesTest extends TestCase
 {
@@ -211,6 +212,27 @@ final class DashboardPagesTest extends TestCase
             ->assertSeeText(__('Sessions'))
             ->assertSeeText('Genève')
             ->assertSeeText('Client #1');
+    }
+
+    /** @return array<string, array{string}> */
+    public static function listsOfVisitors(): array
+    {
+        return ['the sessions' => ['analytics.admin.sessions'], 'the visitors' => ['analytics.admin.visitors']];
+    }
+
+    /** A line shows the first eight characters of its visitor, and its button copies all of them. */
+    #[DataProvider('listsOfVisitors')]
+    public function test_a_line_shows_eight_characters_of_its_visitor_and_copies_the_whole_identifier(string $list): void
+    {
+        $uuid = Visitor::query()->findOrFail($this->seedSession()->visitor_id)->uuid;
+
+        $this->actingAs($this->admin, 'admin')
+            ->get(route($list))
+            ->assertSuccessful()
+            ->assertSee('x-data="anCopyList"', false)
+            ->assertSee('<span class="an:font-mono">'.substr($uuid, 0, 8).'</span>', false)
+            ->assertSee("copy('{$uuid}')", false)
+            ->assertDontSeeText(substr($uuid, 0, 9));
     }
 
     public function test_the_source_filter_reads_a_channel_exactly_as_the_list_below_it_does(): void

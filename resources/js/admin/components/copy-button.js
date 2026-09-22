@@ -1,25 +1,4 @@
-/** How long the check mark stays after a copy, in milliseconds. */
-const CONFIRMATION = 1400;
-
-/**
- * Copies through a hidden field, for a page without the Clipboard API · plain
- * HTTP, where it is not offered. Tells whether the browser copied.
- */
-function copyThroughAField(text) {
-    const field = document.createElement('textarea');
-
-    field.value = text;
-    field.style.position = 'fixed';
-    field.style.opacity = '0';
-    document.body.appendChild(field);
-    field.select();
-
-    const copied = document.execCommand('copy');
-
-    document.body.removeChild(field);
-
-    return copied;
-}
+import { CONFIRMATION, copyText } from '../clipboard.js';
 
 /**
  * A copy-to-clipboard button. A check mark confirms a copy; its absence is
@@ -38,18 +17,7 @@ export function anCopyButton(text) {
         },
 
         async copy() {
-            if (navigator.clipboard?.writeText) {
-                try {
-                    await navigator.clipboard.writeText(text);
-                    this.confirm();
-
-                    return;
-                } catch (_refused) {
-                    // The page may refuse the Clipboard API; the field below is the other way.
-                }
-            }
-
-            if (copyThroughAField(text)) {
+            if (await copyText(text)) {
                 this.confirm();
             }
         },

@@ -96,14 +96,13 @@ final readonly class SessionDetailBuilder
             return new SessionVisitor($session->visitor_id, self::filled($uuid), __('Visiteur anonyme'), null, false, $isReturning);
         }
 
-        $label = $this->subjects->label($attribution->guard);
-        $name = $this->subjects->name($attribution->guard, $attribution->id);
+        $subject = $this->subjects->shownNames([[$attribution->guard, $attribution->id]])[$attribution->guard.':'.$attribution->id];
 
         return new SessionVisitor(
             id: $session->visitor_id,
             uuid: self::filled($uuid),
-            name: $name ?? $label.' #'.$attribution->id,
-            label: $name !== null && $name !== '' && $label !== '' ? $label : null,
+            name: $subject->name,
+            label: $subject->label,
             viaVisitor: $attribution->viaVisitor,
             isReturning: $isReturning,
         );

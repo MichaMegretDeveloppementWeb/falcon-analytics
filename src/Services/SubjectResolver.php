@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Services;
 
+use Falcon\Analytics\DTOs\Dashboard\SubjectName;
 use Falcon\Analytics\Repositories\SubjectReadRepository;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Log;
@@ -145,13 +146,39 @@ final class SubjectResolver
      */
     public function display(string $guard, ?int $id): string
     {
-        $label = $this->label($guard);
-
         if ($id === null) {
-            return $label;
+            return $this->label($guard);
         }
 
-        return $this->name($guard, $id) ?? $label.' #'.$id;
+        return $this->shownNames([[$guard, $id]])[$guard.':'.$id]->name;
+    }
+
+    /**
+     * How each subject is shown, read in one query per guard.
+     *
+     * @param  list<array{string, int}>  $subjects  guard and id pairs
+     * @return array<string, SubjectName> keyed by "guard:id"
+     */
+    public function shownNames(array $subjects): array
+    {
+        $idsByGuard = [];
+        foreach ($subjects as [$guard, $id]) {
+            $idsByGuard[$guard][] = $id;
+        }
+
+        $shown = [];
+        foreach ($idsByGuard as $guard => $ids) {
+            $label = $this->label($guard);
+            $names = $this->names($guard, $ids);
+
+            foreach ($ids as $id) {
+                $shown[$guard.':'.$id] = isset($names[$id])
+                    ? new SubjectName($names[$id], $label)
+                    : new SubjectName($label.' #'.$id, null);
+            }
+        }
+
+        return $shown;
     }
 
     /**
