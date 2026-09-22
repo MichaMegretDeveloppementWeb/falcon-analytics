@@ -25,10 +25,11 @@ final class TheBenchIsStrictTest extends TestCase
     public function test_a_relation_read_in_passing_is_refused(): void
     {
         $this->twoSessions();
+        $sessions = Session::query()->orderBy('id')->get();
 
         $this->expectException(LazyLoadingViolationException::class);
 
-        Session::query()->get()->first()?->visitor;
+        $sessions->map(fn (Session $session): Visitor => $session->visitor);
     }
 
     public function test_a_column_never_read_is_refused(): void
