@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Services\Dashboard;
 
 use Falcon\Analytics\DTOs\Dashboard\Period;
+use Falcon\Analytics\DTOs\Dashboard\TaggedSessions;
 use Falcon\Analytics\Enums\ObjectiveType;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\Funnel;
@@ -46,7 +47,7 @@ final class MarketingReportBuilder
     /** @var Collection<int, Ad>|null */
     private ?Collection $activeAdsWithObjectives = null;
 
-    /** @var array<string, Collection<int, Session>> */
+    /** @var array<string, TaggedSessions> */
     private array $taggedSessionCache = [];
 
     /**
@@ -70,9 +71,26 @@ final class MarketingReportBuilder
      */
     private function taggedSessionRows(Period $period, ?string $subjectType): Collection
     {
-        $key = $period->from->format('c').'|'.$period->to->format('c').'|'.($subjectType ?? '');
+        $key = self::cacheKey($period, $subjectType);
 
-        return $this->taggedSessionCache[$key] ??= $this->repository->taggedSessionRows($period, $subjectType);
+        return ($this->taggedSessionCache[$key] ??= $this->repository->taggedSessionRows($period, $subjectType))->rows;
+    }
+
+    /**
+     * The ceiling, when the sessions this builder served for that period were
+     * cut at it, or null when they were whole or never read. A screen asks it
+     * after building its figures, so nothing is read for the answer.
+     */
+    public function truncatedAt(Period $period, ?string $subjectType): ?int
+    {
+        $read = $this->taggedSessionCache[self::cacheKey($period, $subjectType)] ?? null;
+
+        return $read !== null && $read->truncated ? $read->ceiling : null;
+    }
+
+    private static function cacheKey(Period $period, ?string $subjectType): string
+    {
+        return $period->from->format('c').'|'.$period->to->format('c').'|'.($subjectType ?? '');
     }
 
     /**

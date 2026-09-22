@@ -84,6 +84,10 @@ final class TheErasureKeepsWhatItCannotDeleteTest extends TestCase
             Livewire::test(VisitorDetailPage::class, ['visitor' => $visitor])
                 ->call('forget')
                 ->assertHasErrors('visitor-erasure-failed')
+                ->assertSee('La suppression a échoué.')
+                // Drawn as an error, not as a piece of information: the kit's
+                // alert reads `type`, and ignores any other name for it.
+                ->assertSee('ui:bg-red-50', false)
                 ->assertNoRedirect();
         });
 

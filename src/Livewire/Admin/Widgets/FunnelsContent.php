@@ -6,6 +6,7 @@ namespace Falcon\Analytics\Livewire\Admin\Widgets;
 
 use Falcon\Analytics\DTOs\Dashboard\Period;
 use Falcon\Analytics\Funnels\FunnelEvaluator;
+use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Livewire\Admin\Concerns\GuardsWidgetRead;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
@@ -33,15 +34,16 @@ final class FunnelsContent extends Component
         return view('analytics::livewire.dashboard.widgets.section-skeleton');
     }
 
-    public function render(FunnelEvaluator $evaluator): View
+    public function render(FunnelEvaluator $evaluator, FunnelRegistry $funnels): View
     {
-        return $this->guardedWidget(function () use ($evaluator): array {
+        return $this->guardedWidget(function () use ($evaluator, $funnels): array {
             $period = Period::ofDays($this->period);
             $subjectType = $this->subject !== '' ? $this->subject : null;
 
             return [
                 'reports' => $evaluator->evaluateAll($period, $subjectType),
                 'previousReports' => Collection::make($evaluator->evaluateAll($period->previous(), $subjectType))->keyBy('key'),
+                'declarationsIncomplete' => $funnels->failure() !== null,
             ];
         }, fn (array $data): View => view('analytics::livewire.dashboard.widgets.funnels-content', $data));
     }

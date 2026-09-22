@@ -29,6 +29,18 @@ final class VisitorIdentityTest extends TestCase
         $this->assertSame($uuid, Cookie::queued('fa_vid')?->getValue());
     }
 
+    /** Thirteen months at most, which is the ceiling the CNIL sets for a measurement cookie. */
+    public function test_the_cookie_lasts_thirteen_months_at_most(): void
+    {
+        $this->identity->resolve(Request::create('/', 'POST'), true);
+
+        $expires = Cookie::queued('fa_vid')?->getExpiresTime();
+
+        $this->assertNotNull($expires);
+        $this->assertLessThanOrEqual(now()->addMonths(13)->getTimestamp(), $expires);
+        $this->assertGreaterThan(now()->addYear()->getTimestamp(), $expires);
+    }
+
     public function test_it_reuses_an_existing_valid_cookie_without_re_queuing(): void
     {
         $existing = (string) Str::uuid();

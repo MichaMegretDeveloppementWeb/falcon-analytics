@@ -14,8 +14,14 @@ Une commande, puis trois choses à écrire vous-même. Comptez un quart d'heure.
 | **Une base** | **MySQL ou MariaDB**, et rien d'autre · le paquet crée dix tables préfixées `falcon_analytics_`, dont huit portent vos mesures |
 | **L'ordonnanceur** | `schedule:run` déclenché chaque minute · sans lui, les sessions ne se ferment pas et les jours clos ne sont plus résumés. **Rien n'est perdu pour autant** · voir plus bas |
 | **Node** | **non** · le paquet livre ses fichiers déjà compilés |
+| **Les navigateurs mesurés** | ceux qui savent envoyer une balise · **Chrome 39, Firefox 31, Safari 11.1, Edge 14 ou plus récents**, soit tout navigateur sorti depuis 2018. Sur un plus ancien, la page s'affiche normalement et la visite n'est pas mesurée |
 
 `falcon/ui-kit` vient avec, et vous n'avez pas à l'installer séparément.
+
+> **Cette limite est tenue, pas seulement écrite.** Le script de mesure est
+> compilé pour le JavaScript de 2015, que ces navigateurs lisent, et un essai
+> relit le fichier livré comme tel · une syntaxe plus récente glissée par la
+> compression ferait tomber la suite plutôt que ces visites.
 
 > **Sur la base, la liste est courte et elle est ferme.** Les tableaux de bord
 > posent trois expressions SQL que l'ORM ne sait pas écrire — un regroupement au
@@ -316,12 +322,13 @@ portée de ce qui réagit. **Aucun des deux ne couvre l'autre** · un
 `analytics:check` vert ne dit rien de ce que le second vérifie, et c'est lui qui
 nomme la ligne manquante.
 
-Le premier rend un tableau de **treize points** et s'arrête en échec s'il en trouve un
+Le premier rend un tableau de **seize points** et s'arrête en échec s'il en trouve un
 bloquant · le moteur de la base, les migrations passées, l'interrupteur général,
-la directive posée dans vos vues, le point de collecte joignable, le middleware
-des écrans, le gabarit que vous avez nommé, la feuille publiée à jour,
-l'identité, la durée de conservation, les résumés à jour, le proxy et la
-géolocalisation.
+la directive posée dans vos vues, le point de collecte joignable, la session
+qu'il ouvre, le middleware des écrans, le gabarit que vous avez nommé, la
+feuille publiée à jour, l'identité, les fichiers de déclarations lus en entier,
+la durée de conservation, le plafond du marketing, les résumés à jour, le proxy
+et la géolocalisation.
 
 Le moteur vient en premier, et il est relu à chaque passage · une connexion
 change en cours de vie, quand on déplace une base ou qu'on en pointe une seconde

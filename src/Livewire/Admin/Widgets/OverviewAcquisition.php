@@ -40,6 +40,7 @@ final class OverviewAcquisition extends Component
             return [
                 'topSources' => $repository->topSources($range, $subjectType),
                 'topLocalities' => $repository->topLocalities($range, $subjectType),
+                'truncatedAt' => $repository->attributionTruncatedAt($range, $subjectType),
             ];
         }, fn (array $data): View => view('analytics::livewire.dashboard.widgets.overview-acquisition', $data));
     }

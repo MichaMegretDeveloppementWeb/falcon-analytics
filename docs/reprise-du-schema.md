@@ -78,6 +78,15 @@ d'où l'importance de chercher · une conversion absente de l'écran des
 > l'occasion de le retirer · le tableau de bord additionne des points et les
 > affiche en « pts ».
 
+## Deux défauts de vie privée qui changent
+
+- **L'adresse IP est désormais tronquée par défaut.** Si votre copie publiée de
+  `config/analytics.php` écrit `'anonymize_ip' => false`, elle continue de la
+  garder entière · c'est votre choix qui vaut.
+- **Le cookie d'un visiteur qui a consenti dure treize mois**, au lieu de deux
+  ans. Ceux déjà posés dans les navigateurs gardent leur échéance · le paquet ne
+  réécrit pas un cookie valide.
+
 ---
 
 ## En local, sur le projet en développement
@@ -193,7 +202,7 @@ réellement — pas un motif qui pourrait attraper une des vôtres.
 php artisan analytics:check
 ```
 
-Treize contrôles, tous sur des défauts qui échouent en silence. **Il doit dire
+Seize contrôles, tous sur des défauts qui échouent en silence. **Il doit dire
 « Installation valide ».** S'il rend un point bloquant, il nomme ce qui manque
 et la commande qui le pose.
 

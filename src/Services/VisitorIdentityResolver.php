@@ -15,12 +15,14 @@ final readonly class VisitorIdentityResolver
 
     private const SESSION_KEY = 'fa_vid';
 
-    private const LIFETIME_MINUTES = 60 * 24 * 365 * 2;
+    /** Thirteen months at most, the ceiling the CNIL sets for a measurement cookie. */
+    private const LIFETIME_MINUTES = 60 * 24 * 395;
 
     /**
      * Resolve the visitor UUID. With consent it lives in a persistent httpOnly
-     * cookie (server-managed, invisible to JS). Without consent it lives in the
-     * server session, giving session-scoped dedup with no persistent client id.
+     * cookie (server-managed, invisible to JS), set once and never extended on
+     * a later visit. Without consent it lives in the server session, giving
+     * session-scoped dedup with no persistent client id.
      */
     public function resolve(Request $request, bool $consentGranted): string
     {

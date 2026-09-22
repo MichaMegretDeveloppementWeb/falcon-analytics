@@ -42,7 +42,7 @@ architecture qui n'existe plus.
   s'efface au bout de 90 jours, et c'est tout ce qui s'efface · les pages et
   clics les plus vus sont comptés d'avance chaque nuit, et **tout ce qui porte un
   nom est gardé pour toujours**. Aucune période maximale d'affichage ;
-- **trente-six réglages**, tous facultatifs · le paquet fonctionne sans qu'on en
+- **trente-sept réglages**, tous facultatifs · le paquet fonctionne sans qu'on en
   touche un seul, et un essai le tient ;
 - **des fichiers déjà compilés** · aucun Node n'est requis chez l'hôte. Le
   script des écrans, `analytics-admin.js`, ne part que vers les écrans
@@ -114,6 +114,10 @@ redescendre · voir [mise-a-jour.md](docs/mise-a-jour.md#le-schéma-qui-est-la-v
 PHP 8.5, Laravel 13, Livewire 4.2, et une base **MySQL ou MariaDB**.
 `falcon/ui-kit` vient avec le paquet.
 
+Les visites sont mesurées sur **tout navigateur sorti depuis 2018** · Chrome 39,
+Firefox 31, Safari 11.1, Edge 14 ou plus récents. Le script de mesure est
+compilé pour eux, et un essai le relit.
+
 > **Le plancher est celui de toute la suite**, pas une exigence de ce paquet
 > seul · l'hôte et les autres paquets l'annoncent à l'identique. Une suite dont
 > les membres réclament trois versions différentes ne promet rien de vérifiable.
@@ -123,6 +127,10 @@ PHP 8.5, Laravel 13, Livewire 4.2, et une base **MySQL ou MariaDB**.
 **Sans consentement, aucun identifiant ne survit à la session** — et c'est le
 comportement par défaut, pas une option à activer. Les données restent dans
 votre base ; aucun tiers, aucun service externe, aucun démon.
+
+**L'adresse IP est tronquée par défaut**, et le cookie d'un visiteur qui a
+consenti dure **treize mois au plus**, le plafond que la CNIL fixe · sans que
+la localité y perde, puisqu'elle est lue avant la troncature.
 
 **Le pas à pas d'une session ne se consulte que quatre-vingt-dix jours** par
 défaut · au-delà, les pages vues et les clics anonymes sont effacés. Ce qui

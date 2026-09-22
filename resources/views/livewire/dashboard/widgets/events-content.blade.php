@@ -1,5 +1,9 @@
 <x-analytics::root area="admin" class="an:space-y-8">
 
+    @if ($declarationsIncomplete)
+        <x-ui::alert type="warning">{{ __('Le fichier qui déclare les événements du site n\'a pas pu être lu en entier : ceux déclarés après l\'erreur n\'apparaissent pas ici, ni leurs conversions. Signalez-le à la personne qui maintient le site.') }}</x-ui::alert>
+    @endif
+
     {{-- KPIs with integrated sparklines --}}
     <div class="an:grid an:grid-cols-1 an:gap-4 an:sm:grid-cols-3">
         <x-analytics::kpi-card :label="__('Événements')" :value="number_format($events, 0, ',', ' ')" icon="bolt" :metric="$eventsDelta">
@@ -57,7 +61,7 @@
                             <x-ui::table.cell align="right" class="an:font-medium an:tabular-nums an:text-primary">{{ number_format($row['count'], 0, ',', ' ') }}</x-ui::table.cell>
                             <x-ui::table.cell align="right" class="an:tabular-nums">{{ number_format($row['visitors'], 0, ',', ' ') }}</x-ui::table.cell>
                             <x-ui::table.cell align="right" class="an:tabular-nums an:text-secondary">{{ $row['value'] !== null ? number_format($row['value'], 0, ',', ' ')."\u{00A0}pts" : '·' }}</x-ui::table.cell>
-                            <x-ui::table.cell :last="true" align="right" class="an:tabular-nums">{{ $row['value'] !== null ? number_format($row['valueTotal'], 0, ',', ' ')."\u{00A0}pts" : '·' }}</x-ui::table.cell>
+                            <x-ui::table.cell :last="true" align="right" class="an:tabular-nums">{{ $row['isScored'] ? number_format($row['valueTotal'], 0, ',', ' ')."\u{00A0}pts" : '·' }}</x-ui::table.cell>
                         </x-ui::table.row>
                     @endforeach
                 </x-ui::table.body>

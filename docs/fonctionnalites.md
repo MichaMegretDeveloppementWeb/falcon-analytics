@@ -454,7 +454,7 @@ ce qui précède, déclarez-le avec `data-track-event`. Sur un `<form>`,
 | Attribut | Effet |
 |---|---|
 | `data-track-event="domaine.action"` | nomme l'action · c'est la clé de l'événement déclaré et de la jointure des tunnels |
-| `data-track-value="3"` | un score, en points entiers · un nombre décimal est ignoré, et l'étape du tunnel prime |
+| `data-track-value="3"` | le score de ce clic, en points entiers · il remplace, pour ce clic, celui de la déclaration. Un nombre décimal est ignoré, et dans un tunnel ce sont les points de l'étape qui comptent |
 | `data-track-prop-*="…"` | des propriétés libres · `data-track-prop-listing-id` devient `props.listing_id` |
 | `data-track-section="hero"` | une zone logique, appliquée à tout le sous-arbre |
 | `data-track-label="…"` | un libellé humain · sinon le texte détecté |
@@ -496,7 +496,7 @@ TrackedEvent::define('nav.catalog.click', 'Accès au catalogue');
 |---|---|
 | `name` | la clé technique, telle qu'employée par `data-track-event` ou `Analytics::record()`. Convention · `domaine.action` |
 | `label` | ce que le tableau de bord affiche |
-| `value` | le score que rapporte chaque occurrence, **en points entiers** · jamais un montant. Un événement qui en porte un est une conversion, sauf `conversion: false` |
+| `value` | le score que rapporte chaque occurrence **par défaut**, en points entiers · jamais un montant. Une occurrence qui porte le sien — `data-track-value`, `Analytics::record(value:)` — compte le sien. Un événement déclaré avec un score est une conversion, sauf `conversion: false` |
 | `conversion` | marque l'événement comme une conversion |
 
 > **Un score, pas un montant.** Le tableau de bord additionne des points et les
@@ -523,6 +523,11 @@ Même visiteur, même session, même stockage, mêmes tunnels. **L'appel est
 différé** — il ne bloque jamais la réponse —, sans effet quand le suivi est
 éteint ou que le contexte est exclu, et **il ne lève jamais rien vers
 l'appelant**.
+
+> **Il vaut dans la requête du visiteur, et seulement là.** Depuis une tâche
+> différée ou une commande, il n'y a pas de visiteur à qui rattacher
+> l'événement · rien n'est enregistré, et le journal le dit. Appelez-le dans
+> la requête qui déclenche l'action, avant de confier le reste à une tâche.
 
 ---
 
@@ -684,8 +689,9 @@ faire.
 
 ## La vie privée et le RGPD
 
-- **L'adresse IP** est stockée entière au défaut, ce qui donne la localité et
-  l'historique de connexion. `privacy.anonymize_ip` la tronque.
+- **L'adresse IP** est tronquée avant d'être stockée. Le pays et la ville sont
+  lus avant, donc les écrans ne perdent que l'adresse exacte.
+  `privacy.anonymize_ip` à `false` la garde entière.
 - **Les adresses de pages** sont nettoyées de ce qui ressemble à une donnée
   personnelle — jeton, mot de passe, courriel — avant d'être stockées. Le
   paramètre reste, **sa valeur devient `redacted`** · une adresse amputée ne se
@@ -693,7 +699,9 @@ faire.
   est réglable.
 - **L'identifiant persistant d'un visiteur** n'existe que si
   `identity.consent_cookie` désigne un cookie et que ce cookie vaut `"1"`. Sinon
-  tout reste à la portée de la session.
+  tout reste à la portée de la session. Son cookie, `fa_vid`, dure **treize
+  mois au plus**, le plafond que la CNIL fixe pour un cookie de mesure, et une
+  visite suivante ne le prolonge pas.
 - **Le nom d'un sujet n'est jamais stocké** · il est lu sur votre modèle au
   moment de l'affichage.
 - **L'effacement** se fait depuis le détail d'un visiteur · il supprime le

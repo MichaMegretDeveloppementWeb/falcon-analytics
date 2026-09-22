@@ -57,5 +57,16 @@ final class FunnelRegistryTest extends TestCase
         // The file declares a funnel then throws: resolution must not break.
         $this->assertCount(1, $registry->all());
         $this->assertNotNull($registry->get('before'));
+
+        // And the failure is kept, for whoever has to say it.
+        $this->assertStringContainsString('Malformed funnels file.', (string) $registry->failure());
+    }
+
+    public function test_a_file_that_loads_whole_carries_no_failure(): void
+    {
+        config(['analytics.funnels_path' => __DIR__.'/../Fixtures/analytics-funnels.php']);
+        $this->app->forgetInstance(FunnelRegistry::class);
+
+        $this->assertNull(app(FunnelRegistry::class)->failure());
     }
 }

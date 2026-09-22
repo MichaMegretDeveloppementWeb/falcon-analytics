@@ -25,6 +25,11 @@ export default defineConfig({
         // The only step that clears the directory, and there has to be one.
         emptyOutDir: true,
 
+        // The browsers the collector reaches read the JavaScript of 2015.
+        // Without a target, the compressor writes newer syntax of its own —
+        // `catch {}` for one — and those browsers then refuse the whole file.
+        target: 'es2015',
+
         rollupOptions: {
             /*
              * **The source is named for what it is, the output for the package

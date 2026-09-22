@@ -3,11 +3,11 @@
 **Cette page fait autorité.** Le `README.md` montre le minimum pour démarrer ;
 tout ce qui est réglable est ici, et rien n'est ici qui ne soit réglable.
 
-Trente-six clés, en douze blocs. Le paquet **fonctionne sans en toucher une
+Trente-sept clés, en treize blocs. Le paquet **fonctionne sans en toucher une
 seule** · les valeurs ci-dessous sont celles qui s'appliquent tant que vous ne
 dites rien, et un essai le tient.
 
-> **Trente-six réglages, et non quarante-cinq.** Le fichier porte neuf noms de
+> **Trente-sept réglages, et non quarante-sept.** Le fichier porte dix noms de
 > plus — `identity`, `admin`, `geoip`… — mais ce sont des groupes, pas des
 > valeurs · on ne règle pas `identity`, on règle ce qu'il contient.
 
@@ -281,6 +281,23 @@ en attente.
 
 ---
 
+## L'attribution marketing
+
+Pour rattacher les sessions aux campagnes et aux publicités, les écrans
+marketing lisent **toutes les sessions de la période arrivées avec des
+paramètres dans leur adresse** · un seul `fbclid`, que Facebook ajoute à tous
+ses liens, suffit.
+
+| Clé | Type | Défaut | Ce qu'elle fait |
+|---|---|---|---|
+| `marketing.max_sessions` | entier, au moins `1` | `20000` | Au-delà de ce nombre sur la période, les suivantes ne sont pas lues · la mémoire reste bornée, **et les écrans disent que leurs chiffres sont en dessous de la réalité**. Relevez-le si votre serveur a la mémoire pour. **Une autre valeur arrête les écrans marketing**, et `analytics:check` dit pourquoi. |
+
+> **Ce qui le dit, et où** · la synthèse marketing, le détail d'une campagne,
+> celui d'une publicité, et la répartition des sources de trafic de la vue
+> d'ensemble, qui lit les mêmes sessions.
+
+---
+
 ## Google Search Console
 
 Google retire le mot-clé des adresses de provenance · les requêtes de recherche
@@ -309,7 +326,7 @@ dessus.
 
 | Clé | Type | Défaut | Ce qu'elle fait |
 |---|---|---|---|
-| `privacy.anonymize_ip` | booléen | `false` | À `true`, l'IP est tronquée avant d'être stockée · **le dernier octet en IPv4**, tout ce qui suit les 48 premiers bits en IPv6. Au défaut, elle est gardée entière — ce qui donne la localité et l'historique de connexion. |
+| `privacy.anonymize_ip` | booléen | `true` | L'IP est tronquée avant d'être stockée · **le dernier octet en IPv4**, tout ce qui suit les 48 premiers bits en IPv6. Le pays et la ville sont lus avant la troncature, donc les écrans n'y perdent que l'adresse exacte. À `false`, elle est gardée entière. |
 | `privacy.redact_query_params` | liste | `token`, `access_token`, `auth`, `password`, `secret`, `apikey`, `api_key`, `otp`, `signature`, `email` | Les paramètres dont la valeur est remplacée par `redacted` dans les adresses stockées, sans tenir compte de la casse. **Le paramètre reste, c'est sa valeur qui part** · une adresse tronquée ne se relit plus. **Les paramètres de campagne sont gardés tels quels** — `utm_*`, `gclid`, `fbclid`, les vôtres. Videz la liste pour tout stocker sans rien masquer. |
 
 > **Tronquer n'aveugle pas la carte.** Le pays et la ville se lisent encore sur

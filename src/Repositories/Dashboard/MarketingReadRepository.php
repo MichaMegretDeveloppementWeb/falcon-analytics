@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Repositories\Dashboard;
 
 use Falcon\Analytics\DTOs\Dashboard\Period;
+use Falcon\Analytics\DTOs\Dashboard\TaggedSessions;
 use Falcon\Analytics\Models\Ad;
 use Falcon\Analytics\Models\Campaign;
 use Falcon\Analytics\Models\Event;
@@ -12,6 +13,7 @@ use Falcon\Analytics\Models\Session;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Log;
+use UnexpectedValueException;
 
 /**
  * Raw database reads for the marketing screens: ad-tagged sessions, the active
@@ -24,43 +26,50 @@ use Illuminate\Support\Facades\Log;
 final class MarketingReadRepository
 {
     /**
-     * Hard ceiling on the tagged sessions loaded for a period, so a paid-traffic
-     * spike cannot exhaust memory: beyond it the report degrades (figures under-
-     * count) instead of the page failing, and a warning is logged.
+     * The ceiling comes from `analytics.marketing.max_sessions`; tests inject a
+     * small one to exercise the truncation without hydrating thousands of rows.
      */
-    public const MAX_TAGGED_SESSIONS = 20000;
+    public function __construct(private readonly ?int $maxTaggedSessions = null) {}
 
     /**
-     * The ceiling defaults to the production constant; tests inject a small
-     * one to exercise the truncation without hydrating 20k models.
+     * Ad-tagged sessions for a period, capped at the ceiling so a paid-traffic
+     * spike cannot exhaust memory. Beyond it the figures under-count, and the
+     * result says so for the screens to show. The builder scans these same rows
+     * for every marketing figure, so a superset of the columns each read needs
+     * is fetched in one query.
      */
-    public function __construct(private readonly int $maxTaggedSessions = self::MAX_TAGGED_SESSIONS) {}
-
-    /**
-     * Ad-tagged sessions for a period, capped at MAX_TAGGED_SESSIONS rows. The
-     * builder scans these same rows for every marketing figure, so a superset
-     * of the columns each read needs is fetched in one query.
-     *
-     * @return Collection<int, Session>
-     */
-    public function taggedSessionRows(Period $period, ?string $subjectType): Collection
+    public function taggedSessionRows(Period $period, ?string $subjectType): TaggedSessions
     {
+        $ceiling = $this->ceiling();
+
         $rows = $this->taggedSessions($period, $subjectType)
-            ->limit($this->maxTaggedSessions + 1)
+            ->limit($ceiling + 1)
             ->get(['id', 'visitor_id', 'source', 'mkt_params', 'started_at']);
 
-        if ($rows->count() <= $this->maxTaggedSessions) {
-            return $rows;
+        if ($rows->count() <= $ceiling) {
+            return new TaggedSessions($rows, $ceiling, truncated: false);
         }
 
         Log::channel(config('analytics.log_channel'))->warning('Marketing.tagged_sessions_truncated', [
-            'limit' => $this->maxTaggedSessions,
+            'limit' => $ceiling,
             'from' => $period->from->toDateTimeString(),
             'to' => $period->to->toDateTimeString(),
             'subject_type' => $subjectType,
         ]);
 
-        return $rows->take($this->maxTaggedSessions);
+        return new TaggedSessions($rows->take($ceiling), $ceiling, truncated: true);
+    }
+
+    /** The host's ceiling, refused rather than replaced when it means nothing. */
+    private function ceiling(): int
+    {
+        $ceiling = $this->maxTaggedSessions ?? config('analytics.marketing.max_sessions');
+
+        if (! is_int($ceiling) || $ceiling < 1) {
+            throw new UnexpectedValueException('analytics.marketing.max_sessions must be a whole number of at least 1.');
+        }
+
+        return $ceiling;
     }
 
     /**

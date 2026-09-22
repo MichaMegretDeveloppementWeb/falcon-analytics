@@ -247,6 +247,26 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Marketing attribution
+    |--------------------------------------------------------------------------
+    |
+    | The marketing screens match sessions to campaigns and ads in memory, and
+    | read for that every session of the period that arrived with parameters in
+    | its address — a single fbclid is enough. Past this many, the rest are not
+    | read: the figures then under-count, and the screens say so.
+    |
+    | Raise it if the server has the memory for it. A whole number of at least
+    | one; anything else stops the marketing screens and analytics:check says
+    | why.
+    |
+    */
+
+    'marketing' => [
+        'max_sessions' => 20000,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Google Search Console (organic search queries)
     |--------------------------------------------------------------------------
     |
@@ -275,9 +295,10 @@ return [
     */
 
     'privacy' => [
-        // Raw IP is stored by default (locality + connection history). Set true
-        // to store a truncated/anonymised IP instead.
-        'anonymize_ip' => false,
+        // The IP is truncated before it is stored. The country and the city are
+        // read before that, so the screens lose nothing but the exact address.
+        // Set false to store it whole.
+        'anonymize_ip' => true,
 
         // Query parameters (case-insensitive) redacted from stored URLs. Tracking
         // params (utm_*, gclid, fbclid, custom ad params) are kept; only likely

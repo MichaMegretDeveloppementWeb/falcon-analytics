@@ -35,10 +35,14 @@ final readonly class ServerEventRecorder
     ) {}
 
     /**
-     * Record a custom event for the current visitor. A no-op when tracking is
-     * off or the context is excluded (e.g. an admin); deferred so it never blocks
-     * the response. Nothing here ever throws to the caller: analytics must never
-     * break the code that emits an event, whatever the context (HTTP, job, CLI).
+     * Record a custom event for the visitor of the current web request. A no-op
+     * when tracking is off or the context is excluded (e.g. an admin); deferred
+     * so it never blocks the response.
+     *
+     * Outside a web request that carries a session — a queued job, a command —
+     * there is no visitor to record it for: nothing is recorded, and the log
+     * says so. Nothing here ever throws to the caller: analytics must never
+     * break the code that emits an event.
      *
      * @param  array<string, scalar|null>  $props
      */
@@ -49,11 +53,21 @@ final readonly class ServerEventRecorder
         }
 
         try {
+            $request = request();
+
+            if (! $request->hasSession()) {
+                Log::channel(config('analytics.log_channel'))->warning(
+                    'Analytics server event not recorded: it was sent outside a visitor\'s web request.',
+                    ['event' => $name],
+                );
+
+                return;
+            }
+
             if ($this->analytics->isExcluded()) {
                 return;
             }
 
-            $request = request();
             $uuid = $this->identity->resolve($request, $this->analytics->hasConsent());
             $subject = $this->analytics->subject();
             $snapshot = new RequestSnapshot(

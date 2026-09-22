@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Console;
 
+use Falcon\Analytics\Events\EventRegistry;
+use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Services\DailyCountArchiver;
 use Falcon\Analytics\Services\SubjectResolver;
 use Falcon\Analytics\Support\DatabaseEngine;
@@ -12,11 +14,13 @@ use Falcon\Ui\Exceptions\UiException;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Database\Migrations\Migrator;
+use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\Str;
 use Illuminate\View\Compilers\ComponentTagCompiler;
 use Illuminate\View\FileViewFinder;
 use InvalidArgumentException;
@@ -81,14 +85,44 @@ final class CheckCommand extends Command
             $this->checkMasterSwitch($config),
             $this->checkCollector(),
             $this->checkEndpoint($config),
+            $this->checkCollectorSession(),
             $this->checkModuleMiddleware($config),
             $this->checkAreaLayout($config),
             $this->checkPublishedAssets(),
             $this->checkIdentity($config),
+            $this->checkDeclarations(),
             $this->checkRetention($config),
+            $this->checkMarketingCeiling($config),
             $this->checkSummaries(),
             $this->checkProxy(),
             $this->checkGeoip($config),
+        ];
+    }
+
+    /**
+     * Whether the events and funnels files load whole.
+     *
+     * A file that stops on an error keeps what came before it and ignores the
+     * rest, so the conversions declared after the error vanish from the
+     * screens. Loading never raises, by design, which is why it is said here.
+     *
+     * @return array{0: string, 1: string, 2: string}
+     */
+    private function checkDeclarations(): array
+    {
+        $failures = array_values(array_filter(
+            [app(EventRegistry::class)->failure(), app(FunnelRegistry::class)->failure()],
+            fn (?string $failure): bool => $failure !== null,
+        ));
+
+        if ($failures === []) {
+            return ['Déclarations', 'OK', 'Les fichiers des événements et des tunnels se lisent en entier.'];
+        }
+
+        return [
+            'Déclarations',
+            'KO',
+            'Lecture arrêtée sur une erreur, et tout ce qui est déclaré ensuite est ignoré · '.implode(' · ', $failures),
         ];
     }
 
@@ -124,6 +158,34 @@ final class CheckCommand extends Command
             'OK',
             "Le pas à pas des sessions est gardé {$days} jours. Au-delà, seuls les pages vues et clics "
             .'anonymes sont effacés ; les événements nommés restent, et aucun autre écran ne bouge.',
+        ];
+    }
+
+    /**
+     * The marketing ceiling, read the way the marketing screens read it.
+     *
+     * A value that is not a whole number of sessions is refused there rather
+     * than replaced by one nobody chose, so those screens stop · this says why.
+     *
+     * @return array{0: string, 1: string, 2: string}
+     */
+    private function checkMarketingCeiling(Config $config): array
+    {
+        $ceiling = $config->get('analytics.marketing.max_sessions');
+
+        if (! is_int($ceiling) || $ceiling < 1) {
+            return [
+                'Marketing',
+                'KO',
+                'analytics.marketing.max_sessions doit être un nombre de sessions d’au moins 1. '
+                .'Tant que ce n’est pas le cas, les écrans marketing ne s’affichent pas.',
+            ];
+        }
+
+        return [
+            'Marketing',
+            'OK',
+            'Les écrans marketing lisent au plus '.number_format($ceiling, 0, ',', ' ').' sessions par période.',
         ];
     }
 
@@ -192,7 +254,7 @@ final class CheckCommand extends Command
     }
 
     /**
-     * First of the thirteen, and before the migrations on purpose: the engine
+     * First of the checks, and before the migrations on purpose: the engine
      * decides whether they mean anything at all.
      *
      * A connection can change after an install — a host moves its database, or
@@ -386,6 +448,41 @@ final class CheckCommand extends Command
             'Point d’entrée',
             'KO',
             'Aucune route POST ne répond sur /'.$endpoint.'. Videz le cache des routes (php artisan route:clear).',
+        ];
+    }
+
+    /**
+     * Whether the collector's route opens a session.
+     *
+     * Without consent — the default — the visitor's identifier lives in the
+     * session, so a stack without one answers every beacon with an error: the
+     * visitor's page does not suffer, and the screens stay empty with nothing
+     * to say why. The router is asked what the route really runs, so a group
+     * or an alias counts for what it carries.
+     *
+     * @return array{0: string, 1: string, 2: string}
+     */
+    private function checkCollectorSession(): array
+    {
+        $route = Route::getRoutes()->getByName('analytics.web.ingest');
+
+        if ($route === null) {
+            return ['Session du collecteur', 'À voir', 'Vérifiée une fois la route du collecteur montée · voir le point d’entrée.'];
+        }
+
+        foreach (Route::gatherRouteMiddleware($route) as $middleware) {
+            $class = is_string($middleware) ? Str::before($middleware, ':') : null;
+
+            if ($class !== null && is_a($class, StartSession::class, true)) {
+                return ['Session du collecteur', 'OK', 'La route du collecteur ouvre une session.'];
+            }
+        }
+
+        return [
+            'Session du collecteur',
+            'KO',
+            'La route du collecteur n’ouvre aucune session : sans consentement, l’identifiant du visiteur y vit, '
+            .'et chaque envoi répond en erreur. Remettez StartSession, ou le groupe web, dans analytics.web.middleware.',
         ];
     }
 

@@ -12,6 +12,7 @@ use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Services\ServerEventRecorder;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Throwable;
 
@@ -73,6 +74,35 @@ final class ServerEventRecorderTest extends TestCase
         $this->assertDoesntThrow(fn () => app(ServerEventRecorder::class)->record('X', value: 1));
 
         $this->assertSame(0, Event::count());
+    }
+
+    /**
+     * Outside a visitor's web request there is no visitor to record it for.
+     *
+     * With consent the identifier would come from a cookie the request does
+     * not carry, so every call would make a new visitor · a queued job firing
+     * a thousand times would leave a thousand of them.
+     */
+    public function test_it_makes_no_visitor_outside_a_web_request_even_with_consent(): void
+    {
+        Analytics::consentUsing(fn (): bool => true);
+
+        $this->withoutDefer();
+        app(ServerEventRecorder::class)->record('Lead', value: 3);
+        app(ServerEventRecorder::class)->record('Lead', value: 3);
+
+        $this->assertSame(0, Visitor::count());
+        $this->assertSame(0, Event::count());
+    }
+
+    public function test_it_says_in_the_log_why_nothing_was_recorded_outside_a_web_request(): void
+    {
+        Log::shouldReceive('channel')->andReturnSelf();
+        Log::shouldReceive('warning')
+            ->once()
+            ->withArgs(fn (string $message): bool => str_contains($message, 'outside a visitor'));
+
+        app(ServerEventRecorder::class)->record('Lead');
     }
 
     public function test_it_is_callable_through_the_analytics_facade(): void

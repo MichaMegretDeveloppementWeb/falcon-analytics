@@ -150,6 +150,16 @@ final readonly class OverviewReadRepository
     }
 
     /**
+     * The ceiling, when the attribution behind the paid share of `topSources()`
+     * read only part of a period's sessions, or null when it read them all.
+     */
+    public function attributionTruncatedAt(Period $period, ?string $subjectType): ?int
+    {
+        return $this->marketing->truncatedAt($period, $subjectType)
+            ?? $this->marketing->truncatedAt($period->previous(), $subjectType);
+    }
+
+    /**
      * Top localities (country + city) by sessions, with previous-period counts.
      *
      * @return list<array{country: string, city: string|null, total: int, previous: int}>

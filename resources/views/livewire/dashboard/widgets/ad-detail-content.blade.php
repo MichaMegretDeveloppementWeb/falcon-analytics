@@ -1,5 +1,7 @@
 <x-analytics::root area="admin" class="an:space-y-6">
 
+    @include('analytics::livewire.dashboard.partials.attribution-ceiling')
+
     <div class="an:grid an:grid-cols-2 an:gap-4 an:lg:grid-cols-4">
         <x-analytics::kpi-card :label="__('Sessions')" :value="number_format($sessions, 0, ',', ' ')" icon="cursor-arrow-rays" :metric="$sessionsDelta">
             <div wire:key="a-spark-s-{{ $refId }}-{{ $period }}-{{ $subject }}" class="an:mt-3"><x-analytics::sparkline :values="$trendData" /></div>

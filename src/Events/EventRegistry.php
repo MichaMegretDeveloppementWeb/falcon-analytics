@@ -22,10 +22,13 @@ final class EventRegistry
     /** @var array<string, TrackedEvent> */
     private array $events = [];
 
+    private ?string $failure = null;
+
     /**
      * Load the host events file. A malformed file is logged and degraded to
      * whatever was declared before the failure: it must never break the request
-     * that resolves the registry.
+     * that resolves the registry. The failure is kept, so the screens and the
+     * diagnostic can say what the log alone would.
      */
     public function load(string $path): void
     {
@@ -34,12 +37,20 @@ final class EventRegistry
         try {
             require $path;
         } catch (Throwable $e) {
+            $this->failure = $path.' · '.$e->getMessage();
+
             Log::channel(config('analytics.log_channel'))->error('Analytics events file failed to load.', [
                 'exception' => $e,
             ]);
         } finally {
             self::$loading = null;
         }
+    }
+
+    /** The file and the error it stopped on, or null when it loaded whole. */
+    public function failure(): ?string
+    {
+        return $this->failure;
     }
 
     public static function current(): ?self

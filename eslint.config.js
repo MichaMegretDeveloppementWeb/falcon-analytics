@@ -64,30 +64,23 @@ export default [
 
     {
         /*
-         * The collector, which is written in ES5 on purpose.
+         * The collector, which reaches the browsers that can send a beacon ·
+         * they read the JavaScript of 2015 and no later, so its source is read
+         * as such, and a classic script rather than a module.
          *
-         * It runs on every page of every visitor of every host, it is wrapped
-         * in an immediately invoked function, it declares `'use strict'`
-         * itself, and nothing transpiles it — the build has no target, so
-         * whatever syntax the source uses is the syntax that ships.
-         *
-         * **Two rules therefore do not apply here, and one of them would have
-         * broken it.** `x != null` is the deliberate test for « neither null
-         * nor undefined »; rewritten as `!== null` it would let `undefined`
-         * through. Four of them, and `--fix` would have changed all four
-         * without a word. So `eqeqeq` keeps its strictness except against
-         * `null`, which is ESLint's own option for exactly this.
-         *
-         * `var` is the same choice, one step wider. It is not exempted because
-         * `var` is good — it is exempted because rewriting 38 declarations in
-         * a script that runs everywhere is a decision about which browsers this
-         * collector must reach, and that decision is not written down anywhere
-         * yet. The day it is, this block is what changes.
+         * **One rule is relaxed, because it would have broken it.** `x != null`
+         * is the deliberate test for « neither null nor undefined »; rewritten
+         * as `!== null` it would let `undefined` through, and `--fix` would
+         * have done it without a word. So `eqeqeq` keeps its strictness except
+         * against `null`, which is ESLint's own option for exactly this.
          */
         files: ['resources/js/collector.js'],
+        languageOptions: {
+            ecmaVersion: 2015,
+            sourceType: 'script',
+        },
         rules: {
             ...rules,
-            'no-var': 'off',
             eqeqeq: ['error', 'always', { null: 'ignore' }],
         },
     },

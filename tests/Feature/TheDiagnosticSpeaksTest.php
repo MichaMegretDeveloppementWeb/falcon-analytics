@@ -5,13 +5,19 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Tests\Feature;
 
 use Falcon\Analytics\Enums\EventType;
+use Falcon\Analytics\Events\EventRegistry;
+use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Tests\TestCase;
+use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
+use Illuminate\Cookie\Middleware\EncryptCookies;
+use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
+use Orchestra\Testbench\Attributes\DefineEnvironment;
 
 /**
  * `analytics:check` · what a host learns about its installation.
@@ -79,7 +85,7 @@ final class TheDiagnosticSpeaksTest extends TestCase
     }
 
     /**
-     * Le premier des treize points, et il nomme le moteur trouvé.
+     * Le premier des points, et il nomme le moteur trouvé.
      *
      * Avant les migrations, parce que le moteur décide si elles veulent seulement
      * dire quelque chose. Et à chaque déploiement plutôt qu'une seule fois : une
@@ -261,6 +267,78 @@ final class TheDiagnosticSpeaksTest extends TestCase
     }
 
     /**
+     * The collector's stack without a session, and every beacon then fails.
+     *
+     * Without consent — the default — the visitor's identifier lives in the
+     * session. The stack is fixed when the routes load, so the configuration is
+     * laid before the application boots, and the route itself is what is read.
+     */
+    #[DefineEnvironment('withACollectorStackWithoutSession')]
+    public function test_it_says_when_the_collector_stack_carries_no_session(): void
+    {
+        $this->artisan('analytics:check')
+            ->expectsOutputToContain('StartSession')
+            ->assertFailed();
+    }
+
+    #[DefineEnvironment('withAnEmptyCollectorStack')]
+    public function test_it_says_when_the_collector_stack_is_empty(): void
+    {
+        $this->artisan('analytics:check')
+            ->expectsOutputToContain('StartSession')
+            ->assertFailed();
+    }
+
+    /** A group that carries the session counts for what it carries. */
+    #[DefineEnvironment('withTheWebGroupOnTheCollector')]
+    public function test_it_accepts_a_collector_stack_named_by_its_group(): void
+    {
+        $this->artisan('analytics:check')->assertSuccessful();
+    }
+
+    /**
+     * A declarations file that stops on an error.
+     *
+     * What came before the error is kept and the rest is ignored, so the
+     * conversions declared after it vanish from the screens, and the log is
+     * the only other place that says so.
+     */
+    public function test_it_names_an_events_file_that_does_not_load_whole(): void
+    {
+        config(['analytics.events_path' => __DIR__.'/../Fixtures/analytics-events-broken.php']);
+        $this->app->forgetInstance(EventRegistry::class);
+
+        $this->artisan('analytics:check')
+            ->expectsOutputToContain('analytics-events-broken.php')
+            ->assertFailed();
+    }
+
+    public function test_it_names_a_funnels_file_that_does_not_load_whole(): void
+    {
+        config(['analytics.funnels_path' => __DIR__.'/../Fixtures/analytics-funnels-broken.php']);
+        $this->app->forgetInstance(FunnelRegistry::class);
+
+        $this->artisan('analytics:check')
+            ->expectsOutputToContain('analytics-funnels-broken.php')
+            ->assertFailed();
+    }
+
+    protected function withACollectorStackWithoutSession(Application $app): void
+    {
+        $app['config']->set('analytics.web.middleware', [EncryptCookies::class, AddQueuedCookiesToResponse::class]);
+    }
+
+    protected function withAnEmptyCollectorStack(Application $app): void
+    {
+        $app['config']->set('analytics.web.middleware', []);
+    }
+
+    protected function withTheWebGroupOnTheCollector(Application $app): void
+    {
+        $app['config']->set('analytics.web.middleware', ['web']);
+    }
+
+    /**
      * The identity block is the one thing a host still fills by hand, and a
      * typo in it is the quietest failure of the whole installation.
      *
@@ -340,6 +418,28 @@ final class TheDiagnosticSpeaksTest extends TestCase
         $this->artisan('analytics:check')
             ->expectsOutputToContain('Conservation')
             ->assertFailed();
+    }
+
+    /**
+     * A marketing ceiling that means nothing stops the marketing screens, and
+     * this is where it is said.
+     */
+    public function test_it_blocks_on_a_marketing_ceiling_that_is_not_a_number_of_sessions(): void
+    {
+        config(['analytics.marketing.max_sessions' => 0]);
+
+        $this->artisan('analytics:check')
+            ->expectsOutputToContain('marketing.max_sessions')
+            ->assertFailed();
+    }
+
+    public function test_it_names_the_marketing_ceiling_it_found(): void
+    {
+        config(['analytics.marketing.max_sessions' => 50000]);
+
+        $this->artisan('analytics:check')
+            ->expectsOutputToContain('50 000')
+            ->assertSuccessful();
     }
 
     /** Never erasing is a choice, not a defect. */

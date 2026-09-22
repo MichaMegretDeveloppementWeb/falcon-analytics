@@ -16,6 +16,7 @@
 
         <div class="an:pb-5 an:lg:pb-0 an:lg:pr-8">
             <x-ui::section-header :title="__('Sources de trafic')" class="an:mb-4" />
+            @include('analytics::livewire.dashboard.partials.attribution-ceiling', ['class' => 'an:mb-4'])
             @if ($topSources !== [])
                 <div class="an:flex an:items-center an:gap-6">
                     <div wire:key="donut-sources-{{ $period }}-{{ $subject }}">

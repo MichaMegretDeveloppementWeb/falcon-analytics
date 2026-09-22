@@ -53,7 +53,8 @@ final class Analytics
     /**
      * Record a server-emitted event for the current visitor (thin delegate to
      * ServerEventRecorder). Like any event, it belongs to a funnel by its name.
-     * A no-op when tracking is off or the context is excluded.
+     * A no-op when tracking is off, the context is excluded, or there is no
+     * visitor's web request to record it for.
      *
      * The score is a whole number of points, not an amount: see TrackedEvent.
      *
