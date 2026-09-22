@@ -51,7 +51,13 @@ final class ModelsTest extends TestCase
         $this->assertNull($fresh->ended_at);
         $this->assertFalse($fresh->is_bot);
         $this->assertSame(46.2044, $fresh->latitude);
-        $this->assertSame(0, $fresh->pageview_count);
+
+        // The three counters, through the generic accessor: they are the ones
+        // an addition reads, and only the cast guarantees they come back as
+        // integers whatever the driver hands over.
+        $this->assertSame(0, $fresh->getAttribute('pageview_count'));
+        $this->assertSame(0, $fresh->getAttribute('click_count'));
+        $this->assertSame(0, $fresh->getAttribute('event_count'));
     }
 
     public function test_it_casts_the_event_type_to_the_enum_props_to_an_array_and_value_to_float(): void

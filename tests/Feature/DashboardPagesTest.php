@@ -26,8 +26,6 @@ use Falcon\Analytics\Support\SourceLabel;
 use Falcon\Analytics\Tests\Fixtures\Models\TestAdmin;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
 
@@ -43,27 +41,6 @@ final class DashboardPagesTest extends TestCase
 
         $this->travelTo(CarbonImmutable::parse('2026-06-15 12:00:00'));
         $this->admin = TestAdmin::create([]);
-    }
-
-    /**
-     * What a render costs in queries, and how many it repeats.
-     *
-     * @return array{count: int, duplicates: int}
-     */
-    private function queryBudget(callable $render): array
-    {
-        DB::enableQueryLog();
-        DB::flushQueryLog();
-        $render();
-
-        $signatures = Collection::make(DB::getQueryLog())
-            ->filter(fn (array $q): bool => str_contains($q['query'], 'falcon_analytics_'))
-            ->map(fn (array $q): string => $q['query'].'|'.json_encode($q['bindings']));
-
-        return [
-            'count' => $signatures->count(),
-            'duplicates' => $signatures->count() - $signatures->unique()->count(),
-        ];
     }
 
     /**
@@ -118,34 +95,36 @@ final class DashboardPagesTest extends TestCase
 
     public function test_it_renders_the_events_content_within_its_query_budget(): void
     {
-        $session = $this->seedSession();
-        Event::create(['session_id' => $session->id, 'visitor_id' => $session->visitor_id, 'type' => EventType::Click, 'name' => 'cta.contact', 'occurred_at' => now()]);
-
         $this->actingAs($this->admin, 'admin');
 
         // The deferred widget reads the breakdown (current and previous) and
         // the daily series; the page's shell emits no query at all.
-        $budget = $this->queryBudget(fn () => Livewire::test(EventsContent::class, ['period' => 30])->call('$refresh'));
+        $budget = $this->assertCostIsFlat(
+            function (): void {
+                $session = $this->seedSession();
+                Event::create(['session_id' => $session->id, 'visitor_id' => $session->visitor_id, 'type' => EventType::Click, 'name' => 'cta.contact', 'occurred_at' => now()]);
+            },
+            fn () => Livewire::test(EventsContent::class, ['period' => 30])->call('$refresh'),
+        );
 
         $this->assertLessThanOrEqual(6, $budget['count']);
-        $this->assertSame(0, $budget['duplicates']);
     }
 
     public function test_it_renders_the_marketing_dashboard_content_within_its_query_budget(): void
     {
         Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta']]]);
-        $this->seedSession(['mkt_params' => ['src' => 'meta'], 'source' => 'social']);
-        $this->seedSession(['mkt_params' => ['src' => 'meta'], 'source' => 'social']);
 
         $this->actingAs($this->admin, 'admin');
 
         // The deferred widget carries the heavy reads. The active campaigns and
         // ads, like the whole set of tagged sessions, are loaded once and
         // reused, so no read repeats itself.
-        $budget = $this->queryBudget(fn () => Livewire::test(MarketingDashboardContent::class, ['period' => 30])->call('$refresh'));
+        $budget = $this->assertCostIsFlat(
+            fn () => $this->seedSession(['mkt_params' => ['src' => 'meta'], 'source' => 'social']),
+            fn () => Livewire::test(MarketingDashboardContent::class, ['period' => 30])->call('$refresh'),
+        );
 
         $this->assertLessThanOrEqual(12, $budget['count']);
-        $this->assertSame(0, $budget['duplicates']);
     }
 
     public function test_it_renders_the_deferred_events_content_widget(): void
@@ -408,29 +387,29 @@ final class DashboardPagesTest extends TestCase
 
     public function test_it_renders_the_overview_headline_within_its_query_budget(): void
     {
-        $this->seedSession(['source' => 'google', 'country' => 'FR', 'city' => 'Paris']);
-
         $this->actingAs($this->admin, 'admin');
 
         // The deferred widget carries the engagement reads; the shell emits
         // none. The counters (current and previous), the series and the
         // spotlight are each read once.
-        $budget = $this->queryBudget(fn () => Livewire::test(OverviewHeadline::class, ['period' => 30])->call('$refresh'));
+        $budget = $this->assertCostIsFlat(
+            fn () => $this->seedSession(['source' => 'google', 'country' => 'FR', 'city' => 'Paris']),
+            fn () => Livewire::test(OverviewHeadline::class, ['period' => 30])->call('$refresh'),
+        );
 
         $this->assertLessThanOrEqual(8, $budget['count']);
-        $this->assertSame(0, $budget['duplicates']);
     }
 
     public function test_it_renders_the_sessions_list_within_its_query_budget(): void
     {
-        $this->seedSession(['city' => 'Genève']);
-
         $this->actingAs($this->admin, 'admin');
 
-        $budget = $this->queryBudget(fn () => Livewire::test(SessionsPage::class));
+        $budget = $this->assertCostIsFlat(
+            fn () => $this->seedSession(['city' => 'Genève']),
+            fn () => Livewire::test(SessionsPage::class),
+        );
 
         $this->assertLessThanOrEqual(12, $budget['count']);
-        $this->assertSame(0, $budget['duplicates']);
     }
 
     public function test_it_recomputes_the_overview_metrics_when_the_period_changes(): void

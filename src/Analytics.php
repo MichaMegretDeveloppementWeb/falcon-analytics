@@ -155,6 +155,22 @@ final class Analytics
             return null;
         }
 
-        return ['type' => (string) $subject['type'], 'id' => (int) $subject['id']];
+        $type = $subject['type'];
+        $id = $subject['id'];
+
+        // Same rule as `subjectFromGuards()`, applied to what a host's resolver
+        // hands over: subject_id is an integer column, so a non-numeric key
+        // (e.g. a UUID) cannot be stored. Casting it would attach every one of
+        // those visits to subject 0, a subject that does not exist and that
+        // would gather everybody's journeys.
+        if (! is_int($id) && ! (is_string($id) && ctype_digit($id))) {
+            return null;
+        }
+
+        if (! is_string($type) || $type === '') {
+            return null;
+        }
+
+        return ['type' => $type, 'id' => (int) $id];
     }
 }

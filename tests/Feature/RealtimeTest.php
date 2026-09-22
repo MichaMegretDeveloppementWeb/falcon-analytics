@@ -15,8 +15,6 @@ use Falcon\Analytics\Tests\Fixtures\Models\TestAdmin;
 use Falcon\Analytics\Tests\Fixtures\Models\TestClient;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
 use Locale;
@@ -334,30 +332,25 @@ final class RealtimeTest extends TestCase
     public function test_it_renders_the_realtime_tick_within_its_query_budget(): void
     {
         $marie = TestClient::create(['first_name' => 'Marie', 'last_name' => 'Dupont']);
-        $visitor = $this->visitor(['type' => 'client', 'id' => $marie->id]);
-        $session = $this->sessionRow([], $visitor);
-        $this->event($session, EventType::Pageview, ['url' => 'https://x.test/a']);
-        $this->event($session, EventType::Click, ['target_text' => 'Contact']);
-        $this->sessionRow();
 
         $this->actingAs(TestAdmin::create([]), 'admin');
-
-        DB::enableQueryLog();
-        DB::flushQueryLog();
-
-        Livewire::test(RealtimePage::class);
-
-        $signatures = Collection::make(DB::getQueryLog())
-            ->filter(fn (array $q): bool => str_contains($q['query'], 'falcon_analytics_'))
-            ->map(fn (array $q): string => $q['query'].'|'.json_encode($q['bindings']));
 
         // Fixed plan: online + window (sessions, pageviews) + per-minute
         // buckets + recent sessions (+ visitors) + feed (events + sessions +
         // visitors) + the attributor's disambiguation + top
         // pages/sources/devices + map points + unlocated = 16.
-        // No duplicate read within one tick.
-        $this->assertSame(0, $signatures->count() - $signatures->unique()->count());
-        $this->assertLessThanOrEqual(16, $signatures->count());
+        $budget = $this->assertCostIsFlat(
+            function () use ($marie): void {
+                $visitor = $this->visitor(['type' => 'client', 'id' => $marie->id]);
+                $session = $this->sessionRow([], $visitor);
+                $this->event($session, EventType::Pageview, ['url' => 'https://x.test/a']);
+                $this->event($session, EventType::Click, ['target_text' => 'Contact']);
+                $this->sessionRow();
+            },
+            fn () => Livewire::test(RealtimePage::class),
+        );
+
+        $this->assertLessThanOrEqual(16, $budget['count']);
     }
 
     /**

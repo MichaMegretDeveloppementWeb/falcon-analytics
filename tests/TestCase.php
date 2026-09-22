@@ -11,6 +11,7 @@ use Falcon\Analytics\Tests\Fixtures\Models\TestClient;
 use Falcon\Analytics\Tests\Fixtures\Models\TestLessor;
 use Falcon\Ui\UiServiceProvider;
 use Illuminate\Routing\Router;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
@@ -120,6 +121,36 @@ abstract class TestCase extends Orchestra
         $token = getenv('TEST_TOKEN');
 
         return is_string($token) ? $token : '';
+    }
+
+    /**
+     * Where a worker publishes the compiled files.
+     *
+     * **The third of the three things a parallel run has to give each worker**,
+     * next to its database and its bootstrap cache above — and the one that was
+     * missed. Every worker boots the same test application, so `public_path()`
+     * is ONE directory for the four of them.
+     *
+     * On a workstation the copies are already in place, nobody publishes, and
+     * nothing collides. On a fresh checkout the directory is empty: the four
+     * workers publish at once, and one of them renders a page while another is
+     * still copying `icons.svg`. The kit's staleness guard reads half a file,
+     * refuses to build the address, and the test that falls is about something
+     * else entirely — `test_it_renders_a_session_detail…`, which touches none
+     * of this.
+     *
+     * **Measured on the integration chain** · green, red, green on the same
+     * code, only on the line that resolves the floor. That is what an unshared
+     * directory looks like from the outside: chance.
+     *
+     * The copies are kept rather than dropped at the end: they are what makes
+     * the next run publish nothing at all.
+     */
+    private static function publishedDirectoryFor(string $token): string
+    {
+        $base = dirname(__DIR__).'/vendor/orchestra/testbench-core/laravel/public';
+
+        return $token === '' ? $base : $base.'-'.$token;
     }
 
     /**
@@ -373,6 +404,8 @@ abstract class TestCase extends Orchestra
 
     protected function defineEnvironment($app): void
     {
+        $app->usePublicPath(self::publishedDirectoryFor(self::parallelToken()));
+
         tap($app['config'], function ($config): void {
             // MySQL, and nothing else. SQLite in memory held the suite in
             // twenty seconds and proved nothing of what the schema promises.
@@ -430,6 +463,73 @@ abstract class TestCase extends Orchestra
         } finally {
             Schema::rename($table.'_absent', $table);
         }
+    }
+
+    /**
+     * What an operation costs in package statements, and how many it repeats.
+     *
+     * Only the package's own tables are counted: the bench opens a transaction
+     * and reads the framework's tables around every test, and none of that
+     * belongs to the plan being measured.
+     *
+     * @param  callable(): mixed  $run
+     * @return array{count: int, duplicates: int}
+     */
+    protected function statementsFor(callable $run): array
+    {
+        DB::enableQueryLog();
+        DB::flushQueryLog();
+
+        $run();
+
+        $signatures = Collection::make(DB::getQueryLog())
+            ->filter(fn (array $query): bool => str_contains($query['query'], 'falcon_analytics_'))
+            ->map(fn (array $query): string => $query['query'].'|'.json_encode($query['bindings']));
+
+        DB::disableQueryLog();
+
+        return [
+            'count' => $signatures->count(),
+            'duplicates' => $signatures->count() - $signatures->unique()->count(),
+        ];
+    }
+
+    /**
+     * The same cost at two volumes: a plan is fixed, or it is not a plan.
+     *
+     * A ceiling measured on one row says nothing of what happens at a hundred:
+     * a budget of twenty still passes at one statement per five rows. This
+     * seeds once, measures, seeds `$extra` more, and measures again — the
+     * database is not reset between the two, so the second pass really does see
+     * the whole volume.
+     *
+     * Returns the cost at the larger volume, so a caller can still assert its
+     * own ceiling on top.
+     *
+     * @param  callable(): mixed  $seedOne
+     * @param  callable(): mixed  $run
+     * @return array{count: int, duplicates: int}
+     */
+    protected function assertCostIsFlat(callable $seedOne, callable $run, int $extra = 30): array
+    {
+        $seedOne();
+        $small = $this->statementsFor($run);
+
+        foreach (range(1, $extra) as $ignored) {
+            $seedOne();
+        }
+
+        $large = $this->statementsFor($run);
+
+        $this->assertSame(
+            $small['count'],
+            $large['count'],
+            sprintf('The plan is not fixed: %d statements at 1 row, %d at %d.', $small['count'], $large['count'], $extra + 1),
+        );
+
+        $this->assertSame(0, $large['duplicates'], 'A read repeats itself at volume.');
+
+        return $large;
     }
 
     /**
