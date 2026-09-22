@@ -500,8 +500,10 @@ TrackedEvent::define('nav.catalog.click', 'Accès au catalogue');
 | `conversion` | marque l'événement comme une conversion |
 
 > **Un score, pas un montant.** Le tableau de bord additionne des points et les
-> affiche en « pts ». Un nombre décimal est refusé dès la déclaration · une
-> erreur de type, au premier chargement du fichier.
+> affiche en « pts ». Un nombre décimal est refusé dès la déclaration · le
+> fichier cesse de se charger à cette ligne, et **l'erreur n'est écrite que dans
+> le journal**. Les événements déclarés après elle n'existent plus pour les
+> écrans.
 
 `php artisan analytics:events:scan` compare cette liste à ce que votre code
 emploie réellement, et `--fix` ajoute les manquants.

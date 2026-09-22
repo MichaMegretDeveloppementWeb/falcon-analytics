@@ -15,9 +15,8 @@ use TypeError;
  * The value a conversion carries is a **score in points**, never an amount: the
  * screens add it up and show it in points, and a sum is never held in a float.
  *
- * **The refusal sits at the signature**, where the mistake is: a host declaring
- * `value: 5.0` learns it at the first screen that reads its declarations, not by
- * comparing two totals one day.
+ * **The refusal sits at the signature**, on the line where the mistake is, and
+ * not in a total that drifts one day.
  */
 final class TheScoreIsAWholeNumberTest extends TestCase
 {
