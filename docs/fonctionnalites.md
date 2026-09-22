@@ -524,6 +524,11 @@ différé** — il ne bloque jamais la réponse —, sans effet quand le suivi e
 éteint ou que le contexte est exclu, et **il ne lève jamais rien vers
 l'appelant**.
 
+> **Il vaut dans la requête du visiteur, et seulement là.** Depuis une tâche
+> différée ou une commande, il n'y a pas de visiteur à qui rattacher
+> l'événement · rien n'est enregistré, et le journal le dit. Appelez-le dans
+> la requête qui déclenche l'action, avant de confier le reste à une tâche.
+
 ---
 
 ## Les tunnels
