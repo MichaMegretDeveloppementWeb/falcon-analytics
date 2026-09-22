@@ -171,7 +171,7 @@ n'a pas de Node.
 
 ## L'organisation du domaine
 
-169 classes, dont **16 publiques** · le reste porte `@internal`, et
+**Seize classes sont publiques** · toutes les autres portent `@internal`, et
 `TheSurfaceIsDeclaredTest` refuse que cette frontière bouge sans qu'on le dise.
 La liste tient dans ce fichier d'essai, qui est l'endroit où la lire.
 
@@ -194,6 +194,27 @@ DTOs/Dashboard/…                         ce qui arrive à la vue
 **Les requêtes sont d'un côté, les calculs de l'autre**, et c'est ce qui rend le
 tout éprouvable · un calculateur se teste sans base, un dépôt se teste sans
 écran.
+
+**Une page de détail remet une fiche à sa vue, jamais un modèle.** Elle ne
+garde que le numéro de ce qu'elle montre, verrouillé, et le relit une fois par
+requête · la vue ne peut donc rien lire que la page n'ait prévu.
+`TheDetailScreensHandOverValuesTest` le tient, pour tous les composants.
+
+### Le chemin d'un formulaire · ce qui écrit depuis un écran
+
+```
+Livewire/Admin/…Form     un composant à lui, posé une fois sur son écran
+        ↓
+Actions/Save…Action      l'écriture, dans sa transaction
+        ↓
+an-…-changed             l'annonce · l'écran qui l'écoute se relit
+```
+
+**Ouvrir un formulaire, y ajouter une ligne ou le voir refusé ne redessine que
+lui**, quelle que soit la longueur de la liste à côté ·
+`TheListsDrawOnlyWhatChangesTest` le tient. L'écran l'appelle par sa référence,
+`$wire.$refs.…Form.$wire.edit…()`, et le formulaire ne s'ouvre que si la lecture
+a réussi.
 
 ### Le chemin d'écriture · ce qui enregistre une visite
 
