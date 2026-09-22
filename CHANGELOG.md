@@ -114,6 +114,10 @@ redescendre · voir [mise-a-jour.md](docs/mise-a-jour.md#le-schéma-qui-est-la-v
 PHP 8.5, Laravel 13, Livewire 4.2, et une base **MySQL ou MariaDB**.
 `falcon/ui-kit` vient avec le paquet.
 
+Les visites sont mesurées sur **tout navigateur sorti depuis 2018** · Chrome 39,
+Firefox 31, Safari 11.1, Edge 14 ou plus récents. Le script de mesure est
+compilé pour eux, et un essai le relit.
+
 > **Le plancher est celui de toute la suite**, pas une exigence de ce paquet
 > seul · l'hôte et les autres paquets l'annoncent à l'identique. Une suite dont
 > les membres réclament trois versions différentes ne promet rien de vérifiable.

@@ -31,6 +31,10 @@ tableaux de bord posent du SQL propre à ce moteur, et l'installation refuse de
 commencer sur un autre.
 **Node, non.** `falcon/ui-kit` vient avec le paquet.
 
+Les visites sont mesurées sur **tout navigateur sorti depuis 2018** · Chrome 39,
+Firefox 31, Safari 11.1, Edge 14 ou plus récents. Sur un plus ancien, la page
+s'affiche normalement, sans être mesurée.
+
 Il faut aussi que `schedule:run` tourne chaque minute · c'est ce qui ferme les
 sessions inactives, résume les jours clos et efface ce qui a dépassé la
 conservation. **Si votre ordonnanceur s'arrête, rien n'est perdu** · l'effacement

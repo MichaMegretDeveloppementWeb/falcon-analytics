@@ -8,26 +8,26 @@
 (function () {
   'use strict';
 
-  var cfg = window.__falconAnalytics;
+  const cfg = window.__falconAnalytics;
   if (!cfg || !cfg.endpoint || typeof document === 'undefined') {
     return;
   }
 
   // Server-side limits (keep in sync with IngestBatchRequest): truncate here so
   // one oversized field can never 422 the whole batch, and cap the batch size.
-  var MAX_URL = 2048;
-  var MAX_NAME = 120;
-  var MAX_TEXT = 255;
-  var MAX_SELECTOR = 255;
-  var MIN_SCORE = -2147483648;
-  var MAX_SCORE = 2147483647;
-  var MAX_BATCH = 100;
-  var MAX_BUFFER = 500; // drop oldest beyond this if the endpoint is unreachable
+  const MAX_URL = 2048;
+  const MAX_NAME = 120;
+  const MAX_TEXT = 255;
+  const MAX_SELECTOR = 255;
+  const MIN_SCORE = -2147483648;
+  const MAX_SCORE = 2147483647;
+  const MAX_BATCH = 100;
+  const MAX_BUFFER = 500; // drop oldest beyond this if the endpoint is unreachable
 
-  var buffer = [];
-  var flushTimer = null;
-  var FLUSH_MS = cfg.flush || 5000;
-  var HEARTBEAT_MS = cfg.heartbeat || 20000;
+  const buffer = [];
+  let flushTimer = null;
+  const FLUSH_MS = cfg.flush || 5000;
+  const HEARTBEAT_MS = cfg.heartbeat || 20000;
 
   function now() {
     return Date.now();
@@ -60,18 +60,18 @@
       return;
     }
 
-    var referrer = cap(document.referrer, MAX_URL) || null;
+    const referrer = cap(document.referrer, MAX_URL) || null;
 
     // Chunk into batches the server accepts (events max is MAX_BATCH).
     while (buffer.length) {
-      var chunk = buffer.splice(0, MAX_BATCH);
+      const chunk = buffer.splice(0, MAX_BATCH);
       send(JSON.stringify({ sent_at: now(), referrer: referrer, events: chunk }));
     }
   }
 
   function send(payload) {
     try {
-      var blob = new Blob([payload], { type: 'application/json' });
+      const blob = new Blob([payload], { type: 'application/json' });
       if (navigator.sendBeacon && navigator.sendBeacon(cfg.endpoint, blob)) {
         return;
       }
@@ -114,16 +114,16 @@
     if (raw == null || raw === '') {
       return null;
     }
-    var parsed = Number(raw);
+    const parsed = Number(raw);
     return Number.isInteger(parsed) && parsed >= MIN_SCORE && parsed <= MAX_SCORE ? parsed : null;
   }
 
   function readProps(data, props) {
-    for (var key in data) {
+    for (const key in data) {
       // data-track-prop-<name> -> dataset key trackProp<Name>; require the camel
       // boundary so data-track-property etc. don't over-match.
       if (key.indexOf('trackProp') === 0 && key.length > 9 && key.charAt(9) >= 'A' && key.charAt(9) <= 'Z') {
-        var prop = toSnake(key.charAt(9).toLowerCase() + key.slice(10));
+        const prop = toSnake(key.charAt(9).toLowerCase() + key.slice(10));
         props = props || {};
         if (!has(props, prop)) {
           props[prop] = data[key];
@@ -133,8 +133,8 @@
     return props;
   }
 
-  var ACTIONABLE_ROLES = { button: 1, link: 1, menuitem: 1, menuitemcheckbox: 1, menuitemradio: 1, tab: 1, option: 1, switch: 1 };
-  var ACTIONABLE_INPUTS = { submit: 1, button: 1, reset: 1, image: 1, checkbox: 1, radio: 1 };
+  const ACTIONABLE_ROLES = { button: 1, link: 1, menuitem: 1, menuitemcheckbox: 1, menuitemradio: 1, tab: 1, option: 1, switch: 1 };
+  const ACTIONABLE_INPUTS = { submit: 1, button: 1, reset: 1, image: 1, checkbox: 1, radio: 1 };
 
   /**
    * True only for elements a user meaningfully clicks to trigger something:
@@ -144,7 +144,7 @@
    * space is never recorded. A <form>'s data-track-event is for submit, not click.
    */
   function isActionable(el) {
-    var tag = el.tagName;
+    const tag = el.tagName;
 
     if (tag === 'A' || tag === 'BUTTON' || tag === 'SUMMARY') {
       return true;
@@ -173,13 +173,13 @@
    * ancestor. Stops (and ignores the click) on data-track-ignore.
    */
   function inspect(node) {
-    var name = null;
-    var label = null;
-    var value = null;
-    var section = null;
-    var props = null;
-    var actionable = null;
-    var el = node;
+    let name = null;
+    let label = null;
+    let value = null;
+    let section = null;
+    let props = null;
+    let actionable = null;
+    let el = node;
 
     while (el && el.nodeType === 1) {
       if (el.hasAttribute('data-track-ignore')) {
@@ -189,7 +189,7 @@
         actionable = el;
       }
 
-      var data = el.dataset || {};
+      const data = el.dataset || {};
       // data-track-event on a <form> is captured on submit, not on click.
       if (name === null && data.trackEvent && el.tagName !== 'FORM') {
         name = cap(data.trackEvent, MAX_NAME);
@@ -222,7 +222,7 @@
     if (el.id) {
       return ('#' + el.id).slice(0, MAX_SELECTOR);
     }
-    var selector = el.tagName.toLowerCase();
+    let selector = el.tagName.toLowerCase();
     if (typeof el.className === 'string' && el.className.trim()) {
       selector += '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.');
     }
@@ -230,7 +230,7 @@
   }
 
   function onClick(e) {
-    var node = e.target;
+    let node = e.target;
     if (!node || node.nodeType !== 1) {
       node = node && node.parentElement;
     }
@@ -238,14 +238,14 @@
       return;
     }
 
-    var found = inspect(node);
+    const found = inspect(node);
     if (found.ignored || !found.actionable) {
       // Only record clicks that land on a genuinely interactive element; a click
       // on plain text or empty space carries no analytics signal.
       return;
     }
 
-    var event = baseEvent('click');
+    const event = baseEvent('click');
     if (found.name) {
       event.name = found.name;
     }
@@ -259,28 +259,28 @@
     event.selector = selectorFor(found.actionable);
     // An explicit data-track-label wins; otherwise the element's own text
     // (textContent, not innerText, to avoid a synchronous layout reflow).
-    var text = found.label != null ? found.label : (found.actionable.textContent || '').trim();
+    const text = found.label != null ? found.label : (found.actionable.textContent || '').trim();
     event.text = text ? text.slice(0, MAX_TEXT) : null;
 
     queue(event);
   }
 
   function onSubmit(e) {
-    var form = e.target;
+    const form = e.target;
     if (!form || form.nodeType !== 1 || !form.dataset || !form.dataset.trackEvent) {
       return;
     }
 
-    var data = form.dataset;
-    var event = baseEvent('click');
+    const data = form.dataset;
+    const event = baseEvent('click');
     event.name = cap(data.trackEvent, MAX_NAME);
 
-    var score = scoreOf(data.trackValue);
+    const score = scoreOf(data.trackValue);
     if (score !== null) {
       event.value = score;
     }
 
-    var props = readProps(data, null);
+    const props = readProps(data, null);
     if (props) {
       event.props = props;
     }
