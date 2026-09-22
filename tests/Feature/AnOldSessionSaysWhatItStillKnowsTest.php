@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Tests\Feature;
 
 use Carbon\CarbonImmutable;
+use Falcon\Analytics\DTOs\Dashboard\Session\SessionDetail;
 use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Livewire\Admin\SessionDetailPage;
@@ -132,10 +133,12 @@ final class AnOldSessionSaysWhatItStillKnowsTest extends TestCase
          */
         $this->actingAs($this->anAdmin(), 'admin');
 
-        Livewire::test(SessionDetailPage::class, ['session' => $old])
-            ->assertViewHas('clicksCount', 3)
-            ->assertViewHas('eventsCount', 1)
-            ->assertViewHas('conversionsCount', 0);
+        $detail = Livewire::test(SessionDetailPage::class, ['session' => $old])->viewData('detail');
+
+        $this->assertInstanceOf(SessionDetail::class, $detail);
+        $this->assertSame(3, $detail->clicksCount);
+        $this->assertSame(1, $detail->eventsCount);
+        $this->assertSame(0, $detail->conversionsCount);
 
         $this->assertSame(2, $old->fresh()?->pageview_count);
     }
