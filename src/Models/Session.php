@@ -45,6 +45,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $subject_type
  * @property int|null $subject_id
  * @property int $pageview_count
+ * @property int $click_count
  * @property int $event_count
  * @property-read Visitor $visitor
  * @property-read Collection<int, Event> $events
@@ -98,6 +99,7 @@ final class Session extends Model
             'visitor_id' => 'integer',
             'subject_id' => 'integer',
             'pageview_count' => 'integer',
+            'click_count' => 'integer',
             'event_count' => 'integer',
         ];
     }
