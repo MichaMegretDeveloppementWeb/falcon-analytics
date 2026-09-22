@@ -133,6 +133,33 @@ final class MarketingPagesTest extends TestCase
         }
     }
 
+    /** A window's confirming button is disabled for the length of its call · a double click saves once. */
+    public function test_each_confirming_button_waits_for_its_own_call(): void
+    {
+        $campaign = $this->campaign('Été 2026');
+        $ad = Ad::create(['campaign_id' => $campaign->id, 'name' => 'Cabriolet', 'match_conditions' => [['param' => 'creative', 'value' => 'cabrio']]]);
+
+        $this->actingAs($this->admin, 'admin');
+
+        $screens = [
+            'the campaigns' => [route('analytics.admin.marketing.campaigns'), ['saveCampaign', 'deleteConfirmed']],
+            'a campaign' => [route('analytics.admin.marketing.campaigns.show', $campaign), ['saveCampaign', 'deleteCampaignConfirmed', 'saveAd', 'deleteAdConfirmed']],
+            'an ad' => [route('analytics.admin.marketing.ads.show', $ad), ['saveAd']],
+        ];
+
+        foreach ($screens as $screen => [$url, $calls]) {
+            $page = (string) $this->get($url)->assertSuccessful()->getContent();
+
+            foreach ($calls as $call) {
+                $this->assertStringContainsString(
+                    'wire:loading.attr="disabled" wire:target="'.$call.'"',
+                    $page,
+                    "On {$screen}, the button that calls {$call} stays clickable during the call.",
+                );
+            }
+        }
+    }
+
     /** Both objective lists of the ad form close on the escape key, and say whether they are open. */
     public function test_the_objective_lists_close_on_escape_and_say_whether_they_are_open(): void
     {

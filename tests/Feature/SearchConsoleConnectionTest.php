@@ -237,6 +237,7 @@ final class SearchConsoleConnectionTest extends TestCase
         $page = (string) $this->get(route('analytics.admin.integrations'))->assertSuccessful()->getContent();
 
         $this->assertMatchesRegularExpression('/role="dialog"[^>]*aria-labelledby="ui-modal-an-search-console-disconnect-title"/', $page);
+        $this->assertStringContainsString('wire:loading.attr="disabled" wire:target="disconnectConfirmed"', $page, 'The disconnection stays clickable during its call.');
     }
 
     public function test_it_renders_the_connect_button_when_configured_and_disconnected(): void
