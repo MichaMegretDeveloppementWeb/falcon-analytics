@@ -13,6 +13,7 @@ use Falcon\Analytics\Models\Session;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use LogicException;
 use stdClass;
 
 /**
@@ -52,25 +53,6 @@ final readonly class DailyCountArchiver
      * nothing · the nightly run comes later anyway.
      */
     private const GRACE_MINUTES = 60;
-
-    /**
-     * Summarise the days waiting for it, oldest first.
-     *
-     * @param  int|null  $limit  how many days at most · null takes them all,
-     *                           which is what a catch-up wants
-     * @return list<string> the days summarised, as Y-m-d
-     */
-    public function run(?int $limit = null): array
-    {
-        $done = [];
-
-        foreach ($this->pendingDays($limit) as $day) {
-            $this->archive($day);
-            $done[] = $day->toDateString();
-        }
-
-        return $done;
-    }
 
     /**
      * The closed days not yet summarised, oldest first.
@@ -113,24 +95,29 @@ final readonly class DailyCountArchiver
      * **Replacing rather than adding** is what lets it be run twice · the
      * scheduler, an administrator opening a screen and a hand-run command can
      * all land on the same day without inflating it.
+     *
+     * The replacement stands or falls whole, so it runs inside the caller's
+     * transaction and refuses to run without one.
      */
     public function archive(CarbonImmutable $day): void
     {
+        if (DB::transactionLevel() === 0) {
+            throw new LogicException(self::class.'::archive() replaces a whole day: call it inside the caller\'s transaction.');
+        }
+
         $start = $day->startOfDay();
         $end = $day->endOfDay();
 
-        DB::transaction(function () use ($day, $start, $end): void {
-            DailyCount::query()->where('day', $day->toDateString())->delete();
+        DailyCount::query()->where('day', $day->toDateString())->delete();
 
-            $this->write($day, DailyCount::KIND_PAGE, $this->pageRows($start, $end));
-            $this->write($day, DailyCount::KIND_CLICK, $this->clickRows($start, $end));
+        $this->write($day, DailyCount::KIND_PAGE, $this->pageRows($start, $end));
+        $this->write($day, DailyCount::KIND_CLICK, $this->clickRows($start, $end));
 
-            DailyArchive::query()->upsert(
-                [['day' => $day->toDateString(), 'archived_at' => CarbonImmutable::now()->toDateTimeString()]],
-                ['day'],
-                ['archived_at'],
-            );
-        });
+        DailyArchive::query()->upsert(
+            [['day' => $day->toDateString(), 'archived_at' => CarbonImmutable::now()->toDateTimeString()]],
+            ['day'],
+            ['archived_at'],
+        );
     }
 
     /** Whether a day has been summarised · what the purge asks before erasing. */

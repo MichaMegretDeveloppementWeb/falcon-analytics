@@ -17,12 +17,10 @@ final class PageUrl
 {
     public static function resolve(?string $route, ?string $url): string
     {
-        if ($url !== null && $url !== '') {
-            $path = parse_url($url, PHP_URL_PATH);
+        $path = StoredUrl::page($url);
 
-            if (is_string($path) && $path !== '') {
-                return $path;
-            }
+        if ($path !== null) {
+            return $path;
         }
 
         if ($route !== null && $route !== '') {

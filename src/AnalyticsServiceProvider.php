@@ -19,12 +19,14 @@ use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Http\Middleware\CatchesUpTheMaintenance;
 use Falcon\Analytics\Support\GeoResolver;
+use Falcon\Analytics\Support\PersistentMiddlewareResolver;
 use Falcon\Ui\AssetRegistry;
 use Falcon\Ui\Config\CompletesDefaults;
 use Falcon\Ui\View\Leaves;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Cookie\Middleware\EncryptCookies;
+use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
@@ -104,17 +106,27 @@ final class AnalyticsServiceProvider extends ServiceProvider
 
         $this->registerPersistentMiddleware();
         $this->exemptTheConsentCookie();
+        $this->registerComponents();
+        $this->registerCommands();
+        $this->scheduleMaintenance();
 
-        /*
-         * The components, under a single prefix and through two mechanisms.
-         *
-         * Laravel looks for a class first, and falls back on the anonymous view
-         * when there is none: `<x-analytics::page>` reaches the class,
-         * `<x-analytics::kpi-card>` the view.
-         *
-         * Page and root are classes because they open the kit's context before
-         * their slot, and a view can do nothing before it is rendered.
-         */
+        if ($this->app->runningInConsole()) {
+            $this->offerForPublication();
+        }
+    }
+
+    /**
+     * The components, under a single prefix and through two mechanisms, and
+     * the package's only directive.
+     *
+     * Laravel looks for a class first, and falls back on the anonymous view
+     * when there is none: `<x-analytics::page>` reaches the class,
+     * `<x-analytics::kpi-card>` the view. Page and root are classes because
+     * they open the kit's context before their slot, and a view can do nothing
+     * before it is rendered.
+     */
+    private function registerComponents(): void
+    {
         Blade::componentNamespace('Falcon\\Analytics\\View\\Components', 'analytics');
         Blade::anonymousComponentNamespace('analytics::components', 'analytics');
 
@@ -156,13 +168,18 @@ final class AnalyticsServiceProvider extends ServiceProvider
          * classes live elsewhere, hence this declaration.
          */
         Livewire::addNamespace('analytics', classNamespace: 'Falcon\\Analytics\\Livewire');
+    }
 
-        // Registered OUTSIDE any runningInConsole() guard on purpose: shared
-        // hosts often trigger the scheduler through an HTTP endpoint calling
-        // Artisan::call('schedule:run'), where runningInConsole() is false. A
-        // console-only guard would silently unregister every command and every
-        // schedule below in that setup. commands() only queues an
-        // Artisan::starting callback, so ordinary HTTP requests pay nothing.
+    /**
+     * The commands, registered outside any runningInConsole() guard: shared
+     * hosts often trigger the scheduler through an HTTP endpoint calling
+     * Artisan::call('schedule:run'), where runningInConsole() is false, and a
+     * console-only guard would silently unregister every command in that
+     * setup. commands() only queues an Artisan::starting callback, so ordinary
+     * HTTP requests pay nothing.
+     */
+    private function registerCommands(): void
+    {
         $this->commands([
             InstallCommand::class,
             CheckCommand::class,
@@ -176,11 +193,16 @@ final class AnalyticsServiceProvider extends ServiceProvider
             CheckEventsCommand::class,
             SyncSearchConsoleCommand::class,
         ]);
+    }
 
-        // Self-schedule maintenance so a host only needs to trigger the
-        // standard scheduler (real cron or HTTP-called schedule:run), never a
-        // dedicated analytics cron. Lazily bound: the events register when the
-        // Schedule is actually resolved, i.e. only inside scheduler runs.
+    /**
+     * Self-schedule maintenance so a host only needs to trigger the standard
+     * scheduler (real cron or HTTP-called schedule:run), never a dedicated
+     * analytics cron. Lazily bound: the events register when the Schedule is
+     * actually resolved, i.e. only inside scheduler runs.
+     */
+    private function scheduleMaintenance(): void
+    {
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             // Close idle sessions on a fixed cadence.
             $schedule->command('analytics:sweep')->everyFiveMinutes()->withoutOverlapping();
@@ -207,24 +229,24 @@ final class AnalyticsServiceProvider extends ServiceProvider
                 ->dailyAt('05:00')
                 ->withoutOverlapping();
         });
+    }
 
-        if ($this->app->runningInConsole()) {
-            $this->publishes([
-                __DIR__.'/../config/analytics.php' => config_path('analytics.php'),
-            ], 'analytics-config');
+    /**
+     * The configuration, and the compiled files under two names ·
+     * `laravel-assets` is the one a deployment forces in every release,
+     * `analytics-assets` is for taking these and nothing else. The package
+     * compiles and ships compiled files; the host publishes and serves them,
+     * with no Node and no build of its own.
+     */
+    private function offerForPublication(): void
+    {
+        $this->publishes([
+            __DIR__.'/../config/analytics.php' => config_path('analytics.php'),
+        ], 'analytics-config');
 
-            /*
-             * The compiled files, under two names. `laravel-assets` is the one
-             * a deployment forces in every release; `analytics-assets` is for
-             * taking these and nothing else.
-             *
-             * The package compiles and ships compiled files; the host publishes
-             * and serves them, with no Node and no build of its own.
-             */
-            $this->publishes([
-                __DIR__.'/../public' => public_path($this->publicDirectory().'/analytics'),
-            ], ['analytics-assets', 'laravel-assets']);
-        }
+        $this->publishes([
+            __DIR__.'/../public' => public_path($this->publicDirectory().'/analytics'),
+        ], ['analytics-assets', 'laravel-assets']);
     }
 
     /**
@@ -366,23 +388,30 @@ final class AnalyticsServiceProvider extends ServiceProvider
     /**
      * Replay the host's administration middleware on every Livewire component
      * update (/livewire/update). Livewire only re-runs middleware registered as
-     * persistent, so without this a signed component snapshot from a formerly
-     * authorized session could keep triggering actions (GDPR erasure, campaign
-     * CRUD) after the host middleware would deny the page. The 'web' stack is
-     * excluded: Livewire already runs it on updates.
+     * persistent, and compares them by class, so without this a signed
+     * component snapshot from a formerly authorized session could keep
+     * triggering actions (GDPR erasure, campaign CRUD) after the host
+     * middleware would deny the page.
      */
     private function registerPersistentMiddleware(): void
     {
-        $middleware = array_values(array_unique(array_filter(
+        $configured = array_values(array_filter(
             [
                 ...(array) config('analytics.admin.middleware', []),
                 ...(array) config('analytics.admin.marketing.middleware', []),
             ],
-            fn (mixed $entry): bool => is_string($entry) && $entry !== '' && $entry !== 'web',
-        )));
+            fn (mixed $entry): bool => is_string($entry),
+        ));
 
-        if ($middleware !== []) {
-            Livewire::addPersistentMiddleware($middleware);
+        $router = $this->app->make(Router::class);
+
+        $resolved = (new PersistentMiddlewareResolver(
+            aliases: $router->getMiddleware(),
+            groups: $router->getMiddlewareGroups(),
+        ))->resolve($configured);
+
+        if ($resolved !== []) {
+            Livewire::addPersistentMiddleware($resolved);
         }
     }
 }

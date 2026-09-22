@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Console;
 
-use Falcon\Analytics\Services\Maintenance;
+use Falcon\Analytics\Actions\ArchiveClosedDaysAction;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -25,13 +25,13 @@ final class ArchiveCommand extends Command
 
     protected $description = 'Résume les jours clos, pour que la purge puisse effacer leur détail sans perte.';
 
-    public function handle(Maintenance $maintenance): int
+    public function handle(ArchiveClosedDaysAction $archive): int
     {
         $limit = $this->option('days');
         $limit = is_string($limit) && $limit !== '' ? max(1, (int) $limit) : null;
 
         try {
-            $days = $maintenance->archive($limit);
+            $days = $archive->execute($limit);
         } catch (Throwable $e) {
             Log::channel(config('analytics.log_channel'))->error('Analytics archive failed.', ['exception' => $e]);
             $this->components->error('Le résumé a échoué ; voyez le canal de journal de l’analytique.');

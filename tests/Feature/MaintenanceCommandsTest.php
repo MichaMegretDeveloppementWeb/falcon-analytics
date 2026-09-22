@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Tests\Feature;
 
 use Carbon\CarbonImmutable;
+use Falcon\Analytics\Actions\ArchiveClosedDaysAction;
 use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
-use Falcon\Analytics\Services\DailyCountArchiver;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -35,7 +35,7 @@ final class MaintenanceCommandsTest extends TestCase
     /** Marks every day up to yesterday as summarised, so the purge may proceed. */
     private function everythingIsArchived(): void
     {
-        app(DailyCountArchiver::class)->run();
+        app(ArchiveClosedDaysAction::class)->execute();
     }
 
     public function test_it_erases_anonymous_views_past_the_window_and_keeps_recent_ones(): void

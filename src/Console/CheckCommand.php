@@ -354,50 +354,7 @@ final class CheckCommand extends Command
      */
     private function checkCollector(): array
     {
-        $paths = [resource_path('views')];
-        $finder = View::getFinder();
-
-        // `getPaths()` belongs to the file finder and not to the interface: a
-        // host wiring another one keeps the standard folder read above, and
-        // loses only its extra locations.
-        if ($finder instanceof FileViewFinder) {
-            foreach ($finder->getPaths() as $path) {
-                if (! str_contains(str_replace('\\', '/', $path), '/vendor/')) {
-                    $paths[] = $path;
-                }
-            }
-        }
-
-        // The name the directive carried until the collector became a compiled
-        // file of its own. Worth naming separately, because Blade does not
-        // treat an unknown directive as an error: it copies it to the output as
-        // it stands. A host left on the old name therefore shows the raw text
-        // `@analyticsConfig` to its visitors, and the generic message below
-        // would send it looking for something that is right there.
-        $staleDirective = null;
-        $found = false;
-
-        // Every file is read even once the directive is found, and that is the
-        // point: a host halfway through the rename has one layout on each name,
-        // and stopping at the first hit would report a sound installation while
-        // one of its pages prints the old directive to visitors.
-        foreach (array_unique($paths) as $path) {
-            if (! File::isDirectory($path)) {
-                continue;
-            }
-
-            foreach (File::allFiles($path) as $file) {
-                $contents = File::get($file->getPathname());
-
-                $found = $found || str_contains($contents, '@analyticsCollector');
-
-                if ($staleDirective === null && str_contains($contents, '@analyticsConfig')) {
-                    // Slashes, on every platform: this path is read by a human
-                    // and quoted in the documentation, not handed to the disk.
-                    $staleDirective = str_replace('\\', '/', $file->getRelativePathname());
-                }
-            }
-        }
+        ['found' => $found, 'stale' => $staleDirective] = $this->collectorDirectivesIn($this->hostViewPaths());
 
         if ($staleDirective !== null) {
             return [
@@ -420,6 +377,65 @@ final class CheckCommand extends Command
             .'Posez la directive dans le gabarit de votre site public, à l’endroit qui vous arrange : '
             .'le script est différé, donc sa place dans la page ne change rien.',
         ];
+    }
+
+    /**
+     * The host's view folders · the standard one, then every other location
+     * the file finder knows outside `vendor/`. A host wiring another finder
+     * keeps the standard folder and loses only its extra locations.
+     *
+     * @return list<string>
+     */
+    private function hostViewPaths(): array
+    {
+        $paths = [resource_path('views')];
+        $finder = View::getFinder();
+
+        if ($finder instanceof FileViewFinder) {
+            foreach ($finder->getPaths() as $path) {
+                if (! str_contains(str_replace('\\', '/', $path), '/vendor/')) {
+                    $paths[] = $path;
+                }
+            }
+        }
+
+        return array_values(array_unique($paths));
+    }
+
+    /**
+     * Whether a view carries the directive, and the first one still on its old
+     * name, `@analyticsConfig`, as a relative path with forward slashes.
+     *
+     * Blade copies an unknown directive to the output as it stands, so a view
+     * left on the old name prints it to visitors. Every file is read even once
+     * the directive is found · a host halfway through the rename has one layout
+     * on each name.
+     *
+     * @param  list<string>  $paths
+     * @return array{found: bool, stale: ?string}
+     */
+    private function collectorDirectivesIn(array $paths): array
+    {
+        $found = false;
+        $stale = null;
+
+        foreach ($paths as $path) {
+            if (! File::isDirectory($path)) {
+                continue;
+            }
+
+            foreach (File::allFiles($path) as $file) {
+                $contents = File::get($file->getPathname());
+
+                $found = $found || str_contains($contents, '@analyticsCollector');
+
+                if ($stale === null && str_contains($contents, '@analyticsConfig')) {
+                    $stale = str_replace('\\', '/', $file->getRelativePathname());
+                }
+            }
+        }
+
+        return ['found' => $found, 'stale' => $stale];
     }
 
     /**
@@ -584,17 +600,7 @@ final class CheckCommand extends Command
      */
     private function checkIdentity(Config $config): array
     {
-        $declared = array_keys((array) $config->get('auth.guards', []));
-
-        $unknown = [];
-
-        foreach (['subject_guards', 'exclude_guards'] as $key) {
-            foreach ((array) $config->get("analytics.identity.{$key}", []) as $guard) {
-                if (is_string($guard) && ! in_array($guard, $declared, true)) {
-                    $unknown[] = "{$guard} ({$key})";
-                }
-            }
-        }
+        $unknown = $this->guardsThatDoNotExist($config);
 
         if ($unknown !== []) {
             return [
@@ -623,6 +629,28 @@ final class CheckCommand extends Command
         }
 
         return ['Identité', 'OK', 'Guards et colonnes de nom vérifiés : '.implode(', ', array_map('strval', $subjects)).'.'];
+    }
+
+    /**
+     * The guards the identity block names that `auth.guards` does not declare,
+     * each followed by the key that names it.
+     *
+     * @return list<string>
+     */
+    private function guardsThatDoNotExist(Config $config): array
+    {
+        $declared = array_keys((array) $config->get('auth.guards', []));
+        $unknown = [];
+
+        foreach (['subject_guards', 'exclude_guards'] as $key) {
+            foreach ((array) $config->get("analytics.identity.{$key}", []) as $guard) {
+                if (is_string($guard) && ! in_array($guard, $declared, true)) {
+                    $unknown[] = "{$guard} ({$key})";
+                }
+            }
+        }
+
+        return $unknown;
     }
 
     /**

@@ -11,18 +11,17 @@ use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Repositories\EventWriteRepository;
 
 /**
- * Summarising and erasing, in one place, so the two ways in are one way.
+ * The erasing, in one place, so its two ways in are one way.
  *
  * The scheduler is the normal path. Opening a screen is the other, because a
- * scheduler on shared hosting stops without a word. **Both land here**, and the
- * commands are thin wrappers that only turn this into sentences.
+ * scheduler on shared hosting stops without a word. **Both land here**, right
+ * after `ArchiveClosedDaysAction`, and the command is a thin wrapper that only
+ * turns this into sentences.
  *
- * **It was Artisan::call from the middleware at first, and that was wrong.**
- * Booting the console kernel inside a web request's `terminate()` disturbed the
- * session store: its handler lost the request it had been given, and the
- * session save that follows fails — on the Search Console screens, which use
- * the session heavily. Nothing about analytics, everything about calling a
- * console from a request.
+ * **Neither way goes through the console.** Booting the console kernel inside a
+ * web request's `terminate()` disturbs the session store: its handler loses the
+ * request it was given, and the session save that follows fails. Nothing about
+ * analytics, everything about calling a console from a request.
  *
  * @internal
  */
@@ -33,17 +32,6 @@ final readonly class Maintenance
         private EventWriteRepository $events,
         private FunnelRegistry $funnels,
     ) {}
-
-    /**
-     * Summarise the closed days waiting for it.
-     *
-     * @param  int|null  $limit  days at most · null takes them all
-     * @return list<string> the days summarised, as Y-m-d
-     */
-    public function archive(?int $limit = null): array
-    {
-        return $this->archiver->run($limit);
-    }
 
     /**
      * Erase the anonymous page views and clicks past the retention window.

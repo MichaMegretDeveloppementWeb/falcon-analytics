@@ -73,7 +73,14 @@ architecture qui n'existe plus.
   erreurs, et met le curseur sur le premier champ refusé. La touche Entrée
   enregistre comme le bouton. Son bouton reste désactivé pendant l'appel, donc un double clic
   n'enregistre qu'une fois. Les deux listes d'objectifs d'une pub se ferment à l'échappement de
-  même, et disent si elles sont ouvertes. **Rien à faire pour cela.**
+  même, et disent si elles sont ouvertes. **Rien à faire pour cela** ;
+- **une protection rejouée à chaque clic** · le middleware que vous nommez pour
+  les écrans, qu'il soit une classe, un alias ou un groupe, protège chaque
+  action d'un écran et pas seulement son ouverture. La pile de session n'est
+  jamais rejouée une seconde fois ;
+- **une personne, un profil** · quand un visiteur se connecte depuis un second
+  appareil, ses deux profils se fondent avec leurs sessions **en une seule
+  fois** · une fusion ne reste jamais à moitié faite.
 
 ### Ce que l'intégrateur a à faire
 

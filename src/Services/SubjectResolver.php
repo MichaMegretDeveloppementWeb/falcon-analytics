@@ -94,27 +94,13 @@ final class SubjectResolver
             static fn (int $id): bool => $id > 0,
         )));
 
-        if ($ids === []) {
-            return [];
-        }
-
-        $config = config("analytics.identity.subjects.{$guard}");
-        $config = is_array($config) ? $config : [];
-
-        $columns = $this->columns($config['name'] ?? []);
-        $fallback = $this->columns($config['fallback'] ?? []);
-
-        if ($columns === [] && $fallback === []) {
-            return [];
-        }
-
-        $source = $this->source($guard, $config);
+        $source = $ids === [] ? null : $this->nameSource($guard);
 
         if ($source === null) {
             return [];
         }
 
-        [$table, $key] = $source;
+        ['table' => $table, 'key' => $key, 'columns' => $columns, 'fallback' => $fallback] = $source;
 
         $rows = $this->subjects->rows($table, $key, $ids, array_values(array_unique([$key, ...$columns, ...$fallback])));
 
@@ -128,6 +114,30 @@ final class SubjectResolver
         }
 
         return $names;
+    }
+
+    /**
+     * Where a guard's names are read · its table and key, the columns that make
+     * up a name and those that stand in for one · null when the configuration
+     * names nothing readable.
+     *
+     * @return array{table: string, key: string, columns: list<string>, fallback: list<string>}|null
+     */
+    private function nameSource(string $guard): ?array
+    {
+        $config = config("analytics.identity.subjects.{$guard}");
+        $config = is_array($config) ? $config : [];
+
+        $columns = $this->columns($config['name'] ?? []);
+        $fallback = $this->columns($config['fallback'] ?? []);
+
+        $source = $columns === [] && $fallback === [] ? null : $this->source($guard, $config);
+
+        if ($source === null) {
+            return null;
+        }
+
+        return ['table' => $source[0], 'key' => $source[1], 'columns' => $columns, 'fallback' => $fallback];
     }
 
     /**

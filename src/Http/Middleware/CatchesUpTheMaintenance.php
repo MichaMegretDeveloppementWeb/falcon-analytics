@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Http\Middleware;
 
 use Closure;
+use Falcon\Analytics\Actions\ArchiveClosedDaysAction;
 use Falcon\Analytics\Services\Maintenance;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -29,10 +30,10 @@ use Throwable;
  * answer these differently, and a value that suits nobody is a defect to fix
  * rather than a question to ask of every project.
  *
- * **It does the same thing the scheduler does**, through the same service, and
- * that is deliberate rather than convenient: a second path with its own logic
- * would be a second set of guards to keep in step, and the one that runs least
- * often is the one that would rot.
+ * **It does the same thing the scheduler does**, through the same action and
+ * service, and that is deliberate rather than convenient: a second path with
+ * its own logic would be a second set of guards to keep in step, and the one
+ * that runs least often is the one that would rot.
  *
  * Four things keep it from being felt ·
  *
@@ -105,9 +106,8 @@ final class CatchesUpTheMaintenance
              * Console essays fell on it. Nothing about analytics, everything
              * about calling a console from a request.
              */
-            $maintenance = app(Maintenance::class);
-            $maintenance->archive($days);
-            $maintenance->prune();
+            app(ArchiveClosedDaysAction::class)->execute($days);
+            app(Maintenance::class)->prune();
         });
     }
 }

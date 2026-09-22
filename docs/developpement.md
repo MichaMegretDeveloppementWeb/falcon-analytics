@@ -171,7 +171,7 @@ n'a pas de Node.
 
 ## L'organisation du domaine
 
-162 classes, dont **16 publiques** · le reste porte `@internal`, et
+169 classes, dont **16 publiques** · le reste porte `@internal`, et
 `TheSurfaceIsDeclaredTest` refuse que cette frontière bouge sans qu'on le dise.
 La liste tient dans ce fichier d'essai, qui est l'endroit où la lire.
 
@@ -220,7 +220,8 @@ d'une session ; les événements **nommés** sont rares et portent l'écran des
 ```
 DailyCountArchiver         résume un jour clos · avance depuis le dernier traité
         ↓
-Maintenance                la décision, partagée par les deux chemins
+ArchiveClosedDaysAction    les jours en attente, une transaction par jour
+Maintenance                l'effacement, et le refus d'un jour non résumé
         ↓                              ↑
 ArchiveCommand · PruneCommand    CatchesUpTheMaintenance (au chargement d'un écran)
 ```
