@@ -1,7 +1,7 @@
 @props(['uuid' => ''])
 
 {{-- A visitor's identifier in a list line · its first characters, and the whole of it handed to the list's copy behaviour. --}}
-<span class="an:inline-flex an:items-center an:gap-1"><span class="an:font-mono">{{ substr((string) $uuid, 0, 8) }}</span><button
+<span class="an:inline-flex an:items-center an:gap-1">{{ substr((string) $uuid, 0, 8) }}<button
     type="button"
     x-on:click="copy(@js((string) $uuid))"
     title="{{ __('Copier l\'identifiant') }}"

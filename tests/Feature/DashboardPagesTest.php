@@ -230,7 +230,7 @@ final class DashboardPagesTest extends TestCase
             ->get(route($list))
             ->assertSuccessful()
             ->assertSee('x-data="anCopyList"', false)
-            ->assertSee('<span class="an:font-mono">'.substr($uuid, 0, 8).'</span>', false)
+            ->assertSee('an:gap-1">'.substr($uuid, 0, 8).'<button', false)
             ->assertSee("copy('{$uuid}')", false)
             ->assertDontSeeText(substr($uuid, 0, 9));
     }
