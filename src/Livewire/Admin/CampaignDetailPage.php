@@ -6,12 +6,14 @@ namespace Falcon\Analytics\Livewire\Admin;
 
 use Falcon\Analytics\Actions\DeleteAdAction;
 use Falcon\Analytics\Actions\DeleteCampaignAction;
+use Falcon\Analytics\DTOs\Dashboard\Marketing\CampaignDetail;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Models\Ad;
 use Falcon\Analytics\Models\Campaign;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Log;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 use Throwable;
 
@@ -25,7 +27,8 @@ use Throwable;
  */
 final class CampaignDetailPage extends DashboardComponent
 {
-    public Campaign $campaign;
+    #[Locked]
+    public int $campaignId;
 
     public ?int $deleteAdId = null;
 
@@ -43,30 +46,28 @@ final class CampaignDetailPage extends DashboardComponent
     /** @var array<int, int> */
     public array $adConversions = [];
 
+    /** The campaign as this request read it · kept for the request, never between two. */
+    private ?Campaign $read = null;
+
     public function mount(Campaign $campaign): void
     {
-        $this->campaign = $campaign;
+        $this->campaignId = $campaign->id;
+        $this->read = $campaign;
     }
 
-    /** Reads the campaign again once its form has written to it. */
+    /** Draws the page again once one of its forms has written · the render reads it afresh. */
     #[On('an-campaigns-changed')]
-    public function refreshCampaign(): void
-    {
-        $this->campaign->refresh();
-    }
-
-    /** Draws the ads again once their form has written to one · the render reads them afresh. */
     #[On('an-ads-changed')]
-    public function refreshAds(): void {}
+    public function refresh(): void {}
 
     /** Whether the campaign was deleted · on a yes the page leads back to the list. */
     public function deleteCampaignConfirmed(DeleteCampaignAction $action): bool
     {
         try {
-            $action->execute($this->campaign->id);
+            $action->execute($this->campaignId);
         } catch (Throwable $e) {
             Log::channel(config('analytics.log_channel'))->error('Campaign.delete_failed', [
-                'campaign_id' => $this->campaign->id,
+                'campaign_id' => $this->campaignId,
                 'exception' => $e,
             ]);
             $this->dispatch('ui-toast', type: 'danger', title: __('La suppression de la campagne a échoué. Réessayez.'));
@@ -82,7 +83,7 @@ final class CampaignDetailPage extends DashboardComponent
     /** Whether there is an ad of this campaign to ask about · the confirmation opens on a yes. */
     public function confirmDeleteAd(int $id): bool
     {
-        $name = Ad::query()->where('campaign_id', $this->campaign->id)->whereKey($id)->value('name');
+        $name = Ad::query()->where('campaign_id', $this->campaignId)->whereKey($id)->value('name');
 
         if (! is_string($name)) {
             $this->dispatch('ui-toast', type: 'danger', title: __('Cette pub est introuvable. Actualisez la page.'));
@@ -104,7 +105,7 @@ final class CampaignDetailPage extends DashboardComponent
         }
 
         try {
-            $action->execute($this->deleteAdId, $this->campaign->id);
+            $action->execute($this->deleteAdId, $this->campaignId);
         } catch (Throwable $e) {
             Log::channel(config('analytics.log_channel'))->error('Ad.delete_failed', [
                 'ad_id' => $this->deleteAdId,
@@ -133,11 +134,12 @@ final class CampaignDetailPage extends DashboardComponent
     {
         return $this->guardedRender(
             function () use ($funnels, $events): array {
-                $campaignAds = $this->campaign->ads()->with('objectives')->orderBy('name')->get();
+                $campaign = $this->read ??= Campaign::query()->findOrFail($this->campaignId);
 
                 return [
+                    'detail' => CampaignDetail::of($campaign),
                     'range' => $this->currentPeriod(),
-                    'ads' => $campaignAds,
+                    'ads' => $campaign->ads()->with('objectives')->orderBy('name')->get(),
                     'objectiveLabels' => $this->objectiveLabels($funnels, $events),
                     ...$this->filterData(),
                 ];
