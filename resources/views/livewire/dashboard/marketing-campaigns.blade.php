@@ -2,7 +2,7 @@
 
     <x-ui::page-header
         :title="__('Campagnes')"
-        :description="$total <= 1 ? __(':count campagne', ['count' => $total]) : __(':count campagnes', ['count' => number_format($total, 0, ',', ' ')])">
+        :description="$total <= 1 ? __(':count campagne', ['count' => $total]) : __(':count campagnes', ['count' => \Falcon\Analytics\Support\NumberLabel::for($total)])">
         <x-ui::button x-on:click="$anOpenWhenDone($wire.$refs.campaignForm.$wire.editCampaign(), 'an-campaign-form')"><x-ui::icon name="plus" class="an:h-4 an:w-4" /> {{ __('Nouvelle campagne') }}</x-ui::button>
     </x-ui::page-header>
 

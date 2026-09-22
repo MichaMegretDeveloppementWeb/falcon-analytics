@@ -1,6 +1,7 @@
 @php
     use Falcon\Analytics\Support\DeviceLabel;
     use Falcon\Analytics\Support\DurationLabel;
+    use Falcon\Analytics\Support\NumberLabel;
 @endphp
 
 <x-analytics::root area="admin" class="an:space-y-6">
@@ -51,7 +52,7 @@
                         @foreach ($detail->devices as $share)
                             <div class="an:flex an:items-center an:justify-between an:gap-2">
                                 <span class="an:flex an:items-center an:gap-2 an:text-[13px] an:text-secondary"><span class="an:h-2 an:w-2 an:rounded-full" style="background:var({{ $share->color }})"></span>{{ $share->label }}</span>
-                                <span class="an:text-[13px]"><span class="an:font-semibold an:text-primary">{{ $share->percent."\u{00A0}%" }}</span> <span class="an:text-muted">{{ $share->sessions }}</span></span>
+                                <span class="an:text-[13px]"><span class="an:font-semibold an:text-primary">{{ NumberLabel::percent($share->percent) }}</span> <span class="an:text-muted">{{ $share->sessions }}</span></span>
                             </div>
                         @endforeach
                     </div>
@@ -69,7 +70,7 @@
                         <div>
                             <div class="an:mb-1 an:flex an:items-center an:justify-between an:text-[13px]">
                                 <span class="an:text-secondary"><x-analytics::source :value="$share->source" /></span>
-                                <span><span class="an:font-semibold an:text-primary">{{ $share->percent."\u{00A0}%" }}</span> <span class="an:text-muted">{{ $share->sessions }}</span></span>
+                                <span><span class="an:font-semibold an:text-primary">{{ NumberLabel::percent($share->percent) }}</span> <span class="an:text-muted">{{ $share->sessions }}</span></span>
                             </div>
                             <div class="an:h-1 an:w-full an:overflow-hidden an:rounded-full an:bg-elevated">
                                 <div class="an:h-full an:rounded-full an:bg-series-1/70" style="width: {{ $share->percent }}%"></div>

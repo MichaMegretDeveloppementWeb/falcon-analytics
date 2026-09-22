@@ -9,6 +9,7 @@ use Falcon\Analytics\Models\SearchConsoleConnection;
 use Falcon\Analytics\Services\SearchConsole\SearchConsoleAuth;
 use Falcon\Analytics\Services\SearchConsole\SearchConsoleClient;
 use Falcon\Analytics\Services\SearchConsole\SearchConsoleSynchronizer;
+use Falcon\Analytics\Support\NumberLabel;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Log;
 use Livewire\Component;
@@ -106,7 +107,7 @@ final class IntegrationsPage extends Component
             return;
         }
 
-        $this->dispatch('ui-toast', type: 'success', title: __(':count lignes synchronisées depuis Search Console.', ['count' => number_format($count, 0, ',', ' ')]));
+        $this->dispatch('ui-toast', type: 'success', title: __(':count lignes synchronisées depuis Search Console.', ['count' => NumberLabel::for($count)]));
     }
 
     /** Whether Search Console was disconnected · the confirmation closes on a yes. */

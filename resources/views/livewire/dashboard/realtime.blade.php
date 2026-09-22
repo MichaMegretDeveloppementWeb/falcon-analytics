@@ -1,6 +1,7 @@
 @php
     use Falcon\Analytics\Enums\EventType;
     use Falcon\Analytics\Support\DeviceLabel;
+    use Falcon\Analytics\Support\NumberLabel;
 
     $subjectResolver = app(\Falcon\Analytics\Services\SubjectResolver::class);
 
@@ -58,7 +59,7 @@
                             {{-- `window` is a tab name, not a class; the other two are. --}}
                             :class="tab === 'window' ? 'an:border-accent' : 'an:border-transparent'">
                         <span class="an:block an:text-[14px] an:font-medium {{ $ink }}">{{ __('Visiteurs (:count dernières minutes)', ['count' => $windowMinutes]) }}</span>
-                        <span class="an:mt-0.5 an:block an:text-[21px] an:font-bold an:leading-6 {{ $ink }}">{{ number_format($window['visitors'], 0, ',', ' ') }}</span>
+                        <span class="an:mt-0.5 an:block an:text-[21px] an:font-bold an:leading-6 {{ $ink }}">{{ NumberLabel::for($window['visitors']) }}</span>
                     </button>
                     <button type="button"
                             @click="choose('online')"
@@ -66,7 +67,7 @@
                             :class="tab === 'online' ? 'an:border-accent' : 'an:border-transparent'">
                         <span class="an:block an:text-[14px] an:font-medium {{ $ink }}">{{ __('Visiteurs en ligne') }}</span>
                         <span class="an:mt-0.5 an:flex an:items-center an:gap-x-2 an:text-[21px] an:font-bold an:leading-6 {{ $ink }}">
-                            {{ number_format($onlineCount, 0, ',', ' ') }}
+                            {{ NumberLabel::for($onlineCount) }}
                             <span class="an:h-2.5 an:w-2.5 an:rounded-full an:bg-online an:ring-4 an:ring-online/20"></span>
                         </span>
                     </button>
@@ -91,7 +92,7 @@
                             @forelse ($countries as $row)
                                 <div class="an:flex an:items-center an:justify-between an:gap-2" wire:key="rt-country-{{ $row['country'] ?? 'xx' }}">
                                     <span class="an:min-w-0 an:truncate an:text-[14px] an:font-medium {{ $ink }}"><x-analytics::country :code="$row['country']" /></span>
-                                    <span class="an:shrink-0 an:text-[14px] an:font-medium {{ $ink }}">{{ number_format($row['total'], 0, ',', ' ') }}</span>
+                                    <span class="an:shrink-0 an:text-[14px] an:font-medium {{ $ink }}">{{ NumberLabel::for($row['total']) }}</span>
                                 </div>
                             @empty
                                 <p class="an:py-4 an:text-[13px] {{ $inkSoft }}">{{ __('Aucun visiteur localisé sur la fenêtre.') }}</p>
@@ -102,7 +103,7 @@
                             @forelse ($countriesOnline as $row)
                                 <div class="an:flex an:items-center an:justify-between an:gap-2" wire:key="rt-country-online-{{ $row['country'] ?? 'xx' }}">
                                     <span class="an:min-w-0 an:truncate an:text-[14px] an:font-medium {{ $ink }}"><x-analytics::country :code="$row['country']" /></span>
-                                    <span class="an:shrink-0 an:text-[14px] an:font-medium {{ $ink }}">{{ number_format($row['online'], 0, ',', ' ') }}</span>
+                                    <span class="an:shrink-0 an:text-[14px] an:font-medium {{ $ink }}">{{ NumberLabel::for($row['online']) }}</span>
                                 </div>
                             @empty
                                 <p class="an:py-4 an:text-[13px] {{ $inkSoft }}">{{ __('Personne en ligne actuellement.') }}</p>
@@ -123,7 +124,7 @@
                                     :labels="$sources['labels']"
                                     :values="$sources['values']"
                                     :colors="$sources['colors']"
-                                    :total="number_format($sources['count'], 0, ',', ' ')"
+                                    :total="NumberLabel::for($sources['count'])"
                                     :caption="$sources['count'] > 1 ? __('sources') : __('source')"
                                     size="an:h-24 an:w-24"
                                     channel="sources" />
@@ -131,7 +132,7 @@
                                     @foreach ($sources['labels'] as $index => $label)
                                         <div wire:key="rt-source-{{ $label }}">
                                             <span class="an:flex an:items-center an:gap-2 an:text-[13px] {{ $inkSoft }}"><span class="an:h-2 an:w-2 an:shrink-0 an:rounded-full" style="background:{{ $sources['colors'][$index] }}"></span>{{ $label }}</span>
-                                            <span class="an:block an:pl-4 an:text-[13px]"><span class="an:font-bold {{ $ink }}">{{ ((int) round($sources['values'][$index] / $sources['total'] * 100)) }}%</span> <span class="{{ $inkMuted }}">· {{ number_format($sources['values'][$index], 0, ',', ' ') }}</span></span>
+                                            <span class="an:block an:pl-4 an:text-[13px]"><span class="an:font-bold {{ $ink }}">{{ NumberLabel::percent($sources['values'][$index] / $sources['total'] * 100) }}</span> <span class="{{ $inkMuted }}">· {{ NumberLabel::for($sources['values'][$index]) }}</span></span>
                                         </div>
                                     @endforeach
                                 </div>
@@ -148,7 +149,7 @@
                                     :labels="$devices['labels']"
                                     :values="$devices['values']"
                                     :colors="$devices['colors']"
-                                    :total="number_format($devices['count'], 0, ',', ' ')"
+                                    :total="NumberLabel::for($devices['count'])"
                                     :caption="$devices['count'] > 1 ? __('types') : __('type')"
                                     size="an:h-24 an:w-24"
                                     channel="devices" />
@@ -156,7 +157,7 @@
                                     @foreach ($devices['labels'] as $index => $label)
                                         <div wire:key="rt-device-{{ $label }}">
                                             <span class="an:flex an:items-center an:gap-2 an:text-[13px] {{ $inkSoft }}"><span class="an:h-2 an:w-2 an:shrink-0 an:rounded-full" style="background:{{ $devices['colors'][$index] }}"></span>{{ $label }}</span>
-                                            <span class="an:block an:pl-4 an:text-[13px]"><span class="an:font-bold {{ $ink }}">{{ ((int) round($devices['values'][$index] / $devices['total'] * 100)) }}%</span> <span class="{{ $inkMuted }}">· {{ number_format($devices['values'][$index], 0, ',', ' ') }}</span></span>
+                                            <span class="an:block an:pl-4 an:text-[13px]"><span class="an:font-bold {{ $ink }}">{{ NumberLabel::percent($devices['values'][$index] / $devices['total'] * 100) }}</span> <span class="{{ $inkMuted }}">· {{ NumberLabel::for($devices['values'][$index]) }}</span></span>
                                         </div>
                                     @endforeach
                                 </div>
@@ -180,7 +181,7 @@
                                 <div class="an:relative an:hidden an:h-1.5 an:flex-1 an:overflow-hidden an:rounded-full an:bg-elevated an:sm:block">
                                     <div class="an:absolute an:inset-y-0 an:left-0 an:rounded-full an:bg-accent/70" style="width: {{ $pct }}%"></div>
                                 </div>
-                                <span class="an:w-10 an:shrink-0 an:text-right an:text-[13px] an:font-medium {{ $ink }}">{{ number_format($item['total'], 0, ',', ' ') }}</span>
+                                <span class="an:w-10 an:shrink-0 an:text-right an:text-[13px] an:font-medium {{ $ink }}">{{ NumberLabel::for($item['total']) }}</span>
                             </div>
                             <div class="an:relative an:mt-1.5 an:h-1.5 an:w-full an:overflow-hidden an:rounded-full an:bg-elevated an:sm:hidden">
                                 <div class="an:absolute an:inset-y-0 an:left-0 an:rounded-full an:bg-accent/70" style="width: {{ $pct }}%"></div>
@@ -196,9 +197,9 @@
                 <div class="an:mb-3 an:flex an:flex-wrap an:items-baseline an:justify-between an:gap-3">
                     <p class="an:text-[16px] an:font-bold {{ $ink }}">{{ __('Activité par minute') }}</p>
                     <div class="an:flex an:items-baseline an:gap-x-6">
-                        <span class="an:text-[12px] {{ $inkMuted }}">{{ __('Pages vues') }} <span class="an:text-[14px] an:font-bold {{ $ink }}">{{ number_format($window['pageviews'], 0, ',', ' ') }}</span></span>
-                        <span class="an:text-[12px] {{ $inkMuted }}">{{ __('Conversions') }} <span class="an:text-[14px] an:font-bold {{ $ink }}">{{ number_format($conversionsCount, 0, ',', ' ') }}</span></span>
-                        <span class="an:text-[11px] {{ $inkMuted }}">{{ __('pic :count/min', ['count' => number_format($peakMinute, 0, ',', ' ')]) }}</span>
+                        <span class="an:text-[12px] {{ $inkMuted }}">{{ __('Pages vues') }} <span class="an:text-[14px] an:font-bold {{ $ink }}">{{ NumberLabel::for($window['pageviews']) }}</span></span>
+                        <span class="an:text-[12px] {{ $inkMuted }}">{{ __('Conversions') }} <span class="an:text-[14px] an:font-bold {{ $ink }}">{{ NumberLabel::for($conversionsCount) }}</span></span>
+                        <span class="an:text-[11px] {{ $inkMuted }}">{{ __('pic :count/min', ['count' => NumberLabel::for($peakMinute)]) }}</span>
                     </div>
                 </div>
                 <x-analytics::live-line :labels="array_keys($minuteSeries)" :values="array_values($minuteSeries)" channel="pulse" color="--an-accent" height="an:h-48" />

@@ -1,4 +1,5 @@
 @php
+    use Falcon\Analytics\Support\NumberLabel;
     use Illuminate\Support\Str;
 
     $subjectResolver = app(\Falcon\Analytics\Services\SubjectResolver::class);
@@ -9,7 +10,7 @@
     @include('analytics::livewire.dashboard.partials.tooltip-host')
 
     @php
-        $visitorsTotal = number_format($visitors->total(), 0, ',', ' ');
+        $visitorsTotal = NumberLabel::for($visitors->total());
         $visitorsCount = $visitors->total() <= 1
             ? __(':count visiteur', ['count' => $visitorsTotal])
             : __(':count visiteurs', ['count' => $visitorsTotal]);
@@ -92,7 +93,7 @@
                                 <x-ui::badge color="gray">{{ __('Anonyme') }}</x-ui::badge>
                             @endif
                         </x-ui::table.cell>
-                        <x-ui::table.cell class="an:tabular-nums">{{ number_format((int) $visitor->session_count, 0, ',', ' ') }}</x-ui::table.cell>
+                        <x-ui::table.cell class="an:tabular-nums">{{ NumberLabel::for((int) $visitor->session_count) }}</x-ui::table.cell>
                         <x-ui::table.cell class="an:whitespace-nowrap">{{ $visitor->first_seen_at->translatedFormat('d M Y') }}</x-ui::table.cell>
                         <x-ui::table.cell class="an:whitespace-nowrap an:text-secondary">{{ $visitor->last_seen_at->diffForHumans() }}</x-ui::table.cell>
                         <x-ui::table.cell>

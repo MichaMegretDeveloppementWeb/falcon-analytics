@@ -1,3 +1,5 @@
+@php use Falcon\Analytics\Support\NumberLabel; @endphp
+
 <x-analytics::root area="admin">
     <div class="an:mb-4 an:flex an:items-end an:justify-between an:gap-4">
         <x-ui::section-header :title="__('Clics par recherches Google')" />
@@ -26,7 +28,7 @@
                 :description="__('Les données Google paraissent avec quelques jours de décalage.')" />
         @else
             <div class="an:flex an:items-baseline an:gap-2 an:border-b an:border-subtle an:pb-4">
-                <span class="an:text-2xl an:font-semibold an:tracking-tight an:text-primary">{{ number_format($totals['current'], 0, ',', ' ') }}</span>
+                <span class="an:text-2xl an:font-semibold an:tracking-tight an:text-primary">{{ NumberLabel::for($totals['current']) }}</span>
                 @include('analytics::livewire.dashboard.partials.delta', ['current' => $totals['current'], 'previous' => $totals['previous']])
                 <span class="an:text-[12px] an:text-muted">{{ __('clics sur la période') }}</span>
             </div>
@@ -37,13 +39,13 @@
                         <div class="an:min-w-0">
                             <p class="an:truncate an:text-[13px] an:font-medium an:text-primary" data-an-tooltip="{{ $item['query'] }}">{{ $item['query'] }}</p>
                             <p class="an:text-[11px] an:text-muted">
-                                {{ __('Position moy. : :position', ['position' => $item['position'] !== null ? number_format($item['position'], 1, ',', ' ') : '–']) }}
-                                · {{ number_format($item['impressions'], 0, ',', ' ') }} {{ __('impressions') }}
+                                {{ __('Position moy. : :position', ['position' => $item['position'] !== null ? NumberLabel::for($item['position'], 1) : '–']) }}
+                                · {{ NumberLabel::for($item['impressions']) }} {{ __('impressions') }}
                             </p>
                         </div>
                         <div class="an:flex an:shrink-0 an:items-center an:gap-2">
                             @include('analytics::livewire.dashboard.partials.delta', ['current' => $item['clicks'], 'previous' => $item['previous']])
-                            <span class="an:w-8 an:text-right an:text-[13px] an:font-semibold an:text-primary">{{ number_format($item['clicks'], 0, ',', ' ') }}</span>
+                            <span class="an:w-8 an:text-right an:text-[13px] an:font-semibold an:text-primary">{{ NumberLabel::for($item['clicks']) }}</span>
                         </div>
                     </div>
                 @endforeach

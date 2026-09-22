@@ -1,5 +1,5 @@
 @php
-    use Illuminate\Support\Str;
+    use Falcon\Analytics\Support\NumberLabel;
 @endphp
 
 <x-analytics::root area="admin" class="an:space-y-6">
@@ -91,8 +91,8 @@
                                     @endforelse
                                 </div>
                             </x-ui::table.cell>
-                            <x-ui::table.cell align="right" class="an:tabular-nums">@if ($adMetrics === [])<span class="an:inline-block an:h-3 an:w-8 an:animate-pulse an:rounded an:bg-elevated an:align-middle"></span>@else{{ number_format($adMetrics[$ad->id]['sessions'] ?? 0, 0, ',', ' ') }}@endif</x-ui::table.cell>
-                            <x-ui::table.cell align="right" class="an:font-medium an:tabular-nums an:text-primary">@if ($adMetrics === [])<span class="an:inline-block an:h-3 an:w-6 an:animate-pulse an:rounded an:bg-elevated an:align-middle"></span>@else{{ number_format($adConversions[$ad->id] ?? 0, 0, ',', ' ') }}@endif</x-ui::table.cell>
+                            <x-ui::table.cell align="right" class="an:tabular-nums">@if ($adMetrics === [])<span class="an:inline-block an:h-3 an:w-8 an:animate-pulse an:rounded an:bg-elevated an:align-middle"></span>@else{{ NumberLabel::for($adMetrics[$ad->id]['sessions'] ?? 0) }}@endif</x-ui::table.cell>
+                            <x-ui::table.cell align="right" class="an:font-medium an:tabular-nums an:text-primary">@if ($adMetrics === [])<span class="an:inline-block an:h-3 an:w-6 an:animate-pulse an:rounded an:bg-elevated an:align-middle"></span>@else{{ NumberLabel::for($adConversions[$ad->id] ?? 0) }}@endif</x-ui::table.cell>
                             <x-ui::table.cell :last="true" align="right">
                                 <div class="an-row-link__above an:flex an:items-center an:justify-end an:gap-1">
                                     <x-ui::button variant="ghost" size="compact" x-on:click="$anOpenWhenDone($wire.$refs.adForm.$wire.editAd({{ $ad->id }}), 'an-ad-form')" aria-label="{{ __('Modifier') }}"><x-ui::icon name="pencil-square" class="an:h-3.5 an:w-3.5" /></x-ui::button>

@@ -1,4 +1,6 @@
 @php
+    use Falcon\Analytics\Support\NumberLabel;
+
     $showAd = $showAd ?? true;
 @endphp
 
@@ -33,7 +35,7 @@
                             @if ($showAd)
                                 <a href="{{ route('analytics.admin.marketing.ads.show', $el['adId']) }}" class="an:hidden an:w-32 an:shrink-0 an:cursor-pointer an:truncate an:text-right an:text-[12px] an:text-secondary an:hover:text-primary an:hover:underline an:sm:inline">{{ $el['adName'] }}</a>
                             @endif
-                            <span class="an:shrink-0 an:text-right an:text-base an:font-semibold an:text-primary an:tabular-nums an:sm:w-16">{{ number_format($el['conversions'], 0, ',', ' ') }}</span>
+                            <span class="an:shrink-0 an:text-right an:text-base an:font-semibold an:text-primary an:tabular-nums an:sm:w-16">{{ NumberLabel::for($el['conversions']) }}</span>
                         </div>
                         @if ($el['steps'])
                             <div x-show="open" x-cloak class="an:ml-2 an:mt-3 an:space-y-1.5 an:border-l an:border-default an:pl-4">
@@ -45,7 +47,7 @@
                                         <div class="an:relative an:h-1.5 an:flex-1 an:overflow-hidden an:rounded-full an:bg-elevated">
                                             <div class="an:absolute an:inset-y-0 an:left-0 an:rounded-full an:bg-series-1/70" style="width: {{ max((int) round($step['count'] / $maxStep * 100), 2) }}%"></div>
                                         </div>
-                                        <span class="an:w-10 an:shrink-0 an:text-right an:text-[12px] an:font-medium an:text-secondary an:tabular-nums">{{ number_format($step['count'], 0, ',', ' ') }}</span>
+                                        <span class="an:w-10 an:shrink-0 an:text-right an:text-[12px] an:font-medium an:text-secondary an:tabular-nums">{{ NumberLabel::for($step['count']) }}</span>
                                     </div>
                                 @endforeach
                             </div>

@@ -12,6 +12,7 @@ use Falcon\Analytics\Services\SubjectResolver;
 use Falcon\Analytics\Support\ChartPalette;
 use Falcon\Analytics\Support\DeviceLabel;
 use Falcon\Analytics\Support\DurationLabel;
+use Falcon\Analytics\Support\NumberLabel;
 
 /**
  * Prepares the detail screen of a visitor from the visitor and the aggregates
@@ -43,7 +44,7 @@ final readonly class VisitorDetailBuilder
             sessionCount: $visitor->session_count,
             pageviewCount: $engagement['pageviews'],
             averageDuration: DurationLabel::for($sessions > 0 ? (int) round($engagement['seconds'] / $sessions) : 0),
-            pagesPerSession: number_format($sessions > 0 ? round($engagement['pageviews'] / $sessions, 1) : 0.0, 1, ',', ' '),
+            pagesPerSession: NumberLabel::for($sessions > 0 ? $engagement['pageviews'] / $sessions : 0, 1),
             deviceSessions: array_sum($engagement['devices']),
             devices: self::devices($engagement['devices']),
             sources: self::sources($engagement['sources']),

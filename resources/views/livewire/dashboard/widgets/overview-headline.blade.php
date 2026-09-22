@@ -1,8 +1,6 @@
 @php
     use Falcon\Analytics\Support\DurationLabel;
-
-    $count = fn ($value): string => number_format((float) $value, 0, ',', ' ');
-    $percent = fn ($value): string => number_format((float) $value, 1, ',', ' ')."\u{00A0}%";
+    use Falcon\Analytics\Support\NumberLabel;
 
     $spotlightLine = fn (string $key, callable $format): string => __(':today aujourd\'hui · :yesterday hier', [
         'today' => $format($spotlight[$key]['today']),
@@ -14,14 +12,14 @@
 
     {{-- Headline KPIs : reach, volume and two engagement-quality signals --}}
     <div class="an:grid an:grid-cols-2 an:gap-4 an:lg:grid-cols-4">
-        <x-analytics::kpi-card :label="__('Visiteurs')" :value="$count($headline['visitors']->current)" icon="users"
-            :metric="$headline['visitors']" :description="$spotlightLine('visitors', $count)">
+        <x-analytics::kpi-card :label="__('Visiteurs')" :value="NumberLabel::for($headline['visitors']->current)" icon="users"
+            :metric="$headline['visitors']" :description="$spotlightLine('visitors', NumberLabel::for(...))">
             <div wire:key="spark-visitors-{{ $period }}-{{ $subject }}" class="an:mt-3">
                 <x-analytics::sparkline :values="$sparklines['visitors']" />
             </div>
         </x-analytics::kpi-card>
-        <x-analytics::kpi-card :label="__('Sessions')" :value="$count($headline['sessions']->current)" icon="cursor-arrow-rays"
-            :metric="$headline['sessions']" :description="$spotlightLine('sessions', $count)">
+        <x-analytics::kpi-card :label="__('Sessions')" :value="NumberLabel::for($headline['sessions']->current)" icon="cursor-arrow-rays"
+            :metric="$headline['sessions']" :description="$spotlightLine('sessions', NumberLabel::for(...))">
             <div wire:key="spark-sessions-{{ $period }}-{{ $subject }}" class="an:mt-3">
                 <x-analytics::sparkline :values="$sparklines['sessions']" />
             </div>
@@ -32,8 +30,8 @@
                 <x-analytics::sparkline :values="$sparklines['avgSeconds']" />
             </div>
         </x-analytics::kpi-card>
-        <x-analytics::kpi-card :label="__('Taux de rebond')" :value="$percent($headline['bounceRate']->current)" icon="arrow-uturn-left"
-            :metric="$headline['bounceRate']" :inverse="true" :description="$spotlightLine('bounceRate', $percent)">
+        <x-analytics::kpi-card :label="__('Taux de rebond')" :value="NumberLabel::percent($headline['bounceRate']->current, 1)" icon="arrow-uturn-left"
+            :metric="$headline['bounceRate']" :inverse="true" :description="$spotlightLine('bounceRate', fn ($rate) => NumberLabel::percent($rate, 1))">
             <div wire:key="spark-bounce-{{ $period }}-{{ $subject }}" class="an:mt-3">
                 <x-analytics::sparkline :values="$sparklines['bounceRate']" />
             </div>
@@ -50,7 +48,7 @@
                 </span>
                 <span class="an:text-[13px] an:text-secondary">{{ __('Pages vues') }}</span>
                 <span class="an:flex an:items-center an:gap-2">
-                    <span class="an:text-[13px] an:font-semibold an:tabular-nums an:text-primary">{{ number_format($headline['pageviews']->current, 0, ',', ' ') }}</span>
+                    <span class="an:text-[13px] an:font-semibold an:tabular-nums an:text-primary">{{ NumberLabel::for($headline['pageviews']->current) }}</span>
                     @include('analytics::livewire.dashboard.partials.delta', ['current' => $headline['pageviews']->current, 'previous' => $headline['pageviews']->previous])
                 </span>
             </div>
@@ -60,7 +58,7 @@
                 </span>
                 <span class="an:text-[13px] an:text-secondary">{{ __('Pages par session') }}</span>
                 <span class="an:flex an:items-center an:gap-2">
-                    <span class="an:text-[13px] an:font-semibold an:tabular-nums an:text-primary">{{ number_format($headline['pagesPerSession']->current, 1, ',', ' ') }}</span>
+                    <span class="an:text-[13px] an:font-semibold an:tabular-nums an:text-primary">{{ NumberLabel::for($headline['pagesPerSession']->current, 1) }}</span>
                     @include('analytics::livewire.dashboard.partials.delta', ['current' => $headline['pagesPerSession']->current, 'previous' => $headline['pagesPerSession']->previous])
                 </span>
             </div>

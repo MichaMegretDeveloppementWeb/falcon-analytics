@@ -1,3 +1,5 @@
+@php use Falcon\Analytics\Support\NumberLabel; @endphp
+
 <x-analytics::root area="admin" class="an:grid an:grid-cols-1 an:gap-6 an:lg:grid-cols-2">
     @if ($declarationsIncomplete)
         <x-ui::alert type="warning" class="an:lg:col-span-2">{{ __('Le fichier qui déclare les tunnels du site n\'a pas pu être lu en entier : ceux déclarés après l\'erreur n\'apparaissent pas ici. Signalez-le à la personne qui maintient le site.') }}</x-ui::alert>
@@ -7,7 +9,7 @@
         @php
             $lastStep = $report->steps === [] ? null : $report->steps[array_key_last($report->steps)];
             $overallPct = $lastStep !== null ? (int) round($lastStep->conversionFromStart * 100) : 0;
-            $entrants = number_format($report->entrants, 0, ',', ' ');
+            $entrants = NumberLabel::for($report->entrants);
         @endphp
         <x-ui::card wire:key="funnel-{{ $report->key }}" class="an:flex an:flex-col">
             {{-- Header --}}
@@ -18,11 +20,11 @@
                         {{ $report->entrants <= 1 ? __(':count entrant', ['count' => $entrants]) : __(':count entrants', ['count' => $entrants]) }}
                         @if ($report->entrants > 0 && $lastStep !== null)
                             <span class="an:text-muted">·</span>
-                            {{ $overallPct."\u{00A0}%" }} {{ __('de conversion') }}
+                            {{ NumberLabel::percent($overallPct) }} {{ __('de conversion') }}
                         @endif
                     </p>
                 </div>
-                <x-ui::badge color="gray" class="an:shrink-0">{{ __('Score') }} {{ number_format($report->totalScore, 0, ',', ' ')."\u{00A0}pts" }}</x-ui::badge>
+                <x-ui::badge color="gray" class="an:shrink-0">{{ __('Score') }} {{ NumberLabel::for($report->totalScore)."\u{00A0}pts" }}</x-ui::badge>
             </div>
 
             @if ($report->entrants === 0)
@@ -44,9 +46,9 @@
                         @if ($previous !== null && $previous->visitors > 0 && $lost > 0)
                             <div class="an:flex an:items-center an:gap-1.5 an:pl-0.5 an:text-[11px] an:text-muted">
                                 <x-ui::icon name="arrow-trending-down" class="an:h-3.5 an:w-3.5" />
-                                <span>&minus;{{ $drop."\u{00A0}%" }}</span>
+                                <span>&minus;{{ NumberLabel::percent($drop) }}</span>
                                 <span class="an:text-muted/60">·</span>
-                                <span>{{ $lost <= 1 ? __(':count perdu', ['count' => $lost]) : __(':count perdus', ['count' => number_format($lost, 0, ',', ' ')]) }}</span>
+                                <span>{{ $lost <= 1 ? __(':count perdu', ['count' => $lost]) : __(':count perdus', ['count' => NumberLabel::for($lost)]) }}</span>
                             </div>
                         @endif
 
@@ -54,14 +56,14 @@
                         <div>
                             <div class="an:flex an:items-baseline an:justify-between an:gap-3">
                                 <div class="an:flex an:min-w-0 an:items-baseline an:gap-x-2">
-                                    <span class="an:text-lg an:font-semibold an:tabular-nums an:tracking-tight an:text-primary">{{ number_format($step->visitors, 0, ',', ' ') }}</span>
+                                    <span class="an:text-lg an:font-semibold an:tabular-nums an:tracking-tight an:text-primary">{{ NumberLabel::for($step->visitors) }}</span>
                                     <span class="an:truncate an:text-[13px] an:text-secondary" data-an-tooltip="{{ $step->label }}">{{ $step->label }}</span>
                                 </div>
                                 <div class="an:flex an:shrink-0 an:items-center an:gap-x-2">
                                     @if ($previousVisitors !== null && $previousVisitors > 0)
                                         @include('analytics::livewire.dashboard.partials.delta', ['current' => $step->visitors, 'previous' => $previousVisitors])
                                     @endif
-                                    <span class="an:text-[13px] an:font-semibold an:tabular-nums an:text-primary">{{ $pct."\u{00A0}%" }}</span>
+                                    <span class="an:text-[13px] an:font-semibold an:tabular-nums an:text-primary">{{ NumberLabel::percent($pct) }}</span>
                                 </div>
                             </div>
                             <div class="an:mt-1.5 an:h-2 an:w-full an:overflow-hidden an:rounded-full an:bg-elevated">
@@ -77,8 +79,8 @@
                                         <div class="an:flex an:items-baseline an:justify-between an:gap-3 an:text-[11px]">
                                             <span class="an:truncate an:text-muted">{{ $branchLabel }}</span>
                                             <span class="an:shrink-0 an:tabular-nums an:text-secondary">
-                                                {{ number_format($branchVisitors, 0, ',', ' ') }}
-                                                <span class="an:text-muted">{{ '('.$branchPct."\u{00A0}%)" }}</span>
+                                                {{ NumberLabel::for($branchVisitors) }}
+                                                <span class="an:text-muted">{{ '('.NumberLabel::percent($branchPct).')' }}</span>
                                             </span>
                                         </div>
                                     @endforeach
@@ -86,8 +88,8 @@
                             @endif
 
                             <p class="an:mt-1 an:text-[11px] an:text-muted">{{ __(':v par visiteur · score :s', [
-                                'v' => number_format($step->value, 0, ',', ' ')."\u{00A0}pts",
-                                's' => number_format($step->score, 0, ',', ' ')."\u{00A0}pts",
+                                'v' => NumberLabel::for($step->value)."\u{00A0}pts",
+                                's' => NumberLabel::for($step->score)."\u{00A0}pts",
                             ]) }}</p>
                         </div>
                     @endforeach

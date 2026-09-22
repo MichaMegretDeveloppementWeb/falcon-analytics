@@ -1,15 +1,17 @@
+@php use Falcon\Analytics\Support\NumberLabel; @endphp
+
 <x-analytics::root area="admin" class="an:space-y-6">
 
     @include('analytics::livewire.dashboard.partials.attribution-ceiling')
 
     <div class="an:grid an:grid-cols-2 an:gap-4 an:lg:grid-cols-4">
-        <x-analytics::kpi-card :label="__('Sessions')" :value="number_format($sessions, 0, ',', ' ')" icon="cursor-arrow-rays" :metric="$sessionsDelta">
+        <x-analytics::kpi-card :label="__('Sessions')" :value="NumberLabel::for($sessions)" icon="cursor-arrow-rays" :metric="$sessionsDelta">
             <div wire:key="a-spark-s-{{ $refId }}-{{ $period }}-{{ $subject }}" class="an:mt-3"><x-analytics::sparkline :values="$trendData" /></div>
         </x-analytics::kpi-card>
-        <x-analytics::kpi-card :label="__('Visiteurs')" :value="number_format($visitors, 0, ',', ' ')" icon="users" :metric="$visitorsDelta">
+        <x-analytics::kpi-card :label="__('Visiteurs')" :value="NumberLabel::for($visitors)" icon="users" :metric="$visitorsDelta">
             <div wire:key="a-spark-v-{{ $refId }}-{{ $period }}-{{ $subject }}" class="an:mt-3"><x-analytics::sparkline :values="$trendData" /></div>
         </x-analytics::kpi-card>
-        <x-analytics::kpi-card :label="__('Conversions')" :value="number_format($conversions, 0, ',', ' ')" icon="check-circle" :metric="$conversionsDelta">
+        <x-analytics::kpi-card :label="__('Conversions')" :value="NumberLabel::for($conversions)" icon="check-circle" :metric="$conversionsDelta">
             <div wire:key="a-spark-conv-{{ $refId }}-{{ $period }}-{{ $subject }}" class="an:mt-3"><x-analytics::sparkline :values="$conversionsTrend" color="--an-conversion" /></div>
         </x-analytics::kpi-card>
         <x-analytics::kpi-card :label="__('Taux de conversion')" :value="$rateLabel" icon="arrow-trending-up" :metric="$rateDelta">

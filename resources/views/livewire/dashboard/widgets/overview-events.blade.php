@@ -1,4 +1,6 @@
 @php
+    use Falcon\Analytics\Support\NumberLabel;
+
     $conversionsTotal = array_sum(array_column($topConversions, 'count'));
 @endphp
 
@@ -14,7 +16,7 @@
             <div class="an:pb-5 an:lg:pb-0 an:lg:pr-8">
                 <x-ui::section-header :title="__('Conversions')" class="an:mb-4" />
                 @if ($topConversions !== [])
-                    <p class="an:text-2xl an:font-semibold an:tracking-tight an:text-primary">{{ number_format($conversionsTotal, 0, ',', ' ') }}</p>
+                    <p class="an:text-2xl an:font-semibold an:tracking-tight an:text-primary">{{ NumberLabel::for($conversionsTotal) }}</p>
                     <p class="an:mb-4 an:text-[11px] an:uppercase an:tracking-wider an:text-muted">{{ __('sur la période') }}</p>
 
                     {{-- The share moves into a tooltip: two numbers of similar size side by
@@ -26,7 +28,7 @@
                                 <span class="an:truncate an:text-[13px] an:text-secondary" data-an-tooltip="{{ $item['label'] }}">{{ $item['label'] }}</span>
                             </dt>
                             <dd class="an:w-8 an:text-right an:text-[13px] an:font-semibold an:tabular-nums an:text-primary"
-                                title="{{ $conversionsTotal > 0 ? ((int) round($item['count'] / $conversionsTotal * 100))."\u{00A0}%" : '' }}">{{ number_format($item['count'], 0, ',', ' ') }}</dd>
+                                title="{{ $conversionsTotal > 0 ? NumberLabel::percent($item['count'] / $conversionsTotal * 100) : '' }}">{{ NumberLabel::for($item['count']) }}</dd>
                         @endforeach
                     </dl>
                 @else
@@ -43,7 +45,7 @@
                                 <span class="an:w-5 an:shrink-0 an:text-[11px] an:font-medium an:tabular-nums an:text-muted">{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
                                 <span class="an:truncate an:text-[13px] an:text-secondary" data-an-tooltip="{{ $item['label'] }}">{{ $item['label'] }}</span>
                             </dt>
-                            <dd class="an:w-8 an:text-right an:text-[13px] an:font-semibold an:tabular-nums an:text-primary">{{ number_format($item['count'], 0, ',', ' ') }}</dd>
+                            <dd class="an:w-8 an:text-right an:text-[13px] an:font-semibold an:tabular-nums an:text-primary">{{ NumberLabel::for($item['count']) }}</dd>
                         @endforeach
                     </dl>
                 @else

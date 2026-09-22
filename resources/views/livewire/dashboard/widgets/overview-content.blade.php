@@ -1,4 +1,6 @@
 @php
+    use Falcon\Analytics\Support\NumberLabel;
+
     $maxPages = max(array_column($topPages, 'total') ?: [0]);
 @endphp
 
@@ -19,7 +21,7 @@
                             <span class="an:min-w-0 an:truncate an:text-[13px] an:text-primary"><x-analytics::page-url :url="$item['label']" /></span>
                             <span class="an:flex an:shrink-0 an:items-center an:gap-2">
                                 @include('analytics::livewire.dashboard.partials.delta', ['current' => $item['total'], 'previous' => $item['previous']])
-                                <span class="an:w-8 an:text-right an:text-[13px] an:font-semibold an:text-primary">{{ number_format($item['total'], 0, ',', ' ') }}</span>
+                                <span class="an:w-8 an:text-right an:text-[13px] an:font-semibold an:text-primary">{{ NumberLabel::for($item['total']) }}</span>
                             </span>
                         </div>
                         <div class="an:mt-1.5 an:h-1 an:overflow-hidden an:rounded-full an:bg-elevated">
@@ -45,7 +47,7 @@
                                 <span class="an:block an:truncate an:text-[11px] an:text-muted"><x-analytics::page-url :route="$click['route']" /></span>
                             @endif
                         </dt>
-                        <dd class="an:w-8 an:text-right an:text-[13px] an:font-semibold an:tabular-nums an:text-primary">{{ number_format($click['total'], 0, ',', ' ') }}</dd>
+                        <dd class="an:w-8 an:text-right an:text-[13px] an:font-semibold an:tabular-nums an:text-primary">{{ NumberLabel::for($click['total']) }}</dd>
                     @endforeach
                 </dl>
             @else

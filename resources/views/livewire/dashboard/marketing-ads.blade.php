@@ -2,7 +2,7 @@
 
     <x-ui::page-header
         :title="__('Pubs')"
-        :description="$total <= 1 ? __(':count pub', ['count' => $total]) : __(':count pubs', ['count' => number_format($total, 0, ',', ' ')])" />
+        :description="$total <= 1 ? __(':count pub', ['count' => $total]) : __(':count pubs', ['count' => \Falcon\Analytics\Support\NumberLabel::for($total)])" />
 
     <div class="an:w-full an:sm:max-w-xs">
         <x-ui::search-input wire:model.live.debounce.300ms="search" :placeholder="__('Rechercher une pub ou campagne...')" class="an:w-full" />

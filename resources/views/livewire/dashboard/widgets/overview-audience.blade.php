@@ -1,6 +1,7 @@
 @php
     use Falcon\Analytics\Support\ChartPalette;
     use Falcon\Analytics\Support\DeviceLabel;
+    use Falcon\Analytics\Support\NumberLabel;
 
     $newTotal = $newVsReturning['new'] + $newVsReturning['returning'];
     $newPct = $newTotal > 0 ? (int) round($newVsReturning['new'] / $newTotal * 100) : 0;
@@ -34,7 +35,7 @@
                             :labels="[__('Nouveaux'), __('Récurrents')]"
                             :values="[$newVsReturning['new'], $newVsReturning['returning']]"
                             :colors="[ChartPalette::SERIES[0], ChartPalette::SERIES[4]]"
-                            :total="number_format($newTotal, 0, ',', ' ')"
+                            :total="NumberLabel::for($newTotal)"
                             :caption="__('visiteurs')" />
                     </div>
                     {{--
@@ -50,10 +51,10 @@
                     --}}
                     <dl class="an:grid an:min-w-0 an:max-w-[15rem] an:flex-1 an:grid-cols-[minmax(0,1fr)_auto] an:items-center an:gap-x-6 an:gap-y-2.5">
                         <dt class="an:flex an:items-center an:gap-2 an:text-[13px] an:text-secondary"><span class="an:h-2 an:w-2 an:shrink-0 an:rounded-full" style="background:var(--an-series-1)"></span>{{ __('Nouveaux') }}</dt>
-                        <dd class="an:text-right an:text-[13px] an:font-semibold an:tabular-nums an:text-primary" title="{{ $newPct."\u{00A0}%" }}">{{ number_format($newVsReturning['new'], 0, ',', ' ') }}</dd>
+                        <dd class="an:text-right an:text-[13px] an:font-semibold an:tabular-nums an:text-primary" title="{{ NumberLabel::percent($newPct) }}">{{ NumberLabel::for($newVsReturning['new']) }}</dd>
 
                         <dt class="an:flex an:items-center an:gap-2 an:text-[13px] an:text-secondary"><span class="an:h-2 an:w-2 an:shrink-0 an:rounded-full" style="background:var(--an-series-5)"></span>{{ __('Récurrents') }}</dt>
-                        <dd class="an:text-right an:text-[13px] an:font-semibold an:tabular-nums an:text-primary" title="{{ (100 - $newPct)."\u{00A0}%" }}">{{ number_format($newVsReturning['returning'], 0, ',', ' ') }}</dd>
+                        <dd class="an:text-right an:text-[13px] an:font-semibold an:tabular-nums an:text-primary" title="{{ NumberLabel::percent(100 - $newPct) }}">{{ NumberLabel::for($newVsReturning['returning']) }}</dd>
                     </dl>
                 </div>
             @else
@@ -70,7 +71,7 @@
                             :labels="collect($devices)->keys()->map(fn ($d) => DeviceLabel::for($d))->all()"
                             :values="array_values($devices)"
                             :colors="array_slice($devicePalette, 0, count($devices))"
-                            :total="number_format($deviceTotal, 0, ',', ' ')"
+                            :total="NumberLabel::for($deviceTotal)"
                             :caption="__('sessions')" />
                     </div>
                     <dl class="an:grid an:min-w-0 an:max-w-[15rem] an:flex-1 an:grid-cols-[minmax(0,1fr)_auto] an:items-center an:gap-x-6 an:gap-y-2.5">
@@ -79,7 +80,7 @@
                                 <span class="an:h-2 an:w-2 an:shrink-0 an:rounded-full" style="background:var({{ $devicePalette[$loop->index] ?? '--an-series-6' }})"></span>
                                 <span class="an:truncate">{{ DeviceLabel::for($device) }}</span>
                             </dt>
-                            <dd class="an:text-right an:text-[13px] an:font-semibold an:tabular-nums an:text-primary" title="{{ ((int) round($count / $deviceTotal * 100))."\u{00A0}%" }}">{{ number_format($count, 0, ',', ' ') }}</dd>
+                            <dd class="an:text-right an:text-[13px] an:font-semibold an:tabular-nums an:text-primary" title="{{ NumberLabel::percent($count / $deviceTotal * 100) }}">{{ NumberLabel::for($count) }}</dd>
                         @endforeach
                     </dl>
                 </div>

@@ -1,12 +1,11 @@
 @php
     use Falcon\Analytics\Support\DeviceLabel;
     use Falcon\Analytics\Support\DurationLabel;
+    use Falcon\Analytics\Support\NumberLabel;
 
     $subjectResolver = app(\Falcon\Analytics\Services\SubjectResolver::class);
 
-    $percent = fn ($v): string => number_format((float) $v, 1, ',', ' ')."\u{00A0}%";
-
-    $sessionsTotal = number_format($sessions->total(), 0, ',', ' ');
+    $sessionsTotal = NumberLabel::for($sessions->total());
     $sessionsCount = $sessions->total() <= 1
         ? __(':count session', ['count' => $sessionsTotal])
         : __(':count sessions', ['count' => $sessionsTotal]);

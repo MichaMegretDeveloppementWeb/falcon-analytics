@@ -1,3 +1,5 @@
+@php use Falcon\Analytics\Support\NumberLabel; @endphp
+
 <x-analytics::root area="admin" class="an:space-y-8">
 
     @if ($declarationsIncomplete)
@@ -6,13 +8,13 @@
 
     {{-- KPIs with integrated sparklines --}}
     <div class="an:grid an:grid-cols-1 an:gap-4 an:sm:grid-cols-3">
-        <x-analytics::kpi-card :label="__('Événements')" :value="number_format($events, 0, ',', ' ')" icon="bolt" :metric="$eventsDelta">
+        <x-analytics::kpi-card :label="__('Événements')" :value="NumberLabel::for($events)" icon="bolt" :metric="$eventsDelta">
             <div wire:key="ev-spark-events-{{ $period }}-{{ $subject }}" class="an:mt-3"><x-analytics::sparkline :values="$eventsData" /></div>
         </x-analytics::kpi-card>
-        <x-analytics::kpi-card :label="__('Conversions')" :value="number_format($conversions, 0, ',', ' ')" icon="check-circle" :metric="$conversionsDelta">
+        <x-analytics::kpi-card :label="__('Conversions')" :value="NumberLabel::for($conversions)" icon="check-circle" :metric="$conversionsDelta">
             <div wire:key="ev-spark-conv-{{ $period }}-{{ $subject }}" class="an:mt-3"><x-analytics::sparkline :values="$conversionsData" color="--an-conversion" /></div>
         </x-analytics::kpi-card>
-        <x-analytics::kpi-card :label="__('Score des conversions')" :value="number_format($value, 0, ',', ' ').' pts'" icon="sparkles" :metric="$valueDelta" :description="__('la somme des points rapportés par les conversions')" />
+        <x-analytics::kpi-card :label="__('Score des conversions')" :value="NumberLabel::for($value).' pts'" icon="sparkles" :metric="$valueDelta" :description="__('la somme des points rapportés par les conversions')" />
     </div>
 
     {{-- Trend --}}
@@ -58,10 +60,10 @@
                                     <x-ui::badge color="gray">{{ __('Événement') }}</x-ui::badge>
                                 @endif
                             </x-ui::table.cell>
-                            <x-ui::table.cell align="right" class="an:font-medium an:tabular-nums an:text-primary">{{ number_format($row['count'], 0, ',', ' ') }}</x-ui::table.cell>
-                            <x-ui::table.cell align="right" class="an:tabular-nums">{{ number_format($row['visitors'], 0, ',', ' ') }}</x-ui::table.cell>
-                            <x-ui::table.cell align="right" class="an:tabular-nums an:text-secondary">{{ $row['value'] !== null ? number_format($row['value'], 0, ',', ' ')."\u{00A0}pts" : '·' }}</x-ui::table.cell>
-                            <x-ui::table.cell :last="true" align="right" class="an:tabular-nums">{{ $row['isScored'] ? number_format($row['valueTotal'], 0, ',', ' ')."\u{00A0}pts" : '·' }}</x-ui::table.cell>
+                            <x-ui::table.cell align="right" class="an:font-medium an:tabular-nums an:text-primary">{{ NumberLabel::for($row['count']) }}</x-ui::table.cell>
+                            <x-ui::table.cell align="right" class="an:tabular-nums">{{ NumberLabel::for($row['visitors']) }}</x-ui::table.cell>
+                            <x-ui::table.cell align="right" class="an:tabular-nums an:text-secondary">{{ $row['value'] !== null ? NumberLabel::for($row['value'])."\u{00A0}pts" : '·' }}</x-ui::table.cell>
+                            <x-ui::table.cell :last="true" align="right" class="an:tabular-nums">{{ $row['isScored'] ? NumberLabel::for($row['valueTotal'])."\u{00A0}pts" : '·' }}</x-ui::table.cell>
                         </x-ui::table.row>
                     @endforeach
                 </x-ui::table.body>
