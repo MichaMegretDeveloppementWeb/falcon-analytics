@@ -8,8 +8,6 @@ use Falcon\Analytics\Actions\DeleteAdAction;
 use Falcon\Analytics\Actions\DeleteCampaignAction;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
-use Falcon\Analytics\Livewire\Admin\Concerns\EditsAd;
-use Falcon\Analytics\Livewire\Admin\Concerns\EditsCampaign;
 use Falcon\Analytics\Models\Ad;
 use Falcon\Analytics\Models\Campaign;
 use Illuminate\Contracts\View\View;
@@ -20,16 +18,13 @@ use Throwable;
 /**
  * A single campaign in detail: its headline traffic over the period, its identity
  * and URL conditions, and the table of its ads with per-ad traffic and conversion
- * objectives. Ads and objectives are managed here; the campaign can be edited or
- * deleted.
+ * objectives. Ads and objectives are managed here, by the two forms laid once on
+ * the page; the campaign can be edited or deleted.
  *
  * @internal
  */
 final class CampaignDetailPage extends DashboardComponent
 {
-    use EditsAd;
-    use EditsCampaign;
-
     public Campaign $campaign;
 
     public ?int $deleteAdId = null;
@@ -53,28 +48,16 @@ final class CampaignDetailPage extends DashboardComponent
         $this->campaign = $campaign;
     }
 
-    protected function adFormCampaignId(): int
-    {
-        return $this->campaign->id;
-    }
-
-    protected function campaignFormId(): int
-    {
-        return $this->campaign->id;
-    }
-
-    /** Reads the campaign into the form · the modal opens on the answer. */
-    public function editCampaign(): bool
-    {
-        $this->fillCampaignForm($this->campaign);
-
-        return true;
-    }
-
-    protected function afterCampaignSaved(): void
+    /** Reads the campaign again once its form has written to it. */
+    #[On('an-campaigns-changed')]
+    public function refreshCampaign(): void
     {
         $this->campaign->refresh();
     }
+
+    /** Draws the ads again once their form has written to one · the render reads them afresh. */
+    #[On('an-ads-changed')]
+    public function refreshAds(): void {}
 
     /** Whether the campaign was deleted · on a yes the page leads back to the list. */
     public function deleteCampaignConfirmed(DeleteCampaignAction $action): bool
@@ -92,34 +75,6 @@ final class CampaignDetailPage extends DashboardComponent
         }
 
         $this->redirect(route('analytics.admin.marketing.campaigns'));
-
-        return true;
-    }
-
-    /** Opens a blank ad form · the modal opens on the answer. */
-    public function newAd(): bool
-    {
-        $this->blankAdForm();
-
-        return true;
-    }
-
-    /** Whether the ad could be read into the form · the modal opens on a yes. */
-    public function editAd(int $id, FunnelRegistry $funnels, EventRegistry $events): bool
-    {
-        try {
-            $ad = Ad::with('objectives')->where('campaign_id', $this->campaign->id)->findOrFail($id);
-        } catch (Throwable $e) {
-            Log::channel(config('analytics.log_channel'))->error('Ad.edit_load_failed', [
-                'ad_id' => $id,
-                'exception' => $e,
-            ]);
-            $this->dispatch('ui-toast', type: 'danger', title: __('Cette pub est introuvable. Actualisez la page.'));
-
-            return false;
-        }
-
-        $this->fillAdForm($ad, $funnels, $events);
 
         return true;
     }
@@ -184,7 +139,6 @@ final class CampaignDetailPage extends DashboardComponent
                     'range' => $this->currentPeriod(),
                     'ads' => $campaignAds,
                     'objectiveLabels' => $this->objectiveLabels($funnels, $events),
-                    ...$this->adFormOptions($funnels, $events),
                     ...$this->filterData(),
                 ];
             },

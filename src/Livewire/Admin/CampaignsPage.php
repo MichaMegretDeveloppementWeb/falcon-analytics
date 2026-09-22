@@ -5,25 +5,25 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Livewire\Admin;
 
 use Falcon\Analytics\Actions\DeleteCampaignAction;
-use Falcon\Analytics\Livewire\Admin\Concerns\EditsCampaign;
 use Falcon\Analytics\Livewire\Admin\Concerns\RecoversFromReadFailure;
 use Falcon\Analytics\Models\Campaign;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Log;
+use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Throwable;
 
 /**
  * The campaigns management list: a searchable, paginated table of campaigns with
- * their URL conditions and ad count. Campaigns are created and edited here; ads
- * and objectives are managed from a campaign's detail page.
+ * their URL conditions and ad count. Campaigns are created and edited here, by
+ * the form laid once under the list; ads and objectives are managed from a
+ * campaign's detail page.
  *
  * @internal
  */
 final class CampaignsPage extends Component
 {
-    use EditsCampaign;
     use RecoversFromReadFailure;
     use WithPagination;
 
@@ -40,38 +40,9 @@ final class CampaignsPage extends Component
         $this->resetPage();
     }
 
-    protected function campaignFormId(): ?int
-    {
-        return $this->campaignId;
-    }
-
-    /** Opens a blank form · the modal opens on the answer. */
-    public function newCampaign(): bool
-    {
-        $this->blankCampaignForm();
-
-        return true;
-    }
-
-    /** Whether the campaign could be read into the form · the modal opens on a yes. */
-    public function editCampaign(int $id): bool
-    {
-        try {
-            $campaign = Campaign::query()->findOrFail($id);
-        } catch (Throwable $e) {
-            Log::channel(config('analytics.log_channel'))->error('Campaign.edit_load_failed', [
-                'campaign_id' => $id,
-                'exception' => $e,
-            ]);
-            $this->dispatch('ui-toast', type: 'danger', title: __('Cette campagne est introuvable. Actualisez la page.'));
-
-            return false;
-        }
-
-        $this->fillCampaignForm($campaign);
-
-        return true;
-    }
+    /** Draws the list again once the form has written to it · the render reads it afresh. */
+    #[On('an-campaigns-changed')]
+    public function refresh(): void {}
 
     /** Whether there is a campaign to ask about · the confirmation opens on a yes. */
     public function confirmDelete(int $id): bool
