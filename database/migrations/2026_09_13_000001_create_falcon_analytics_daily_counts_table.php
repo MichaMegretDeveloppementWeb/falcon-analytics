@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
@@ -33,8 +34,8 @@ return new class extends Migration
             $table->id();
             $table->date('day');
 
-            // 'page' or 'click'. A string rather than a boolean: a third kind
-            // would otherwise force a migration on a column that means nothing.
+            // A string rather than a boolean: a third kind would otherwise force
+            // a migration on a column that means nothing.
             $table->string('kind', 16);
 
             /*
@@ -74,6 +75,10 @@ return new class extends Migration
             // The reading always starts from a date range and a kind.
             $table->index(['kind', 'day'], 'fa_daily_counts_kind_day_idx');
         });
+
+        // The engine keeps the list the code keeps · the `KIND_` constants of
+        // `DailyCount`. Named, so a refusal says which rule.
+        DB::statement("ALTER TABLE falcon_analytics_daily_counts ADD CONSTRAINT fa_daily_counts_kind_check CHECK (`kind` IN ('page', 'click'))");
     }
 
     public function down(): void

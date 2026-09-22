@@ -65,10 +65,9 @@ final readonly class IngestEventsAction
                 $this->visitors->incrementSessionCount($locked);
             }
 
-            // Heartbeats keep the session alive but are never stored as rows.
             $storable = array_values(array_filter(
                 $batch->events,
-                fn (IncomingEvent $event): bool => $event->type !== EventType::Heartbeat,
+                fn (IncomingEvent $event): bool => $event->type->isStored(),
             ));
 
             // Collapse consecutive duplicate page views: reloading the same URL is

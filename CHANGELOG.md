@@ -42,6 +42,12 @@ architecture qui n'existe plus.
   s'efface au bout de 90 jours, et c'est tout ce qui s'efface · les pages et
   clics les plus vus sont comptés d'avance chaque nuit, et **tout ce qui porte un
   nom est gardé pour toujours**. Aucune période maximale d'affichage ;
+- **deux classements rapides quel que soit le trafic** · les pages et clics les
+  plus vus lisent chaque journée close dans les compteurs de la nuit, et seule
+  la journée en cours se compte visite par visite. Sur un site à 10 000 pages
+  vues par jour, le bloc des pages passe ainsi de plusieurs secondes à une
+  fraction de seconde. Une journée y reste comptée telle que la nuit l'a
+  comptée · un visiteur effacé ensuite y demeure, anonymement ;
 - **trente-sept réglages**, tous facultatifs · le paquet fonctionne sans qu'on en
   touche un seul, et un essai le tient ;
 - **des fichiers déjà compilés** · aucun Node n'est requis chez l'hôte. Le
@@ -100,6 +106,10 @@ Le paquet crée **dix tables** préfixées `falcon_analytics_`, chargées
 automatiquement · un `php artisan migrate` suffit, et `analytics:install` le
 lance pour vous. Huit portent vos mesures ; les deux autres sont la mécanique de
 la conservation, et ne sont pas une interface.
+
+Les deux colonnes qui ne prennent qu'une liste fermée — le type d'un événement,
+la sorte d'un résumé — sont gardées **par la base elle-même**, par une
+contrainte nommée que MySQL (depuis 8.0.16) et MariaDB (depuis 10.2) appliquent.
 
 Elles sont toutes réversibles. Ce qui ne veut pas dire qu'il faille les
 redescendre · voir [mise-a-jour.md](docs/mise-a-jour.md#le-schéma-qui-est-la-vraie-question).

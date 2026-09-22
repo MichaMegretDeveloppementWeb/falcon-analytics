@@ -20,7 +20,6 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $id
  * @property CarbonImmutable $day
  * @property CarbonImmutable $archived_at
- * @property CarbonImmutable|null $pruned_at
  */
 final class DailyArchive extends Model
 {
@@ -31,19 +30,18 @@ final class DailyArchive extends Model
     public $timestamps = false;
 
     /** @var list<string> */
-    protected $fillable = ['day', 'archived_at', 'pruned_at'];
+    protected $fillable = ['day', 'archived_at'];
 
     /**
      * The key, always written as a plain date.
      *
      * **A model has ONE `$dateFormat`, and this table has two kinds of column**
-     * · a date that everything queries on, and two timestamps. Set to `Y-m-d`
-     * for the key, it reaches the timestamps too: an archiving run at 03:30 is
-     * then recorded as having happened at 00:00, on both stamps, without a
-     * word.
+     * · a date that everything queries on, and a timestamp. Set to `Y-m-d` for
+     * the key, it reaches the timestamp too: an archiving run at 03:30 is then
+     * recorded as having happened at 00:00, without a word.
      *
-     * So the format is left alone — the timestamps keep their hour — and the
-     * key says for itself what it is. A mutator is the only thing that reaches
+     * So the format is left alone — the timestamp keeps its hour — and the key
+     * says for itself what it is. A mutator is the only thing that reaches
      * the write: a format given to a cast serves `toArray()`, never the
      * statement.
      *
@@ -63,16 +61,16 @@ final class DailyArchive extends Model
     }
 
     /**
-     * The last day whose detail has been erased, or null while none has.
+     * The last day summarised, or null while none has been.
      *
      * **The reading splits here** · up to and including this day the figures
-     * come from the summaries, after it from the rows themselves. Asked of the
-     * table rather than worked out from the retention, because the two part
-     * company as soon as a scheduler stops or a retention is shortened.
+     * come from the summaries, after it from the rows themselves. Every day up
+     * to it holds its summary, since the archiving goes forward from the
+     * oldest row without leaving a gap.
      */
-    public static function lastPrunedDay(): ?CarbonImmutable
+    public static function lastSummarisedDay(): ?CarbonImmutable
     {
-        $day = self::query()->whereNotNull('pruned_at')->max('day');
+        $day = self::query()->max('day');
 
         return is_string($day) && $day !== '' ? CarbonImmutable::parse($day)->startOfDay() : null;
     }
@@ -83,7 +81,6 @@ final class DailyArchive extends Model
         return [
             'day' => 'immutable_date',
             'archived_at' => 'immutable_datetime',
-            'pruned_at' => 'immutable_datetime',
         ];
     }
 }

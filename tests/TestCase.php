@@ -440,7 +440,8 @@ abstract class TestCase extends Orchestra
 
     /**
      * The package's schema as the engine holds it: one line per column, per
-     * index and per foreign key, sorted so two readings compare.
+     * index, per foreign key and per check constraint, sorted so two readings
+     * compare.
      *
      * Scoped to the connection's own database — `information_schema` holds
      * every database of the server, and an unscoped listing would read the
@@ -483,7 +484,18 @@ abstract class TestCase extends Orchestra
             ->orderBy('kcu.CONSTRAINT_NAME')
             ->pluck('line');
 
-        return array_values($columns->merge($indexes)->merge($keys)
+        // The check constraints, by name: a lost one leaves every column and
+        // every index exactly as it was.
+        $checks = DB::table('information_schema.TABLE_CONSTRAINTS')
+            ->selectRaw("CONCAT('CHK ', TABLE_NAME, '.', CONSTRAINT_NAME) AS line")
+            ->whereRaw('TABLE_SCHEMA = DATABASE()')
+            ->where('TABLE_NAME', 'like', 'falcon\_analytics\_%')
+            ->where('CONSTRAINT_TYPE', 'CHECK')
+            ->orderBy('TABLE_NAME')
+            ->orderBy('CONSTRAINT_NAME')
+            ->pluck('line');
+
+        return array_values($columns->merge($indexes)->merge($keys)->merge($checks)
             ->map(fn (mixed $line): string => (string) $line)
             ->all());
     }

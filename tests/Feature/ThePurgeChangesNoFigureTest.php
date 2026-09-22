@@ -13,18 +13,14 @@ use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Models\Ad;
 use Falcon\Analytics\Models\AdObjective;
 use Falcon\Analytics\Models\Campaign;
-use Falcon\Analytics\Models\DailyArchive;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Repositories\Dashboard\EventReadRepository;
 use Falcon\Analytics\Repositories\Dashboard\OverviewReadRepository;
 use Falcon\Analytics\Services\Dashboard\MarketingReportBuilder;
-use Falcon\Analytics\Services\Maintenance;
 use Falcon\Analytics\Tests\TestCase;
-use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
@@ -272,60 +268,16 @@ final class ThePurgeChangesNoFigureTest extends TestCase
      * An erasing that stops halfway costs no figure either.
      *
      * **The erasing deletes in batches, not in one statement**, so a timeout or
-     * a killed process leaves a day part erased. The order the two writes are
-     * made in is what decides what that costs ·
-     *
-     * - marked AFTER, the day is still read from rows that are no longer all
-     *   there, and the two blocks shrink quietly until some later run finishes
-     *   the job — the exact failure this whole design exists to forbid ;
-     * - marked BEFORE, the same interruption costs nothing · the summary
-     *   already holds the whole day, so the reading is exact whether the rows
-     *   went or stayed, and the leftovers go next time.
-     *
-     * So the order is watched at the statements themselves, which is the only
-     * place it is really decided.
-     */
-    public function test_the_days_are_marked_before_the_first_row_goes(): void
-    {
-        $this->aHistory();
-        $this->artisan('analytics:archive')->assertSuccessful();
-
-        /** @var list<string> $order */
-        $order = [];
-
-        DB::listen(function (QueryExecuted $query) use (&$order): void {
-            $sql = strtolower(ltrim($query->sql));
-
-            if (str_starts_with($sql, 'update') && str_contains($sql, 'falcon_analytics_daily_archives')) {
-                $order[] = 'marque';
-            }
-
-            if (str_starts_with($sql, 'delete') && str_contains($sql, 'falcon_analytics_events')) {
-                $order[] = 'efface';
-            }
-        });
-
-        app(Maintenance::class)->prune();
-
-        $this->assertContains('efface', $order, 'Rien n’a été effacé, donc rien n’est prouvé.');
-        $this->assertSame('marque', $order[0], 'La marque doit être écrite avant la première suppression.');
-    }
-
-    /**
-     * And a day marked then erased **halfway** reads exactly, which is what
-     * makes the order above worth having.
+     * a killed process leaves a day part erased. Such a day is already read
+     * from its summary, so the reading is exact whether its rows went or
+     * stayed, and the leftovers go next time.
      *
      * This is the state an interruption leaves behind, and it is the one that
-     * discriminates · une journée marquée dont les lignes sont toutes encore là
-     * se lit juste de toute façon, les deux sources s'accordant. Une journée
-     * marquée dont la moitié des lignes sont parties ne se lit juste que si
-     * c'est le résumé qui répond.
-     *
-     * Marquée après coup, cette même journée aurait été lue sur ce qu'il reste
-     * de ses lignes, et les deux blocs auraient maigri en silence jusqu'à ce
-     * qu'un passage ultérieur finisse le travail.
+     * discriminates · a day whose rows are all still there reads right either
+     * way, the two sources agreeing. A day that has lost half of them only
+     * reads right if its summary answers.
      */
-    public function test_a_day_marked_then_erased_halfway_reads_exactly(): void
+    public function test_a_day_erased_halfway_reads_exactly(): void
     {
         $this->aHistory();
         $this->artisan('analytics:archive')->assertSuccessful();
@@ -334,14 +286,9 @@ final class ThePurgeChangesNoFigureTest extends TestCase
 
         $cutoff = CarbonImmutable::now()->subDays(30)->startOfDay();
 
-        // The interrupted state, laid down by hand · la marque est posée, puis
-        // l'effacement s'arrête après une seule ligne.
-        DailyArchive::query()
-            ->where('day', '<', $cutoff->toDateString())
-            ->update(['pruned_at' => CarbonImmutable::now()->toDateTimeString()]);
-
-        // Une ligne que l'effacement aurait effacée · anonyme, et sur une route
-        // qu'aucune étape de tunnel ne protège.
+        // The interrupted state, laid down by hand · the erasing stops after a
+        // single row, one it would have taken · anonymous, and on a route no
+        // funnel step protects.
         $halfDone = Event::query()
             ->where('occurred_at', '<', $cutoff)
             ->where('type', EventType::Pageview->value)

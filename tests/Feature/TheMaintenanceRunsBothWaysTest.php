@@ -261,14 +261,14 @@ final class TheMaintenanceRunsBothWaysTest extends TestCase
     /**
      * The register keeps the hour at which it acted, not just the date.
      *
-     * **Read back through the model**, which is the point · the two stamps are
-     * written as plain strings by the archiving and the erasing, so a model
-     * that reads them badly would be discovered only by whoever first asked
-     * « quand ce jour a-t-il été effacé ? » — a question one asks precisely
-     * when something has gone wrong, and gets a wrong answer to.
+     * **Read back through the model**, which is the point · the stamp is
+     * written as a plain string by the archiving, so a model that reads it
+     * badly would be discovered only by whoever first asked « quand ce jour
+     * a-t-il été résumé ? » — a question one asks precisely when something has
+     * gone wrong, and gets a wrong answer to.
      *
-     * A single `$dateFormat` on the model cannot serve both a date column and
-     * two timestamps, and the shorter of the two silently wins.
+     * A single `$dateFormat` on the model cannot serve both a date column and a
+     * timestamp, and the shorter of the two silently wins.
      */
     public function test_the_register_keeps_the_hour_it_acted_at(): void
     {
@@ -282,33 +282,29 @@ final class TheMaintenanceRunsBothWaysTest extends TestCase
 
         $this->assertSame('2026-01-05', $row->day->toDateString(), 'The day itself is a date, and stays one.');
         $this->assertSame('2026-06-15 03:30:00', $row->archived_at->toDateTimeString());
-        $this->assertNotNull($row->pruned_at, 'That day is old enough to have been erased.');
-        $this->assertSame('2026-06-15 03:30:00', $row->pruned_at->toDateTimeString());
     }
 
     /**
      * And it keeps it when the register is written through the model too.
      *
      * The maintenance writes plain statements, so the model's own conversions
-     * never run today — which is exactly why this is worth holding. **The
-     * measured loss came from there** · one `$dateFormat` cannot serve a date
-     * key and two timestamps, and the shorter of the two wins in silence. The
-     * next hand to reach for `DailyArchive::create()` would have recorded every
-     * run at midnight and had no way of noticing.
+     * never run today — which is exactly why this is worth holding · one
+     * `$dateFormat` cannot serve a date key and a timestamp, and the shorter of
+     * the two wins in silence. The next hand to reach for
+     * `DailyArchive::create()` would record every run at midnight and have no
+     * way of noticing.
      */
     public function test_the_register_keeps_the_hour_when_written_through_the_model(): void
     {
         DailyArchive::create([
             'day' => CarbonImmutable::parse('2026-01-05'),
             'archived_at' => CarbonImmutable::parse('2026-06-15 03:30:00'),
-            'pruned_at' => CarbonImmutable::parse('2026-06-15 03:31:00'),
         ]);
 
         $written = DB::table(DailyArchive::TABLE)->where('day', '2026-01-05')->first();
 
         $this->assertNotNull($written, 'The key has to be written as a plain date, or nothing finds it again.');
         $this->assertSame('2026-06-15 03:30:00', (string) $written->archived_at);
-        $this->assertSame('2026-06-15 03:31:00', (string) $written->pruned_at);
     }
 
     /** The counters' key goes the same way, being read back by the same date. */

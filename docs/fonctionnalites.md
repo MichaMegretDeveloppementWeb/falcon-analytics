@@ -706,4 +706,6 @@ faire.
   moment de l'affichage.
 - **L'effacement** se fait depuis le détail d'un visiteur · il supprime le
   profil, ses sessions, ses événements et ses alias fusionnés, en une
-  transaction.
+  transaction. Les deux classements de la vue d'ensemble — pages et clics les
+  plus vus — gardent ses visites des journées déjà résumées, en simples comptes
+  anonymes · ils lisent ces journées dans les compteurs de la nuit.

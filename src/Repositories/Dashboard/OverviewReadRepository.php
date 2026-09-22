@@ -218,18 +218,20 @@ final readonly class OverviewReadRepository
     }
 
     /**
-     * Page views by address, from wherever they are still readable.
+     * Page views by address, a closed day from its summary and the day under
+     * way from its rows.
      *
      * **The two halves never overlap and never leave a gap.** Up to the last
-     * day the purge has emptied, the figures come from that day's summary;
-     * after it, from the rows themselves. The line is asked of the archive
-     * table rather than worked out from the retention, because the two part
-     * company as soon as a scheduler stops or a retention is shortened — and a
-     * line in the wrong place would either double a figure or drop one, with
-     * nothing to say which.
+     * day summarised, the figures come from the summaries; after it, from the
+     * rows themselves. The rows are then read for a day or so, whatever the
+     * period · reading them for every day they still exist would cost the
+     * whole retention, twice per screen.
      *
-     * A day whose detail is gone still holds its NAMED rows, which the summary
-     * counted too. That is the whole reason the split has to be strict.
+     * A closed day is therefore counted as the night counted it · a row erased
+     * or a session identified after that no longer reaches these two blocks.
+     *
+     * A summarised day still holds its rows, which the summary counted too.
+     * That is the whole reason the split has to be strict.
      *
      * @return Collection<string, int>
      */
@@ -245,8 +247,7 @@ final readonly class OverviewReadRepository
 
     /**
      * The reading of one measure over a period, taken from the summaries for
-     * the days that no longer hold their detail and from the detail for the
-     * rest, then added up.
+     * the days they hold and from the detail for the rest, then added up.
      *
      * Adding is exact here and only here · these are plain counts, so a day
      * plus a day makes two days. Nothing that counts DISTINCT visitors could
@@ -258,14 +259,14 @@ final readonly class OverviewReadRepository
      */
     private function joinHalves(callable $fromDetail, callable $fromSummary, Period $period): Collection
     {
-        $lastErased = DailyArchive::lastPrunedDay();
+        $lastSummarised = DailyArchive::lastSummarisedDay();
 
-        // Nothing has ever been erased, so the rows answer for everything.
-        if ($lastErased === null || $lastErased->lessThan($period->from)) {
+        // No summary reaches the window, so the rows answer for all of it.
+        if ($lastSummarised === null || $lastSummarised->lessThan($period->from)) {
             return $fromDetail($period);
         }
 
-        $boundary = $lastErased->endOfDay();
+        $boundary = $lastSummarised->endOfDay();
 
         // The whole window is behind the line: the summaries answer for it all.
         if ($boundary->greaterThanOrEqualTo($period->to)) {

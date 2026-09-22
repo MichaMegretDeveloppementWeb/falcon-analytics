@@ -21,7 +21,6 @@ COL falcon_analytics_campaigns.updated_at datetime null=YES def=- extra=
 COL falcon_analytics_daily_archives.archived_at datetime null=NO def=- extra=
 COL falcon_analytics_daily_archives.day date null=NO def=- extra=
 COL falcon_analytics_daily_archives.id bigint unsigned null=NO def=- extra=auto_increment
-COL falcon_analytics_daily_archives.pruned_at datetime null=YES def=- extra=
 COL falcon_analytics_daily_counts.day date null=NO def=- extra=
 COL falcon_analytics_daily_counts.id bigint unsigned null=NO def=- extra=auto_increment
 COL falcon_analytics_daily_counts.kind varchar(16) null=NO def=- extra=
@@ -144,3 +143,5 @@ FK falcon_analytics_events.falcon_analytics_events_session_id_foreign (session_i
 FK falcon_analytics_events.falcon_analytics_events_visitor_id_foreign (visitor_id) -> falcon_analytics_visitors.id del=CASCADE upd=NO ACTION
 FK falcon_analytics_sessions.falcon_analytics_sessions_visitor_id_foreign (visitor_id) -> falcon_analytics_visitors.id del=CASCADE upd=NO ACTION
 FK falcon_analytics_visitors.falcon_analytics_visitors_merged_into_id_foreign (merged_into_id) -> falcon_analytics_visitors.id del=SET NULL upd=NO ACTION
+CHK falcon_analytics_daily_counts.fa_daily_counts_kind_check
+CHK falcon_analytics_events.fa_events_type_check
