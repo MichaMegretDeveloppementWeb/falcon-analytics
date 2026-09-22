@@ -36,9 +36,6 @@ final class IntegrationsPage extends Component
 
     public bool $propertiesFailed = false;
 
-    /** '' | disconnect */
-    public string $modal = '';
-
     public function mount(): void
     {
         $flash = session()->pull('analytics.search_console.flash');
@@ -112,12 +109,8 @@ final class IntegrationsPage extends Component
         $this->dispatch('ui-toast', type: 'success', title: __(':count lignes synchronisées depuis Search Console.', ['count' => number_format($count, 0, ',', ' ')]));
     }
 
-    public function confirmDisconnect(): void
-    {
-        $this->modal = 'disconnect';
-    }
-
-    public function disconnectConfirmed(SearchConsoleAuth $auth): void
+    /** Whether Search Console was disconnected · the confirmation closes on a yes. */
+    public function disconnectConfirmed(SearchConsoleAuth $auth): bool
     {
         $connection = SearchConsoleConnection::current();
 
@@ -129,18 +122,14 @@ final class IntegrationsPage extends Component
                 Log::channel(config('analytics.log_channel'))->error('SearchConsole.disconnect_failed', ['exception' => $e]);
                 $this->dispatch('ui-toast', type: 'danger', title: __('La déconnexion a échoué. Réessayez.'));
 
-                return;
+                return false;
             }
         }
 
-        $this->modal = '';
         $this->properties = [];
         $this->dispatch('ui-toast', type: 'success', title: __('Search Console déconnectée.'));
-    }
 
-    public function closeModal(): void
-    {
-        $this->modal = '';
+        return true;
     }
 
     public function render(SearchConsoleAuth $auth): View

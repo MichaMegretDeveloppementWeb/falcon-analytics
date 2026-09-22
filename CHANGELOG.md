@@ -57,7 +57,14 @@ architecture qui n'existe plus.
 - **des écrans qui ne se publient pas** · ils appartiennent au paquet, qui les
   renouvelle à chaque version. Votre gabarit les habille tous, et peut en
   distinguer un par son nom de route · voir
-  [installation.md](docs/installation.md#un-écran-en-particulier).
+  [installation.md](docs/installation.md#un-écran-en-particulier) ;
+- **des fenêtres qui se tiennent au clavier** · créer, modifier ou supprimer une
+  campagne ou une pub, et déconnecter la Search Console, se font dans la
+  fenêtre du kit. Le clavier y entre, la touche Tab y reste, l'échappement la
+  ferme et rend le focus, et un lecteur d'écran l'annonce par son titre. Elle
+  ne s'ouvre que si le serveur a pu lire ce qu'elle montre, et ne se ferme
+  qu'une fois l'enregistrement fait · un refus la laisse ouverte, avec ses
+  erreurs. **Rien à faire pour cela.**
 
 ### Ce que l'intégrateur a à faire
 

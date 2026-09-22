@@ -96,7 +96,7 @@
                     @endif
 
                     <div class="an:flex an:justify-end">
-                        <x-ui::button variant="ghost" size="compact" wire:click="confirmDisconnect">{{ __('Annuler la connexion') }}</x-ui::button>
+                        <x-ui::button variant="ghost" size="compact" x-on:click="$dispatch('ui-open-modal', 'an-search-console-disconnect')">{{ __('Annuler la connexion') }}</x-ui::button>
                     </div>
                 </div>
             @else
@@ -132,29 +132,20 @@
                                 {{ __('Synchroniser maintenant') }}
                             </x-ui::button>
                         @endif
-                        <x-ui::button variant="danger" class="an:whitespace-nowrap" wire:click="confirmDisconnect">{{ __('Déconnecter') }}</x-ui::button>
+                        <x-ui::button variant="danger" class="an:whitespace-nowrap" x-on:click="$dispatch('ui-open-modal', 'an-search-console-disconnect')">{{ __('Déconnecter') }}</x-ui::button>
                     </div>
                 </div>
             @endif
         </x-ui::card>
     </div>
 
-    {{-- Modals --}}
-    <div x-on:keydown.escape.window="$wire.modal !== '' && $wire.closeModal()">
-        <div x-show="$wire.modal === 'disconnect'" x-cloak class="an:fixed an:inset-0 an:z-50 an:overflow-y-auto">
-            <div class="an:fixed an:inset-0 an:bg-gray-900/50 an:backdrop-blur-sm an:dark:bg-black/60"></div>
-            <div class="an:relative an:flex an:min-h-full an:items-center an:justify-center an:p-4" @click.self="$wire.closeModal()">
-                <div class="an:w-full an:max-w-md an:rounded-xl an:border an:border-default an:bg-surface an:p-5 an:shadow-xl">
-                    <h3 class="an:text-[13px] an:font-semibold an:text-primary">{{ __('Déconnecter Search Console ?') }}</h3>
-                    <p class="an:mt-2 an:text-[12px] an:text-secondary">
-                        {{ __('L\'autorisation Google sera révoquée. Les mots-clés déjà synchronisés restent affichés, mais ne seront plus mis à jour.') }}
-                    </p>
-                    <div class="an:mt-4 an:flex an:justify-end an:gap-2">
-                        <x-ui::button type="button" variant="ghost" wire:click="closeModal">{{ __('Annuler') }}</x-ui::button>
-                        <x-ui::button type="button" variant="danger" wire:click="disconnectConfirmed">{{ __('Déconnecter') }}</x-ui::button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    {{-- Disconnection --}}
+    <x-ui::modal name="an-search-console-disconnect" variant="confirm" :title="__('Déconnecter Search Console ?')">
+        {{ __('L\'autorisation Google sera révoquée. Les mots-clés déjà synchronisés restent affichés, mais ne seront plus mis à jour.') }}
+
+        <x-slot:actions>
+            <x-ui::button type="button" variant="ghost" x-on:click="$dispatch('ui-close-modal', 'an-search-console-disconnect')">{{ __('Annuler') }}</x-ui::button>
+            <x-ui::button type="button" variant="danger" x-on:click="$anCloseWhenDone($wire.disconnectConfirmed(), 'an-search-console-disconnect')">{{ __('Déconnecter') }}</x-ui::button>
+        </x-slot:actions>
+    </x-ui::modal>
 </x-analytics::root>

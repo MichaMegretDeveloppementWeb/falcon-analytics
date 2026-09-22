@@ -10,8 +10,8 @@ use RecursiveIteratorIterator;
 use SplFileInfo;
 
 /**
- * Every Alpine component a view names is registered, under the package's
- * prefix.
+ * Every Alpine component and magic a view names is registered, under the
+ * package's prefix.
  *
  * Alpine says nothing about a name it does not know: the element simply does
  * nothing. And a name is global to the page, shared with the host and every
@@ -56,25 +56,31 @@ final class EveryAlpineNameIsRegisteredTest extends TestCase
     }
 
     /**
-     * The names the entry hands to `Alpine.data`, read from its table.
+     * The names the entry hands to `Alpine.data` and `Alpine.magic`, read from
+     * its two tables.
      *
      * @return list<string>
      */
     private function registered(): array
     {
         $entry = (string) file_get_contents(dirname(__DIR__, 2).'/resources/js/analytics-admin.js');
+        $registered = [];
 
-        $this->assertSame(1, preg_match('/const components = \{(.*?)\};/s', $entry, $table), 'The table of components moved.');
+        foreach (['components', 'magics'] as $kind) {
+            $this->assertSame(1, preg_match('/const '.$kind.' = \{(.*?)\};/s', $entry, $table), "The table of {$kind} moved.");
 
-        preg_match_all('/^\s*(\w+),\s*$/m', $table[1], $names);
+            preg_match_all('/^\s*(\w+),\s*$/m', $table[1], $names);
 
-        $this->assertNotSame([], $names[1], 'No component was read: the guard would watch nothing.');
+            $this->assertNotSame([], $names[1], "No name was read from the {$kind}: the guard would watch nothing.");
 
-        return $names[1];
+            $registered = [...$registered, ...$names[1]];
+        }
+
+        return $registered;
     }
 
     /**
-     * The components the views name, each with a view that names it.
+     * The components and magics the views name, each with a view that names it.
      *
      * @return array<string, string>
      */
@@ -89,9 +95,12 @@ final class EveryAlpineNameIsRegisteredTest extends TestCase
                 continue;
             }
 
-            preg_match_all('/\sx-data="([a-zA-Z]\w*)/', (string) file_get_contents($file->getPathname()), $found);
+            $contents = (string) file_get_contents($file->getPathname());
 
-            foreach ($found[1] as $name) {
+            preg_match_all('/\sx-data="([a-zA-Z]\w*)/', $contents, $components);
+            preg_match_all('/\$(an[A-Z]\w*)\(/', $contents, $magics);
+
+            foreach ([...$components[1], ...$magics[1]] as $name) {
                 $used[$name] = substr($file->getPathname(), strlen($root) + 1);
             }
         }

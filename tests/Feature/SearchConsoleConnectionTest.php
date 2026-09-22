@@ -227,6 +227,18 @@ final class SearchConsoleConnectionTest extends TestCase
             ->assertSeeText('ANALYTICS_GSC_CLIENT_ID');
     }
 
+    /** The disconnection is asked in a dialog the keyboard enters, named by its title. */
+    public function test_it_asks_for_the_disconnection_in_the_kits_dialog(): void
+    {
+        $this->configureCredentials();
+        $this->connection();
+        $this->actingAs($this->admin, 'admin');
+
+        $page = (string) $this->get(route('analytics.admin.integrations'))->assertSuccessful()->getContent();
+
+        $this->assertMatchesRegularExpression('/role="dialog"[^>]*aria-labelledby="ui-modal-an-search-console-disconnect-title"/', $page);
+    }
+
     public function test_it_renders_the_connect_button_when_configured_and_disconnected(): void
     {
         $this->configureCredentials();
@@ -372,10 +384,8 @@ final class SearchConsoleConnectionTest extends TestCase
         $this->actingAs($this->admin, 'admin');
 
         Livewire::test(IntegrationsPage::class)
-            ->call('confirmDisconnect')
-            ->assertSet('modal', 'disconnect')
             ->call('disconnectConfirmed')
-            ->assertSet('modal', '')
+            ->assertReturned(true)
             ->assertDispatched('ui-toast');
 
         $this->assertSame(0, SearchConsoleConnection::query()->count());

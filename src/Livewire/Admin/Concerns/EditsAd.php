@@ -17,8 +17,9 @@ use Throwable;
 /**
  * Shared ad-editing form (name, URL conditions and conversion objectives) used by
  * both the campaign detail and the ad detail screens, so an ad can be created or
- * edited from either place with identical behaviour. The host component owns the
- * `$modal` state and provides the campaign the ad belongs to.
+ * edited from either place with identical behaviour. The host component provides
+ * the campaign the ad belongs to; the modal is the kit's, and opens and closes on
+ * this form's answers.
  *
  * @internal
  */
@@ -46,11 +47,14 @@ trait EditsAd
     protected function blankAdForm(): void
     {
         $this->resetAdForm();
+        $this->resetValidation();
         $this->adConditions = [['param' => '', 'value' => '']];
     }
 
     protected function fillAdForm(Ad $ad, FunnelRegistry $funnels, EventRegistry $events): void
     {
+        $this->resetValidation();
+
         $funnelLabels = [];
         foreach ($funnels->all() as $funnel) {
             $funnelLabels[$funnel->key] = $funnel->label;
@@ -112,7 +116,8 @@ trait EditsAd
         unset($this->objectives[$index]);
     }
 
-    public function saveAd(SaveAdAction $action): void
+    /** Whether the ad was saved · the modal closes on a yes, and only then. */
+    public function saveAd(SaveAdAction $action): bool
     {
         $this->validate([
             'adName' => ['required', 'string', 'max:150'],
@@ -166,14 +171,15 @@ trait EditsAd
             ]);
             $this->dispatch('ui-toast', type: 'danger', title: __('L\'enregistrement de la pub a échoué. Réessayez.'));
 
-            return;
+            return false;
         }
 
-        // The modal only closes; the form is repopulated on the next open (newAd /
-        // editAd). Resetting the form arrays here would remove their wire:model rows
-        // during the same morph and break Alpine's pending model-update flush.
-        $this->modal = '';
+        // The form is repopulated on the next open (newAd / editAd). Resetting the
+        // form arrays here would remove their wire:model rows during the same morph
+        // and break Alpine's pending model-update flush.
         $this->afterAdSaved();
+
+        return true;
     }
 
     protected function afterAdSaved(): void {}

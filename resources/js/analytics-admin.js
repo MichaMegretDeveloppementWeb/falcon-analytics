@@ -9,6 +9,7 @@ import { anObjectivePicker } from './admin/dashboard/objective-picker.js';
 import { anRealtimeTabs } from './admin/dashboard/realtime-tabs.js';
 import { anSessionTabs } from './admin/dashboard/session-tabs.js';
 import { anTooltipHost } from './admin/dashboard/tooltip-host.js';
+import { anCloseWhenDone, anOpenWhenDone } from './admin/modal-actions.js';
 
 /** Every Alpine component the dashboard's views name. */
 const components = {
@@ -25,9 +26,19 @@ const components = {
     anWorldMap,
 };
 
+/** Every Alpine magic the dashboard's views call · a Livewire call, then a modal. */
+const magics = {
+    anCloseWhenDone,
+    anOpenWhenDone,
+};
+
 function register() {
     for (const [name, component] of Object.entries(components)) {
         window.Alpine.data(name, component);
+    }
+
+    for (const [name, magic] of Object.entries(magics)) {
+        window.Alpine.magic(name, magic);
     }
 }
 

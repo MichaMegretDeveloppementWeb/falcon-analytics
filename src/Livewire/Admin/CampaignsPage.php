@@ -31,9 +31,6 @@ final class CampaignsPage extends Component
 
     public string $search = '';
 
-    /** '' | campaign | delete */
-    public string $modal = '';
-
     public ?int $deleteId = null;
 
     public string $deleteLabel = '';
@@ -48,13 +45,16 @@ final class CampaignsPage extends Component
         return $this->campaignId;
     }
 
-    public function newCampaign(): void
+    /** Opens a blank form · the modal opens on the answer. */
+    public function newCampaign(): bool
     {
         $this->blankCampaignForm();
-        $this->modal = 'campaign';
+
+        return true;
     }
 
-    public function editCampaign(int $id): void
+    /** Whether the campaign could be read into the form · the modal opens on a yes. */
+    public function editCampaign(int $id): bool
     {
         try {
             $campaign = Campaign::query()->findOrFail($id);
@@ -65,43 +65,51 @@ final class CampaignsPage extends Component
             ]);
             $this->dispatch('ui-toast', type: 'danger', title: __('Cette campagne est introuvable. Actualisez la page.'));
 
-            return;
+            return false;
         }
 
         $this->fillCampaignForm($campaign);
-        $this->modal = 'campaign';
+
+        return true;
     }
 
-    public function confirmDelete(int $id): void
+    /** Whether there is a campaign to ask about · the confirmation opens on a yes. */
+    public function confirmDelete(int $id): bool
     {
-        $this->deleteId = $id;
-        $this->deleteLabel = (string) Campaign::query()->whereKey($id)->value('name');
-        $this->modal = 'delete';
-    }
+        $name = Campaign::query()->whereKey($id)->value('name');
 
-    public function deleteConfirmed(DeleteCampaignAction $action): void
-    {
-        if ($this->deleteId !== null) {
-            try {
-                $action->execute($this->deleteId);
-            } catch (Throwable $e) {
-                Log::channel(config('analytics.log_channel'))->error('Campaign.delete_failed', [
-                    'campaign_id' => $this->deleteId,
-                    'exception' => $e,
-                ]);
-                $this->dispatch('ui-toast', type: 'danger', title: __('La suppression de la campagne a échoué. Réessayez.'));
+        if (! is_string($name)) {
+            $this->dispatch('ui-toast', type: 'danger', title: __('Cette campagne est introuvable. Actualisez la page.'));
 
-                return;
-            }
+            return false;
         }
 
-        $this->closeModal();
+        $this->deleteId = $id;
+        $this->deleteLabel = $name;
+
+        return true;
     }
 
-    public function closeModal(): void
+    /** Whether the campaign was deleted · the confirmation closes on a yes. */
+    public function deleteConfirmed(DeleteCampaignAction $action): bool
     {
-        $this->modal = '';
-        $this->resetValidation();
+        if ($this->deleteId === null) {
+            return false;
+        }
+
+        try {
+            $action->execute($this->deleteId);
+        } catch (Throwable $e) {
+            Log::channel(config('analytics.log_channel'))->error('Campaign.delete_failed', [
+                'campaign_id' => $this->deleteId,
+                'exception' => $e,
+            ]);
+            $this->dispatch('ui-toast', type: 'danger', title: __('La suppression de la campagne a échoué. Réessayez.'));
+
+            return false;
+        }
+
+        return true;
     }
 
     public function render(): View
