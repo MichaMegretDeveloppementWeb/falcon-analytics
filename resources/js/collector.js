@@ -17,7 +17,7 @@
   // one oversized field can never 422 the whole batch, and cap the batch size.
   var MAX_URL = 2048;
   var MAX_NAME = 120;
-  var MAX_TEXT = 120;
+  var MAX_TEXT = 255;
   var MAX_SELECTOR = 255;
   var MIN_SCORE = -2147483648;
   var MAX_SCORE = 2147483647;
