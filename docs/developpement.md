@@ -114,6 +114,32 @@ $this->actingAs(TestAdmin::create([]), 'admin');
 $this->get(route('analytics.admin.overview'))->assertSuccessful();
 ```
 
+**Les lignes se construisent par les fabriques**, sous `database/factories/`,
+une par modèle public · `Visitor`, `Session`, `Event`, `Campaign`, `Ad`,
+`AdObjective`, `SearchConsoleConnection`. Leurs valeurs par défaut sont celles
+d'une visite fraîche telle que l'enregistrement l'écrit · un essai ne pose que
+ce dont son assertion dépend, et laisse la fabrique décider du reste ·
+
+```php
+$session = Session::factory()->at(now()->subDay())->create(['source' => 'social']);
+Event::factory()->for($session)->click('cta.contact', 'Nous contacter')->create();
+Ad::factory()->for($campaign)->matching('utm_content', 'visuel-a')->create();
+```
+
+**Elles sont déclarées en `autoload`**, et non en `autoload-dev` · ce dernier
+n'est pas lu quand le paquet est une dépendance, et un hôte peut ainsi s'en
+servir dans ses propres essais. **Elles sont donc publiques** · renommer un état
+se dit au journal des versions.
+
+**Deux sortes de lignes restent écrites à la main**, et un essai le dit · les
+résumés de journée (`DailyCount`, `DailyArchive`), internes au paquet, et une
+insertion brute quand c'est elle que l'essai éprouve.
+
+**La commande de démonstration n'emploie pas les fabriques** · `analytics:seed`
+écrit par les actions et par l'enregistrement, comme un écran et comme le
+collecteur. Une fabrique monte un décor, elle ne remplace pas ce que
+l'enregistrement calcule.
+
 ---
 
 ## Compiler
@@ -272,7 +298,7 @@ Cinq règles tiennent l'ensemble, et chacune a son essai ·
 | `Events/` | les événements nommés, déclarés par l'hôte |
 | `Services/SearchConsole/` | l'authentification OAuth, le client, la synchronisation |
 | `Support/` | ce qui ne tient à aucune couche · géolocalisation, agent utilisateur, expurgation d'URL, palette |
-| `Console/` | les dix commandes |
+| `Console/` | les douze commandes |
 | `View/` | ce que la directive du collecteur a besoin de savoir |
 
 ---

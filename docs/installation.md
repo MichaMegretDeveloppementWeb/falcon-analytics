@@ -348,6 +348,11 @@ que « rien n'a été mesuré ».
 Puis chargez une page publique portant la directive · un visiteur doit apparaître
 dans les secondes qui suivent, sur l'écran temps réel.
 
+**Pour juger les écrans sans attendre le trafic**, en développement ·
+`php artisan analytics:seed` les remplit de visites inventées, qui parcourent
+vos pages et déclenchent vos événements · voir
+[fonctionnalites.md](fonctionnalites.md#remplir-les-écrans-pour-les-éprouver).
+
 **Facultatif, et recommandé** · la [géolocalisation](fonctionnalites.md#la-géolocalisation),
 une clé gratuite et une commande.
 

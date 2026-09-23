@@ -1,6 +1,6 @@
 # Ce que Falcon Analytics fait, écran par écran
 
-Quatorze écrans, dix commandes, un point de collecte. Cette page dit ce que
+Quatorze écrans, douze commandes, un point de collecte. Cette page dit ce que
 chacun fait, ce qu'il attend et ce qu'il rend.
 
 Pour les réglages, une seule autorité · [configuration.md](configuration.md).
@@ -358,11 +358,13 @@ limite de débit tiennent sa place, et ils sont posés **après** votre pile · 
 page publique très fréquentée veut la monter. Le contrôle d'origine, lui, n'a
 aucun réglage.
 
-### Les dix commandes
+### Les douze commandes
 
 | Commande | Ce qu'elle fait | Quand |
 |---|---|---|
 | `analytics:install` | publie la configuration, ajoute les variables d'environnement, lance les migrations | à l'installation |
+| `analytics:seed` | remplit les écrans de visites inventées · refuse hors développement sans `--force` | en développement, pour éprouver les écrans · voir plus bas |
+| `analytics:refresh` | supprime les tables de l'analytique et rejoue ses migrations · les statistiques repartent de zéro | une fois, pour un projet installé avant la reprise du schéma · voir [reprise-du-schema.md](reprise-du-schema.md) |
 | `analytics:check` | dit si le paquet est correctement installé et opérationnel | après l'installation, et quand quelque chose cloche |
 | `analytics:sweep` | clôt les sessions inactives au-delà du délai | **planifiée, toutes les 5 minutes** |
 | `analytics:archive` | résume les jours clos, pour que l'effacement ne coûte aucun chiffre · `--days` borne un passage | **planifiée, chaque jour à 03:00** |
@@ -372,6 +374,60 @@ aucun réglage.
 | `analytics:search-console:sync` | tire les requêtes organiques dans le cache local | **planifiée, chaque jour à 05:00** · inerte sans connexion |
 | `analytics:events:scan` | compare les événements déclarés à ceux employés dans le code · `--fix` ajoute les manquants | quand vous instrumentez |
 | `analytics:events:check` | vérifie que chaque étape de tunnel référence un événement déclaré | quand vous écrivez un tunnel |
+
+### Remplir les écrans pour les éprouver
+
+À l'installation, les quatorze écrans sont vides · les données viennent du
+trafic réel, et il en faut des semaines. `analytics:seed` les remplit de visites
+inventées, pour juger la lisibilité et la tenue des écrans tout de suite.
+
+```bash
+php artisan analytics:seed
+php artisan analytics:seed --visits=2000 --days=90
+```
+
+| Option | Défaut | Ce qu'elle règle |
+|---|---|---|
+| `--visits` | 600 | combien de visites ajouter |
+| `--days` | 30 | sur combien de jours passés les répartir |
+| `--force` | — | exécuter hors développement |
+
+**Elle refuse hors `local` et `testing`**, et nomme l'environnement trouvé · une
+commande qui écrit de fausses visites est aussi dangereuse qu'une commande qui
+en efface. `--force` lève le refus, si c'est vraiment ce que vous voulez.
+
+**Chaque passage ajoute** · relancée, elle double les visites. Les deux
+campagnes de démonstration, elles, ne sont posées qu'une fois.
+
+**Ce qu'elle pose** ·
+
+- **deux campagnes de démonstration** et leurs pubs, reconnues par les
+  paramètres `utm_campaign` et `utm_content` de leurs liens, avec pour objectifs
+  votre première conversion et votre premier tunnel déclarés ;
+- **les visites**, **enregistrées comme celles du collecteur** · même chemin,
+  l'horloge réglée sur le moment de chaque visite. Elles parcourent **vos**
+  pages publiques (les routes nommées, sans paramètre, hors authentification),
+  cliquent, déclenchent **vos** événements, avancent dans **vos** tunnels, et
+  arrivent en direct, par un moteur, un réseau, un site tiers ou un lien de
+  campagne, sur ordinateur, téléphone ou tablette. Certains visiteurs reviennent,
+  quelques robots passent, et les dernières visites tombent dans les minutes qui
+  précèdent, pour le temps réel ;
+- **le lieu de chaque visite** · il vient de votre base de géolocalisation, et à
+  défaut d'une courte liste de villes ;
+- **puis ce que feraient les tâches planifiées** · les sessions inactives
+  closes, et les journées closes résumées.
+
+**La chaîne vit dans le paquet**, sous `database/seeders/`, et se joue aussi à
+la manière ordinaire · mais le refus hors développement vit sur la commande, et
+il n'y est pas ·
+
+```bash
+php artisan db:seed --class="Falcon\Analytics\Database\Seeders\DatabaseSeeder"
+```
+
+**Le `DatabaseSeeder` de votre application ne déclare pas le nôtre**, et c'est
+voulu · un `db:seed` ordinaire poserait six cents visites inventées chaque fois
+que vous rejouez autre chose.
 
 ### La fusion des identités
 

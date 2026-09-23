@@ -34,10 +34,13 @@ architecture qui n'existe plus.
   donc un visiteur est *ce client-là*, ce qu'aucun outil externe ne peut faire ;
 - **Google Search Console**, pour les vraies requêtes organiques ;
 - **la géolocalisation locale**, par base MaxMind téléchargée chez vous ;
-- **dix commandes** · installation, diagnostic, deux pour les événements, deux
-  pour la géolocalisation, une pour la Search Console et trois d'entretien —
-  **dont cinq que le paquet planifie lui-même**, sans que vous ayez de tâche à
-  créer ;
+- **douze commandes** · installation, diagnostic, deux pour les événements, deux
+  pour la géolocalisation, une pour la Search Console, trois d'entretien, une
+  pour repartir de zéro et une qui remplit les écrans de visites inventées en
+  développement — **dont cinq que le paquet planifie lui-même**, sans que vous
+  ayez de tâche à créer ;
+- **des fabriques** pour chaque modèle public, utilisables dans vos propres
+  essais ;
 - **une conservation qui ne fausse aucun chiffre** · le pas à pas d'une session
   s'efface au bout de 90 jours, et c'est tout ce qui s'efface · les pages et
   clics les plus vus sont comptés d'avance chaque nuit, et **tout ce qui porte un
