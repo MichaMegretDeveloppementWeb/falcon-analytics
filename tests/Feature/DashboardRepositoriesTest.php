@@ -373,16 +373,21 @@ final class DashboardRepositoriesTest extends TestCase
         ], $this->overview->topPages($this->period, null));
     }
 
-    public function test_it_ranks_the_top_clicks_preferring_the_visible_text_over_the_technical_name(): void
+    public function test_it_ranks_a_named_click_by_its_event_and_a_plain_click_by_its_text(): void
     {
         $session = $this->makeSession();
         $this->makeEvent($session, EventType::Click, ['name' => 'cta.contact', 'target_text' => 'Nous contacter', 'route' => 'home']);
+        $this->makeEvent($session, EventType::Click, ['name' => 'cta.contact', 'target_text' => 'Écrivez-nous', 'route' => 'home']);
         $this->makeEvent($session, EventType::Click, ['name' => 'cta.contact', 'target_text' => 'Nous contacter', 'route' => 'home']);
         $this->makeEvent($session, EventType::Click, ['name' => 'auth.login', 'route' => 'client.login']);
+        $this->makeEvent($session, EventType::Click, ['name' => 'auth.login', 'route' => 'client.login']);
+        $this->makeEvent($session, EventType::Click, ['target_text' => 'Menu', 'route' => 'home']);
 
         $this->assertSame([
-            ['label' => 'Nous contacter', 'route' => 'home', 'total' => 2],
-            ['label' => 'auth.login', 'route' => 'client.login', 'total' => 1],
+            // Two buttons of the same event are one line · a plain click keeps its text.
+            ['label' => 'cta.contact', 'route' => 'home', 'total' => 3],
+            ['label' => 'auth.login', 'route' => 'client.login', 'total' => 2],
+            ['label' => 'Menu', 'route' => 'home', 'total' => 1],
         ], $this->overview->topClicks($this->period, null));
     }
 

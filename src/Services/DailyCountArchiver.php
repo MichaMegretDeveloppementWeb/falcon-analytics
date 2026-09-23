@@ -174,18 +174,19 @@ final readonly class DailyCountArchiver
     }
 
     /**
-     * Clicks of the day, by visible label, by page and by subject.
+     * Clicks of the day, by event, by page and by subject.
      *
-     * The label prefers the text a human saw over the technical name, and the
-     * resolution happens in a subquery · grouping by that expression directly
-     * is refused under ONLY_FULL_GROUP_BY.
+     * A named click counts by its event, a plain one by its text · the screen
+     * names each by its declared label then. The key is resolved in a subquery
+     * · grouping by that expression directly is refused under
+     * ONLY_FULL_GROUP_BY.
      *
      * @return list<array{label: string, route: string|null, subject_type: string|null, total: int}>
      */
     private function clickRows(CarbonImmutable $start, CarbonImmutable $end): array
     {
         $labelled = $this->scope(EventType::Click, $start, $end)
-            ->selectRaw("COALESCE(NULLIF(target_text, ''), NULLIF(name, '')) as label, route, s.subject_type as subject_type");
+            ->selectRaw("COALESCE(NULLIF(name, ''), NULLIF(target_text, '')) as label, route, s.subject_type as subject_type");
 
         $rows = DB::query()
             ->fromSub($labelled, 'clicks')

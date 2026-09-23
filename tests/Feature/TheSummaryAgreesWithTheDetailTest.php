@@ -99,8 +99,8 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
 
     /**
      * A day with everything the two readings have to agree about · several
-     * addresses, repeats, a click whose label falls back on its technical name,
-     * a bot, and two subjects.
+     * addresses, repeats, a named click without a visible text, a bot, and two
+     * subjects.
      */
     private function aBusyDay(CarbonImmutable $day): void
     {
@@ -120,7 +120,7 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
         $this->click($anonymous, 'Demander un devis', 'devis.demande', 'accueil', $day->setTime(9, 30));
         $this->click($anonymous, 'Demander un devis', 'devis.demande', 'accueil', $day->setTime(9, 40));
 
-        // No visible text: the label falls back on the technical name.
+        // No visible text: counted by its event all the same.
         $this->click($client, null, 'panier.ajout', 'tarifs', $day->setTime(12, 30));
 
         // Neither text nor name: nothing to show, so nothing counted.

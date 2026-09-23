@@ -13,6 +13,12 @@
     return;
   }
 
+  // A page that loads the collector twice keeps the first, or it counts everything twice.
+  if (window.__falconAnalyticsStarted) {
+    return;
+  }
+  window.__falconAnalyticsStarted = true;
+
   // Server-side limits (keep in sync with IngestBatchRequest): truncate here so
   // one oversized field can never 422 the whole batch, and cap the batch size.
   const MAX_URL = 2048;

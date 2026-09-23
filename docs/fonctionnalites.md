@@ -505,8 +505,19 @@ TrackedEvent::define('nav.catalog.click', 'Accès au catalogue');
 > le journal**. Les événements déclarés après elle n'existent plus pour les
 > écrans.
 
+**Comment un événement se lit à l'écran** · par son libellé, s'il est déclaré ·
+sinon par le texte du lien cliqué · sinon par son nom technique. Le parcours
+d'une session, le fil en direct et le classement des clics suivent tous cette
+règle.
+
+**Le classement des clics compte une ligne par événement** · deux boutons qui
+déclenchent le même événement n'en font qu'une, à son libellé. Pour les
+distinguer, déclarez deux événements. Un clic sans événement garde une ligne
+par texte.
+
 `php artisan analytics:events:scan` compare cette liste à ce que votre code
-emploie réellement, et `--fix` ajoute les manquants.
+emploie réellement, et `--fix` ajoute les manquants · un événement employé mais
+non déclaré s'affiche sinon par son nom technique dans le classement des clics.
 
 ### Émettre depuis le serveur
 
