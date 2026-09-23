@@ -11,10 +11,13 @@ use Falcon\Analytics\Livewire\Admin\AdForm;
 use Falcon\Analytics\Livewire\Admin\CampaignDetailPage;
 use Falcon\Analytics\Livewire\Admin\CampaignForm;
 use Falcon\Analytics\Livewire\Admin\CampaignsPage;
+use Falcon\Analytics\Livewire\Admin\Widgets\AdDetailContent;
 use Falcon\Analytics\Livewire\Admin\Widgets\CampaignDetailContent;
 use Falcon\Analytics\Models\Ad;
 use Falcon\Analytics\Models\AdObjective;
 use Falcon\Analytics\Models\Campaign;
+use Falcon\Analytics\Models\Event;
+use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Tests\Fixtures\Models\TestAdmin;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -91,6 +94,70 @@ final class MarketingPagesTest extends TestCase
         Livewire::test(CampaignDetailContent::class, ['refId' => $campaign->id, 'period' => 30])
             ->call('$refresh')
             ->assertSeeText(__('Taux de conversion'));
+    }
+
+    public function test_a_campaign_page_costs_the_same_whatever_its_ads(): void
+    {
+        $campaign = $this->campaign();
+        $this->actingAs($this->admin, 'admin');
+
+        // Fixed plan: the ads, then their objectives in one read = 2.
+        $budget = $this->assertCostIsFlat(
+            fn () => AdObjective::factory()->for(Ad::factory()->for($campaign))->event('Lead')->create(),
+            fn () => Livewire::test(CampaignDetailPage::class, ['campaign' => $campaign]),
+        );
+
+        $this->assertLessThanOrEqual(2, $budget['count']);
+    }
+
+    public function test_a_campaign_performance_costs_the_same_whatever_its_traffic(): void
+    {
+        $campaign = $this->campaign();
+        AdObjective::factory()->for(Ad::factory()->for($campaign)->matching('src', 'meta'))->event('Lead')->create();
+        $this->actingAs($this->admin, 'admin');
+
+        // Fixed plan: the campaign, the active campaigns, the active ads and
+        // their objectives (2), the tagged sessions of the period and of the one
+        // before (2), then the conversions of the period's visitors
+        // (occurrences, then distinct visitors) = 8.
+        $budget = $this->assertCostIsFlat(
+            fn () => Event::factory()->for(Session::factory()->state(['mkt_params' => ['src' => 'meta']]))->custom('Lead')->create(),
+            fn () => Livewire::test(CampaignDetailContent::class, ['refId' => $campaign->id, 'period' => 30])->call('$refresh'),
+        );
+
+        $this->assertLessThanOrEqual(8, $budget['count']);
+    }
+
+    public function test_an_ad_page_costs_the_same_whatever_its_objectives(): void
+    {
+        $ad = Ad::factory()->for($this->campaign())->create();
+        $this->actingAs($this->admin, 'admin');
+
+        // Fixed plan: its campaign = 1.
+        $budget = $this->assertCostIsFlat(
+            fn () => AdObjective::factory()->for($ad)->create(),
+            fn () => Livewire::test(AdDetailPage::class, ['ad' => $ad]),
+        );
+
+        $this->assertLessThanOrEqual(1, $budget['count']);
+    }
+
+    public function test_an_ad_performance_costs_the_same_whatever_its_traffic(): void
+    {
+        $ad = Ad::factory()->for($this->campaign())->matching('src', 'meta')->create();
+        AdObjective::factory()->for($ad)->event('Lead')->create();
+        $this->actingAs($this->admin, 'admin');
+
+        // Fixed plan: the active ads and their objectives (2), among which the
+        // ad itself, the tagged sessions of the period and of the one before
+        // (2), then the conversions of the period's visitors (occurrences, then
+        // distinct visitors) = 6.
+        $budget = $this->assertCostIsFlat(
+            fn () => Event::factory()->for(Session::factory()->state(['mkt_params' => ['src' => 'meta']]))->custom('Lead')->create(),
+            fn () => Livewire::test(AdDetailContent::class, ['refId' => $ad->id, 'period' => 30])->call('$refresh'),
+        );
+
+        $this->assertLessThanOrEqual(6, $budget['count']);
     }
 
     public function test_it_fills_its_inline_ads_table_metrics_from_the_dispatched_event(): void

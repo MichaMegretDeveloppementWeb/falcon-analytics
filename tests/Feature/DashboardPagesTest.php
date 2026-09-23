@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Tests\Feature;
 
 use Carbon\CarbonImmutable;
+use Falcon\Analytics\Livewire\Admin\SessionDetailPage;
 use Falcon\Analytics\Livewire\Admin\SessionsPage;
 use Falcon\Analytics\Livewire\Admin\VisitorDetailPage;
 use Falcon\Analytics\Livewire\Admin\Widgets\EventsContent;
@@ -374,6 +375,35 @@ final class DashboardPagesTest extends TestCase
         );
 
         $this->assertLessThanOrEqual(12, $budget['count']);
+    }
+
+    public function test_a_session_detail_costs_the_same_whatever_its_journey(): void
+    {
+        $this->actingAs($this->admin, 'admin');
+        $session = $this->seedSession();
+
+        // Fixed plan: the visitor, then the whole journey in one read = 2.
+        $budget = $this->assertCostIsFlat(
+            fn () => Event::factory()->for($session)->create(),
+            fn () => Livewire::test(SessionDetailPage::class, ['session' => $session]),
+        );
+
+        $this->assertLessThanOrEqual(2, $budget['count']);
+    }
+
+    public function test_a_visitor_detail_costs_the_same_whatever_its_sessions(): void
+    {
+        $this->actingAs($this->admin, 'admin');
+        $visitor = Visitor::factory()->create();
+
+        // Fixed plan: the engagement, the devices, the sources, then one page
+        // of sessions (count + rows) = 5.
+        $budget = $this->assertCostIsFlat(
+            fn () => Session::factory()->for($visitor)->create(),
+            fn () => Livewire::test(VisitorDetailPage::class, ['visitor' => $visitor]),
+        );
+
+        $this->assertLessThanOrEqual(5, $budget['count']);
     }
 
     public function test_it_recomputes_the_overview_metrics_when_the_period_changes(): void

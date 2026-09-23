@@ -9,7 +9,6 @@ use Falcon\Analytics\DTOs\Dashboard\Period;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Livewire\Admin\Concerns\GuardsWidgetRead;
-use Falcon\Analytics\Models\Ad;
 use Falcon\Analytics\Services\Dashboard\MarketingMetricsCalculator;
 use Falcon\Analytics\Services\Dashboard\MarketingReportBuilder;
 use Illuminate\Contracts\View\View;
@@ -42,7 +41,7 @@ final class AdDetailContent extends Component
     public function render(FunnelRegistry $funnels, EventRegistry $events, MarketingReportBuilder $marketing, MarketingMetricsCalculator $metrics): View
     {
         return $this->guardedWidget(function () use ($funnels, $events, $marketing, $metrics): array {
-            $ad = Ad::query()->with('objectives')->findOrFail($this->refId);
+            $ad = $marketing->adWithObjectives($this->refId);
             $period = Period::ofDays($this->period);
             $subjectType = $this->subject !== '' ? $this->subject : null;
 

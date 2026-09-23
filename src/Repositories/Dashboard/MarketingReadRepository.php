@@ -99,12 +99,9 @@ final class MarketingReadRepository
         return array_values(Ad::query()->where('is_active', true)->with('campaign')->get()->all());
     }
 
-    /**
-     * @return list<Ad>
-     */
-    public function activeCampaignAds(Campaign $campaign): array
+    public function adWithObjectives(int $id): Ad
     {
-        return array_values($campaign->ads()->where('is_active', true)->get()->all());
+        return Ad::query()->with('objectives')->findOrFail($id);
     }
 
     /**
