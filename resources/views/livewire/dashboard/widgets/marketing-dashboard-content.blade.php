@@ -44,7 +44,7 @@
                 <a href="{{ route('analytics.admin.marketing.campaigns') }}" class="an:inline-flex an:cursor-pointer an:items-center an:gap-x-1 an:text-[12px] an:font-medium an:text-secondary an:transition-colors an:hover:text-primary">{{ __('Toutes les campagnes') }} <x-ui::icon name="arrow-right" class="an:h-3.5 an:w-3.5" /></a>
             </div>
             @if ($campaignRows === [])
-                <x-ui::empty-state icon="megaphone" :title="__('Aucune campagne active sur la période')" :description="__('Le trafic taggé sera attribué ici dès qu\'une campagne correspondra.')" />
+                <x-ui::empty-state icon="megaphone" :title="__('Aucune campagne active sur la période')" :description="__('Les sessions arrivées par un lien qui porte des paramètres seront attribuées ici dès qu\'une campagne leur correspondra.')" />
             @else
                 <x-ui::table>
                     <x-ui::table.head>

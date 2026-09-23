@@ -21,6 +21,7 @@ final class TheVocabularyHoldsTest extends TestCase
         '/\btop\b/iu' => '« … les plus vues » ou « … principaux »',
         '/^Analytics$/u' => 'Audience',
         '/\bvisites?\b/iu' => 'session',
+        '/tagg|tagu/iu' => '« arrivée par un lien qui porte des paramètres »',
         '/\b(tu|tes|ton|ta|définis)\b/iu' => 'le vouvoiement',
         '/\.\.\./u' => '« … »',
         '/—/u' => '« · », « : » ou une virgule',

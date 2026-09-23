@@ -129,6 +129,8 @@ le vôtre · celui-ci ne décrit que ce que le paquet affiche.
 | la provenance d'une session | **source** · le bloc s'appelle « Sources de trafic », la section « Acquisition » | canal, en colonne « Acquisition » |
 | ce qu'on a tapé dans un moteur | **recherche** | mot-clé, terme, requête |
 | les paramètres d'un lien de campagne | leur nom tel quel · `utm_campaign`, `utm_source`, `utm_medium`, `utm_content`, `utm_term` | Campagne, Source, Contenu, Terme |
+| une session dont l'adresse d'arrivée porte des paramètres | **une session arrivée par un lien qui porte des paramètres** | trafic taggé |
+| le fichier où le site déclare ses événements ou ses tunnels | **le fichier qui déclare les événements du site**, **… les tunnels du site** | son chemin, qu'un écran ne nomme jamais |
 | retirer à la main | **supprimer** · « effacer » ne désigne que la purge automatique | l'effacement d'un visiteur |
 | couper Search Console | **déconnecter** | annuler la connexion |
 | un classement | « les plus vues », « principaux » | Top |
