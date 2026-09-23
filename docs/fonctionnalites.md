@@ -134,7 +134,11 @@ le vôtre · celui-ci ne décrit que ce que le paquet affiche.
 | retirer à la main | **supprimer** · « effacer » ne désigne que la purge automatique | l'effacement d'un visiteur |
 | couper Search Console | **déconnecter** | annuler la connexion |
 | un classement | « les plus vues », « principaux » | Top |
-| un score | **1 pt**, **12 pts** | 1 pts |
+| ce que rapportent les conversions ou un tunnel | **score**, compté en **points** · **1 pt**, **12 pts** | montant, valeur · 1 pts |
+
+**Les types d'appareil** · Ordinateur, Mobile, Téléphone simple, Phablette,
+Tablette, Télévision, Écran connecté, Appareil photo, Enceinte connectée,
+Console, Voiture, Baladeur, Objet connecté, Périphérique, Inconnu.
 
 **Les sources d'une session**, et la ligne qui les explique sur la fiche d'une
 session ·
