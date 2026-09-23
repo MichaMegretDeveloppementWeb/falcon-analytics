@@ -389,7 +389,7 @@ php artisan analytics:seed --visits=2000 --days=90
 | Option | Défaut | Ce qu'elle règle |
 |---|---|---|
 | `--visits` | 600 | combien de visites ajouter |
-| `--days` | 30 | sur combien de jours passés les répartir |
+| `--days` | 30 | sur combien de jours passés les répartir · jamais plus que la conservation, `retention_days` |
 | `--force` | — | exécuter hors développement |
 
 **Elle refuse hors `local` et `testing`**, et nomme l'environnement trouvé · une
@@ -415,7 +415,14 @@ campagnes de démonstration, elles, ne sont posées qu'une fois.
 - **le lieu de chaque visite** · il vient de votre base de géolocalisation, et à
   défaut d'une courte liste de villes ;
 - **puis ce que feraient les tâches planifiées** · les sessions inactives
-  closes, et les journées closes résumées.
+  closes, et les journées closes résumées — **celles qui l'étaient déjà
+  comprises**, puisque la commande y ajoute des visites et que la tâche de nuit,
+  elle, ne revient jamais sur une journée résumée.
+
+**Elle refuse un `--days` plus long que la conservation.** Au-delà, le pas à pas
+d'une visite est effacé à la purge suivante · les visites posées là
+disparaîtraient sans avoir compté dans les classements. Et une journée déjà
+purgée ne se résume plus à nouveau, puisque son détail n'est plus complet.
 
 **La chaîne vit dans le paquet**, sous `database/seeders/`, et se joue aussi à
 la manière ordinaire · mais le refus hors développement vit sur la commande, et

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Tests\Feature;
 
 use Carbon\CarbonImmutable;
+use Falcon\Analytics\Actions\ArchiveClosedDaysAction;
 use Falcon\Analytics\DTOs\Dashboard\Period;
 use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Events\EventRegistry;
@@ -114,25 +115,55 @@ final class SeedCommandTest extends TestCase
         $this->assertNotSame([], $conversions['campaigns'], 'a campaign credited with a conversion');
     }
 
+    public function test_it_refuses_more_days_than_the_retention_keeps(): void
+    {
+        config(['analytics.retention_days' => 3]);
+
+        $this->artisan('analytics:seed', self::SMALL)
+            ->expectsOutputToContain('--days dépasse la conservation')
+            ->assertFailed();
+
+        $this->assertSame(0, Visitor::query()->count());
+    }
+
     public function test_each_closed_day_is_summarised_as_its_detail_says(): void
     {
         $this->artisan('analytics:seed', ['--visits' => 40, '--days' => 4])->assertSuccessful();
 
-        $yesterday = CarbonImmutable::now()->subDay()->startOfDay();
+        $this->assertEachClosedDaySaysWhatItsDetailSays(4);
+    }
 
-        $this->assertTrue(DailyArchive::query()->where('day', $yesterday->toDateString())->exists(), 'yesterday is summarised');
+    /** The site already summarised its own days · the visits laid behind them count too. */
+    public function test_days_already_summarised_take_the_visits_laid_in_them(): void
+    {
+        Event::factory()->create(['url' => 'https://exemple.test/', 'occurred_at' => CarbonImmutable::now()->subDay()]);
+        app(ArchiveClosedDaysAction::class)->execute();
 
-        $summarised = (int) DailyCount::query()
-            ->where('day', $yesterday->toDateString())
-            ->where('kind', DailyCount::KIND_PAGE)
-            ->sum('total');
+        $this->artisan('analytics:seed', ['--visits' => 40, '--days' => 4])->assertSuccessful();
 
-        $detail = Event::query()
-            ->where('type', EventType::Pageview)
-            ->whereBetween('occurred_at', [$yesterday, $yesterday->endOfDay()])
-            ->whereHas('session', fn ($session) => $session->where('is_bot', false))
-            ->count();
+        $this->assertEachClosedDaySaysWhatItsDetailSays(4);
+    }
 
-        $this->assertSame($detail, $summarised);
+    private function assertEachClosedDaySaysWhatItsDetailSays(int $days): void
+    {
+        $today = CarbonImmutable::now()->startOfDay();
+
+        for ($day = $today->subDays($days); $day->lessThan($today); $day = $day->addDay()) {
+            $this->assertTrue(DailyArchive::query()->where('day', $day->toDateString())->exists(), "{$day->toDateString()} is summarised");
+
+            $summarised = (int) DailyCount::query()
+                ->where('day', $day->toDateString())
+                ->where('kind', DailyCount::KIND_PAGE)
+                ->sum('total');
+
+            $detail = Event::query()
+                ->where('type', EventType::Pageview)
+                ->whereNotNull('page')
+                ->whereBetween('occurred_at', [$day, $day->endOfDay()])
+                ->whereHas('session', fn ($session) => $session->where('is_bot', false))
+                ->count();
+
+            $this->assertSame($detail, $summarised, "{$day->toDateString()} says what its detail says");
+        }
     }
 }

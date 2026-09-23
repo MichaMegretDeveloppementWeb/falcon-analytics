@@ -30,6 +30,10 @@ use Throwable;
  * The one thing written aside is the place of a visit, which the ingestion
  * only finds in the host's geolocation database.
  *
+ * **The days it writes into are summarised again afterwards**, those already
+ * summarised included · the nightly run only goes forward, since a real visit
+ * never lands in the past.
+ *
  * @phpstan-type Step array{type: EventType, name: ?string, route: ?string, url: ?string, text: ?string}
  * @phpstan-type Page array{route: ?string, url: string}
  */
@@ -99,7 +103,17 @@ final class DemoTrafficSeeder extends Seeder
         $timeout = (int) config('analytics.session.timeout_minutes');
         $this->sessions->closeIdleSessions($now->subMinutes($timeout), $timeout);
 
-        return ['visite|visites' => $visits, 'journée résumée|journées résumées' => count($this->archive->execute())];
+        $summarised = $this->archive->executeFrom($this->firstDayWritten($before, $now));
+
+        return ['visite|visites' => $visits, 'journée résumée|journées résumées' => count($summarised)];
+    }
+
+    /** The day the earliest visit of this pass started, where summarising again begins. */
+    private function firstDayWritten(int $before, CarbonImmutable $now): CarbonImmutable
+    {
+        $earliest = Session::query()->where('id', '>', $before)->min('started_at');
+
+        return is_string($earliest) ? CarbonImmutable::parse($earliest) : $now;
     }
 
     /**

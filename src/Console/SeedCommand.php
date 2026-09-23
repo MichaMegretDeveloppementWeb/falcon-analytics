@@ -66,7 +66,8 @@ final class SeedCommand extends Command
     }
 
     /**
-     * The options, read and checked before anything is written.
+     * The options, read and checked before anything is written · the days
+     * stay within the retention, where every day can be summarised again.
      *
      * @return array{days: int, visits: int}|null
      */
@@ -82,7 +83,19 @@ final class SeedCommand extends Command
             }
         }
 
-        return ['days' => (int) $this->option('days'), 'visits' => (int) $this->option('visits')];
+        $days = (int) $this->option('days');
+        $retention = config('analytics.retention_days');
+
+        if (is_int($retention) && $retention >= 1 && $days > $retention) {
+            $this->components->error(
+                "--days dépasse la conservation réglée ({$retention} jours, analytics.retention_days) · des visites "
+                .'plus anciennes seraient effacées à la purge suivante, sans avoir compté dans les classements.'
+            );
+
+            return null;
+        }
+
+        return ['days' => $days, 'visits' => (int) $this->option('visits')];
     }
 
     /**
