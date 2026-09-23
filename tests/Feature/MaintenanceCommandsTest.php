@@ -51,12 +51,8 @@ final class MaintenanceCommandsTest extends TestCase
     }
 
     /**
-     * What carries a name is never erased, whatever its age.
-     *
-     * **This is the rule the whole retention rests on.** A named event feeds
-     * the events screen, the funnels and the marketing conversions, and no
-     * daily count can stand in for it exactly — so it stays. Erasing one would
-     * make a campaign read « 1 200 visiteurs, 0 conversion » without a word.
+     * A named event feeds the events screen, the funnels and the marketing
+     * conversions, and no daily count can stand in for it exactly.
      */
     public function test_it_never_erases_what_carries_a_name(): void
     {
@@ -80,11 +76,8 @@ final class MaintenanceCommandsTest extends TestCase
     }
 
     /**
-     * And the page views a declared funnel steps through stay as well.
-     *
      * A funnel advances sequentially inside its window, which no daily count
-     * can rebuild. Keeping the handful of routes it names is what keeps that
-     * screen exact at any depth.
+     * can rebuild, so the page views on the routes it names stay.
      */
     public function test_it_keeps_the_page_views_a_declared_funnel_needs(): void
     {
@@ -124,11 +117,8 @@ final class MaintenanceCommandsTest extends TestCase
     }
 
     /**
-     * Nothing is erased before the day has been summarised.
-     *
-     * **This is what makes a dead scheduler harmless.** On a shared host the
-     * cron stops without a word; if the erasing kept going on its own, the
-     * figures would leave with it. Here both halt together.
+     * A stopped scheduler halts the summary and the erasing together, so no
+     * figure leaves before it is summarised.
      */
     public function test_it_refuses_to_erase_a_day_that_was_never_summarised(): void
     {
@@ -138,7 +128,7 @@ final class MaintenanceCommandsTest extends TestCase
 
         Event::factory()->for(Session::factory()->at($now))->create(['occurred_at' => $now->subDays(500)]);
 
-        // No archiving at all: the scheduler never ran.
+        // No archiving at all, as when the scheduler is stopped.
         $this->artisan('analytics:prune')->assertSuccessful();
 
         $this->assertSame(1, Event::count(), 'Nothing summarised, so nothing erased.');
@@ -158,10 +148,7 @@ final class MaintenanceCommandsTest extends TestCase
         $this->assertSame(1, Event::count());
     }
 
-    /**
-     * Zero used to mean « keep everything », which is the opposite of what one
-     * writes it for. It is now refused, and said.
-     */
+    /** A zero is ambiguous, so the command refuses it and says so. */
     public function test_it_refuses_a_retention_that_is_not_a_number_of_days(): void
     {
         config(['analytics.retention_days' => 0]);
@@ -182,8 +169,7 @@ final class MaintenanceCommandsTest extends TestCase
 
         $this->artisan('analytics:sweep')->assertSuccessful();
 
-        // `ended_at` is set to the last activity plus the timeout (11:50 + 5
-        // min), never to the time of the sweep.
+        // `ended_at` is the last activity plus the timeout (11:50 + 5 min), not the sweep time.
         $freshIdle = $idle->fresh();
         $freshActive = $active->fresh();
 
@@ -279,9 +265,7 @@ final class MaintenanceCommandsTest extends TestCase
         CarbonImmutable::setTestNow($now);
         config(['analytics.retention_days' => 90]);
 
-        // Something old enough to erase, and its day summarised — otherwise the
-        // command stops on one of its two guards before ever reaching the table,
-        // and the failure this watches could not happen.
+        // Old and summarised, so the command passes both guards and reaches the table.
         Event::factory()->for(Session::factory()->at($now))->create(['occurred_at' => $now->subDays(100)]);
 
         $this->everythingIsArchived();

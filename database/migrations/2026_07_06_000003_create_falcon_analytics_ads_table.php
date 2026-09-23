@@ -9,8 +9,7 @@ use Illuminate\Support\Facades\Schema;
 /**
  * Ads belonging to a campaign, each carrying its own conversion objectives.
  *
- * Like a campaign, an ad is identified by free URL-parameter conditions rather
- * than a fixed key.
+ * Like a campaign, an ad is identified by free URL-parameter conditions.
  */
 return new class extends Migration
 {
@@ -25,14 +24,10 @@ return new class extends Migration
             $table->json('match_conditions')->nullable();
             $table->boolean('is_active')->default(true);
 
-            // Written by hand rather than through the timestamps helper: see the
-            // visitors table.
             $table->dateTime('created_at')->nullable();
             $table->dateTime('updated_at')->nullable();
 
-            // The foreign key needs an index of its own: nothing else backs it
-            // now that the ads are matched by conditions rather than by a
-            // (campaign_id, key) unique.
+            // The foreign key needs an index of its own: no other index starts with campaign_id.
             $table->index('campaign_id', 'fa_ads_campaign_idx');
         });
     }

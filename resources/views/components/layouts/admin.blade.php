@@ -1,7 +1,7 @@
 {{--
     The package's own shell: the one that answers when the host names no layout.
 
-    It mounts the kit's layout rather than writing a document, and hands it only
+    It mounts the kit's layout, writes no document of its own, and hands it only
     what belongs to the package: its navigation and its title. The head, the two
     asset slots, the theme class and the notification container come from the
     kit — and the last one is the piece a hand-written layout forgets without

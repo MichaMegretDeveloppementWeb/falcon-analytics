@@ -10,7 +10,7 @@ use Falcon\Analytics\DTOs\DeviceInfo;
 /** @internal */
 final readonly class UserAgentParser
 {
-    /** Session column lengths; truncate rather than fail the insert on an exotic UA. */
+    /** Session column lengths; an exotic UA is truncated so the insert never fails. */
     private const MAX_TYPE_LENGTH = 20;
 
     private const MAX_NAME_LENGTH = 60;

@@ -51,9 +51,9 @@ final class SessionJourneyBuilderTest extends TestCase
         $end = CarbonImmutable::parse('2026-07-02 12:05:00');
 
         $events = new Collection([
-            $this->event(EventType::Pageview, '2026-07-02 12:00:00', 'home', 'https://x.test/home'),       // 60 s
-            $this->event(EventType::Pageview, '2026-07-02 12:01:00', 'catalog', 'https://x.test/catalog'), // 180 s
-            $this->event(EventType::Pageview, '2026-07-02 12:04:00', 'home', 'https://x.test/home'),       // 60 s
+            $this->event(EventType::Pageview, '2026-07-02 12:00:00', 'home', 'https://x.test/home'),
+            $this->event(EventType::Pageview, '2026-07-02 12:01:00', 'catalog', 'https://x.test/catalog'),
+            $this->event(EventType::Pageview, '2026-07-02 12:04:00', 'home', 'https://x.test/home'),
         ]);
 
         $builder = new SessionJourneyBuilder;

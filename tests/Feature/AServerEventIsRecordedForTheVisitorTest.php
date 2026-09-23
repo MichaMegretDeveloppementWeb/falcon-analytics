@@ -13,7 +13,6 @@ use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
-use Throwable;
 
 final class AServerEventIsRecordedForTheVisitorTest extends TestCase
 {
@@ -65,22 +64,14 @@ final class AServerEventIsRecordedForTheVisitorTest extends TestCase
 
     public function test_it_never_throws_to_the_caller_even_without_a_usable_request_context(): void
     {
-        // Called outside an HTTP request: no session is available, resolution
-        // fails, and the caller must never see an exception.
-        // One argument only: `assertDoesntThrow` takes just the closure, and it
-        // already catches every `Throwable`. The second argument served no
-        // purpose but to suggest it chose what gets caught.
         $this->assertDoesntThrow(fn () => Analytics::record('X', value: 1));
 
         $this->assertSame(0, Event::count());
     }
 
     /**
-     * Outside a visitor's web request there is no visitor to record it for.
-     *
-     * With consent the identifier would come from a cookie the request does
-     * not carry, so every call would make a new visitor · a queued job firing
-     * a thousand times would leave a thousand of them.
+     * With consent the identifier comes from a cookie that no web request
+     * carries here, so every call would otherwise make a new visitor.
      */
     public function test_it_makes_no_visitor_outside_a_web_request_even_with_consent(): void
     {

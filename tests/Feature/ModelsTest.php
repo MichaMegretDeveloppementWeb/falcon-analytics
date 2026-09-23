@@ -25,17 +25,13 @@ final class ModelsTest extends TestCase
 
         $this->assertNotNull($fresh);
 
-        // Through the generic accessor, not the property: what is checked here
-        // is the cast, and the model's annotation already promises it. Going
-        // through the property would make an assertion that can no longer fail.
+        // Generic accessor: the property's annotation already promises the cast, so it could not fail.
         $this->assertInstanceOf(CarbonImmutable::class, $fresh->getAttribute('started_at'));
         $this->assertNull($fresh->ended_at);
         $this->assertFalse($fresh->is_bot);
         $this->assertSame(46.2044, $fresh->latitude);
 
-        // The three counters, through the generic accessor: they are the ones
-        // an addition reads, and only the cast guarantees they come back as
-        // integers whatever the driver hands over.
+        // Generic accessor: only the cast guarantees integers, whatever the driver hands over.
         $this->assertSame(0, $fresh->getAttribute('pageview_count'));
         $this->assertSame(0, $fresh->getAttribute('click_count'));
         $this->assertSame(0, $fresh->getAttribute('event_count'));

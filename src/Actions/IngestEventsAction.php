@@ -176,9 +176,7 @@ final readonly class IngestEventsAction
             'route' => $event->route,
             'url' => $event->url,
 
-            // The page, written once here · the path of the route, without
-            // host, query string or fragment. Every count of « pages » groups
-            // on this column, and the screen displays exactly this.
+            // The URL's path alone: every page count groups on this column.
             'page' => StoredUrl::page($event->url),
 
             'target_selector' => $event->targetSelector,

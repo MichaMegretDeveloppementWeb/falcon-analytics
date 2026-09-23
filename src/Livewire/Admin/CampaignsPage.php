@@ -19,7 +19,7 @@ use Throwable;
  * The campaigns management list: a searchable, paginated table of campaigns with
  * their URL conditions and ad count. Campaigns are created and edited here, by
  * the form laid once under the list; ads and objectives are managed from a
- * campaign's detail page.
+ * campaign's detail page, and an ad can also be edited from its own.
  *
  * @internal
  */
@@ -92,8 +92,7 @@ final class CampaignsPage extends Component
                     ->withCount('ads')
                     ->when($this->search !== '', fn ($query) => $query->where('name', 'like', '%'.$this->search.'%'))
                     ->orderBy('name')
-                    // Two campaigns can share a name: the key closes the order,
-                    // which a paginated list needs to be total.
+                    // Two campaigns can share a name: the key makes the paginated order total.
                     ->orderBy('id')
                     ->paginate(self::PER_PAGE);
 

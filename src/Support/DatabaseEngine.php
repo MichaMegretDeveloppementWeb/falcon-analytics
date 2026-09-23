@@ -10,21 +10,15 @@ use Illuminate\Support\Facades\DB;
 /**
  * The database engines the package is built and tested for, and nothing else.
  *
- * **MySQL and MariaDB.** The dashboards need three bits of raw SQL that Eloquent
+ * MySQL and MariaDB. The dashboards need three bits of raw SQL that Eloquent
  * cannot express — a day bucket, a minute bucket and a duration in seconds —
- * and those are written in MySQL's dialect. MariaDB writes them identically, so
- * it costs not one line; see {@see ScopesSessionQueries}.
+ * written in MySQL's dialect, which MariaDB shares; see {@see ScopesSessionQueries}.
+ * No other engine is announced, since the test suite runs on no other.
  *
- * Nothing else is announced, because nothing else is run. The code carried arms
- * for PostgreSQL, SQL Server and SQLite that no test ever exercised: three
- * engines promised by the code, three by the notice, one by the suite, and no
- * two lists the same.
- *
- * **Why this is guarded rather than left to fail** · a fresh Laravel arrives
- * configured for SQLite. An install that says nothing would publish the config,
- * publish the compiled files, write the environment and migrate — and the host
- * would meet the defect much later, on a screen, through a SQL syntax error
- * nobody connects to this package.
+ * Checked up front because a fresh Laravel arrives configured for SQLite: an
+ * install that said nothing would publish, migrate, and leave the host to meet
+ * a SQL syntax error much later, on a screen, with nothing tying it to this
+ * package.
  *
  * @internal
  */
@@ -47,8 +41,7 @@ final class DatabaseEngine
     /**
      * What to tell whoever is holding the wrong engine.
      *
-     * It names the driver found rather than only the ones expected: « MySQL is
-     * required » leaves the reader looking for where to check, and the answer is
+     * It names the driver found, not only the ones expected: the cause is
      * almost always a `DB_CONNECTION` nobody thought about.
      */
     public static function refusal(?string $driver = null): string

@@ -17,8 +17,8 @@ final readonly class SourceResolver
 
     /**
      * Ad-platform click identifiers that unambiguously mark paid traffic even
-     * without UTM tags (auto-tagging). fbclid is deliberately excluded: Facebook
-     * appends it to every outbound click, organic ones included.
+     * without UTM tags (auto-tagging). Not fbclid: Facebook appends it to every
+     * outbound click, organic ones included.
      *
      * @var list<string>
      */
@@ -27,7 +27,7 @@ final readonly class SourceResolver
     /** @var list<string> */
     private const PAID_MEDIUMS = ['cpc', 'ppc', 'paid', 'paidsearch', 'paid-search', 'paid_social', 'paidsocial', 'social-paid', 'display', 'banner', 'cpm', 'cpv', 'retargeting'];
 
-    /** The utm_* session columns are varchar(150); truncate rather than fail the insert. */
+    /** The utm_* session columns are varchar(150); values are truncated so the insert never fails. */
     private const MAX_UTM_LENGTH = 150;
 
     public function resolve(?string $landingUrl, ?string $referrer, ?string $appHost): Acquisition

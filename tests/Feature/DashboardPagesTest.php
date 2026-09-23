@@ -79,8 +79,7 @@ final class DashboardPagesTest extends TestCase
     {
         $this->actingAs($this->admin, 'admin');
 
-        // The deferred widget reads the breakdown (current and previous) and
-        // the daily series; the page's shell emits no query at all.
+        // Budget: the breakdown, current and previous, and the daily series; the shell reads nothing.
         $budget = $this->assertCostIsFlat(
             fn () => Event::factory()->for($this->seedSession())->click('cta.contact')->create(),
             fn () => Livewire::test(EventsContent::class, ['period' => 30])->call('$refresh'),
@@ -95,9 +94,7 @@ final class DashboardPagesTest extends TestCase
 
         $this->actingAs($this->admin, 'admin');
 
-        // The deferred widget carries the heavy reads. The active campaigns and
-        // ads, like the whole set of tagged sessions, are loaded once and
-        // reused, so no read repeats itself.
+        // Budget: active campaigns, ads and tagged sessions are each loaded once and reused.
         $budget = $this->assertCostIsFlat(
             fn () => $this->seedSession(['mkt_params' => ['src' => 'meta'], 'source' => 'social']),
             fn () => Livewire::test(MarketingDashboardContent::class, ['period' => 30])->call('$refresh'),
@@ -160,9 +157,7 @@ final class DashboardPagesTest extends TestCase
     {
         $this->actingAs($this->admin, 'admin');
 
-        // A real read is forced into failure: the session list falls on an
-        // absent table, and the page's shell still reads, so its guarded render
-        // degrades.
+        // The shell still renders, so only the guarded list degrades.
         $this->withoutTable('falcon_analytics_sessions', function (): void {
             Livewire::test(SessionsPage::class)->assertSee(__('Données indisponibles'));
         });
@@ -172,8 +167,7 @@ final class DashboardPagesTest extends TestCase
     {
         $this->actingAs($this->admin, 'admin');
 
-        // The heavy reads live in the deferred widgets, which therefore carry
-        // their own guard.
+        // The heavy reads live in the deferred widgets, so each carries its own guard.
         $this->withoutTable('falcon_analytics_sessions', function (): void {
             Livewire::test(OverviewHeadline::class, ['period' => 30])->call('$refresh')->assertSee(__('Données indisponibles'));
         });
@@ -197,7 +191,6 @@ final class DashboardPagesTest extends TestCase
         return ['the sessions' => ['analytics.admin.sessions'], 'the visitors' => ['analytics.admin.visitors']];
     }
 
-    /** A line shows the first eight characters of its visitor, and its button copies all of them. */
     #[DataProvider('listsOfVisitors')]
     public function test_a_line_shows_eight_characters_of_its_visitor_and_copies_the_whole_identifier(string $list): void
     {
@@ -219,8 +212,6 @@ final class DashboardPagesTest extends TestCase
         $this->actingAs($this->admin, 'admin')
             ->get(route('analytics.admin.sessions'))
             ->assertSuccessful()
-            // The filter used to carry its own table of labels, so the same
-            // channel read one way in the column and another in the select.
             ->assertSeeText(SourceLabel::for('organic'))
             ->assertDontSeeText('Naturel');
     }
@@ -312,8 +303,6 @@ final class DashboardPagesTest extends TestCase
             ->call('forget')
             ->assertRedirect(route('analytics.admin.visitors'));
 
-        // The target is erased entirely; the other visitor's data has to
-        // survive, which proves the scoping.
         $this->assertFalse(Visitor::whereKey($target->id)->exists());
         $this->assertSame(0, Session::where('visitor_id', $target->id)->count());
         $this->assertSame(0, Event::where('visitor_id', $target->id)->count());
@@ -322,9 +311,7 @@ final class DashboardPagesTest extends TestCase
         $this->assertSame(1, Event::where('visitor_id', $other->id)->count());
     }
 
-    // The erasure that fails lives in `TheErasureKeepsWhatItCannotDeleteTest`:
-    // it needs a bench with no wrapping transaction, which this file cannot
-    // offer without changing how its other tests run.
+    // A failing erasure is tested in `TheErasureKeepsWhatItCannotDeleteTest`, outside any transaction.
 
     public function test_it_renders_the_declared_funnels_for_an_authenticated_admin(): void
     {
@@ -354,9 +341,7 @@ final class DashboardPagesTest extends TestCase
     {
         $this->actingAs($this->admin, 'admin');
 
-        // The deferred widget carries the engagement reads; the shell emits
-        // none. The counters (current and previous), the series and the
-        // spotlight are each read once.
+        // Budget: the counters, current and previous, the series and the spotlight, each read once.
         $budget = $this->assertCostIsFlat(
             fn () => $this->seedSession(['source' => 'google', 'country' => 'FR', 'city' => 'Paris']),
             fn () => Livewire::test(OverviewHeadline::class, ['period' => 30])->call('$refresh'),
@@ -396,8 +381,7 @@ final class DashboardPagesTest extends TestCase
         $this->actingAs($this->admin, 'admin');
         $visitor = Visitor::factory()->create();
 
-        // Fixed plan: the engagement, the devices, the sources, then one page
-        // of sessions (count + rows) = 5.
+        // Fixed plan: engagement, devices, sources, then one page of sessions (count + rows) = 5.
         $budget = $this->assertCostIsFlat(
             fn () => Session::factory()->for($visitor)->create(),
             fn () => Livewire::test(VisitorDetailPage::class, ['visitor' => $visitor]),
@@ -408,13 +392,12 @@ final class DashboardPagesTest extends TestCase
 
     public function test_it_recomputes_the_overview_metrics_when_the_period_changes(): void
     {
-        $this->seedSession();                                     // aujourd'hui, dans toutes les fenêtres
+        $this->seedSession();                                     // today, inside every window
         $this->seedSession(['started_at' => now()->subDays(60)]); // only inside the 90-day window
 
         $this->actingAs($this->admin, 'admin');
 
-        // The page swaps the deferred widget's period property, through
-        // wire:key, so the widget recomputes per window.
+        // The page swaps the widget's period through wire:key, so it recomputes per window.
         Livewire::test(OverviewHeadline::class, ['period' => 30])->call('$refresh')
             ->assertViewHas('headline', fn ($headline) => $headline['sessions']->current === 1.0);
 
@@ -443,10 +426,7 @@ final class DashboardPagesTest extends TestCase
 
         $this->actingAs($this->admin, 'admin');
 
-        // The chain is broken into three: `assertViewHas` comes from Laravel's
-        // plugin, whose return type leads back to its own response class, and
-        // `set()` does not exist there. At runtime the component returns
-        // itself, but the tooling cannot know that.
+        // Split in three: the tooling types `assertViewHas` as returning a class without `set()`.
         $component = Livewire::test(SessionsPage::class);
 
         $component->assertViewHas('sessions', fn ($paginator) => $paginator->total() === 2);

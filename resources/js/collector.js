@@ -28,7 +28,7 @@
   const MIN_SCORE = -2147483648;
   const MAX_SCORE = 2147483647;
   const MAX_BATCH = 100;
-  const MAX_BUFFER = 500; // drop oldest beyond this if the endpoint is unreachable
+  const MAX_BUFFER = 500; // the oldest go first when more than this piles up between two flushes
 
   const buffer = [];
   let flushTimer = null;
@@ -68,7 +68,6 @@
 
     const referrer = cap(document.referrer, MAX_URL) || null;
 
-    // Chunk into batches the server accepts (events max is MAX_BATCH).
     while (buffer.length) {
       const chunk = buffer.splice(0, MAX_BATCH);
       send(JSON.stringify({ sent_at: now(), referrer: referrer, events: chunk }));
@@ -82,7 +81,7 @@
         return;
       }
     } catch (_e) {
-      /* fall through to fetch */
+      /* fetch below is the fallback */
     }
 
     try {
@@ -246,8 +245,6 @@
 
     const found = inspect(node);
     if (found.ignored || !found.actionable) {
-      // Only record clicks that land on a genuinely interactive element; a click
-      // on plain text or empty space carries no analytics signal.
       return;
     }
 
@@ -263,8 +260,7 @@
     }
 
     event.selector = selectorFor(found.actionable);
-    // An explicit data-track-label wins; otherwise the element's own text
-    // (textContent, not innerText, to avoid a synchronous layout reflow).
+    // textContent, not innerText: it forces no synchronous layout reflow.
     const text = found.label != null ? found.label : (found.actionable.textContent || '').trim();
     event.text = text ? text.slice(0, MAX_TEXT) : null;
 
@@ -301,24 +297,21 @@
     }
   }
 
-  // Page view on load.
   queue(baseEvent('pageview'));
 
-  // Delegated click capture. Capture phase so app handlers calling
-  // stopPropagation can't swallow it; not passive (passive is a no-op for click).
+  // Capture phase, so an app handler calling stopPropagation cannot swallow the
+  // click; not passive, which is a no-op for a click.
   document.addEventListener('click', onClick, true);
 
-  // Delegated form submit (capture) so Enter-key submissions are tracked too.
+  // On submit, so a form sent with the Enter key is tracked too.
   document.addEventListener('submit', onSubmit, true);
 
-  // Visibility-gated heartbeat keeps last_activity_at accurate for passive reading.
   setInterval(function () {
     if (document.visibilityState === 'visible') {
       queue(baseEvent('heartbeat'));
     }
   }, HEARTBEAT_MS);
 
-  // Never lose the buffer when leaving or hiding the tab.
   document.addEventListener('visibilitychange', onHidden);
   window.addEventListener('pagehide', flush);
 })();

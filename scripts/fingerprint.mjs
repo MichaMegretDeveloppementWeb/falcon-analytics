@@ -20,9 +20,9 @@ import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /*
- * `fileURLToPath` rather than `.pathname`: a URL is encoded, a path is not.
- * With the package sitting in a directory whose name carries a space, that gave
- * a literal `%20` and the build stopped on a file it could not find.
+ * `fileURLToPath`, not `.pathname`: a URL is encoded, a path is not, so a
+ * directory whose name carries a space would come back as a literal `%20` and
+ * name a file that does not exist.
  *
  * It also strips the slash that precedes the drive letter under Windows.
  */

@@ -72,9 +72,7 @@ final readonly class FunnelStep
             return $this->event !== null ? [$this->event] : [];
         }
 
-        // `!== null`, like the single branch just above: an `array_filter`
-        // without a callback also dropped an empty string and the name "0",
-        // which the simple case keeps. Both paths now answer alike.
+        // Not a bare array_filter: it would also drop "" and "0", which the simple case keeps.
         return array_values(array_filter(
             array_map(
                 static fn (FunnelBranch $branch): ?string => $branch->event,

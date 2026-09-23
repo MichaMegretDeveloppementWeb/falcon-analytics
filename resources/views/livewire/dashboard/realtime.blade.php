@@ -1,8 +1,8 @@
 @php
     use Falcon\Analytics\Support\NumberLabel;
 
-    // The board's ink, in three weights. Tokens rather than literals, and no
-    // dark variant beside them: a token already carries both of its values.
+    // The board's ink, in three weights. Tokens, with no dark variant beside
+    // them: a token already carries both of its values.
     $ink = 'an:text-ink';
     $inkMuted = 'an:text-ink/40';
     $inkSoft = 'an:text-ink-soft';
@@ -225,7 +225,7 @@
                 @endif
             </div>
 
-            {{-- Live activity (last 24 hours): the featured event type --}}
+            {{-- Live activity (the realtime window) --}}
             <div class="an:rounded-xl an:border an:border-default an:bg-surface">
                 <div class="an:px-5 an:py-4">
                     <p class="an:text-[16px] an:font-bold {{ $ink }}">{{ __('Activité en direct') }}</p>

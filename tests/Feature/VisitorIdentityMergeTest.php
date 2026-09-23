@@ -178,12 +178,9 @@ final class VisitorIdentityMergeTest extends TestCase
     }
 
     /**
-     * Folding a browser into the person's profile and pulling in their stray
-     * sessions are one operation · if the second fails, the first is undone.
-     *
-     * The relocation is made to fail on its first write, after the fold has
-     * already moved the browser's rows. Committed apart, the fold would stay ·
-     * a profile merged without the sessions the merge promises to bring.
+     * The relocation fails on its first write, after the fold has moved the
+     * browser's rows · committed apart, the fold would stay without the sessions
+     * it promises to bring.
      */
     public function test_a_fold_and_the_sessions_it_pulls_in_stand_or_fall_together(): void
     {

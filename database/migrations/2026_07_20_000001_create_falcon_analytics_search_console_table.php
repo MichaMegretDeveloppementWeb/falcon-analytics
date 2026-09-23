@@ -17,14 +17,11 @@ return new class extends Migration
     {
         Schema::create('falcon_analytics_search_console', function (Blueprint $table): void {
             $table->id();
-            $table->string('property', 255)->nullable(); // GSC siteUrl, e.g. "sc-domain:example.com"
+            $table->string('property', 255)->nullable();
             $table->text('refresh_token');
             $table->text('access_token')->nullable();
-            // Written by hand rather than through the timestamps helper, which
-            // lays down a type the engine converts against the session time
-            // zone. See the visitors table.
             $table->dateTime('token_expires_at')->nullable();
-            $table->string('status', 20)->default('pending_property'); // pending_property | connected | error
+            $table->string('status', 20)->default('pending_property');
             $table->string('last_error', 255)->nullable();
             $table->dateTime('last_synced_at')->nullable();
             $table->dateTime('created_at')->nullable();

@@ -71,12 +71,12 @@ final class PackageInstallationTest extends TestCase
         $this->assertContains('fa_sessions_country_idx', $sessionIndexes);
     }
 
+    /**
+     * `auth:admin` and `auth` both replay on each Livewire update as the class
+     * Livewire compares · the session stack stays out, Livewire always runs it.
+     */
     public function test_it_registers_the_configured_module_middleware_as_livewire_persistent(): void
     {
-        // The bench mounts the dashboard behind ['web', 'auth:admin'] and the
-        // marketing module keeps its default ['web', 'auth']; both replay on
-        // /livewire/update by their class, which is what Livewire compares,
-        // while the session stack stays out, Livewire always running it.
         $persistent = Livewire::getPersistentMiddleware();
 
         $this->assertContains(Authenticate::class, $persistent);
@@ -86,16 +86,9 @@ final class PackageInstallationTest extends TestCase
     }
 
     /**
-     * Both mount points say it, and each one for itself.
-     *
-     * An explicitly empty list mounts screens with no session and no auth —
-     * almost certainly a host misconfiguration, and one that shows as a working
-     * page rather than an error. So it is said out loud, twice: the two mount
-     * points are configured apart and a host can empty one without the other.
-     *
-     * **Asked of the provider, not of the route file.** That is where the
-     * mounting lives now, and a test that re-read the file would pass while the
-     * package warned nobody.
+     * An empty list mounts screens with no session and no auth, which shows as a
+     * working page and not as an error. The two mount points are configured
+     * apart, so each one warns for itself.
      */
     public function test_it_warns_when_a_screen_group_is_mounted_with_an_empty_middleware_list(): void
     {
@@ -120,33 +113,17 @@ final class PackageInstallationTest extends TestCase
         File::put($base.DIRECTORY_SEPARATOR.'.env.example', "APP_NAME=Host\n");
 
         $this->app->setBasePath($base);
-        // Said rather than inherited: the bench pins its own published
-        // directory, one per parallel worker, and `setBasePath()` does not
-        // undo a public path that was chosen. A host installing for real moves
-        // both, so this test moves both.
+        // setBasePath() keeps the bench's per-worker public path, so it moves too.
         $this->app->usePublicPath($base.DIRECTORY_SEPARATOR.'public');
-        // The provider is registered again so the publication target follows
-        // the new root.
+        // Registered again so the publication target follows the new root.
         $this->app->register(AnalyticsServiceProvider::class, force: true);
 
         try {
-            // No options: the command asks for nothing any more. It publishes,
-            // scaffolds the environment and migrates, and that is all it
-            // touches.
             $this->artisan('analytics:install')->assertSuccessful();
 
             $this->assertFileExists($base.DIRECTORY_SEPARATOR.'config'.DIRECTORY_SEPARATOR.'analytics.php');
 
-            /*
-             * The compiled files, without which the first screen raises: the
-             * kit refuses to build the address of a file the host has not
-             * published. The kit's installer publishes its own; nobody else
-             * publishes ours.
-             *
-             * Both are named: a shipped file missing from this list would never
-             * be claimed, and its absence would show on the first visit rather
-             * than here.
-             */
+            // Without them the first screen raises: the kit does not address an unpublished file.
             foreach (['analytics.css', 'analytics.js'] as $shipped) {
                 $this->assertFileExists(
                     $base.DIRECTORY_SEPARATOR.'public'.DIRECTORY_SEPARATOR.'vendor'
@@ -165,17 +142,9 @@ final class PackageInstallationTest extends TestCase
     }
 
     /**
-     * L'installation refuse un moteur que le paquet ne promet pas, **et elle
-     * refuse avant d'écrire quoi que ce soit**.
-     *
-     * C'est là tout l'enjeu · un refus plus bas laisserait une configuration
-     * publiée, des fichiers compilés publiés, un `.env` écrit et des tables à
-     * demi utiles — une installation qui a l'air faite et ne l'est pas. L'essai
-     * ne se contente donc pas du code de sortie · il vérifie que rien n'a été
-     * posé dans le dossier de l'hôte.
-     *
-     * Une application Laravel neuve arrive réglée sur SQLite · ce n'est pas un
-     * cas de laboratoire, c'est le premier contact le plus probable.
+     * The refusal comes before anything is written: a later one would leave an
+     * installation that looks done and is not. A fresh Laravel application
+     * defaults to SQLite, so this is the likeliest first contact.
      */
     public function test_the_installer_refuses_an_engine_the_package_does_not_promise(): void
     {
@@ -189,12 +158,7 @@ final class PackageInstallationTest extends TestCase
         $original = config('database.default');
 
         try {
-            /*
-             * Une connexion de configuration, sans schéma ni migration · la
-             * garde ne lit que le nom du pilote. La valeur d'origine est remise
-             * dans le `finally` : le banc tient sa transaction sur la connexion
-             * par défaut, et la laisser ailleurs empêcherait son annulation.
-             */
+            // Restored in `finally`: the bench rolls its transaction back on the default connection.
             config([
                 'database.connections.epreuve_sqlite' => ['driver' => 'sqlite', 'database' => ':memory:'],
                 'database.default' => 'epreuve_sqlite',
@@ -221,16 +185,8 @@ final class PackageInstallationTest extends TestCase
     }
 
     /**
-     * The installer asks for no path at all any more.
-     *
-     * It used to ask for three, and wrote them into the host's entries: that
-     * model went with the rebuild of the suite. The package compiles and
-     * publishes its files, so there is nothing left to import and nothing to
-     * ask for.
-     *
-     * The test is on the command's definition rather than on a call: an option
-     * reintroduced would show here, instead of being discovered the day
-     * somebody wonders what it is for.
+     * The package compiles and publishes its own files, so there is no path to
+     * ask for. Read from the command's definition, so a path option shows here.
      */
     public function test_it_asks_for_no_path_at_all(): void
     {

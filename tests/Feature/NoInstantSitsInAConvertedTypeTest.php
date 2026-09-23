@@ -12,13 +12,10 @@ use Illuminate\Support\Facades\DB;
 /**
  * No instant of the package sits in a type the engine converts.
  *
- * Asked of the engine's own catalogue rather than of the migrations: a test
- * that re-reads the migrations would only prove they agree with themselves,
- * and it is the schema that a restored backup, a replica or a reporting tool
- * will read.
- *
- * **Scoped by the table prefix, not by a list**, so a table added tomorrow is
- * covered without anyone remembering to add it here.
+ * It reads the engine's own catalogue, the schema a restored backup, a replica
+ * or a reporting tool reads · the migrations would only agree with themselves.
+ * It is scoped by the table prefix, so a new table is covered without being
+ * listed here.
  */
 final class NoInstantSitsInAConvertedTypeTest extends TestCase
 {
@@ -39,8 +36,8 @@ final class NoInstantSitsInAConvertedTypeTest extends TestCase
     }
 
     /**
-     * And the probe knows how to find something, so an empty answer above means
-     * "none is converted" rather than "the query matched nothing".
+     * An empty answer above then means that none is converted, not that the
+     * query matched nothing.
      */
     public function test_the_probe_sees_the_columns_it_is_meant_to_judge(): void
     {

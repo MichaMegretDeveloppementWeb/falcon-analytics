@@ -15,11 +15,9 @@ use Livewire\Component;
  * (kept in the query string), and the layout resolution that honours the host's
  * configurable shell.
  *
- * @internal like every screen of this package, and the reason is worth writing
- *           once. The provider announces them to Laravel under `analytics::…`,
- *           which would let a host drop one into a page of its own. That
- *           announcement is plumbing for our own pages, not an invitation · a
- *           screen expects a whole page around it, its layout and its assets,
+ * @internal like every screen of this package. The provider registers them
+ *           under `analytics::…` for the package's own pages, not for a host's ·
+ *           a screen expects a whole page around it, its layout and its assets,
  *           and laid elsewhere it comes out wrong with nothing to say so. What
  *           this package promises are the addresses of its pages.
  */

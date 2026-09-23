@@ -1,18 +1,13 @@
-# Ce qu'il faut pour faire tourner le paquet dans une VRAIE application, hors
-# du banc d'essai · `vendor/bin/testbench <commande>`.
+# What it takes to run the package inside a REAL application, outside the test
+# bench · `vendor/bin/testbench <command>`.
 #
-# À quoi ça sert : la suite d'essais force InnoDB, une base jetable et une
-# horloge figée. Certaines choses ne se voient que sans ce confort — une
-# migration refusée par le moteur par défaut de la machine, une commande qui
-# suppose une configuration que seul le banc fournit, le planificateur tel que
-# `schedule:list` le montre à un intégrateur.
+# The test suite forces InnoDB, a throwaway database and a frozen clock. Some
+# things only show without that comfort — a migration the machine's default
+# engine refuses, a command that assumes a configuration only the bench
+# provides, the scheduler as `schedule:list` shows it to an integrator.
 #
-# Le 2026-09-13, c'est comme ça qu'on a découvert qu'un index unique de cinq
-# colonnes dépassait la limite de MyISAM : la suite d'essais ne pouvait pas le
-# voir, puisqu'elle demande InnoDB.
-#
-# La base vient de l'environnement · exportez DB_* avant d'appeler, ou laissez
-# SQLite en mémoire pour ce qui n'a pas besoin de persister.
+# The database comes from the environment · export DB_* before calling, or
+# leave SQLite in memory for what does not need to persist.
 
 providers:
   - Falcon\Ui\UiServiceProvider
@@ -20,6 +15,6 @@ providers:
   - Falcon\Analytics\AnalyticsServiceProvider
 
 env:
-  # Sans ça, le cache tombe sur la base et réclame une table `cache_locks` que
-  # personne n'a migrée · `schedule:list` s'arrête dessus.
+  # Without it, the cache falls back on the database and asks for a
+  # `cache_locks` table that is never migrated here · `schedule:list` stops on it.
   - CACHE_STORE="array"

@@ -16,7 +16,7 @@ use Livewire\Livewire;
  *
  * A kit button laid on an analytics screen carries `data-ui-scope` and
  * `data-ui-area`. That is what the package's stylesheet targets, and also what
- * lets the kit reach for a skin belonging to the package rather than its own
+ * lets the kit reach for a skin belonging to the package instead of its own
  * view. None of it is derived from the URL or from a composer: the kit reads a
  * stack, during the render, and that stack only exists if a tag opened it.
  *
@@ -40,11 +40,8 @@ final class TheKitKnowsWhoItDrawsForTest extends TestCase
     }
 
     /**
-     * The reactive update, without the page.
-     *
-     * `Livewire::test` renders the component for itself, exactly like a
-     * response to a click: if the context came from the page alone, this output
-     * would be bare.
+     * `Livewire::test` renders the component for itself, like a response to a
+     * click: if the context came from the page alone, this output would be bare.
      */
     public function test_a_recomputed_fragment_keeps_the_context(): void
     {
@@ -59,17 +56,9 @@ final class TheKitKnowsWhoItDrawsForTest extends TestCase
     }
 
     /**
-     * The screen serves the package's stylesheet, and once only.
-     *
-     * The page declares it, and every root it contains declares it too —
-     * because a reactive block can be drawn somewhere other than a screen of
-     * the package. On a whole page those declarations come by the dozen and
-     * **have to produce one single tag**: it is the kit that deduplicates, on
-     * an identifier the package does not even know.
-     *
-     * The order matters too: the kit's first, the package's after. That is what
-     * the layer contract assumes, and a stylesheet read in the wrong order
-     * opens empty layers that invert the priority.
+     * The page and every root in it declare the stylesheet, and the kit folds
+     * them into one tag. The kit's sheet comes first, as the layer contract
+     * assumes · read in the wrong order, empty layers invert the priority.
      */
     public function test_a_screen_serves_the_package_sheet_exactly_once(): void
     {
@@ -90,13 +79,7 @@ final class TheKitKnowsWhoItDrawsForTest extends TestCase
         );
     }
 
-    /**
-     * No reactive view has been forgotten.
-     *
-     * The list is not written here: it is read off the components themselves,
-     * so a view added tomorrow enters the check on its own. What the test above
-     * proves of one view, this one extends to all of them.
-     */
+    /** The list is read off the components, so a new view enters the check on its own. */
     public function test_every_view_a_component_returns_carries_a_root(): void
     {
         $without = [];

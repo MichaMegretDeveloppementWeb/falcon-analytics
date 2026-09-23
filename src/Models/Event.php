@@ -46,7 +46,7 @@ final class Event extends Model
     /**
      * Internal model: writes always go through the package repositories with
      * explicit attribute arrays (never raw request input), so mass assignment
-     * is intentionally unguarded.
+     * is left unguarded.
      *
      * @var array<string>
      */

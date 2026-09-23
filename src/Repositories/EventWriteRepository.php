@@ -31,17 +31,15 @@ final readonly class EventWriteRepository
      * Erase the ANONYMOUS page views and clicks older than the cutoff, in
      * bounded batches so a single statement never locks the largest table.
      *
-     * **What is kept is what a screen still reads**, and that is the whole
-     * design of the retention · an anonymous page view or click has already
-     * been counted into the daily summary, so erasing it costs no figure. A row
-     * carrying a NAME has not: it feeds the events screen, the funnels and the
-     * marketing conversions, none of which a summary could stand in for
-     * exactly — so those rows stay, whatever their age.
+     * What is kept is what a screen still reads. An anonymous page view or
+     * click is already counted into the daily summary, so erasing it costs no
+     * figure. A row carrying a NAME feeds the events screen, the funnels and
+     * the marketing conversions, which no summary can stand in for exactly, so
+     * it stays whatever its age.
      *
-     * **Page views on a route a declared funnel steps through stay too.** A
+     * Page views on a route a declared funnel steps through stay too: a
      * funnel's progression is sequential inside its window, which no daily
-     * count can rebuild; keeping the handful of routes it names is what keeps
-     * those screens exact at any depth.
+     * count can rebuild.
      *
      * @param  list<string>  $keptRoutes  routes a declared funnel steps through
      * @return int the number erased
@@ -55,9 +53,7 @@ final readonly class EventWriteRepository
                 ->where('occurred_at', '<', $cutoff)
                 ->whereIn('type', [EventType::Pageview->value, EventType::Click->value])
 
-                // A name is what makes a row worth keeping: an empty string is
-                // not a name, and the collector writes one for a click whose
-                // element carried nothing.
+                // An empty name is no name: the collector writes one for a click on an element carrying nothing.
                 ->where(fn (Builder $query): Builder => $query->whereNull('name')->orWhere('name', ''))
 
                 ->when($keptRoutes !== [], fn (Builder $query): Builder => $query->where(

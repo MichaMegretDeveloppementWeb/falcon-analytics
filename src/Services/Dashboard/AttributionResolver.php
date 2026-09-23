@@ -10,8 +10,7 @@ use Falcon\Analytics\Models\Campaign;
 /**
  * The retroactive attribution rule: match a visit's marketing params against the
  * campaign/ad URL conditions, the most specific (most conditions) definition wins.
- * Pure and deterministic, no persistence, so it lives in the calculation layer
- * rather than the repository.
+ * Pure and deterministic, no persistence.
  *
  * @internal
  */

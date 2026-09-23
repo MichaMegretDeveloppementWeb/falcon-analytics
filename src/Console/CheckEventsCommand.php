@@ -27,8 +27,7 @@ final class CheckEventsCommand extends Command
 
         foreach ($funnels->all() as $funnel) {
             foreach ($funnel->steps() as $step) {
-                // eventNames() covers branches too, so a step declared with anyOf is
-                // checked branch by branch rather than skipped.
+                // eventNames() covers anyOf branches too, so each branch is checked.
                 foreach ($step->eventNames() as $event) {
                     if (! in_array($event, $declared, true)) {
                         $undeclared[] = [$funnel->key, $event];

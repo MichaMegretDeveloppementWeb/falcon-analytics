@@ -50,13 +50,9 @@ final class UrlRedactorTest extends TestCase
     }
 
     /**
-     * The fragment survives the redaction.
-     *
      * The collector sends the address as the visitor opened it, `#section`
-     * included, and a session's journey shows it. Rebuilt from the query alone,
-     * a redacted address lost its fragment while an unredacted one kept it ·
-     * the same visit read differently depending on whether a token had been
-     * in the link. Measured 2026-09-14.
+     * included, and a session's journey shows it · the same visit reads the same
+     * whether or not a token was in the link.
      */
     public function test_it_keeps_the_fragment_when_it_redacts(): void
     {

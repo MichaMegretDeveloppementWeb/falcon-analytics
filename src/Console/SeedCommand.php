@@ -100,7 +100,7 @@ final class SeedCommand extends Command
 
     /**
      * One line of the report · each key names what was counted as
-     * « singulier|pluriel », and a zero is left out.
+     * `singular|plural`, and a zero is left out.
      *
      * @param  array<string, int>  $written
      */

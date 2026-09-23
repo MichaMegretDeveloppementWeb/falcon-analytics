@@ -11,38 +11,33 @@ use RecursiveIteratorIterator;
 use SplFileInfo;
 
 /**
- * Tout nom que le paquet expose à la cascade ou au script porte son préfixe.
+ * Every name the package exposes to the cascade or to scripts carries its prefix.
  *
- * Un préfixe d'utilitaires n'isole que les utilitaires · `an:flex` ne protège
- * ni une classe écrite à la main, ni une animation, ni un attribut de données.
- * Ces trois familles vivent dans un espace de noms **partagé avec l'hôte et
- * avec les autres paquets de la suite**, et deux noms identiques s'y écrasent
- * sans que rien ne le dise.
+ * A utility prefix isolates utilities only: `an:flex` protects neither a
+ * hand-written class, nor an animation, nor a data attribute. Those share a
+ * namespace with the host and the other packages of the suite, where two
+ * identical names overwrite each other silently. An attribute costs most: a
+ * screen draws inside the host's layout, so a listener on the window also
+ * catches the host's elements.
  *
- * Le cas le plus coûteux est l'attribut · un écran du paquet se dessine dans le
- * layout de l'hôte, et un écouteur posé sur la fenêtre accroche alors aussi les
- * éléments de l'hôte. Un nom aussi répandu que `data-tooltip` se réclame de
- * deux propriétaires à la fois.
- *
- * `EveryClassCarriesThePrefix` garde une autre chose · les utilitaires Tailwind
- * qu'on aurait écrits sans leur préfixe. Les deux ne se recouvrent pas.
+ * `EveryClassCarriesThePrefixTest` guards unprefixed Tailwind utilities; the
+ * two do not overlap.
  */
 final class EveryExposedNameCarriesThePrefixTest extends TestCase
 {
     private const PREFIX = 'an';
 
     /**
-     * Ce que le paquet a le droit d'écrire sans son préfixe · ce qui ne lui
-     * appartient pas.
+     * What the package may write without its prefix: what does not belong to it.
      *
      * @var list<string>
      */
     private const SHARED = [
-        // Ceux du kit, qu'il lit lui-même.
+        // The kit's, which it reads itself.
         'data-ui-scope',
         'data-ui-area',
 
-        // Ceux du cadre et de ses bibliothèques.
+        // The framework's and its libraries'.
         'data-navigate-track',
         'data-csrf',
         'data-module-url',
@@ -68,7 +63,7 @@ final class EveryExposedNameCarriesThePrefixTest extends TestCase
     }
 
     /**
-     * Les trois familles, et l'expression qui les trouve.
+     * The three families, and the pattern that finds each.
      *
      * @return array<string, array{0: string, 1: string}>
      */

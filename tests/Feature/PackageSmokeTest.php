@@ -10,29 +10,14 @@ use Falcon\Ui\Rendering\RenderContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 /**
- * The package stands up, end to end.
+ * The package stands up, end to end · a real page, the kit's stylesheet and the
+ * package's on it, the marker saying who drew it, and the render stack back
+ * where it started.
  *
- * **This file is the suite's common one**, named by the socle and kept in every
- * Falcon package. Its mechanism does not change from one package to the next ·
- * a real page, the kit's stylesheet and the package's on it, the marker saying
- * who drew it, and the render stack back where it started.
- *
- * **Two tests and not one** · what the page carries and what it leaves behind
- * fail for unrelated reasons, and a single test would say « the baseline is
- * down » without saying which of the two.
- *
- * **It leans on no other test, and that is the point.** Everything else here
- * proves a finer thing — that the sheet appears once and not twice, that the
- * route names have not moved, that every reactive view carries a root. Each of
- * those assumes the chain already stands. This one is what says it stands, and
- * a baseline that leaned on its neighbours would not be a baseline. The overlap
- * is deliberate and it is small.
- *
- * **What varies between packages is which page.** The model in the suite's
- * notice renders a public home page, which supposes every package has one.
- * Analytics has no public page at all · its public area is a collector that
- * receives a POST and answers no HTML. The render therefore happens on an
- * administration screen, the only area this package draws.
+ * It is the baseline every other test assumes, so it leans on none of them.
+ * What the page carries and what it leaves behind fail for unrelated reasons,
+ * hence two tests. The page is an administration screen · the public area is a
+ * collector that answers no HTML.
  */
 final class PackageSmokeTest extends TestCase
 {
@@ -50,13 +35,8 @@ final class PackageSmokeTest extends TestCase
     }
 
     /**
-     * And the render stack is back to zero · every opening was closed.
-     *
-     * **Nothing else in this package asks.** A stack left open does not show on
-     * the page that opened it — it shows on the next one, where the kit reads a
-     * scope belonging to a screen that finished rendering long ago, and dresses
-     * it with a skin that is not its own. The failure appears one page away
-     * from its cause, which is what makes it expensive.
+     * A stack left open does not show on the page that opened it but on the
+     * next one, which the kit then dresses with a scope that is not its own.
      */
     public function test_the_render_stack_is_left_as_it_was_found(): void
     {

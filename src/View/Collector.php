@@ -21,9 +21,9 @@ final class Collector
      * `window.__falconAnalytics` and leaves when the object is absent — is never
      * even reached. The host writes no condition of its own.
      *
-     * Two of these values cannot be bundled, and that is why they travel inline
-     * rather than inside the compiled file: the current route's name changes on
-     * every page, and the cut applies per request.
+     * Two of these values cannot be bundled, so they travel inline, outside the
+     * compiled file: the current route's name changes on every page, and the
+     * cut applies per request.
      *
      * Runs on every host page, so any failure degrades to a page without
      * measurement rather than to a broken page.
@@ -31,8 +31,6 @@ final class Collector
     public static function configuration(): ?string
     {
         try {
-            // Suppressed when tracking is off or the current context is excluded
-            // (e.g. an authenticated admin), so no collector runs on those pages.
             if (config('analytics.enabled') !== true || Analytics::isExcluded()) {
                 return null;
             }

@@ -56,12 +56,8 @@ final class DashboardRepositoriesTest extends TestCase
     }
 
     /**
-     * A page's rows, through what the pagination contract promises.
-     *
-     * The repositories return the interface, not the concrete class: it offers
-     * `items()`, and neither `first()` nor `count()`. Going through it here
-     * keeps the tests honest about what the public API actually promises,
-     * rather than about what today's implementation offers on top.
+     * A page's rows, through what the pagination contract promises: the
+     * interface offers `items()`, and neither `first()` nor `count()`.
      *
      * @template TModel of Model
      *
@@ -218,8 +214,6 @@ final class DashboardRepositoriesTest extends TestCase
     {
         Campaign::factory()->matching('src', 'meta_ete')->create(['name' => 'Été']);
 
-        // Two sessions classified organic that actually match the campaign,
-        // plus one that does not.
         $this->makeSession(['source' => 'organic', 'mkt_params' => ['src' => 'meta_ete']]);
         $this->makeSession(['source' => 'organic', 'mkt_params' => ['src' => 'meta_ete']]);
         $this->makeSession(['source' => 'organic']);
@@ -254,9 +248,8 @@ final class DashboardRepositoriesTest extends TestCase
     }
 
     /**
-     * The score an occurrence carries is its own; the declared one is the
-     * default for the occurrences that carry none. An event nobody declared
-     * still adds up what its occurrences were given.
+     * The declared score is the default for occurrences that carry none, and an
+     * undeclared event still adds up the scores its occurrences carry.
      */
     public function test_an_occurrence_counts_the_score_it_carries_before_the_declared_one(): void
     {
@@ -293,7 +286,7 @@ final class DashboardRepositoriesTest extends TestCase
         $session = $this->makeSession();
         $this->makeEvent($session, EventType::Click, ['name' => 'cta.contact']);
         $this->makeEvent($session, EventType::Click, ['name' => 'Lead']);
-        $this->makeEvent($session, EventType::Pageview); // sans nom, donc écarté
+        $this->makeEvent($session, EventType::Pageview); // unnamed: not counted
 
         $result = (new SessionListReadRepository)->paginateSessions(
             $this->period, null, null, null, null, app(SubjectResolver::class), conversionNames: ['Lead'],
@@ -301,9 +294,7 @@ final class DashboardRepositoriesTest extends TestCase
 
         $row = $this->firstRow($result);
 
-        // Through the generic accessor: these are columns computed by the
-        // query, not attributes of the model, and they only exist on the rows
-        // this repository returns.
+        // Generic accessor: these columns are computed by the query, not model attributes.
         $this->assertSame(2, (int) $row->getAttribute('events_count'));
         $this->assertSame(1, (int) $row->getAttribute('conversions_count'));
     }
@@ -348,7 +339,6 @@ final class DashboardRepositoriesTest extends TestCase
         $this->makeEvent($bot, EventType::Pageview, ['route' => 'home', 'url' => 'https://x.test/']);
 
         $this->assertSame([
-            // The same page aggregates, and a page is the path of its route.
             ['label' => '/listings/25', 'total' => 2, 'previous' => 0],
             ['label' => '/catalog', 'total' => 1, 'previous' => 0],
         ], $this->overview->topPages($this->period, null));
@@ -365,7 +355,7 @@ final class DashboardRepositoriesTest extends TestCase
         $this->makeEvent($session, EventType::Click, ['target_text' => 'Menu', 'route' => 'home']);
 
         $this->assertSame([
-            // Two buttons of the same event are one line · a plain click keeps its text.
+            // Two texts of the same named event make one line.
             ['label' => 'cta.contact', 'route' => 'home', 'total' => 3],
             ['label' => 'auth.login', 'route' => 'client.login', 'total' => 2],
             ['label' => 'Menu', 'route' => 'home', 'total' => 1],
@@ -472,10 +462,7 @@ final class DashboardRepositoriesTest extends TestCase
 
     public function test_it_keeps_the_session_list_in_a_total_order_when_the_sorted_column_ties(): void
     {
-        // Six sessions the requested sort cannot tell apart: the tiebreaker is
-        // the only thing left to decide, and without one the engine is free to
-        // answer differently on each page, showing a row twice and hiding
-        // another.
+        // Six sessions the sort cannot tell apart, so only the tiebreaker orders them.
         $ids = [];
         foreach (range(1, 6) as $minutes) {
             $ids[] = $this->makeSession(['device_type' => 'desktop', 'started_at' => now()->subMinutes($minutes)])->id;
@@ -523,13 +510,13 @@ final class DashboardRepositoriesTest extends TestCase
     public function test_it_paginates_the_all_time_visitor_directory_with_its_derived_columns(): void
     {
         $visitor = Visitor::factory()->create();
-        $this->makeSession(['source' => 'organic', 'started_at' => now()->subDays(60)], $visitor); // la toute première : acquisition
+        $this->makeSession(['source' => 'organic', 'started_at' => now()->subDays(60)], $visitor); // first session: acquisition
         $this->makeSession(['city' => 'Lyon', 'source' => 'referral', 'started_at' => now()->subDays(3)], $visitor);
-        $this->makeSession(['city' => 'Paris', 'source' => 'paid', 'started_at' => now()->subDay()], $visitor); // la dernière : localité
+        $this->makeSession(['city' => 'Paris', 'source' => 'paid', 'started_at' => now()->subDay()], $visitor); // latest session: locality
 
-        $this->makeSession(['is_bot' => true], Visitor::factory()->create()); // visiteur robot seulement : écarté
+        $this->makeSession(['is_bot' => true], Visitor::factory()->create()); // bot-only visitor: excluded
 
-        $alias = Visitor::factory()->create(); // alias fusionné : écarté
+        $alias = Visitor::factory()->create(); // merged alias: excluded
         $alias->update(['merged_into_id' => $visitor->id]);
 
         $result = $this->visitors->paginateVisitors(null, null, new SubjectResolver);
@@ -560,15 +547,15 @@ final class DashboardRepositoriesTest extends TestCase
     public function test_it_counts_period_visitors_new_visitors_and_sessions_excluding_bots(): void
     {
         $returning = Visitor::factory()->create();
-        $returning->update(['first_seen_at' => now()->subDays(60)]); // vu avant la période
+        $returning->update(['first_seen_at' => now()->subDays(60)]); // first seen before the period
         $this->makeSession([], $returning);
         $this->makeSession([], $returning);
 
         $new = Visitor::factory()->create();
-        $new->update(['first_seen_at' => now()->subDay()]); // vu pour la première fois dans la période
+        $new->update(['first_seen_at' => now()->subDay()]); // first seen within the period
         $this->makeSession([], $new);
 
-        $this->makeSession(['is_bot' => true], Visitor::factory()->create()); // robot : écarté
+        $this->makeSession(['is_bot' => true], Visitor::factory()->create()); // bot: excluded
 
         $counts = $this->visitors->visitorCounts($this->period, null);
 
@@ -595,8 +582,7 @@ final class DashboardRepositoriesTest extends TestCase
 
     public function test_it_fetches_the_visitors_screen_data_within_its_query_budget(): void
     {
-        // Fixed plan: pagination (count + selection) + counters twice (totals +
-        // new) + daily (active + new) = 8.
+        // Fixed plan: pagination (count + rows) + counters twice (totals + new) + daily (active + new) = 8.
         $budget = $this->assertCostIsFlat(
             fn () => $this->makeSession(['city' => 'Paris']),
             function (): void {
@@ -617,7 +603,6 @@ final class DashboardRepositoriesTest extends TestCase
         $this->makeSession(['device_type' => 'mobile', 'source' => 'google', 'pageview_count' => 2], $visitor);
         $this->makeSession(['device_type' => 'desktop', 'source' => null, 'pageview_count' => 1], $visitor);
 
-        // Another visitor's session must never leak into the aggregate.
         $this->makeSession(['device_type' => 'tablet', 'source' => 'social', 'pageview_count' => 9]);
 
         $engagement = app(VisitorProfileReadRepository::class)->engagement($visitor->id);

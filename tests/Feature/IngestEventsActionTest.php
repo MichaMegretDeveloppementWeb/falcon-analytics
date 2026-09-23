@@ -70,9 +70,7 @@ final class IngestEventsActionTest extends TestCase
 
         $this->assertSame(7, $session->subject_id);
 
-        // The reconstructed instants fall about a second before the
-        // `started_at` set by the server; `last_activity_at` is pulled forward
-        // so it never precedes the start.
+        // Reconstructed instants precede the server's `started_at`, so `last_activity_at` is pulled forward.
         $this->assertSame('2026-07-01 10:00:00', $session->last_activity_at->toDateTimeString());
 
         $this->assertSame(2, Event::count());
@@ -112,8 +110,7 @@ final class IngestEventsActionTest extends TestCase
         $this->assertSame(2, Session::count());
         $this->assertSame(2, Visitor::firstOrFail()->session_count);
 
-        // The same address still counts in the fresh session: the reload guard
-        // starts again from a null last address after a timeout.
+        // After a timeout the reload guard restarts from no last address, so the same address counts.
         $newest = Session::orderByDesc('id')->first();
 
         $this->assertNotNull($newest);
@@ -147,7 +144,7 @@ final class IngestEventsActionTest extends TestCase
         $now = CarbonImmutable::parse('2026-07-01 10:00:00');
         CarbonImmutable::setTestNow($now);
 
-        // A vers B puis retour a A fait trois.
+        // A, then B, then back to A makes three.
         app(IngestEventsAction::class)->execute('u-1', null, $this->snapshot(), new IncomingBatch(events: [
             $this->incoming(EventType::Pageview, $now->subSeconds(3), url: 'https://boutique.test/a'),
             $this->incoming(EventType::Pageview, $now->subSeconds(2), url: 'https://boutique.test/b'),

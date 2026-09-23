@@ -18,7 +18,7 @@ use Illuminate\Support\ServiceProvider;
  * `config/internal.php` holds what the PACKAGE answers · how often the
  * maintenance may catch itself up, how much it takes on at a time. **Two
  * reasonable hosts would not answer those differently**, so they are not
- * questions — a value that suits nobody is a defect to fix here rather than a
+ * questions — a value that suits nobody is a defect to fix here, not a
  * question to ask of every project.
  *
  * The distinction is only worth anything if it is held ·
@@ -26,7 +26,7 @@ use Illuminate\Support\ServiceProvider;
  * - the internal file must never be publishable, or a host would find it in
  *   its own `config/` and reasonably take it for an invitation ;
  * - it must win over anything a host writes, or the distinction would be a
- *   convention rather than a rule ;
+ *   convention and not a rule ;
  * - and the published file must not carry a copy of it, which is how such a
  *   separation usually rots.
  */
@@ -58,16 +58,9 @@ final class TwoConfigurationsAndOnlyOneIsYoursTest extends TestCase
     }
 
     /**
-     * A host that invents the key anyway is overruled.
-     *
-     * **This is the difference between a rule and a convention**, and it rests
-     * on one line of the provider: the internal settings are SET, not merged.
-     * A merge would fill in only what is missing, so a host writing
-     * `analytics.internal.…` into its published copy would win — and would then
-     * be steering something the package answers for.
-     *
-     * The provider is registered again over a configuration that already holds
-     * the invented value, which is exactly the situation a boot would meet.
+     * The provider sets the internal settings and does not merge them, since a
+     * merge would let a host's invented key win. It is registered again over a
+     * configuration already holding the invented value, as a boot would meet it.
      */
     public function test_a_host_that_invents_the_key_is_overruled(): void
     {
@@ -85,10 +78,8 @@ final class TwoConfigurationsAndOnlyOneIsYoursTest extends TestCase
     }
 
     /**
-     * The published file holds no copy of them.
-     *
-     * This is how the separation rots · a key drifts into the host's file,
-     * someone sets it, nothing happens, and nobody can say why.
+     * A key drifting into the host's file would be set by someone, change
+     * nothing, and leave nobody able to say why.
      */
     public function test_the_published_file_carries_no_copy_of_them(): void
     {

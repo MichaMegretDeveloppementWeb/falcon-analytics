@@ -23,18 +23,9 @@ use Livewire\Livewire;
 /**
  * The one screen the retention changes, and what it says instead.
  *
- * Everything else reads the same before and after the erasing. A session's
- * step-by-step does not — it is what the retention is spent on — so this screen
- * is the only place the cost shows, and the only place it has to be explained.
- *
- * **The lie this replaces was the package's own.** A session whose detail had
- * gone read « Cette session n'a enregistré aucun évènement » · flatly false of
- * a session that recorded six, and contradicted on the same screen by the
- * figures just above it.
- *
- * Two absences, and they do not mean the same thing · a session that recorded
- * nothing, and a session whose record was erased. Telling them apart is the
- * whole of this essay.
+ * A session's step-by-step is what the retention erases, so this screen is the
+ * only place the cost shows. It tells two absences apart: a session that
+ * recorded nothing, and a session whose detail was erased.
  */
 final class AnOldSessionSaysWhatItStillKnowsTest extends TestCase
 {
@@ -60,8 +51,7 @@ final class AnOldSessionSaysWhatItStillKnowsTest extends TestCase
     private function aSessionOn(CarbonImmutable $day, bool $withEvents = true): Session
     {
         $session = $this->aVisitOn($day, [
-            // What the ingestion keeps as it happens; these rows are laid down
-            // directly rather than through the endpoint.
+            // The counters ingestion keeps, set here since these rows skip the endpoint.
             'pageview_count' => $withEvents ? 2 : 0,
             'click_count' => $withEvents ? 3 : 0,
             'event_count' => $withEvents ? 6 : 0,
@@ -110,11 +100,8 @@ final class AnOldSessionSaysWhatItStillKnowsTest extends TestCase
     }
 
     /**
-     * The figures stay, and they are the session's own.
-     *
-     * Counting the rows that are left would answer zero clicks for a session
-     * that had three · the counter was kept as it happened, so it outlives what
-     * it counted.
+     * The session's counters outlive the rows they counted: counting what is
+     * left would answer zero clicks.
      */
     public function test_it_still_gives_the_figures_after_the_erasing(): void
     {
@@ -124,14 +111,7 @@ final class AnOldSessionSaysWhatItStillKnowsTest extends TestCase
 
         $this->assertSame(0, Event::query()->where('session_id', $old->id)->where('type', EventType::Click)->count(), 'The clicks really are gone.');
 
-        /*
-         * Asked of the component rather than of the page.
-         *
-         * The first draft looked for « 2 » and « 3 » in the HTML, which a page
-         * of that size contains many times over · it passed with the counters
-         * read back from the rows, which is exactly the defect it was meant to
-         * refuse. A figure is worth asserting by name or not at all.
-         */
+        // Asked of the component: a bare figure occurs many times in the page's HTML.
         $this->actingAs($this->anAdmin(), 'admin');
 
         $detail = Livewire::test(SessionDetailPage::class, ['session' => $old])->viewData('detail');
@@ -144,7 +124,7 @@ final class AnOldSessionSaysWhatItStillKnowsTest extends TestCase
         $this->assertSame(2, $old->fresh()?->pageview_count);
     }
 
-    /** And its named event, which the erasing spares. */
+    /** The erasing spares named events. */
     public function test_it_still_shows_the_named_event(): void
     {
         $old = $this->aSessionOn(CarbonImmutable::parse('2026-03-01'));
@@ -154,10 +134,6 @@ final class AnOldSessionSaysWhatItStillKnowsTest extends TestCase
         $this->open($old)->assertSee('commande.payee');
     }
 
-    /**
-     * And it says why the step-by-step is thinner, rather than letting the
-     * reader wonder.
-     */
     public function test_it_says_the_step_by_step_was_erased(): void
     {
         $old = $this->aSessionOn(CarbonImmutable::parse('2026-03-01'));
@@ -167,12 +143,6 @@ final class AnOldSessionSaysWhatItStillKnowsTest extends TestCase
         $this->open($old)->assertSee('durée de conservation', false);
     }
 
-    /**
-     * A recent session says nothing of the sort.
-     *
-     * The notice has to be as absent when it does not apply as it is present
-     * when it does · a screen that always explains itself explains nothing.
-     */
     public function test_a_recent_session_carries_no_such_notice(): void
     {
         $recent = $this->aSessionOn(CarbonImmutable::now()->subDays(2));
@@ -182,14 +152,7 @@ final class AnOldSessionSaysWhatItStillKnowsTest extends TestCase
         $this->open($recent)->assertDontSee('durée de conservation', false);
     }
 
-    /**
-     * And a session that genuinely recorded nothing keeps its own words.
-     *
-     * **This is the case the fix could have broken**, and it is the reason the
-     * two absences are told apart rather than folded into one gentler sentence:
-     * « aucun évènement » is true here, and saying « effacé » instead would be
-     * the same lie in the other direction.
-     */
+    /** Here « aucun évènement » is true, and « effacé » would be false. */
     public function test_a_session_that_recorded_nothing_is_told_apart(): void
     {
         $empty = $this->aSessionOn(CarbonImmutable::now()->subDays(2), withEvents: false);
@@ -200,16 +163,8 @@ final class AnOldSessionSaysWhatItStillKnowsTest extends TestCase
     }
 
     /**
-     * An old session that recorded nothing, on a day that WAS erased.
-     *
-     * **The first of three cases the archive register got wrong.** Its day is
-     * marked as emptied — a neighbouring session had plenty to erase — so
-     * asking the register « ce jour a-t-il été purgé ? » says yes, and the
-     * screen announced a loss that never happened.
-     *
-     * What settles it is the session's own arithmetic · nothing counted,
-     * nothing kept, nothing lost. The busy neighbour is there on purpose:
-     * without it the erasing finds nothing to do and marks no day at all.
+     * The archive register marks the day as emptied, so only the session's own
+     * counters tell that nothing was lost: nothing counted, nothing kept.
      */
     public function test_an_old_empty_session_is_not_said_to_be_erased_even_on_an_erased_day(): void
     {
@@ -228,20 +183,14 @@ final class AnOldSessionSaysWhatItStillKnowsTest extends TestCase
     }
 
     /**
-     * An old session whose every click carries a name keeps its step-by-step,
-     * and is not told otherwise.
-     *
-     * **The second case, and the one that would have been seen most.** A host
-     * that declares its conversions emits named clicks, and the erasing spares
-     * every row that carries a name — so this visit is whole. The register
-     * still answered « ce jour a été purgé » and the screen put « le détail a
-     * été effacé » above a journey nobody had touched.
+     * The erasing spares every row that carries a name, so this visit is whole
+     * although the register marks its day as emptied.
      */
     public function test_an_old_session_made_only_of_named_clicks_lost_nothing(): void
     {
         $day = CarbonImmutable::parse('2026-03-01');
 
-        // The neighbour again, so that the day really does get emptied.
+        // The neighbour, which gets the day marked as emptied.
         $this->aSessionOn($day);
 
         $named = $this->aVisitOn($day, ['pageview_count' => 0, 'click_count' => 2, 'event_count' => 2]);
@@ -257,22 +206,17 @@ final class AnOldSessionSaysWhatItStillKnowsTest extends TestCase
         $this->open($named)->assertDontSee('durée de conservation', false);
     }
 
-    /**
-     * And the third · an old session whose pages all sit on a route a declared
-     * funnel protects. The erasing leaves those rows where they are, so here
-     * too the journey is whole and the screen must say nothing.
-     */
+    /** The erasing spares rows on a route a declared funnel steps through, so the journey is whole. */
     public function test_an_old_session_on_a_protected_route_lost_nothing(): void
     {
         $day = CarbonImmutable::parse('2026-03-01');
 
-        // The fixture funnel steps through the route `home`, which therefore
-        // survives the erasing.
+        // The fixture funnel steps through `home`, so that route survives the erasing.
         config(['analytics.funnels_path' => __DIR__.'/../Fixtures/analytics-funnels.php']);
         $this->app->forgetInstance(FunnelRegistry::class);
         $this->app->forgetInstance(Maintenance::class);
 
-        // The neighbour, so the day is emptied at all.
+        // The neighbour, which gets the day marked as emptied.
         $this->aSessionOn($day);
 
         $protected = $this->aVisitOn($day, ['pageview_count' => 2, 'click_count' => 0, 'event_count' => 2]);

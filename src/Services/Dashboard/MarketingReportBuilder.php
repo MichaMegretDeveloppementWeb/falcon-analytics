@@ -103,8 +103,7 @@ final class MarketingReportBuilder
      */
     private function activeAds(): array
     {
-        // `array_values` because callers want a list: an Eloquent collection is
-        // already keyed from zero, but its type does not say so.
+        // `array_values` only to carry the `list` type: the keys already run from zero.
         return $this->activeAds ??= array_values($this->activeAdsWithObjectives()->all());
     }
 

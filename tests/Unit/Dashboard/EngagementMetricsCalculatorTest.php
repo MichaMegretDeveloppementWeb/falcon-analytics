@@ -12,14 +12,9 @@ use PHPUnit\Framework\TestCase;
 final class EngagementMetricsCalculatorTest extends TestCase
 {
     /**
-     * @return array<string, int|float>
-     */
-    /**
-     * The raw counts, in the exact shape the calculator expects.
-     *
-     * Written one by one rather than through `compact()`: the shape then reads
-     * in the code, and the tooling can check it matches what the called method
-     * declares.
+     * The raw counts, in the exact shape the calculator expects · written one by
+     * one, so the shape reads in the code and the tooling checks it against what
+     * the called method declares.
      *
      * @return array{visitors: int, sessions: int, pageviews: int, avgSeconds: float, bounces: int}
      */

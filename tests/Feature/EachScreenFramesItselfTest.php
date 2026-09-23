@@ -12,29 +12,19 @@ use RecursiveIteratorIterator;
 use SplFileInfo;
 
 /**
- * Un écran se cadre lui-même, sur son propre conteneur.
+ * A screen frames itself, on its own container.
  *
- * La vue mince est l'endroit où un écran dit ce qu'il prend de la place qu'on
- * lui rend · `<x-analytics::page class="…">`. Ces classes traversent le sac
- * d'attributs jusqu'à `.an-root`, et cet élément est le seul endroit où une
- * largeur se décide. Le niveau au-dessus répond à une question — combien de
- * place y a-t-il — et jamais à la seconde.
+ * The thin view states what the screen takes of the space it is given, through
+ * `<x-analytics::page class="…">`. Those classes cross the attribute bag down
+ * to `.an-root`, the only place a width is decided. A page that loses half its
+ * width shrinks without overflowing, so nothing else would notice.
  *
- * **Tenu ici parce que le chemin a été coupé une fois, par le dessus, sans que
- * rien ne tombe.** Une coquille portant sa propre largeur maximale a mis tous
- * les écrans de tous les paquets dans une colonne centrée ; une page qui perd
- * la moitié de sa largeur ne déborde pas, elle rétrécit, et aucune mesure ne
- * s'en est plainte.
- *
- * @see ScreenMountingTest pour la couche au-dessus · le gabarit de l'hôte,
- *      qui rend la place sans décider ce qu'on en fait.
+ * @see ScreenMountingTest for the layer above: the host's layout, which gives
+ *      the space without deciding its use.
  */
 final class EachScreenFramesItselfTest extends TestCase
 {
-    /**
-     * La classe est inventée plutôt que relue sur un écran · ce qui doit tenir
-     * est qu'une déclaration arrive, pas la valeur que tel écran a retenue.
-     */
+    /** An invented class: what holds is that a declaration arrives, whatever value a screen picks. */
     public function test_the_container_receives_what_the_screen_declares(): void
     {
         $html = Blade::render(
@@ -49,14 +39,7 @@ final class EachScreenFramesItselfTest extends TestCase
             "La classe déclarée par l'écran n'atteint plus son conteneur.");
     }
 
-    /**
-     * Et chaque écran le dit, sans exception.
-     *
-     * Ce qu'une vue muette produit ne ressemble pas à une erreur · la page
-     * s'affiche, collée aux deux bords et sans marge intérieure, et rien ne le
-     * signale. C'est l'écran suivant, celui qui n'existe pas encore, que cette
-     * assertion attrape.
-     */
+    /** A view that states nothing renders flush to both edges, with no error to say so. */
     public function test_every_admin_screen_states_its_frame(): void
     {
         $views = $this->adminViews();
@@ -75,7 +58,7 @@ final class EachScreenFramesItselfTest extends TestCase
     }
 
     /**
-     * Les vues minces de l'administration.
+     * The admin area's thin views.
      *
      * @return list<SplFileInfo>
      */

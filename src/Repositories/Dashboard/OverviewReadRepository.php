@@ -176,8 +176,7 @@ final readonly class OverviewReadRepository
 
         $previous = $counts($period->previous());
 
-        // `array_values` rather than `->values()`: same result, but it carries
-        // the `list` type this file declares. Same reason everywhere here.
+        // `array_values` only to carry the `list` type: the keys already run from zero.
         return array_values($counts($period)
             ->sortByDesc(fn (object $row): int => (int) $row->total)
             ->take($limit)
@@ -191,21 +190,9 @@ final readonly class OverviewReadRepository
     }
 
     /**
-     * Most viewed pages (pageview events grouped by their real URL, so dynamic
-     * pages show their concrete path), with the previous-period count for each.
-     *
-     * @return list<array{label: string, total: int, previous: int}>
-     */
-    /**
-     * The most seen pages · a page being the path of its route, without host,
-     * query string or fragment.
-     *
-     * The address is stored whole, and a session's journey shows it whole. This
-     * block asks another question · on a site receiving campaign traffic,
-     * grouping on the whole address split the real top page into one row per
-     * visit — `fbclid` being unique per click — while the screen displayed the
-     * same path on every one of them. Anchor links did the same. See
-     * `StoredUrl`.
+     * The most viewed pages, with the previous-period count for each · a page
+     * being the path of its address, without host, query string or fragment.
+     * See `StoredUrl`.
      *
      * @return list<array{label: string, total: int, previous: int}>
      */
@@ -218,20 +205,19 @@ final readonly class OverviewReadRepository
     }
 
     /**
-     * Page views by address, a closed day from its summary and the day under
+     * Page views by page path, a closed day from its summary and the day under
      * way from its rows.
      *
-     * **The two halves never overlap and never leave a gap.** Up to the last
-     * day summarised, the figures come from the summaries; after it, from the
-     * rows themselves. The rows are then read for a day or so, whatever the
-     * period · reading them for every day they still exist would cost the
-     * whole retention, twice per screen.
+     * The two halves never overlap and never leave a gap. Up to the last day
+     * summarised, the figures come from the summaries; after it, from the rows
+     * themselves, so the rows are read for a day or so whatever the period,
+     * never across the whole retention.
      *
      * A closed day is therefore counted as the night counted it · a row erased
-     * or a session identified after that no longer reaches these two blocks.
+     * or a session identified after that does not reach these two blocks.
      *
-     * A summarised day still holds its rows, which the summary counted too.
-     * That is the whole reason the split has to be strict.
+     * A summarised day still holds its rows, which the summary counted too, so
+     * the split has to be strict.
      *
      * @return Collection<string, int>
      */
@@ -261,14 +247,12 @@ final readonly class OverviewReadRepository
     {
         $lastSummarised = DailyArchive::lastSummarisedDay();
 
-        // No summary reaches the window, so the rows answer for all of it.
         if ($lastSummarised === null || $lastSummarised->lessThan($period->from)) {
             return $fromDetail($period);
         }
 
         $boundary = $lastSummarised->endOfDay();
 
-        // The whole window is behind the line: the summaries answer for it all.
         if ($boundary->greaterThanOrEqualTo($period->to)) {
             return $fromSummary($period);
         }
@@ -315,12 +299,7 @@ final readonly class OverviewReadRepository
      */
     public function topClicks(Period $period, ?string $subjectType, int $limit = 6): array
     {
-        /*
-         * A click is ranked by its label AND the page it sits on, so the two
-         * travel together through the joining · a key that dropped the route
-         * would merge two different buttons that happen to read the same, and
-         * the reading would change the day the purge crossed them.
-         */
+        // Keyed by label AND route: two buttons that read the same on different pages stay apart.
         $counts = $this->joinHalves(
             fn (Period $window): Collection => $this->detailedClickCounts($window, $subjectType),
             fn (Period $window): Collection => $this->summarisedCounts($window, $subjectType, DailyCount::KIND_CLICK)
@@ -349,9 +328,7 @@ final readonly class OverviewReadRepository
         // A named click counts by its event, a plain one by its text · the daily summary keys it the same way.
         $label = "COALESCE(NULLIF(name, ''), NULLIF(target_text, ''))";
 
-        // Resolve the label in a subquery so the aggregate groups by a plain
-        // column: MySQL/MariaDB in ONLY_FULL_GROUP_BY reject grouping by this
-        // COALESCE expression directly (1055 "target_text isn't in GROUP BY").
+        // Grouped from a subquery: ONLY_FULL_GROUP_BY rejects grouping by the COALESCE itself.
         $clicks = $this->eventScope(EventType::Click, $period, $subjectType)
             ->selectRaw("{$label} as label, route");
 
@@ -372,16 +349,10 @@ final readonly class OverviewReadRepository
     /**
      * A click's identity, as one string · the route, then the label.
      *
-     * **That order is the whole correctness of this pair**, and it is not the
-     * order one writes first. A button's visible text comes from `textContent`,
-     * which keeps the line feeds of the source · a button written across three
-     * lines of HTML carries them into its label. A route name cannot.
-     *
-     * So the field that may hold the separator goes LAST, and the split takes
-     * everything after the first one. Written label-first, « Demander\nun
-     * devis » on the route `accueil` came back as the label « Demander » on the
-     * route « un devis\naccueil » — a wrong label and a wrong page, on a block
-     * nobody would think to doubt.
+     * Not label-first: a label comes from `textContent`, which keeps the line
+     * feeds of the source, so it can hold the separator while a route name
+     * cannot. The label goes last, and the split takes everything after the
+     * first separator.
      */
     private static function clickKey(string $label, ?string $route): string
     {
@@ -398,7 +369,7 @@ final readonly class OverviewReadRepository
     }
 
     /**
-     * Page views of the window, by page · the path of the route, written down
+     * Page views of the window, by page · the path of the address, written down
      * at ingestion by the same reading the screen makes to display an address.
      * See `StoredUrl`.
      *

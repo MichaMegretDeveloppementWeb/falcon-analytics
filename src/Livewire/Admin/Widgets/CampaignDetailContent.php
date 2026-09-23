@@ -62,8 +62,6 @@ final class CampaignDetailContent extends Component
 
             $activeAds = $marketing->activeAdsOf($campaign);
 
-            // Hand the per-ad traffic and conversions to the parent's inline ads table,
-            // so those reads happen once here rather than blocking the page shell.
             $this->dispatch('an-campaign-metrics-loaded', adMetrics: $report['ads'], adConversions: $conversions['ads']);
 
             return [

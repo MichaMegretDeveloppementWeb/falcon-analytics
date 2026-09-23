@@ -33,14 +33,9 @@ final class SessionJourneyBuilder
      */
     public function build(Collection $events, CarbonInterface $windowStart, CarbonInterface $windowEnd): array
     {
-        // Two parallel accumulators rather than one array of shapes: each list
-        // keeps a clean type, and the final shape composes in one pass.
         $steps = [];
         $children = [];
 
-        // The index of the current step, held rather than asked for again: the
-        // two lists grow together, and the second branch is only reached after
-        // at least one push.
         $current = -1;
 
         foreach ($events as $event) {

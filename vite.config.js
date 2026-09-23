@@ -14,10 +14,8 @@ export default defineConfig({
     // copying the directory into itself.
     publicDir: false,
 
-    // No `base` here, unlike the kit. It needs one to have its on-demand chunk
-    // fetched from beside the script that asks for it. The format below forbids
-    // any splitting, so no address is written into the produced file and there
-    // is nothing to resolve.
+    // No `base`: the format below forbids any splitting, so the produced file
+    // holds no address to resolve.
 
     build: {
         outDir: 'public',
@@ -33,16 +31,11 @@ export default defineConfig({
         rollupOptions: {
             /*
              * **The source is named for what it is, the output for the package
-             * that ships it**, and the two therefore differ · the skeleton has
-             * them matching, as `ui.js` does in the kit.
+             * that ships it** · `collector.js` says what the file contains to
+             * whoever opens it, `analytics.js` is what a host publishes, beside
+             * the dashboard's `analytics-admin.js`.
              *
-             * `collector.js` says what the file contains to whoever opens it.
-             * `analytics.js` is what a host publishes, beside the dashboard's
-             * `analytics-admin.js`. Renaming either would lose one of the two
-             * readings.
-             *
-             * This is the line to come back to when asking where
-             * `public/analytics.js` is written.
+             * This line is where `public/analytics.js` comes from.
              */
             input: {
                 analytics: 'resources/js/collector.js',
@@ -50,9 +43,8 @@ export default defineConfig({
 
             output: {
                 /*
-                 * **An immediately invoked function, not a module**, and this
-                 * is not a matter of taste: the kit emits a CLASSIC tag for a
-                 * package's file, `<script src … defer>`. A module loaded that
+                 * **An immediately invoked function, not a module**: the kit
+                 * emits a CLASSIC tag for a package's file, `<script src … defer>`. A module loaded that
                  * way is treated as an ordinary script, and its export
                  * declarations would throw in the browser.
                  *

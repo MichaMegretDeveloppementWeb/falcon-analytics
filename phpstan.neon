@@ -1,7 +1,6 @@
-# No `includes:` here, and that is deliberate: `phpstan/extension-installer`
-# mounts the installed packages' extensions on its own — larastan, Carbon's, and
-# the strict rules. An `includes:` written by hand would duplicate that, and
-# would have to be kept up to date with every extension added.
+# No `includes:`: `phpstan/extension-installer` mounts the installed packages'
+# extensions on its own — larastan, Carbon's, and the strict rules. An
+# `includes:` written by hand would load them a second time.
 
 parameters:
     # Level 8: the step that refuses to let a possibly null value travel without
@@ -13,11 +12,10 @@ parameters:
     # `dynamicCallOnStaticMethod` forbids calling a static method on an
     # instance. Eloquent models its query builder that way: a
     # `$query->whereIn(...)` or a `$query->count()` passes for a static call
-    # there. Measured on this package: 153 errors, all of that shape, and none
-    # of them a defect. The kit does not meet them — it has no models.
+    # there, and none of those is a defect. The kit does not meet them — it has
+    # no models.
     #
-    # The other twenty rules stay, and they have already returned 88 real
-    # reports. That one will come back on the day the tooling can tell
+    # The other rules stay. This one comes back on the day the tooling can tell
     # Eloquent's forwarding from a genuine static call on an instance.
     strictRules:
         dynamicCallOnStaticMethod: false
@@ -30,8 +28,8 @@ parameters:
         - routes
 
     # Templates read by `analytics:scan-events`, not code to analyse: they name
-    # classes that do not exist on purpose, to prove the scanner finds an event
-    # without resolving anything.
+    # classes that do not exist, to prove the scanner finds an event without
+    # resolving anything.
     excludePaths:
         - tests/Fixtures/scan
 
@@ -84,10 +82,6 @@ parameters:
         # outside a test's life cycle: inside a test method, the application is
         # always booted.
         # Removed the day testbench declares it non-null.
-        #
-        # Its twin, on offset access, was removed straight away: no error
-        # matched it, and `reportUnmatchedIgnoredErrors` said so instead of
-        # letting it sleep. That is exactly its job.
         -
             identifier: method.nonObject
             message: '#^Cannot call method .+\(\) on Illuminate\\Foundation\\Application\|null\.$#'

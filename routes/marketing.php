@@ -14,14 +14,12 @@ use Illuminate\Support\Facades\Route;
  *
  * **Same area, second mount point.** They share the area's shell and its name
  * prefix — a host mounting both wants one chrome around them — but they carry
- * their own address and their own guards, from their own config block. Three of
- * them WRITE, where the eleven others only read, and a host is entitled to put
- * that behind another guard.
+ * their own address and their own guards, from their own config block, so a
+ * host can put campaign and ad management behind another guard.
  *
- * **Their group is a sibling of the analytics one, never a child**, and that is
- * measured rather than assumed · a nested group concatenates the prefixes
- * (`/admin/analytics/admin/marketing/…`) and ACCUMULATES the middleware, so the
- * screens would demand both guards at once and nobody would get in.
+ * **Their group is a sibling of the analytics one, never a child** · a nested
+ * group concatenates the prefixes (`/admin/analytics/admin/marketing/…`) and
+ * ACCUMULATES the middleware, so the screens would demand both guards at once.
  */
 
 Route::get('/', MarketingDashboardController::class)->name('dashboard');

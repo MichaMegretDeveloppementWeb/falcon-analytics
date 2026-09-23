@@ -40,8 +40,7 @@ final class VisitorDetailPage extends Component
         $this->visitorId = $visitor->id;
         $this->read = $visitor;
 
-        // A folded profile has no data of its own anymore: an old link or
-        // bookmark lands on the canonical profile instead.
+        // A folded profile holds no data of its own: a link to it lands on the canonical profile.
         if ($visitor->merged_into_id !== null) {
             $this->redirect(route('analytics.admin.visitors.show', $visitor->merged_into_id));
         }

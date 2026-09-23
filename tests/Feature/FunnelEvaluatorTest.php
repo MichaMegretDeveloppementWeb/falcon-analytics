@@ -57,8 +57,7 @@ final class FunnelEvaluatorTest extends TestCase
         $session = Session::factory()->for($visitor)->create(['is_bot' => $isBot]);
 
         foreach ($events as $order => $spec) {
-            // In the past, the events always preceding "now", and filed by
-            // their rank.
+            // Always before now, one second apart in the given order.
             $occurredAt = now()->subMinutes(10)->addSeconds($order);
 
             $event = is_array($spec)
@@ -71,11 +70,11 @@ final class FunnelEvaluatorTest extends TestCase
 
     public function test_it_counts_sequential_step_completion_and_never_lets_a_step_out_count_the_previous_one(): void
     {
-        $this->journey(['ViewContent', 'Lead', 'CompleteRegistration']); // atteint l'etape 3
-        $this->journey(['ViewContent', 'Lead']);                         // atteint l'etape 2
-        $this->journey(['ViewContent']);                                 // atteint l'etape 1
-        $this->journey(['Lead', 'CompleteRegistration']);                // n'entre jamais, pas de vue
-        $this->journey(['CompleteRegistration', 'ViewContent', 'Lead']); // etape 2, inscription trop tot
+        $this->journey(['ViewContent', 'Lead', 'CompleteRegistration']); // reaches step 3
+        $this->journey(['ViewContent', 'Lead']);                         // reaches step 2
+        $this->journey(['ViewContent']);                                 // reaches step 1
+        $this->journey(['Lead', 'CompleteRegistration']);                // never enters: no view
+        $this->journey(['CompleteRegistration', 'ViewContent', 'Lead']); // step 2: registration too early
 
         $report = $this->evaluator->evaluate($this->funnel, $this->period, null);
 
@@ -94,7 +93,7 @@ final class FunnelEvaluatorTest extends TestCase
     public function test_it_scopes_a_funnel_to_the_subject_identity_keeping_anonymous_early_steps(): void
     {
         $this->journey(['ViewContent', 'Lead'], subjectType: 'client');
-        $this->journey(['ViewContent', 'Lead']); // anonyme
+        $this->journey(['ViewContent', 'Lead']); // anonymous
 
         $all = $this->evaluator->evaluate($this->funnel, $this->period, null);
         $clients = $this->evaluator->evaluate($this->funnel, $this->period, 'client');
@@ -110,9 +109,9 @@ final class FunnelEvaluatorTest extends TestCase
             ->step('Page', 1, route: 'reg.page')
             ->step('Envoi', 5, event: 'reg.submit');
 
-        $this->journey([['route' => 'reg.page'], 'reg.submit']); // atteint l'etape 2
-        $this->journey(['reg.submit']);                          // n'entre jamais, pas de page
-        $this->journey([['route' => 'reg.page']]);               // atteint l'etape 1
+        $this->journey([['route' => 'reg.page'], 'reg.submit']); // reaches step 2
+        $this->journey(['reg.submit']);                          // never enters: no page
+        $this->journey([['route' => 'reg.page']]);               // reaches step 1
 
         $report = $this->evaluator->evaluate($funnel, $this->period, null);
 
@@ -122,8 +121,8 @@ final class FunnelEvaluatorTest extends TestCase
 
     public function test_it_excludes_bot_sessions_from_funnel_counts(): void
     {
-        $this->journey(['ViewContent', 'Lead']);                 // humain
-        $this->journey(['ViewContent', 'Lead'], isBot: true);    // robot, ne doit pas compter
+        $this->journey(['ViewContent', 'Lead']);                 // human
+        $this->journey(['ViewContent', 'Lead'], isBot: true);    // bot: excluded
 
         $report = $this->evaluator->evaluate($this->funnel, $this->period, null);
 
@@ -146,11 +145,8 @@ final class FunnelEvaluatorTest extends TestCase
 
     // ── Parallel branches ────────────────────────────────────────────────
     //
-    // A milestone is often reachable by more than one path: a form opened from
-    // either of two pages, a sign-up led by either of two journeys. Laid as
-    // consecutive steps, they would read "went through one, THEN through the
-    // other" and return zeros. Branches stand at the same depth, and the report
-    // says where the visitors came in.
+    // A milestone reachable by several paths is one step whose branches stand
+    // at the same depth, and the report says where the visitors came in.
 
     public function test_it_advances_a_branched_step_whichever_branch_the_visitor_takes(): void
     {
@@ -162,10 +158,10 @@ final class FunnelEvaluatorTest extends TestCase
             ])
             ->step('Envoi', 100, event: 'Lead');
 
-        $this->journey(['ViewContent', 'form.quiz', 'Lead']);            // par le questionnaire
-        $this->journey(['ViewContent', ['route' => 'contact'], 'Lead']); // par la page de contact
-        $this->journey(['ViewContent', 'form.quiz']);                    // s'arrete au formulaire
-        $this->journey(['ViewContent', 'Lead']);                         // saute l'etape
+        $this->journey(['ViewContent', 'form.quiz', 'Lead']);            // through the quiz
+        $this->journey(['ViewContent', ['route' => 'contact'], 'Lead']); // through the contact page
+        $this->journey(['ViewContent', 'form.quiz']);                    // stops at the form
+        $this->journey(['ViewContent', 'Lead']);                         // skips the step
 
         $report = $this->evaluator->evaluate($funnel, $this->period, null);
 
@@ -191,10 +187,7 @@ final class FunnelEvaluatorTest extends TestCase
         $this->assertSame(['Questionnaire' => 2, 'Contact' => 1], $report->steps[0]->branches);
     }
 
-    /**
-     * A branch nobody took has to appear all the same: a zero is a reading, and
-     * a row that disappears looks like a defect rather than an absence.
-     */
+    /** A zero is a reading, while a row that disappears looks like a defect. */
     public function test_it_keeps_an_untaken_branch_in_the_report_at_zero(): void
     {
         $funnel = (new Funnel('branched', 'Branched'))

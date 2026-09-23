@@ -20,16 +20,10 @@ use Illuminate\Support\Facades\DB;
 /**
  * The maintenance has two ways in, and they must be the same way.
  *
- * The scheduler is the normal one. The second exists because **a scheduler on
- * shared hosting stops without a word**: the summarising stops with it, the
- * erasing stops too — nothing is lost, by design — but the summaries fall
- * behind and no screen says so. So opening a screen catches the backlog up.
- *
- * **Both run the same two commands, in the same order**, which is what this
- * essay holds. A second path with its own logic would be a second set of guards
- * to keep in step, and the one that runs least often is the one that would rot.
- *
- * Written 2026-09-13, with the summaries.
+ * The scheduler is the normal one. A scheduler on shared hosting can stop
+ * without a word: nothing is lost, but the summaries fall behind and no screen
+ * says so, so opening a screen catches the backlog up. Both ways run the same
+ * two commands, in the same order.
  */
 final class TheMaintenanceRunsBothWaysTest extends TestCase
 {
@@ -76,18 +70,9 @@ final class TheMaintenanceRunsBothWaysTest extends TestCase
     }
 
     /**
-     * The scheduler's way · asked of the scheduler itself, at the hour of a
-     * cron tick.
-     *
-     * **Not through `schedule:run`**, and the reason is worth writing down: it
-     * launches each command as its own process, which boots its own
-     * application and would never see this one's database. What a cron
-     * genuinely decides is whether an event is due at the minute it wakes, and
-     * that is asked here, minute by minute.
-     *
-     * Summarising at 03:00 and erasing at 03:30, in that order · the erasing
-     * refuses a day the summarising has not treated, so the order is the
-     * guarantee and not a detail.
+     * Asked of the scheduler itself · `schedule:run` launches each command as its
+     * own process, which would never see this test's database. The erasing
+     * refuses a day the summarising has not treated, so the order is the guarantee.
      */
     public function test_a_cron_tick_at_three_finds_the_summarising_due(): void
     {
@@ -100,11 +85,7 @@ final class TheMaintenanceRunsBothWaysTest extends TestCase
         $this->assertFalse($this->scheduled('analytics:archive')->isDue(app()));
     }
 
-    /**
-     * And at any other minute a tick finds nothing to do, which is the other
-     * half of being scheduled · summarising on every tick would rewrite the
-     * same days all day long.
-     */
+    /** Summarising on every tick would rewrite the same days all day long. */
     public function test_a_cron_tick_at_any_other_minute_finds_nothing_due(): void
     {
         $this->travelTo(CarbonImmutable::parse('2026-06-15 11:00:00'));
@@ -113,12 +94,7 @@ final class TheMaintenanceRunsBothWaysTest extends TestCase
         $this->assertFalse($this->scheduled('analytics:prune')->isDue(app()));
     }
 
-    /**
-     * And what a tick at 03:00 then 03:30 actually does, run in that order.
-     *
-     * The commands themselves, which is what the scheduler launches · this is
-     * the cron's effect without the cron's process.
-     */
+    /** The commands the scheduler launches, in its order · the cron's effect without its process. */
     public function test_the_two_commands_a_cron_launches_summarise_and_erase(): void
     {
         $this->aVisitOn('2026-06-12');
@@ -146,7 +122,7 @@ final class TheMaintenanceRunsBothWaysTest extends TestCase
         );
     }
 
-    /** A marketing screen too · every analytics screen is a way in. */
+    /** Every analytics screen is a way in, not only the overview. */
     public function test_a_marketing_screen_is_a_way_in_as_well(): void
     {
         $this->aVisitOn('2026-06-12');
@@ -158,13 +134,7 @@ final class TheMaintenanceRunsBothWaysTest extends TestCase
         $this->assertTrue(DailyArchive::query()->where('day', '2026-06-12')->exists());
     }
 
-    /**
-     * Once per interval, whoever opens a screen.
-     *
-     * The failure this guards is not a wrong figure but a slow site · a
-     * summarising started on every page load would run on every click of every
-     * administrator.
-     */
+    /** A summarising started on every page load would slow every click of every administrator. */
     public function test_it_runs_once_per_interval_and_not_on_every_page(): void
     {
         $this->aVisitOn('2026-06-12');
@@ -175,7 +145,6 @@ final class TheMaintenanceRunsBothWaysTest extends TestCase
 
         $firstRun = DailyArchive::query()->where('day', '2026-06-12')->firstOrFail()->archived_at;
 
-        // A second visit, a minute later: the interval has not passed.
         $this->travelTo(CarbonImmutable::parse('2026-06-15 12:01:00'));
         $this->actingAs($admin, 'admin')->get(route('analytics.admin.overview'))->assertSuccessful();
 
@@ -186,7 +155,6 @@ final class TheMaintenanceRunsBothWaysTest extends TestCase
         );
     }
 
-    /** And a host that trusts its scheduler can switch it off. */
     public function test_it_can_be_switched_off(): void
     {
         config(['analytics.internal.maintenance.on_screen_load' => false]);
@@ -200,11 +168,8 @@ final class TheMaintenanceRunsBothWaysTest extends TestCase
     }
 
     /**
-     * Two administrators at once, and only one run.
-     *
-     * The lock is taken for the length of a run. Holding it from outside is
-     * what a second request in flight looks like, and the visit that meets it
-     * has to do nothing rather than wait or duplicate.
+     * The run's lock held from outside stands for a second request in flight ·
+     * the visit that meets it does nothing, neither waiting nor duplicating.
      */
     public function test_two_administrators_at_once_do_not_both_run_it(): void
     {
@@ -225,10 +190,8 @@ final class TheMaintenanceRunsBothWaysTest extends TestCase
     }
 
     /**
-     * A visit catches up a few days at a time, not all of them.
-     *
-     * A year of backlog summarised inside one page's terminate would hold a
-     * worker for as long as it takes; several visits share the work instead.
+     * A year of backlog summarised in one page's terminate would hold a worker
+     * for as long as it takes, so several visits share the work.
      */
     public function test_a_visit_catches_up_a_bounded_number_of_days(): void
     {
@@ -243,16 +206,9 @@ final class TheMaintenanceRunsBothWaysTest extends TestCase
     }
 
     /**
-     * The register keeps the hour at which it acted, not just the date.
-     *
-     * **Read back through the model**, which is the point · the stamp is
-     * written as a plain string by the archiving, so a model that reads it
-     * badly would be discovered only by whoever first asked « quand ce jour
-     * a-t-il été résumé ? » — a question one asks precisely when something has
-     * gone wrong, and gets a wrong answer to.
-     *
-     * A single `$dateFormat` on the model cannot serve both a date column and a
-     * timestamp, and the shorter of the two silently wins.
+     * Read back through the model: the archiving writes the stamp as a plain
+     * string, and a single `$dateFormat` cannot serve both a date column and a
+     * timestamp, the shorter of the two winning in silence.
      */
     public function test_the_register_keeps_the_hour_it_acted_at(): void
     {
@@ -269,14 +225,9 @@ final class TheMaintenanceRunsBothWaysTest extends TestCase
     }
 
     /**
-     * And it keeps it when the register is written through the model too.
-     *
-     * The maintenance writes plain statements, so the model's own conversions
-     * never run today — which is exactly why this is worth holding · one
-     * `$dateFormat` cannot serve a date key and a timestamp, and the shorter of
-     * the two wins in silence. The next hand to reach for
-     * `DailyArchive::create()` would record every run at midnight and have no
-     * way of noticing.
+     * The maintenance writes plain statements, so only this test runs the
+     * model's own conversions · a wrong format would record every run at
+     * midnight without a trace.
      */
     public function test_the_register_keeps_the_hour_when_written_through_the_model(): void
     {

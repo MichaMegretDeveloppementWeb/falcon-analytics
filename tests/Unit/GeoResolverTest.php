@@ -57,7 +57,7 @@ final class GeoResolverTest extends TestCase
     /**
      * `locate()` degrades to an empty location whatever the cause, which is
      * right for a request and useless for whoever reads the screen: an absent
-     * database and a 127.0.0.1 both showed a blank column, and nothing said
+     * database and a 127.0.0.1 both show a blank column, and nothing says
      * which one to fix.
      */
     public function test_it_names_the_reason_an_address_does_not_resolve(): void

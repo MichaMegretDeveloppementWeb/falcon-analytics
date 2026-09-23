@@ -11,16 +11,11 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\View;
 
 /**
- * How a screen reaches the browser.
+ * How a screen reaches the browser · route, controller, thin view, component,
+ * with the host layout extended.
  *
- * Until 2026-09-07 each screen was a full-page Livewire component mounted by
- * `Route::livewire`, naming its own layout through `->layout()`. It now goes
- * route → controller → thin view → component, the way falcon/booking has always
- * done it, and the host layout is extended rather than filled as a slot.
- *
- * The suite's forty-four route assertions already prove the screens answer.
- * What they cannot see is where the screen lands, because they run against the
- * package's own shell. These do.
+ * The route tests run against the package's own shell; these prove where a
+ * screen lands under a host layout.
  */
 final class ScreenMountingTest extends TestCase
 {
@@ -40,18 +35,13 @@ final class ScreenMountingTest extends TestCase
         return TestAdmin::create(['email' => 'admin@example.test']);
     }
 
+    /**
+     * The chrome alone means a misnamed section, which Blade yields empty without
+     * a word · the screen alone means a layout never extended. The needle comes
+     * from the screen's body, since its name is also in the <title>.
+     */
     public function test_it_renders_the_screen_inside_the_section_of_the_host_layout(): void
     {
-        /*
-         * Both halves matter. The chrome alone would mean the section name is
-         * wrong and the screen fell on the floor — silently, since Blade yields
-         * an empty section without complaining. The screen alone would mean the
-         * layout was never extended.
-         *
-         * The needle is taken from the body of the screen and nowhere else. The
-         * screen's own name would not do: it is in the <title> too, so the
-         * assertion held even with the section deliberately misnamed.
-         */
         $this->actingAs($this->admin(), 'admin')
             ->get(route('analytics.admin.overview'))
             ->assertOk()
@@ -60,21 +50,9 @@ final class ScreenMountingTest extends TestCase
     }
 
     /**
-     * The kit's stylesheet travels with the package's, even under a host layout
-     * that knows nothing of the suite.
-     *
-     * **It is not decorative, it is necessary**: the package's utilities
-     * resolve seven kit tokens at runtime, `var(--ui-…)`, and those values live
-     * in the kit's stylesheet. Served on its own, the package's would display
-     * without its colours.
-     *
-     * What brings it in is not the layout — the fixture's is bare — but the
-     * screen's content, which draws kit components. That is what makes the
-     * separation safe: a package's stylesheet cannot end up on a page without
-     * the kit's.
-     *
-     * The day a screen uses no kit component at all, this test falls — and it
-     * will then be a decision, not a discovery.
+     * The package's utilities resolve kit tokens, `var(--ui-…)`, whose values
+     * live in the kit's stylesheet. The fixture layout is bare, so the kit's
+     * sheet comes from the kit components the screen draws, once.
      */
     public function test_the_kit_sheet_travels_with_the_package_sheet(): void
     {
@@ -89,12 +67,8 @@ final class ScreenMountingTest extends TestCase
     }
 
     /**
-     * The reason the conversion was worth doing.
-     *
-     * The error state used to carry a layout of its own, so a failed read
-     * replaced the entire page. The controller decides the chrome now, and the
-     * component only fills the section: what is lost is the panel, not the way
-     * out of it.
+     * The controller decides the chrome and the component only fills the
+     * section, so a failed read loses the panel and not the way out of it.
      */
     public function test_it_keeps_the_host_chrome_when_the_screen_fails_to_read_its_data(): void
     {
@@ -109,7 +83,6 @@ final class ScreenMountingTest extends TestCase
         });
     }
 
-    /** The title is composed by the controller, before the screen renders. */
     public function test_it_lets_the_controller_name_the_browser_tab(): void
     {
         $this->actingAs($this->admin(), 'admin')
@@ -117,11 +90,6 @@ final class ScreenMountingTest extends TestCase
             ->assertSee('<title>'.__('Temps réel').' · '.__('Analytics').'</title>', false);
     }
 
-    /**
-     * Two screens name the record they show, and that title moved out of the
-     * component when the screens were converted. The suite visits both already,
-     * but only asserts on the body — this is the half that changed hands.
-     */
     public function test_it_lets_the_controller_name_the_tab_after_the_record_it_shows(): void
     {
         $campaign = Campaign::factory()->create(['name' => 'Été 2026']);
@@ -132,17 +100,9 @@ final class ScreenMountingTest extends TestCase
     }
 
     /**
-     * The title crosses two components, and it has to come out whole.
-     *
-     * **Blade escapes a class component's attributes at the moment it lays them
-     * down**, because an attribute ends up inside a tag. A title passed that
-     * way reached the layout already escaped and came out of `{{ }}` escaped a
-     * second time: `Vue d&amp;#039;ensemble` in the browser tab, while the rest
-     * of the page was fine.
-     *
-     * It therefore travels through the page's constructor, where it is data.
-     * The two tests above would never have seen it: none of their titles
-     * carries an apostrophe.
+     * Blade escapes a class component's attributes when it lays them down, so a
+     * title passed as one comes out of `{{ }}` escaped twice. The title travels
+     * through the page's constructor, and this one carries an apostrophe.
      */
     public function test_it_escapes_the_title_once_and_not_twice(): void
     {

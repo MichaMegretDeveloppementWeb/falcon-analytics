@@ -72,7 +72,7 @@ final class TheEngineKeepsTheListsTest extends TestCase
         $this->assertSame($this->storedTypes(), $this->listedBy('fa_events_type_check'));
     }
 
-    /** And a kind of summary added in the code without the engine knowing it. */
+    /** A kind of summary added in the code without the engine knowing it turns this red. */
     public function test_the_kind_constraint_lists_exactly_the_kinds_that_are_summarised(): void
     {
         $kinds = array_values(array_filter(

@@ -13,7 +13,7 @@ use Livewire\Attributes\Lazy;
 use Livewire\Component;
 
 /**
- * Deferred "Clics par recherches Google" section: the organic queries Google
+ * Deferred Google search queries section: the organic queries Google
  * reported for the period, read from the local Search Console cache. Without
  * an attached connection the section renders a call-to-action towards the
  * integrations screen instead of numbers. This is a different source from the

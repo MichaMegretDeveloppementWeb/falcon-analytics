@@ -7,15 +7,10 @@ namespace Falcon\Analytics\Tests\Fixtures;
 use Falcon\Analytics\Repositories\Concerns\ScopesSessionQueries;
 
 /**
- * Les trois expressions SQL du trait, rendues lisibles par un essai.
+ * Exposes the trait's three SQL expressions, private to the read repositories,
+ * to a test.
  *
- * Elles sont privées chez leurs dix appelants, et c'est bien · rien en dehors
- * des dépôts de lecture n'a de raison de les composer. Ce porteur existe donc
- * uniquement pour les éprouver, et il ne fait rien d'autre.
- *
- * Une classe nommée plutôt qu'anonyme · l'analyse statique ne type pas les
- * méthodes d'une classe anonyme rendue par une fonction, et l'essai perdait
- * alors la garantie qu'il croyait tenir.
+ * A named class, so static analysis types its methods.
  */
 final class ExposedSessionQueries
 {

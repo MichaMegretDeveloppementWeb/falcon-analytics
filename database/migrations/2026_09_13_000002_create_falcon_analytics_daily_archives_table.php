@@ -26,9 +26,6 @@ return new class extends Migration
         Schema::create('falcon_analytics_daily_archives', function (Blueprint $table): void {
             $table->id();
             $table->date('day')->unique('fa_daily_archives_day_unique');
-            // Written by hand rather than through the timestamps helper, which
-            // lays down a type the engine converts against the session time
-            // zone. See the visitors table.
             $table->dateTime('archived_at');
         });
     }

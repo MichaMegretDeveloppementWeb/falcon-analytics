@@ -34,7 +34,7 @@
         <x-ui::stat-card :label="__('Pages / session')" :value="$detail->pagesPerSession" icon="chart-bar" />
     </div>
 
-    {{-- Comportement : appareils + acquisition --}}
+    {{-- Behaviour: devices and acquisition --}}
     <div class="an:grid an:grid-cols-1 an:gap-6 an:lg:grid-cols-2">
         <x-ui::card>
             <x-ui::section-header :title="__('Appareils')" class="an:mb-4" />

@@ -41,8 +41,7 @@ final class AnalyticsFacadeTest extends TestCase
     {
         AnalyticsFacade::resolveSubjectUsing(fn () => $resolved);
 
-        // Casting any of these would attach the visit to subject 0, a subject
-        // that does not exist and that would gather everybody's journeys.
+        // A cast would attach the visit to subject 0, which gathers everybody's journeys.
         $this->assertNull(app(Analytics::class)->subject());
     }
 

@@ -12,10 +12,10 @@ use SplFileInfo;
 /**
  * Every dialog the package opens is the kit's modal.
  *
- * A dialog drawn by hand looked the same and was not one: the keyboard stayed
- * on the page behind the backdrop, Tab walked what the backdrop hid, and a
- * screen reader heard no dialog at all. The kit's modal holds the keyboard,
- * hands the focus back and says what it is.
+ * A dialog drawn by hand looks the same and is not one: the keyboard stays on
+ * the page behind the backdrop, Tab walks what the backdrop hides, and a screen
+ * reader hears no dialog at all. The kit's modal holds the keyboard, hands the
+ * focus back and says what it is.
  *
  * No database here: it reads files, and nothing else.
  */

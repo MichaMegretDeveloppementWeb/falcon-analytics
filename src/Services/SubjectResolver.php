@@ -185,10 +185,8 @@ final class SubjectResolver
      * Where a guard's names are read from, for whoever needs to check it.
      *
      * The diagnostic asks this to say whether the columns a host named exist.
-     * It goes through the same derivation the reads use rather than repeating
-     * it: a second copy of this logic would answer differently the day one of
-     * them changes, and the diagnostic would then approve an installation that
-     * does not work.
+     * It goes through the same derivation the reads use, so the diagnostic
+     * never approves an installation whose reads fail.
      *
      * @return array{0: string, 1: string}|null
      */
@@ -257,10 +255,7 @@ final class SubjectResolver
      */
     private function join(object $row, array $columns): ?string
     {
-        // The columns come from the host's configuration, so their names are
-        // only known at runtime. The row is read as an array rather than
-        // through a property with a variable name: same result, and the tooling
-        // can follow what happens.
+        // Read as an array, not through variable property names, so static analysis can follow it.
         $values = (array) $row;
         $parts = [];
 

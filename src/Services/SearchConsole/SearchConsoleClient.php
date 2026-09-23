@@ -23,7 +23,7 @@ final class SearchConsoleClient
     /** The API's own per-request maximum. */
     public const ROW_LIMIT = 25000;
 
-    /** The `query` column is varchar(255); truncate rather than fail the upsert. */
+    /** The `query` column is varchar(255); values are truncated so the upsert never fails. */
     private const QUERY_COLUMN_LIMIT = 255;
 
     /**

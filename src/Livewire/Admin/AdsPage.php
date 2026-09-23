@@ -14,8 +14,8 @@ use Livewire\Component;
 use Livewire\WithPagination;
 
 /**
- * A flat, searchable table of every ad across all campaigns. Editing an ad and
- * its objectives happens on the parent campaign's detail page.
+ * A flat, searchable table of every ad across all campaigns. An ad and its
+ * objectives are edited on its campaign's detail page or on its own.
  *
  * @internal
  */
@@ -45,8 +45,7 @@ final class AdsPage extends Component
                             ->orWhereHas('campaign', fn (Builder $campaign): Builder => $campaign->where('name', 'like', $term));
                     })
                     ->orderBy('name')
-                    // Two ads can share a name: the key closes the order, which
-                    // a paginated list needs to be total.
+                    // Two ads can share a name: the key makes the paginated order total.
                     ->orderBy('id')
                     ->paginate(self::PER_PAGE);
 

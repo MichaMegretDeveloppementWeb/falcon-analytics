@@ -14,14 +14,13 @@ use Falcon\Analytics\Repositories\EventWriteRepository;
  * The erasing, in one place, so its two ways in are one way.
  *
  * The scheduler is the normal path. Opening a screen is the other, because a
- * scheduler on shared hosting stops without a word. **Both land here**, right
+ * scheduler on shared hosting stops without a word. Both land here, right
  * after `ArchiveClosedDaysAction`, and the command is a thin wrapper that only
  * turns this into sentences.
  *
- * **Neither way goes through the console.** Booting the console kernel inside a
- * web request's `terminate()` disturbs the session store: its handler loses the
- * request it was given, and the session save that follows fails. Nothing about
- * analytics, everything about calling a console from a request.
+ * Neither way goes through the console: booting the console kernel inside a
+ * web request's `terminate()` disturbs the session store, whose handler loses
+ * the request it was given, and the session save that follows fails.
  *
  * @internal
  */
@@ -58,22 +57,12 @@ final readonly class Maintenance
 
         $cutoff = CarbonImmutable::now()->subDays($days)->startOfDay();
 
-        /*
-         * Nothing that old exists, so there is nothing to erase and nothing to
-         * complain about. Asked first because a site younger than its own
-         * retention would otherwise be told every night that a day it never had
-         * has not been summarised.
-         */
+        // Asked first: a site younger than its retention has nothing to erase and nothing to warn about.
         if (! Event::query()->where('occurred_at', '<', $cutoff)->exists()) {
             return MaintenanceOutcome::nothingToDo("Rien de plus vieux que {$days} jours : rien à effacer.");
         }
 
-        /*
-         * The last day that would be erased. Erasing runs up to the cutoff, so
-         * the day before it is the newest one at stake; if that one has not been
-         * summarised, neither have the older ones — the archiving only ever
-         * moves forward.
-         */
+        // The archiving only moves forward: if the newest day at stake is summarised, so are the older ones.
         $lastAtStake = $cutoff->subDay();
 
         if (! $this->archiver->isArchived($lastAtStake)) {
@@ -83,11 +72,7 @@ final readonly class Maintenance
             ));
         }
 
-        /*
-         * Every day erased here is already read from its summary · the guard
-         * above made sure it holds one. So an erasing that stops halfway, being
-         * made in batches, costs no figure · the leftovers simply go next time.
-         */
+        // Every day erased is already read from its summary, so a batch run stopped halfway costs no figure.
         $deleted = $this->events->pruneAnonymousOlderThan($cutoff, $this->routesFunnelsNeed());
 
         return MaintenanceOutcome::erased(
@@ -100,10 +85,9 @@ final readonly class Maintenance
     /**
      * The routes a declared funnel steps through, which therefore survive.
      *
-     * **Read at each run, not stored** · a funnel declared today protects its
-     * routes from tomorrow's erasing, and one removed stops protecting them.
-     * Neither can reach back over what is already gone, and that limit belongs
-     * to the documentation rather than to a workaround here.
+     * Read at each run, not stored · a funnel declared today protects its
+     * routes from the next erasing, and one removed stops protecting them.
+     * Neither reaches back over what is already gone.
      *
      * @return list<string>
      */

@@ -77,9 +77,9 @@ final readonly class EngagementReadRepository
     /**
      * Scalar aggregates for a period in a single query.
      *
-     * An array and not the `stdClass` `first()` returns: its properties come
-     * from the SELECT aliases, which static analysis cannot know. An array
-     * carries its shape.
+     * Returned as an array, which carries its shape: the `stdClass` from
+     * `first()` takes its properties from the SELECT aliases, which static
+     * analysis cannot know.
      *
      * @return array{sessions: int, visitors: int, pageviews: int, avgSeconds: float, bounces: int}
      */

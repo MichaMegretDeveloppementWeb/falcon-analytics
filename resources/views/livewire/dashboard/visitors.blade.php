@@ -22,7 +22,7 @@
         @endif
     </x-ui::page-header>
 
-    {{-- The locality went missing with no way to tell why: absent database, truncated one, or private address. --}}
+    {{-- Why a locality reads as unknown: absent database, truncated one, or private address. --}}
     <x-analytics::geo-notice />
 
     {{-- The KPIs are scoped to the period; the list below is all time. --}}
@@ -42,7 +42,7 @@
         <livewire:analytics::admin.widgets.visitors-headline :period="$period" :subject="$subject" :key="'visitors-headline-'.$period.'-'.$subject" />
     </div>
 
-    {{-- Annuaire tous temps --}}
+    {{-- All-time directory --}}
     <x-ui::section-header :title="__('Tous les visiteurs')" class="an:pt-2" />
 
     <x-ui::search-input wire:model.live.debounce.300ms="search" :placeholder="__('Rechercher un nom, un ID…')" class="an:w-full an:sm:max-w-xs" />

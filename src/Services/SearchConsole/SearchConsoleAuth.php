@@ -59,7 +59,7 @@ final class SearchConsoleAuth
 
     /**
      * Exchange the authorization code and store the connection (replacing any
-     * previous one: the integration holds a single connection by design).
+     * previous one: the integration holds a single connection).
      */
     public function exchangeCode(string $code): SearchConsoleConnection
     {

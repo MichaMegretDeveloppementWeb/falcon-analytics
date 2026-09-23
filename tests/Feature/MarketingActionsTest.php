@@ -47,7 +47,7 @@ final class MarketingActionsTest extends TestCase
         $this->assertSame($campaign->id, $ad->campaign_id);
         $this->assertSame(2, AdObjective::query()->where('ad_id', $ad->id)->count());
 
-        // Saving again replaces the set of objectives rather than adding to it.
+        // Saving again replaces the objectives, it does not add to them.
         (new SaveAdAction)->execute($ad->id, $campaign->id, 'Cabrio', [['param' => 'creative', 'value' => 'cabrio']], [
             ['type' => 'event', 'reference' => 'Lead', 'label' => 'Lead'],
         ]);
@@ -74,7 +74,6 @@ final class MarketingActionsTest extends TestCase
         $ad = Ad::factory()->for($campaign)->create();
         AdObjective::factory()->for($ad)->event('Lead')->create();
 
-        // Wrong campaign identifier: the ad and its objectives stay intact.
         (new DeleteAdAction)->execute($ad->id, $campaign->id + 999);
 
         $this->assertSame(1, Ad::query()->count());

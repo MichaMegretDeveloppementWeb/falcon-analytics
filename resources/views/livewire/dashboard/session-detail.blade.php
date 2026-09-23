@@ -69,14 +69,10 @@
                 <x-ui::section-header :title="__('Parcours')" :description="__('Ce que le visiteur a fait, dans l\'ordre')" class="an:mb-5" />
 
                 {{--
-                    Deux absences, et elles ne se disent pas pareil.
-
-                    Un parcours vide parce que la session n'a rien enregistré,
-                    et un parcours vide parce que la conservation est passée
-                    dessus. Dire « cette session n'a enregistré aucun
-                    évènement » d'une session qui en avait quatre est un
-                    mensonge que le paquet se raconte tout seul · les chiffres
-                    juste au-dessus le contredisent à l'écran.
+                    Two absences, and they do not read the same: a session that
+                    recorded nothing, and one whose step-by-step the retention
+                    erased. Saying "no event recorded" of the second is
+                    contradicted by the figures just above it.
                 --}}
                 @if (empty($detail->journey) && $detail->detailErased)
                     <x-ui::empty-state

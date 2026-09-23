@@ -9,34 +9,18 @@ use Falcon\Analytics\Tests\TestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
- * Les essais tournent sur l'environnement qu'on a choisi, pas sur celui qu'un
- * fichier égaré leur donne.
+ * The tests run on the environment pinned in `phpunit.xml`, not on the one a
+ * stray file gives them.
  *
- * **L'incident.** `vendor/bin/testbench`, qui lance le paquet dans une vraie
- * application et mérite d'être lancé, dépose son `.env.example` dans le
- * squelette du banc sous le nom `.env`. Ce fichier porte
- * `SESSION_DRIVER=cookie`, et il vaut pour TOUTE la suite. Quatre essais Search
- * Console sont alors tombés sur `Attempt to read property "cookies" on null` —
- * ils ouvrent une session hors d'une vraie requête, et une session « cookie »
- * a besoin d'une requête pour écrire son cookie. Rien à voir avec ce qu'ils
- * éprouvaient. Le fichier vit sous `vendor/`, donc `git stash` ne l'enlève pas,
- * ce qui le faisait passer pour un défaut du code.
- *
- * **Ce que cet essai remplace, et pourquoi.** Un essai précédent interdisait ce
- * fichier · il détectait la cause sans réparer quoi que ce soit, et laissait la
- * suite rouge jusqu'à ce qu'on l'efface à la main. Depuis que les variables
- * sont épinglées dans `phpunit.xml`, le fichier est **inoffensif** — mesuré le
- * 2026-09-14, avec lui en place : 530 essais sur 531 passent, le seul à tomber
- * étant ce détecteur devenu fausse alerte.
- *
- * **Un essai surveille la garantie, pas une des façons de la casser.** La
- * garantie, c'est que ces variables valent ce que nous avons décidé. Le fichier
- * égaré n'en était qu'une menace parmi d'autres.
+ * `vendor/bin/testbench` drops its `.env.example` into the bench skeleton as
+ * `.env`, which then applies to the whole suite. The pinned variables are set
+ * before the application boots and are never replaced, so that file is
+ * harmless · these tests watch the guarantee, not one way of breaking it.
  */
 final class TheBenchRunsOnThePinnedEnvironmentTest extends TestCase
 {
     /**
-     * Ce qui est décidé par nous, et que rien d'autre ne doit décider.
+     * The pinned values, which nothing else may decide.
      *
      * @return array<string, array{0: string, 1: string, 2: string}>
      */
@@ -51,10 +35,8 @@ final class TheBenchRunsOnThePinnedEnvironmentTest extends TestCase
     }
 
     /**
-     * Ce que l'application dit vraiment, une fois démarrée.
-     *
-     * C'est le résultat qui compte · un réglage épinglé mais surchargé plus loin
-     * ne servirait à rien, et c'est ici qu'on s'en apercevrait.
+     * Read from the booted application, so a pinned value overridden further on
+     * shows here.
      */
     #[DataProvider('pinned')]
     public function test_the_running_application_uses_what_we_chose(string $variable, string $value, string $key): void
@@ -67,20 +49,14 @@ final class TheBenchRunsOnThePinnedEnvironmentTest extends TestCase
         );
     }
 
-    /** The dates speak the bench's language, as they speak the host's. */
     public function test_the_dates_speak_the_pinned_language(): void
     {
         $this->assertSame('juil.', CarbonImmutable::parse('2026-07-09')->translatedFormat('M'));
     }
 
     /**
-     * Et l'épinglage est bien là, dans le fichier qui le pose.
-     *
-     * **C'est l'assertion qui discrimine.** Celle du dessus passerait aussi sans
-     * épinglage, tant qu'aucun fichier égaré ne traîne — donc elle ne dit rien
-     * du jour où il en traînera un. Celle-ci tombe dès que la ligne disparaît de
-     * `phpunit.xml`, c'est-à-dire au moment où la protection part, et non des
-     * semaines plus tard sur un essai qui parle d'autre chose.
+     * The test above also passes without a pin while no stray file exists · this
+     * one fails as soon as the line leaves `phpunit.xml`.
      */
     #[DataProvider('pinned')]
     public function test_the_configuration_pins_it_before_anything_else_can(string $variable, string $value, string $key): void

@@ -59,8 +59,8 @@ final readonly class ObjectiveCompletionReader
     }
 
     /**
-     * The visitors who fired each event, in one read rather than a count query
-     * per ad per objective.
+     * The visitors who fired each event, in one read for every ad and
+     * objective.
      *
      * @param  list<int>  $visitorIds
      * @param  list<string>  $names
@@ -121,8 +121,7 @@ final readonly class ObjectiveCompletionReader
             },
         );
 
-        // `array_values` because incrementing the counter by reference loses
-        // the list type `array_fill` gave it.
+        // `array_values`: incrementing by reference loses the `list` type `array_fill` gave it.
         return array_values($reached);
     }
 

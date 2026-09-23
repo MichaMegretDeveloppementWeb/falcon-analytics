@@ -20,9 +20,8 @@ use Livewire\Livewire;
  * Past the ceiling on sessions read for attribution, every screen whose
  * figures come from them says they under-count.
  *
- * The ceiling keeps the memory bounded, and it is right. What it cost was a
- * figure that looked like any other while it was a part of the real one, and
- * the log was the only place that said so.
+ * The ceiling keeps the memory bounded, and a figure it cuts looks like any
+ * other · the screen has to say it is only part of the real one.
  */
 final class TheMarketingCeilingIsSaidTest extends TestCase
 {

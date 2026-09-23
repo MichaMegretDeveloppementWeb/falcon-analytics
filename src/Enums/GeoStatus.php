@@ -7,13 +7,11 @@ namespace Falcon\Analytics\Enums;
 /**
  * Why an address did, or did not, resolve to a locality.
  *
- * Geolocation degrades to an empty location whatever goes wrong, which is the right behaviour
- * for a request and the wrong one for whoever reads the screen: a missing database and a private
- * address both showed the same blank column, and nothing said which to fix.
+ * Geolocation degrades to an empty location whatever goes wrong, which suits a request but not
+ * whoever reads the screen: a missing database and a private address give the same blank column.
+ * This says which one to fix.
  *
- * One set of wording, for the screen and for the console alike. There used to be two, the console
- * keeping English while the dashboard spoke the interface language; both now speak the same
- * language, so a second set would only be something to keep in sync.
+ * One set of wording serves the screen and the console alike.
  *
  * @internal nothing public returns it · the two enumerations cast on a model
  *           are, and this one is not one of them.
@@ -51,8 +49,8 @@ enum GeoStatus: string
      * What to do about it, when there is something to do.
      *
      * `__()` returns `array|string|null`, the translator answering an array
-     * when a key designates one. Rather than assert otherwise with a cast that
-     * would render « Array », an array counts as no advice.
+     * when a key designates one. An array counts as no advice: cast to a
+     * string, it would render « Array ».
      */
     public function hint(): ?string
     {

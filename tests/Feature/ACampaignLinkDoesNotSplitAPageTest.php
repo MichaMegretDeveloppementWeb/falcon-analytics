@@ -19,22 +19,12 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
- * Une page atteinte par plusieurs liens reste une page.
+ * A page reached through several links stays one page.
  *
- * **Mesuré le 2026-09-14.** La même page ouverte trois fois, dont deux par un
- * lien de campagne, revenait en trois lignes d'une vue — et l'écran affichait
- * le même chemin sur les trois, puisqu'il rend le chemin et groupait sur
- * l'adresse. Sur un site qui reçoit du trafic de campagne l'effet n'a rien de
- * discret : `fbclid` est unique par clic, donc la vraie page la plus vue se
- * divise en autant de lignes qu'elle a eu de visites et n'atteint jamais le
- * haut de la liste. Les liens d'ancre font pareil avec `#`, et deux hôtes
- * servant un même site le feraient avec l'hôte.
- *
- * **Décidé le 2026-09-14 · une page, c'est le chemin de sa route.** Sans hôte,
- * sans paramètres, sans ancre. Il est écrit une fois, à l'arrivée, par la même
- * fonction que l'écran utilise pour afficher une adresse. Les trois lectures
- * qui posent la question — la vue d'ensemble, son résumé, et le temps réel —
- * groupent dessus, et l'adresse entière reste écrite pour le parcours.
+ * A page is the path of its route: no host, no query string, no fragment. A
+ * campaign token such as `fbclid` is unique per click, so grouping on the full
+ * address would split a page into one row per visit. The overview, its summary
+ * and the realtime screen group on the page; the full address stays stored.
  */
 final class ACampaignLinkDoesNotSplitAPageTest extends TestCase
 {
@@ -66,11 +56,7 @@ final class ACampaignLinkDoesNotSplitAPageTest extends TestCase
         Event::factory()->for($session)->create(['url' => $url, 'occurred_at' => $at]);
     }
 
-    /**
-     * Une page ouverte par cinq chemins différents · le lien nu, deux liens de
-     * campagne dont le jeton n'est jamais deux fois le même, un lien d'ancre,
-     * et le même site servi sans le `www`.
-     */
+    /** One page reached bare, through two campaign links, an anchor, and without `www`. */
     private function fiveWaysToTheSamePage(CarbonImmutable $day): void
     {
         $session = $this->newSession();
@@ -81,8 +67,7 @@ final class ACampaignLinkDoesNotSplitAPageTest extends TestCase
         $this->pageview($session, 'https://www.exemple.test/tarifs#prix', $day->setTime(9, 12));
         $this->pageview($session, 'https://exemple.test/tarifs', $day->setTime(9, 14));
 
-        // Une autre page, pour que le classement ait de quoi se tromper : avec
-        // le regroupement fautif elle passait devant, à une vue contre cinq.
+        // A second page, which a split page would fall below in the ranking.
         $this->pageview($session, 'https://www.exemple.test/contact', $day->setTime(9, 15));
     }
 
@@ -102,10 +87,7 @@ final class ACampaignLinkDoesNotSplitAPageTest extends TestCase
         );
     }
 
-    /**
-     * Et le résumé écrit la même chose, sans quoi le bloc sauterait le jour où
-     * l'effacement traverse cette journée.
-     */
+    /** The summary agrees with the detail, or the block would change once erasure reaches the day. */
     public function test_the_summary_writes_one_row_for_that_page(): void
     {
         $day = CarbonImmutable::parse('2026-06-10');
@@ -130,11 +112,7 @@ final class ACampaignLinkDoesNotSplitAPageTest extends TestCase
         );
     }
 
-    /**
-     * Le temps réel pose la même question sur une fenêtre de trente minutes, et
-     * doit donc y répondre pareil · deux écrans qui disent tous les deux « les
-     * pages les plus vues » ne peuvent pas compter une page de deux façons.
-     */
+    /** Two screens that both show the most viewed pages count a page the same way. */
     public function test_the_realtime_screen_counts_one_page_once(): void
     {
         $session = $this->newSession();
@@ -148,11 +126,7 @@ final class ACampaignLinkDoesNotSplitAPageTest extends TestCase
         $this->assertSame([['url' => '/tarifs', 'total' => 3]], $read);
     }
 
-    /**
-     * L'adresse entière reste écrite telle quelle, et le pas à pas d'une
-     * session la montre entière · ce n'est pas la même question, et on ne perd
-     * rien en la posant autrement ailleurs.
-     */
+    /** A session's step-by-step view shows the full address. */
     public function test_the_stored_address_keeps_its_query_string_and_fragment(): void
     {
         $day = CarbonImmutable::parse('2026-06-10');
@@ -165,11 +139,7 @@ final class ACampaignLinkDoesNotSplitAPageTest extends TestCase
         $this->assertTrue(Event::query()->where('url', 'https://www.exemple.test/tarifs#prix')->exists());
     }
 
-    /**
-     * La page est posée à côté de l'adresse dès l'écriture, par le modèle
-     * comme par l'ingestion · une ligne ne peut pas porter une adresse et pas
-     * de page.
-     */
+    /** No row carries an address without its page, whichever path writes it. */
     public function test_a_row_written_through_the_model_carries_its_page(): void
     {
         $day = CarbonImmutable::parse('2026-06-10');
@@ -179,7 +149,7 @@ final class ACampaignLinkDoesNotSplitAPageTest extends TestCase
     }
 
     /**
-     * Ce que « la page » veut dire, cas par cas · le chemin, et rien d'autre.
+     * The page of an address, case by case: its path and nothing else.
      *
      * @return array<string, array{0: string|null, 1: string|null}>
      */

@@ -12,11 +12,8 @@ use Illuminate\Console\Command;
  * Installs the package: publishes its settings, scaffolds the environment
  * variables it reads, and runs its migrations.
  *
- * **It asks nothing about your files, and writes into none of them.** It used
- * to ask for three entrypoints — the back office's sheet and script, the public
- * site's script — and write imports into them, because the packages shipped
- * sources for the host to compile. They compile their own now, so there is
- * nothing to import and nothing to ask.
+ * **It writes into none of your asset entrypoints**: the package ships its
+ * files already compiled, so there is nothing to import and nothing to ask.
  *
  * It also runs the kit's installer, which it depends on. Every step of both is
  * idempotent: running this again costs nothing.
@@ -77,12 +74,7 @@ final class InstallCommand extends Command
 
     public function handle(): int
     {
-        /*
-         * Before anything is written, and that is the whole point. A refusal
-         * further down would leave a published config, published compiled
-         * files, an environment file written and tables half worth having —
-         * an installation that looks done and is not.
-         */
+        // Before anything is written: a later refusal would leave an installation that looks done and is not.
         if (! DatabaseEngine::isSupported()) {
             $this->components->error(DatabaseEngine::refusal());
 
@@ -99,16 +91,8 @@ final class InstallCommand extends Command
         ]);
         $this->components->task('config/analytics.php publié');
 
-        /*
-         * The compiled files, forced on purpose: they are generated, so there
-         * is nothing of the application's to preserve, and a copy left behind
-         * is worse than none — the kit compares it to what the package ships
-         * and raises on the first screen rather than serving last month's.
-         *
-         * Their own tag rather than `laravel-assets`, which would republish
-         * every package of the suite. A deployment uses the wide one; an
-         * install of this package uses this.
-         */
+        // Forced: generated files have nothing to preserve, and a stale copy makes the kit raise.
+        // Not laravel-assets: it would republish every package of the suite.
         $this->callSilently('vendor:publish', ['--tag' => 'analytics-assets', '--force' => true]);
         $this->components->task('Feuille de styles et collecteur compilés publiés');
 

@@ -41,25 +41,10 @@ final class AnalyticsServiceProvider extends ServiceProvider
 
     public function register(): void
     {
-        // `completeConfigFrom` rather than `mergeConfigFrom`: Laravel's only
-        // completes the first level. A published copy that ages therefore loses
-        // every sub-key added since, without a word. The kit carries this
-        // policy for the whole suite; it is not copied here.
+        // Not mergeConfigFrom: it only completes the first level.
         $this->completeConfigFrom(__DIR__.'/../config/analytics.php', 'analytics');
 
-        /*
-         * The package's own settings, and they are not the host's.
-         *
-         * Posed AFTER the host's configuration and without regard for what a
-         * published copy might say: these are design decisions, not questions.
-         * A key of that file copied into `config/analytics.php` therefore has
-         * no effect, which is the point — a value that suits nobody is a defect
-         * to fix here, not a question to ask of every project.
-         *
-         * They live in a file rather than in constants so they read in one
-         * place, change in one line, and can be moved for the length of an
-         * essay.
-         */
+        // Set after the host's configuration, so a published copy cannot override it.
         $this->app->make(ConfigRepository::class)->set('analytics.internal', require __DIR__.'/../config/internal.php');
 
         $this->app->singleton(Analytics::class);
@@ -99,10 +84,7 @@ final class AnalyticsServiceProvider extends ServiceProvider
 
         $this->mountTheScreens();
 
-        // Where the package's compiled files are. The kit reads this registry
-        // to build their address, and to compare the published copy with the
-        // source: an older copy raises rather than quietly serving last
-        // month's stylesheet.
+        // The kit builds asset URLs from this path, and raises on a stale published copy.
         $this->app->make(AssetRegistry::class)->register('analytics', __DIR__.'/../public');
 
         $this->registerPersistentMiddleware();
@@ -131,8 +113,7 @@ final class AnalyticsServiceProvider extends ServiceProvider
         Blade::componentNamespace('Falcon\\Analytics\\View\\Components', 'analytics');
         Blade::anonymousComponentNamespace('analytics::components', 'analytics');
 
-        // A list repeats these once per row, a campaign once per condition:
-        // the kit runs their file directly.
+        // Repeated once per row or per condition: the kit runs their file directly.
         $this->app->make(Leaves::class)->add(
             'analytics::components.source',
             'analytics::components.page-url',
@@ -141,34 +122,12 @@ final class AnalyticsServiceProvider extends ServiceProvider
             'analytics::components.row-uuid',
         );
 
-        /*
-         * The package's only directive: it brings the whole collector to a
-         * public page of the host, its configuration included.
-         *
-         * It was called `@analyticsConfig` back when it laid down nothing but a
-         * configuration object, the code coming from the host's JavaScript
-         * entry. The package now compiles and ships its script, so the
-         * directive brings it — and the name says so.
-         *
-         * It renders a view rather than HTML built here: an asset declaration
-         * has to go through the kit's component, not behind its back.
-         */
+        // Brings the collector and its configuration to a host page, through a view
+        // so its asset declaration goes through the kit's component.
         Blade::directive('analyticsCollector', fn (): string => "<?php echo view('analytics::collector')->render(); ?>");
 
-        /*
-         * The screens and their blocks, by namespace.
-         *
-         * Thirty lines of manual registration used to live here, one per class.
-         * A screen added without its line did not exist, and the absence only
-         * showed on screen.
-         *
-         * The name is now derived from the class path: the one carrying the
-         * overview answers to `<livewire:analytics::admin.overview-page />`,
-         * and a block filed under `Widgets` to `admin.widgets.trend-chart`.
-         *
-         * Livewire only discovers `app/Livewire` on its own; a package's
-         * classes live elsewhere, hence this declaration.
-         */
+        // Livewire only discovers app/Livewire; names derive from the class path,
+        // e.g. `<livewire:analytics::admin.overview-page />`.
         Livewire::addNamespace('analytics', classNamespace: 'Falcon\\Analytics\\Livewire');
     }
 
@@ -207,27 +166,18 @@ final class AnalyticsServiceProvider extends ServiceProvider
     private function scheduleMaintenance(): void
     {
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
-            // Close idle sessions on a fixed cadence.
             $schedule->command('analytics:sweep')->everyFiveMinutes()->withoutOverlapping();
 
-            /*
-             * Summarise, then erase, and in that order. The purge refuses a day
-             * the archiving has not treated, so a scheduler that stops running
-             * loses nothing: both halt together and the backlog is caught up
-             * later. Half an hour apart so a long catch-up does not meet its
-             * own purge.
-             */
+            // The purge refuses a day not yet summarised; the half-hour gap keeps a
+            // long catch-up clear of it.
             $schedule->command('analytics:archive')->dailyAt('03:00')->withoutOverlapping();
             $schedule->command('analytics:prune')->dailyAt('03:30')->withoutOverlapping();
 
-            // Refresh the GeoLite2 database monthly; inert until a licence key is set.
             $schedule->command('analytics:geoip:download')
                 ->monthlyOn(1, '04:00')
                 ->withoutOverlapping()
                 ->when(fn (): bool => (string) config('analytics.geoip.license_key') !== '');
 
-            // Pull the Search Console queries daily; the command is inert
-            // while no connection is attached.
             $schedule->command('analytics:search-console:sync')
                 ->dailyAt('05:00')
                 ->withoutOverlapping();
@@ -255,20 +205,18 @@ final class AnalyticsServiceProvider extends ServiceProvider
     /**
      * Where every screen of the package mounts, and behind what.
      *
-     * **One file tells all of it**, and that is why the groups are here rather
-     * than in the route files themselves: an address or a guard of this package
-     * is read in one place, never hunted for.
+     * **One file holds every address and guard of the package**: the groups
+     * live here, and the route files carry only their list of routes.
      *
      * **One area, and its mount points.** An area is its shell and its name
      * prefix; marketing shares both with the analytics screens — same
      * administration, one chrome — while carrying its own address and its own
-     * guards. Three of its screens WRITE, where the eleven others only read, so
-     * a host is entitled to put them behind another guard.
+     * guards, so a host can put campaign and ad management behind another
+     * guard.
      *
-     * **Siblings, never nested**, and it is measured rather than assumed · a
-     * nested group concatenates the prefixes and ACCUMULATES the middleware, so
-     * marketing would answer at `/admin/analytics/admin/marketing/…` and demand
-     * both guards at once. Nobody would get in.
+     * **Siblings, never nested** · a nested group concatenates the prefixes and
+     * ACCUMULATES the middleware, so marketing would answer at
+     * `/admin/analytics/admin/marketing/…` and demand both guards at once.
      *
      * The middleware must carry a session stack (`web`, typically): package
      * routes are registered outside the host's own groups, so they inherit
@@ -298,9 +246,7 @@ final class AnalyticsServiceProvider extends ServiceProvider
             'Analytics marketing screens mounted with an empty middleware list: they are publicly reachable.',
         );
 
-        // The public side: the collector posts here, and nothing else lives at
-        // this level. Its own stack is written in the file, the origin check
-        // and the rate limit going with it.
+        // The collector's endpoint: its file carries its own stack, origin check and rate limit.
         $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
     }
 
@@ -308,19 +254,16 @@ final class AnalyticsServiceProvider extends ServiceProvider
      * One mount point · its address, its guards, its name prefix, its file.
      *
      * **The package appends one middleware of its own after the host's list**,
-     * which catches the maintenance up when a scheduler has stopped. Appended
-     * rather than configured, for the same reason the origin check is appended
-     * to the collection endpoint: what the package depends on to do its job is
-     * not something a host removes by emptying a setting. Switching it off is a
-     * setting of its own, `maintenance.on_screen_load`.
+     * which catches the maintenance up when a scheduler has stopped. Like the
+     * origin check on the collection endpoint, emptying the host's list cannot
+     * remove it; the package's internal setting
+     * `maintenance.on_screen_load` switches it off.
      *
      * @param  array<string, mixed>  $area
      */
     private function mount(array $area, string $prefix, string $name, string $file, string $warning): void
     {
-        // An explicitly empty list mounts the screens with no protection at all
-        // — no session, no auth. Almost certainly a host misconfiguration, so
-        // say it rather than serve them quietly.
+        // An explicitly empty list leaves the screens unprotected: almost certainly a host mistake.
         if (($area['middleware'] ?? null) === []) {
             Log::channel(config('analytics.log_channel'))->warning($warning);
         }
@@ -372,9 +315,8 @@ final class AnalyticsServiceProvider extends ServiceProvider
      * **every visitor stays session-scoped without a word** — the exact symptom
      * of having forgotten the exemption.
      *
-     * This used to be a line the host had to add to `bootstrap/app.php`, and it
-     * was the most silent of the four things asked of it. The kit already does
-     * the same for its own three cookies; a package can do it for its own.
+     * The host has nothing to add to `bootstrap/app.php`: the package exempts
+     * its own cookie, as the kit does for its own.
      *
      * Nothing happens while no cookie is named: with no consent cookie, the
      * package never promotes a visitor anyway.

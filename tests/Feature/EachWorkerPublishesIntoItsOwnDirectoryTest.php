@@ -7,21 +7,11 @@ namespace Falcon\Analytics\Tests\Feature;
 use Falcon\Analytics\Tests\TestCase;
 
 /**
- * Chaque processus d'essai publie les fichiers compilés dans son propre
- * dossier.
+ * Each test process publishes the compiled files into its own directory.
  *
- * **Le jumeau du cache de démarrage, et le troisième des trois choses qu'un
- * passage en parallèle doit donner à chaque processus.** Les quatre processus
- * démarrent la même application d'essai, dont `public_path()` est UN seul
- * dossier. Sur un poste, les copies sont déjà en place et personne ne publie ·
- * sur un dépôt fraîchement récupéré, le dossier est vide, les quatre publient
- * en même temps, et l'un rend une page pendant qu'un autre recopie encore
- * `icons.svg`. La garde de péremption du kit lit un fichier à moitié écrit,
- * refuse de construire l'adresse, et **l'essai qui tombe ne parle de rien de
- * tout ça**.
- *
- * Mesuré sur la chaîne d'intégration · vert, rouge, vert sur le même code.
- * C'est l'allure qu'a un dossier partagé vu du dehors : celle du hasard.
+ * Workers boot the same bench application, whose `public_path()` is one
+ * directory. On a fresh checkout they would all publish at once, and the kit's
+ * staleness guard would read a half-written file in a test about something else.
  */
 final class EachWorkerPublishesIntoItsOwnDirectoryTest extends TestCase
 {
@@ -43,11 +33,7 @@ final class EachWorkerPublishesIntoItsOwnDirectoryTest extends TestCase
         $this->assertStringEndsWith('/laravel/public', str_replace('\\', '/', $this->publishedDirectory('')));
     }
 
-    /**
-     * The bench keeps the rule private, as it should: it is read here through
-     * the class rather than restated, so a change of shape cannot leave this
-     * test agreeing with a rule nobody applies any more.
-     */
+    /** Read through the bench's private method, so this test follows the rule the bench applies. */
     private function publishedDirectory(string $token): string
     {
         $method = new \ReflectionMethod(TestCase::class, 'publishedDirectoryFor');

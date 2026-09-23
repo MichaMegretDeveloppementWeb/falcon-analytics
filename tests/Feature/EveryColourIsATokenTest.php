@@ -14,35 +14,21 @@ use SplFileInfo;
 /**
  * No colour is written down twice, because no colour is written down at all.
  *
- * `paquet-style.md` §4 asks for a named, documented token for every value a
- * host may want to change, and a chart is exactly that: it is drawn on a canvas
- * by Chart.js, so no class reaches it and the values had been written by hand —
- * in both themes, in every view that drew something.
- *
- * **The drift was already there when this was measured**, on 2026-09-12. Four
- * views declared what was meant to be one ramp of blues and three disagreed:
- * `#4b9bf0` against `#54a8f0` on the second step, `#a5cdf7` against `#a5cdf6`
- * on the fourth, `#d1d5db` against `#d7e9fc` on the sixth. Nobody decided any
- * of it. A copy aged, and nothing could say so.
- *
- * 25 distinct values, 146 times, across 19 views and one PHP class. This test
- * is what keeps the next one from being written.
+ * Every value a host may want to change is a named token. A chart is drawn on a
+ * canvas, where no class reaches, so its colours are tokens declared once in the
+ * theme sheet; a literal copied from view to view drifts silently.
  *
  * No database here: it reads files, and nothing else.
  */
 final class EveryColourIsATokenTest extends TestCase
 {
     /**
-     * A hex colour anywhere in the delivered source.
+     * A hex colour anywhere in the delivered source, comments included: a value
+     * quoted in an explanation gets copied out of it.
      *
-     * Comments are read too, and deliberately: a value quoted in an
-     * explanation is a value that will be copied out of it one day.
-     *
-     * Not after `&` or `amp;`, which make it an HTML entity · `&#039;` and its
-     * doubly escaped form `&amp;#039;` are the escaped apostrophe a docblock
-     * quotes when explaining a twice-escaped title, and neither has ever
-     * coloured anything. Excluding on what follows would not do: a real colour
-     * is very often followed by the `;` that ends a declaration.
+     * Not after `&` or `amp;`, which make it an HTML entity such as `&#039;` or
+     * `&amp;#039;`. A real colour is often followed by the `;` that ends a
+     * declaration, so only what precedes tells the two apart.
      */
     private const COLOUR = '/(?<!&)(?<!amp;)#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})\b/';
 
@@ -51,26 +37,15 @@ final class EveryColourIsATokenTest extends TestCase
         $this->assertSame([], $this->coloursIn('resources/views', '.blade.php'));
     }
 
-    /**
-     * And no PHP either. A ramp lived in a Livewire component as a class
-     * constant, which the view sweep could not see — it was found by accident,
-     * and it was a fifth ramp.
-     */
     public function test_no_class_writes_a_colour(): void
     {
         $this->assertSame([], $this->coloursIn('src', '.php'));
     }
 
     /**
-     * The one place they are allowed, and the shape that makes them readable.
-     *
-     * Every token holding a literal is declared twice, once per theme. A token
-     * declared once would be a token that ignores the dark mode — which is
-     * exactly the bug the literals had, written as a second set of `dark:`
-     * classes beside them.
-     *
-     * A token holding `var(…)` derives from another and is declared once on
-     * purpose: it follows whatever its source does, in both themes.
+     * The theme sheet is the one place literals are allowed. A literal token
+     * declared once would ignore the dark mode; a token holding `var(…)`
+     * derives from another and follows it in both themes.
      */
     public function test_every_literal_token_is_declared_in_both_themes(): void
     {
@@ -126,8 +101,7 @@ final class EveryColourIsATokenTest extends TestCase
 
             $source = (string) file_get_contents($file->getPathname());
 
-            // `preg_split` answers `false` on a broken pattern. This one is
-            // not, but the signature says so and a file is never empty here.
+            // `preg_split` is typed to return `false` on a broken pattern.
             $lines = preg_split('/\R/', $source);
 
             foreach ($lines === false ? [] : $lines as $number => $line) {

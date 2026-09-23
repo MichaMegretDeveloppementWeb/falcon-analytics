@@ -3,9 +3,9 @@
 @endphp
 
 {{--
-    Sections were 32 px apart while the rows inside a card sit within 28: a group's outer gap
-    did not exceed its inner ones, and the page read as one long list. At 48 px, with a rule,
-    each block becomes a block again.
+    Sections sit further apart than the rows inside a card, with a rule between
+    them: a group's outer gap has to exceed its inner ones, or the page reads as
+    one long list.
 --}}
 <x-analytics::root area="admin" class="an:space-y-12">
 

@@ -12,15 +12,10 @@ use Illuminate\Support\Facades\Schema;
  * Drops the package's tables and replays its migrations. Nothing else is
  * touched.
  *
- * **Why a command and not a written procedure** · `migrate:fresh` would carry
- * away the host's own tables, which are none of the package's business, and a
- * procedure to improvise by hand is a procedure someone gets wrong on the day
- * it matters.
+ * **Unlike `migrate:fresh`, it leaves the host's own tables alone.**
  *
  * **It designates its tables by the prefix**, read from the engine's own
- * catalogue — never from a list kept by hand, which one would have to remember
- * to update. A table added tomorrow is covered without anyone thinking about
- * it.
+ * catalogue, so a table the package adds later is covered too.
  *
  * **It does not refuse to run outside development**, unlike a command that
  * writes made-up data: this one exists precisely for a host already in
@@ -92,9 +87,7 @@ final class RefreshCommand extends Command
      */
     private function drop(array $tables): void
     {
-        // The tables reference one another, and the order that would satisfy
-        // every constraint is one more thing to get wrong. Constraints are put
-        // back whatever happens.
+        // The tables reference one another: with constraints off, the drop order does not matter.
         Schema::disableForeignKeyConstraints();
 
         try {

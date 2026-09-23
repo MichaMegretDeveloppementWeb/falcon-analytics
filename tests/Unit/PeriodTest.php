@@ -19,21 +19,14 @@ use PHPUnit\Framework\TestCase;
  * **So the clamp is the guarantee here, not the arithmetic.** Three lengths are
  * offered and anything else falls back, which keeps `?period=99999` from
  * turning a linked shortcut into a full-table scan — and keeps a mistyped link
- * showing the usual month rather than an error.
- *
- * Written on 2026-09-13, when `docs/fonctionnalites.md` started telling hosts
- * they may write these parameters themselves.
+ * showing the usual month instead of an error.
  */
 final class PeriodTest extends TestCase
 {
     /**
-     * The three lengths the documentation tells hosts they may write.
-     *
-     * **Listed here rather than read from the constant**, and that is the whole
-     * value of the list · comparing the constant to itself proves nothing, and
-     * PHPStan says so. These are literals because they are a promise made
-     * elsewhere, in `docs/fonctionnalites.md`. Change the constant and these
-     * fall, which is the point.
+     * The three lengths `docs/fonctionnalites.md` tells hosts they may write,
+     * as literals · compared with the constant itself they would prove nothing,
+     * and a change to the constant fails here.
      *
      * @return array<string, array{0: int}>
      */
@@ -68,18 +61,13 @@ final class PeriodTest extends TestCase
 
         $this->assertSame(Period::DEFAULT_DAYS, $period->days);
 
-        // And the window is a real one, forward in time: a negative length that
-        // slipped through would put `from` after `to`, and every screen would
-        // read an empty range without a word.
+        // A negative length slipping through would put `from` after `to`, and every screen would read nothing.
         $this->assertTrue($period->from->lessThan($period->to));
     }
 
     /**
-     * The window covers the whole of its first day.
-     *
-     * `subDays($days - 1)->startOfDay()` and not `subDays($days)` · seven days
-     * means today and the six before it, so a week reads as a week rather than
-     * as eight days.
+     * Seven days are today and the six before it, from the start of the first,
+     * so a week does not read as eight days.
      */
     public function test_it_counts_today_as_one_of_the_days(): void
     {
@@ -94,14 +82,9 @@ final class PeriodTest extends TestCase
     }
 
     /**
-     * The previous window is made of whole days, and it touches this one.
-     *
-     * It ended at the same hour of the day as the current window at first —
-     * 14:30, a week earlier — and two things were wrong with that. The hours
-     * from 14:30 to midnight on that day belonged to neither window, so a visit
-     * there counted nowhere. And a window ending mid-day cannot be read from
-     * the daily summaries, which know whole days only · the « previous » figure
-     * of the two summarised blocks moved on the day the erasing crossed it.
+     * A previous window ending mid-day would leave the rest of that day in
+     * neither window, and could not be read from the daily summaries, which
+     * know whole days only.
      */
     public function test_the_previous_window_is_whole_days_touching_this_one(): void
     {

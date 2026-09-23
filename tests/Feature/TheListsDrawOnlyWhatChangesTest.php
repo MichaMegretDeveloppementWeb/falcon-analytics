@@ -48,7 +48,7 @@ final class TheListsDrawOnlyWhatChangesTest extends TestCase
      * The views a render asks for, by name and count.
      *
      * The deferred blocks are resolved, so what is counted is the screen once
-     * it has settled rather than the skeleton it opens on. Asked again before
+     * it has settled, not the skeleton it opens on. Asked again before
      * every render: the setting holds for one component and no more, a state
      * flush clearing it as each test component is torn down.
      *

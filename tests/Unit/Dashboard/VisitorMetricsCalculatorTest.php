@@ -45,7 +45,7 @@ final class VisitorMetricsCalculatorTest extends TestCase
                 '2026-06-01' => ['sessions' => 6, 'visitors' => 3],
                 '2026-06-03' => ['sessions' => 4, 'visitors' => 2],
             ],
-            'new' => ['2026-06-01' => 2, '2026-06-03' => 5], // 5 > 2 actifs, donc borné
+            'new' => ['2026-06-01' => 2, '2026-06-03' => 5], // 5 > 2 active, so clamped
         ];
 
         $metrics = (new VisitorMetricsCalculator)->compute(
@@ -55,7 +55,6 @@ final class VisitorMetricsCalculatorTest extends TestCase
             period: $this->threeDayPeriod(),
         );
 
-        // Trois jours : 06-01, 06-02 (vide), 06-03.
         $this->assertSame([3.0, 0.0, 2.0], $metrics->visitors->sparkline);
         $this->assertSame([2.0, 0.0, 2.0], $metrics->newVisitors->sparkline);
         $this->assertSame([1.0, 0.0, 0.0], $metrics->returning->sparkline);

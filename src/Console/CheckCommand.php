@@ -30,8 +30,8 @@ use Throwable;
 /**
  * Diagnoses an installation.
  *
- * Separate from the installer on purpose: most of what breaks an installation
- * breaks it later, when configuration changes or an entrypoint is rewritten.
+ * Separate from the installer: most of what breaks an installation breaks it
+ * later, when configuration changes or a layout is rewritten.
  *
  * Analytics fails quietly, which is why this matters more here than for a
  * package that draws screens. A collector that is never rendered, an ingestion
@@ -106,7 +106,7 @@ final class CheckCommand extends Command
      *
      * A file that stops on an error keeps what came before it and ignores the
      * rest, so the conversions declared after the error vanish from the
-     * screens. Loading never raises, by design, which is why it is said here.
+     * screens. Loading never raises, so it is said here.
      *
      * @return array{0: string, 1: string, 2: string}
      */
@@ -195,15 +195,14 @@ final class CheckCommand extends Command
      * Whether the summarising keeps up, which is how a dead scheduler shows.
      *
      * **Nothing else says it.** When the scheduler stops, the erasing stops
-     * with it — nothing is lost, by design — and the screens go on answering
-     * from the rows. The only visible trace is this backlog growing, and the
-     * catch-up on a screen load hides even that while an administrator visits.
+     * with it, so nothing is lost, and the screens go on answering from the
+     * rows. The only visible trace is this backlog growing, and the catch-up
+     * on a screen load hides even that while an administrator visits.
      *
      * One day waiting is the normal state between midnight and the nightly run.
-     * More than that means either a scheduler that is not running, or an
-     * installation still working through the history it had before the
-     * summaries existed — and the two are told apart by watching the number
-     * fall, which is what the message asks for.
+     * More than that means either a scheduler that is not running, or a first
+     * catch-up still working through older days — and the two are told apart
+     * by watching the number fall, which is what the message asks for.
      *
      * @return array{0: string, 1: string, 2: string}
      */
@@ -256,8 +255,8 @@ final class CheckCommand extends Command
     }
 
     /**
-     * First of the checks, and before the migrations on purpose: the engine
-     * decides whether they mean anything at all.
+     * First of the checks, before the migrations: the engine decides whether
+     * they mean anything at all.
      *
      * A connection can change after an install — a host moves its database, or
      * points a second environment somewhere else — so this is checked at every
@@ -359,10 +358,10 @@ final class CheckCommand extends Command
      * strictly invisible: screens work, routes answer, tables exist, and not a
      * single visit arrives.
      *
-     * Searched across every host view rather than in a named layout, the
-     * package not knowing which one carries the public site. Package views are
-     * skipped, ours included: finding the directive under `vendor/` would say
-     * « laid down » about someone else's file.
+     * Searched across every host view, since the package does not know which
+     * layout carries the public site. Package views are skipped, ours
+     * included: finding the directive under `vendor/` would say « laid down »
+     * about someone else's file.
      *
      * `resource_path('views')` is read whatever happens, before that filter: on
      * a test bench the host's views live under `vendor/`, and the general rule
@@ -421,13 +420,13 @@ final class CheckCommand extends Command
     }
 
     /**
-     * Whether a view carries the directive, and the first one still on its old
-     * name, `@analyticsConfig`, as a relative path with forward slashes.
+     * Whether a view carries the directive, and the first one that carries the
+     * former name `@analyticsConfig`, as a relative path with forward slashes.
      *
-     * Blade copies an unknown directive to the output as it stands, so a view
-     * left on the old name prints it to visitors. Every file is read even once
-     * the directive is found · a host halfway through the rename has one layout
-     * on each name.
+     * A host may still write the former directive name, and Blade copies an
+     * unknown directive to the output as it stands, so that view prints it to
+     * visitors. Every file is read even once the directive is found · two
+     * layouts can each carry one of the names.
      *
      * @param  list<string>  $paths
      * @return array{found: bool, stale: ?string}
@@ -586,8 +585,8 @@ final class CheckCommand extends Command
     /**
      * The two groups of screens the administration holds, by config block.
      *
-     * Marketing sits inside the admin block rather than beside it: it is a
-     * second entity of the same area, with its own address and its own guard.
+     * Marketing sits inside the admin block: it is a second entity of the same
+     * area, with its own address and its own guard.
      * The layout is not among them — it belongs to the area, and both entities
      * of the administration are drawn by the same one.
      *
@@ -602,7 +601,7 @@ final class CheckCommand extends Command
     }
 
     /**
-     * The identity block, which is the one thing a host still fills by hand.
+     * The identity block, which is the one thing a host fills by hand.
      *
      * **A guard named here that does not exist is dropped in silence.** The
      * subject resolution filters the configured names against `auth.guards`,
@@ -674,8 +673,8 @@ final class CheckCommand extends Command
     /**
      * The name columns a host declared that its own table does not carry.
      *
-     * The table comes from the resolver rather than from a second derivation
-     * here: it reads an explicit override, or the guard's auth provider model.
+     * The table comes from the resolver, which reads an explicit override or
+     * the guard's auth provider model.
      * A guard whose source cannot be resolved at all is not a fault — a host
      * may want the label alone.
      *
@@ -707,8 +706,7 @@ final class CheckCommand extends Command
                 try {
                     $exists = Schema::hasColumn($table, $column);
                 } catch (Throwable) {
-                    // No reachable table is another point's business, not this
-                    // one's: the migrations check speaks first.
+                    // An unreachable table is the migrations check's business.
                     return [];
                 }
 
@@ -733,12 +731,12 @@ final class CheckCommand extends Command
      * **And the rate limit becomes one bucket for the whole site**, which is
      * the consequence that actually loses data rather than merely distorting
      * it. Laravel keys a guest's throttle on `domain|ip`, so every visitor
-     * shares the 120 a minute and beyond that the beacons are refused — for
-     * everyone at once, and silently, since a beacon's answer is not read.
+     * shares one `analytics.throttle` budget and beyond it the beacons are
+     * refused — for everyone at once, and silently, since a beacon's answer is
+     * not read.
      *
-     * **Visitor counts are not affected by the address itself**, and saying
-     * they were sent the reader looking for a bug in the wrong place · a
-     * visitor is a cookie or a session id, never an address. See
+     * **Visitor counts are not affected by the address itself** · a visitor is
+     * a cookie or a session id, never an address. See
      * `VisitorIdentityResolver`.
      *
      * It cannot be settled from the console — no request is in flight, and the
