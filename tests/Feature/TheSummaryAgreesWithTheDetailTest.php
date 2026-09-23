@@ -362,6 +362,59 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
     }
 
     /**
+     * Rows written into days already summarised · the forward sequence never
+     * goes back to them, so they are summarised again from where they start.
+     */
+    public function test_days_written_behind_the_line_are_summarised_again(): void
+    {
+        $this->pageview($this->newSession(), 'https://exemple.test/', CarbonImmutable::parse('2026-06-14 10:00'));
+        $this->archiveClosedDays->execute();
+
+        $this->pageview($this->newSession(), 'https://exemple.test/tarifs', CarbonImmutable::parse('2026-06-11 10:00'));
+        $this->pageview($this->newSession(), 'https://exemple.test/tarifs', CarbonImmutable::parse('2026-06-14 11:00'));
+
+        $done = $this->archiveClosedDays->executeFrom(CarbonImmutable::parse('2026-06-11'));
+
+        $this->assertSame(['2026-06-11', '2026-06-12', '2026-06-13', '2026-06-14'], $done);
+        $this->assertSame(1, (int) DailyCount::query()->where('day', '2026-06-11')->sum('total'));
+        $this->assertSame(2, (int) DailyCount::query()->where('day', '2026-06-14')->sum('total'));
+    }
+
+    /** A sequence that stopped earlier is caught up too, so the register keeps no gap. */
+    public function test_summarising_again_leaves_no_gap_behind_a_stalled_sequence(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-06-11 12:00:00'));
+        $this->pageview($this->newSession(), 'https://exemple.test/', CarbonImmutable::parse('2026-06-10 10:00'));
+        $this->archiveClosedDays->execute();
+
+        $this->travelTo(CarbonImmutable::parse('2026-06-15 12:00:00'));
+        $this->pageview($this->newSession(), 'https://exemple.test/', CarbonImmutable::parse('2026-06-13 10:00'));
+
+        $this->assertSame(
+            ['2026-06-11', '2026-06-12', '2026-06-13', '2026-06-14'],
+            $this->archiveClosedDays->executeFrom(CarbonImmutable::parse('2026-06-13')),
+        );
+    }
+
+    /**
+     * Past the retention the detail may be erased already · a day summarised
+     * again there would count less than the summary it replaced.
+     */
+    public function test_summarising_again_never_reaches_past_the_retention(): void
+    {
+        config(['analytics.retention_days' => 3]);
+
+        $this->pageview($this->newSession(), 'https://exemple.test/', CarbonImmutable::parse('2026-06-08 10:00'));
+        $this->archiveClosedDays->execute();
+        Event::query()->whereDate('occurred_at', '2026-06-08')->delete();
+
+        $done = $this->archiveClosedDays->executeFrom(CarbonImmutable::parse('2026-06-08'));
+
+        $this->assertSame(['2026-06-12', '2026-06-13', '2026-06-14'], $done);
+        $this->assertSame(1, (int) DailyCount::query()->where('day', '2026-06-08')->sum('total'), 'The erased day kept its summary.');
+    }
+
+    /**
      * Each day is summarised in its own transaction · a day that fails is
      * undone whole, and the days before it stay summarised, so the next run
      * resumes at the one that failed rather than starting over.

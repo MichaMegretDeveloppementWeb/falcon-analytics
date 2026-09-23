@@ -69,24 +69,39 @@ final readonly class DailyCountArchiver
      */
     public function pendingDays(?int $limit = null): array
     {
-        $yesterday = CarbonImmutable::now()->subMinutes(self::GRACE_MINUTES)->subDay()->startOfDay();
         $from = $this->firstPendingDay();
 
-        if ($from === null || $from->greaterThan($yesterday)) {
-            return [];
+        return $from === null ? [] : $this->closedDaysSince($from, $limit);
+    }
+
+    /**
+     * Every closed day from `$from` on, oldest first · for a writer that puts
+     * rows into days already summarised, which the forward sequence never
+     * goes back to.
+     *
+     * **Never before the retention window** · the detail there may already be
+     * erased, and a day summarised again would count less than the summary it
+     * replaces. **And from the first pending day when that one is earlier**, so
+     * the register keeps no gap · a pending day is always whole, the purge
+     * refusing a day that has not been summarised.
+     *
+     * @return list<CarbonImmutable>
+     */
+    public function closedDaysFrom(CarbonImmutable $from): array
+    {
+        $from = $from->startOfDay();
+        $kept = $this->firstDayKept();
+        $pending = $this->firstPendingDay();
+
+        if ($kept !== null && $kept->greaterThan($from)) {
+            $from = $kept;
         }
 
-        $days = [];
-
-        for ($day = $from; $day->lessThanOrEqualTo($yesterday); $day = $day->addDay()) {
-            $days[] = $day;
-
-            if ($limit !== null && count($days) >= $limit) {
-                break;
-            }
+        if ($pending !== null && $pending->lessThan($from)) {
+            $from = $pending;
         }
 
-        return $days;
+        return $this->closedDaysSince($from);
     }
 
     /**
@@ -143,6 +158,39 @@ final readonly class DailyCountArchiver
         return is_string($oldest) && $oldest !== ''
             ? CarbonImmutable::parse($oldest)->startOfDay()
             : null;
+    }
+
+    /**
+     * The days from `$from` up to the last one that is really closed ·
+     * yesterday, once the grace after midnight has passed.
+     *
+     * @return list<CarbonImmutable>
+     */
+    private function closedDaysSince(CarbonImmutable $from, ?int $limit = null): array
+    {
+        $yesterday = CarbonImmutable::now()->subMinutes(self::GRACE_MINUTES)->subDay()->startOfDay();
+        $days = [];
+
+        for ($day = $from; $day->lessThanOrEqualTo($yesterday); $day = $day->addDay()) {
+            $days[] = $day;
+
+            if ($limit !== null && count($days) >= $limit) {
+                break;
+            }
+        }
+
+        return $days;
+    }
+
+    /**
+     * The oldest day the purge leaves whole, or null when nothing is erased ·
+     * no retention, or one the purge refuses.
+     */
+    private function firstDayKept(): ?CarbonImmutable
+    {
+        $days = config('analytics.retention_days');
+
+        return is_int($days) && $days >= 1 ? CarbonImmutable::now()->subDays($days)->startOfDay() : null;
     }
 
     /**
