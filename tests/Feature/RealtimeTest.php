@@ -75,10 +75,10 @@ final class RealtimeTest extends TestCase
     {
         $twoDevices = $this->visitor();
         $this->sessionRow([], $twoDevices);
-        $this->sessionRow(['last_activity_at' => now()->subSeconds(30)], $twoDevices); // même visiteur : compte une fois
+        $this->sessionRow(['last_activity_at' => now()->subSeconds(30)], $twoDevices); // same visitor: counted once
         $this->sessionRow(['last_activity_at' => now()->subSeconds(30)]);
-        $this->sessionRow(['last_activity_at' => now()->subMinutes(5)]); // périmée
-        $this->sessionRow(['is_bot' => true]);                           // robot
+        $this->sessionRow(['last_activity_at' => now()->subMinutes(5)]); // stale
+        $this->sessionRow(['is_bot' => true]);                           // bot
 
         $this->assertSame(2, $this->repository->onlineCount($this->onlineSince, null));
     }
@@ -86,12 +86,12 @@ final class RealtimeTest extends TestCase
     public function test_it_counts_the_window_sessions_visitors_and_pageviews_activity_based(): void
     {
         $visitor = $this->visitor();
-        $active = $this->sessionRow(['started_at' => now()->subHours(2)], $visitor); // commencée avant, toujours active
+        $active = $this->sessionRow(['started_at' => now()->subHours(2)], $visitor); // started earlier, still active
         $this->sessionRow([], $visitor);
-        $this->sessionRow(['last_activity_at' => now()->subHours(1)]);               // hors fenêtre
+        $this->sessionRow(['last_activity_at' => now()->subHours(1)]);               // outside the window
 
         $this->event($active, EventType::Pageview);
-        $this->event($active, EventType::Pageview, ['occurred_at' => now()->subHours(1)]); // hors fenêtre
+        $this->event($active, EventType::Pageview, ['occurred_at' => now()->subHours(1)]); // outside the window
         $this->event($active, EventType::Click);
 
         $counts = $this->repository->windowCounts($this->windowSince, null);
@@ -210,10 +210,10 @@ final class RealtimeTest extends TestCase
         $geneva = ['city' => 'Geneva', 'country' => 'CH', 'latitude' => 46.2044, 'longitude' => 6.1432];
 
         $this->sessionRow($geneva);
-        $this->sessionRow(array_merge($geneva, ['last_activity_at' => now()->subMinutes(10)])); // récente, pas en ligne
+        $this->sessionRow(array_merge($geneva, ['last_activity_at' => now()->subMinutes(10)])); // recent, not online
         $this->sessionRow(['city' => 'Paris', 'country' => 'FR', 'latitude' => 48.8566, 'longitude' => 2.3522]);
-        $this->sessionRow(array_merge($geneva, ['is_bot' => true]));                            // robot : écarté
-        $this->sessionRow(array_merge($geneva, ['last_activity_at' => now()->subHours(2)]));    // hors fenêtre
+        $this->sessionRow(array_merge($geneva, ['is_bot' => true]));                            // bot: excluded
+        $this->sessionRow(array_merge($geneva, ['last_activity_at' => now()->subHours(2)]));    // outside the window
 
         $points = $this->repository->mapPoints($this->windowSince, $this->onlineSince);
 
@@ -297,8 +297,7 @@ final class RealtimeTest extends TestCase
         $this->sessionRow(['city' => 'Geneva', 'country' => 'CH', 'latitude' => 46.2044, 'longitude' => 6.1432]);
         $this->sessionRow();
 
-        // `getDisplayRegion` returns `false` if the intl extension does not
-        // know the region: the test then has nothing to look for in the page.
+        // False when intl does not know the region, which would leave nothing to look for.
         $region = Locale::getDisplayRegion('-CH', app()->getLocale());
 
         $this->assertNotFalse($region, 'the CH region has to have a label');
@@ -319,10 +318,7 @@ final class RealtimeTest extends TestCase
 
         $this->actingAs(TestAdmin::create([]), 'admin');
 
-        // Fixed plan: online + window (sessions, pageviews) + per-minute
-        // buckets + recent sessions (+ visitors) + feed (events + sessions +
-        // visitors) + the attributor's disambiguation + top
-        // pages/sources/devices + map points + unlocated = 16.
+        // Fixed plan of 15: online 1, window 2, per-minute 1, recent sessions 2, feed 3, attributor 1, top lists 3, map 1, unlocated 1.
         $budget = $this->assertCostIsFlat(
             function () use ($marie): void {
                 $visitor = $this->visitor(['type' => 'client', 'id' => $marie->id]);
@@ -334,7 +330,7 @@ final class RealtimeTest extends TestCase
             fn () => Livewire::test(RealtimePage::class),
         );
 
-        $this->assertLessThanOrEqual(16, $budget['count']);
+        $this->assertLessThanOrEqual(15, $budget['count']);
     }
 
     /**
@@ -359,8 +355,7 @@ final class RealtimeTest extends TestCase
         $this->assertStringContainsString('vector-effect="non-scaling-stroke"', $drawing);
         $this->assertGreaterThan(100_000, strlen($drawing));
 
-        // Every point a pair: a single lost space shifts every number after
-        // it, and the world draws as one stray line without any error.
+        // A single lost space shifts every number after it and draws the world as one stray line.
         $this->assertSame(1, preg_match('/ d="([^"]+)"/', $drawing, $path));
 
         $points = preg_split('/[MZ\s]+/', $path[1], -1, PREG_SPLIT_NO_EMPTY);
