@@ -9,11 +9,10 @@ use Falcon\Analytics\Analytics;
 use Falcon\Analytics\DTOs\RequestSnapshot;
 use Falcon\Analytics\Http\Requests\IngestBatchRequest;
 use Falcon\Analytics\Services\VisitorIdentityResolver;
+use Falcon\Analytics\Support\AfterTheResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use Throwable;
-
-use function Illuminate\Support\defer;
 
 /** @internal what is promised is the route name, never this class. */
 final class IngestController
@@ -41,7 +40,7 @@ final class IngestController
 
         // Deferred so the beacon returns immediately; analytics must never surface
         // an error, so a persistence failure is logged and swallowed.
-        defer(function () use ($action, $visitorUuid, $subject, $snapshot, $batch): void {
+        AfterTheResponse::run(function () use ($action, $visitorUuid, $subject, $snapshot, $batch): void {
             try {
                 $action->execute($visitorUuid, $subject, $snapshot, $batch);
             } catch (Throwable $e) {

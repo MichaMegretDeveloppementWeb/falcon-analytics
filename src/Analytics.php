@@ -12,12 +12,11 @@ use Falcon\Analytics\DTOs\IncomingEvent;
 use Falcon\Analytics\DTOs\RequestSnapshot;
 use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Services\VisitorIdentityResolver;
+use Falcon\Analytics\Support\AfterTheResponse;
 use Falcon\Analytics\Support\UrlRedactor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Throwable;
-
-use function Illuminate\Support\defer;
 
 /**
  * Integration surface between the host application and the package.
@@ -254,7 +253,7 @@ final class Analytics
     {
         $action = app(IngestEventsAction::class);
 
-        defer(function () use ($action, $uuid, $subject, $snapshot, $batch): void {
+        AfterTheResponse::run(function () use ($action, $uuid, $subject, $snapshot, $batch): void {
             try {
                 $action->execute($uuid, $subject, $snapshot, $batch);
             } catch (Throwable $e) {
