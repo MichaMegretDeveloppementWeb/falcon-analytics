@@ -28,7 +28,6 @@ final class SearchQueriesWidgetTest extends TestCase
         $this->admin = TestAdmin::create([]);
         $this->travelTo(CarbonImmutable::parse('2026-07-20 12:00:00'));
 
-        // Render the deferred widget's real content rather than its placeholder.
         Livewire::withoutLazyLoading();
     }
 
@@ -42,8 +41,8 @@ final class SearchQueriesWidgetTest extends TestCase
         $this->queryRow('2026-07-10', 'louer une voiture', 10, 100, 3.0);
         $this->queryRow('2026-07-11', 'louer une voiture', 20, 300, 5.0);
         $this->queryRow('2026-07-12', 'suv geneve', 5, 50, 8.0);
-        $this->queryRow('2026-06-01', 'louer une voiture', 12, 200, 6.0); // période précédente
-        $this->queryRow('2025-01-01', 'louer une voiture', 99, 999, 1.0); // hors des deux périodes
+        $this->queryRow('2026-06-01', 'louer une voiture', 12, 200, 6.0); // previous period
+        $this->queryRow('2025-01-01', 'louer une voiture', 99, 999, 1.0); // outside both periods
 
         $rows = app(SearchQueryReadRepository::class)->topQueries(Period::ofDays(30), 10);
 
@@ -62,7 +61,7 @@ final class SearchQueriesWidgetTest extends TestCase
     {
         $this->queryRow('2026-07-10', 'louer une voiture', 10, 100, 3.0);
         $this->queryRow('2026-07-12', 'suv geneve', 5, 50, 8.0);
-        $this->queryRow('2026-06-01', 'louer une voiture', 12, 200, 6.0); // période précédente
+        $this->queryRow('2026-06-01', 'louer une voiture', 12, 200, 6.0); // previous period
 
         $this->assertSame(
             ['current' => 15, 'previous' => 12],

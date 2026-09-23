@@ -13,13 +13,13 @@
 
     The markers live under wire:ignore and are regenerated IN PLACE on every
     tick (the `map` payload), sized in SCREEN PIXELS so they look the same on a
-    phone and on a wide display. The page's 30 min / Online tab filters them
+    phone and on a wide display. The page's window and online tabs filter them
     through the `an-realtime-mode` event, and the tooltip goes through
     the dashboard's delegated `data-an-tooltip`.
 
     Its four colours are tokens · land, borders, the live green and the recent
-    accent. They were literals, and the dark theme was a second set of classes
-    beside them; a token carries both, so those classes are gone.
+    accent · each carrying its light and its dark value, so no dark variant
+    sits beside them.
 --}}
 <div
     wire:ignore

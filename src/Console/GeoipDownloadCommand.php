@@ -72,10 +72,8 @@ final class GeoipDownloadCommand extends Command
     /**
      * Unpack the one file we need, streaming.
      *
-     * PharData was the obvious tool and it reads the whole archive into memory: a 32 MB download
-     * blew past PHP's 128 MB default and the command died mid-extract, having already spent the
-     * download. Ungzipping to a temp file then walking the tar keeps memory flat whatever the
-     * archive weighs.
+     * Not PharData: it loads the whole archive into memory. Ungzipping to a temp file then walking
+     * the tar keeps memory flat whatever the archive weighs.
      */
     private function extractDatabase(string $archive, string $extractDir, string $edition): string
     {

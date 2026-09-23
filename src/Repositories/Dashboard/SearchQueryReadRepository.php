@@ -9,9 +9,9 @@ use Falcon\Analytics\DTOs\Dashboard\Period;
 use Falcon\Analytics\Models\SearchQuery;
 
 /**
- * Reads for the "Clics par recherches Google" section, on the locally synced
- * Search Console cache only (never the API): the top queries of the period
- * and the cache's freshness edge. GSC data trails reality by ~3 days, so the
+ * Reads for the Google search queries section, on the locally synced Search
+ * Console cache only (never the API): the top queries of the period and the
+ * cache's freshness edge. GSC data trails reality by a few days, so the
  * freshest cached day is surfaced next to the numbers.
  *
  * @internal
@@ -48,8 +48,7 @@ final class SearchQueryReadRepository
             ->groupBy('query')
             ->pluck('total_clicks', 'query');
 
-        // `array_values` because this method declares a list: the result is
-        // already keyed from zero, but its type does not say so.
+        // `array_values` only to carry the `list` type: the keys already run from zero.
         return array_values($rows->map(function (SearchQuery $row) use ($previous): array {
             $clicks = (int) $row->getAttribute('total_clicks');
             $impressions = (int) $row->getAttribute('total_impressions');

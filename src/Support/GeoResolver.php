@@ -20,8 +20,8 @@ final class GeoResolver
      * @param  string|null  $devIp  Public IP substituted for private/reserved
      *                              request IPs (local development, where every
      *                              request comes from 127.0.0.1). Inert in
-     *                              production by design: real public IPs are
-     *                              never overridden.
+     *                              production: real public IPs are never
+     *                              overridden.
      */
     public function __construct(
         private readonly ?string $databasePath = null,
@@ -74,9 +74,9 @@ final class GeoResolver
     /**
      * Why an address resolves, or does not.
      *
-     * locate() degrades to an empty location whatever the cause, which is right for a request and
-     * useless for whoever reads the screen: a missing database and a 127.0.0.1 both showed a blank
-     * column. Pass no address to check the database alone.
+     * locate() degrades to an empty location whatever the cause; this names the cause, so a missing
+     * database and a private address do not look alike on screen. Pass no address to check the
+     * database alone.
      */
     public function status(?string $ip = null): GeoStatus
     {
@@ -99,8 +99,7 @@ final class GeoResolver
         }
 
         try {
-            // `->` and not `?->`: a missing reader has already returned above,
-            // as UnreadableDatabase.
+            // `->` and not `?->`: a missing reader has already returned UnreadableDatabase.
             $this->reader()->city($effective);
         } catch (Throwable) {
             return GeoStatus::NotInDatabase;

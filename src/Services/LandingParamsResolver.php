@@ -34,7 +34,7 @@ final readonly class LandingParamsResolver
 
         foreach ($params as $key => $value) {
             if (! is_string($value)) {
-                continue; // skip array-style params (foo[]=...)
+                continue;
             }
 
             $key = trim((string) $key);

@@ -190,8 +190,8 @@ final readonly class SessionDetailBuilder
 
     /**
      * The query a search engine left in the referrer · almost never there, the
-     * engines strip it. `utm_term` is an advertiser's parameter and is kept
-     * apart rather than taken for what the visitor typed.
+     * engines strip it. Not `utm_term`: it is an advertiser's parameter, not
+     * what the visitor typed.
      */
     private static function searchQuery(?string $referrer): ?string
     {

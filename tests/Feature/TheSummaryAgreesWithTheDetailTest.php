@@ -22,12 +22,12 @@ use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 /**
- * The one essay the whole retention rests on.
+ * The test the whole retention rests on.
  *
  * Two blocks of the overview — the most seen pages and the most clicked
  * elements — read a closed day from its summary, and the day under way from its
- * rows. **If the summary and the raw reading ever disagreed, the two blocks
- * would jump the night a day was summarised**, and nothing would say why.
+ * rows. If the summary and the raw reading disagreed, the two blocks would jump
+ * the night a day is summarised, and nothing would say why.
  *
  * So the raw reading is taken first, then the day is summarised, and the two
  * are compared · read afterwards, the screen would answer from the summary and
@@ -74,8 +74,8 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
 
     /**
      * A day with everything the two readings have to agree about · several
-     * addresses, repeats, a named click without a visible text, a bot, and two
-     * subjects.
+     * addresses, repeats, a named click without a visible text, a click with
+     * neither text nor name, which counts nowhere, a bot, and two subjects.
      */
     private function aBusyDay(CarbonImmutable $day): void
     {
@@ -88,17 +88,14 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
         $this->pageview($anonymous, 'https://exemple.test/tarifs', $day->setTime(11, 0));
         $this->pageview($client, 'https://exemple.test/tarifs', $day->setTime(12, 0));
 
-        // A bot's rows are excluded from both readings, and a summary that
-        // forgot to exclude them would be the easiest mistake to make.
+        // Bot rows are excluded from both readings, the easiest thing for a summary to forget.
         $this->pageview($robot, 'https://exemple.test/', $day->setTime(13, 0));
 
         $this->click($anonymous, 'Demander un devis', 'devis.demande', 'accueil', $day->setTime(9, 30));
         $this->click($anonymous, 'Demander un devis', 'devis.demande', 'accueil', $day->setTime(9, 40));
 
-        // No visible text: counted by its event all the same.
         $this->click($client, null, 'panier.ajout', 'tarifs', $day->setTime(12, 30));
 
-        // Neither text nor name: nothing to show, so nothing counted.
         $this->click($anonymous, '', '', null, $day->setTime(9, 45));
 
         $this->click($robot, 'Demander un devis', 'devis.demande', 'accueil', $day->setTime(13, 30));
@@ -118,9 +115,7 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
     }
 
     /**
-     * What the summary holds for a day, in the shape the raw reading answers
-     * with · read from the table rather than through the model, so that a
-     * grouping cannot hand back a null the analysis has to be argued out of.
+     * What the summary holds for a day, in the shape the raw reading answers with.
      *
      * @return list<array<string, mixed>>
      */
@@ -188,10 +183,8 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
     }
 
     /**
-     * And they agree per subject too, which is the half a summary gets wrong
-     * without noticing · the screens filter on the subject of the SESSION, so a
-     * summary that read it off the event would drift the moment a visitor
-     * signed in mid-session.
+     * The screens filter on the subject of the session, so a summary that read
+     * it off the event would drift once a visitor signs in mid-session.
      */
     public function test_the_summary_agrees_subject_by_subject(): void
     {
@@ -233,7 +226,7 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
         $this->assertSame($summarised, $this->overview->topPages($oneDay, null, 20), 'The rows answered for a day its summary holds.');
     }
 
-    /** And the day under way, which no summary holds yet, is read from its rows as they come. */
+    /** No summary holds the day under way yet. */
     public function test_the_day_under_way_is_read_from_its_rows(): void
     {
         $yesterday = CarbonImmutable::now()->subDay()->startOfDay();
@@ -249,17 +242,9 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
     }
 
     /**
-     * A label that spans lines survives the round trip, both halves of it.
-     *
-     * **This is not a curiosity.** A button written across three lines of HTML
-     * gives a label with line feeds in it · `textContent` keeps them, and only
-     * the outer whitespace is trimmed. Both the summary's signature and the
-     * joining of the two halves had taken a line feed for a separator they
-     * could rely on, and both were wrong.
-     *
-     * Written label-first, the joining answered « Demander » on the route
-     * « un devis\naccueil » — a wrong label on a wrong page, in a block nobody
-     * would think to doubt. Measured 2026-09-14.
+     * A button written across lines of HTML gives a label with line feeds, which
+     * `textContent` keeps · the summary's signature and the joining of the two
+     * halves must not cut the label at one.
      */
     public function test_a_label_that_spans_lines_comes_back_whole(): void
     {
@@ -271,8 +256,7 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
         $this->click($session, $overTwoLines, null, 'accueil', $day->setTime(9, 0));
         $this->click($session, $overTwoLines, null, 'accueil', $day->setTime(9, 1));
 
-        // A second click labelled with the first line alone · the two are
-        // different buttons and must stay two rows.
+        // Another button, labelled with the first line alone, so it stays its own row.
         $this->click($session, 'Demander', null, 'accueil', $day->setTime(9, 2));
 
         $this->archiver->archive($day);
@@ -289,20 +273,14 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
         $this->assertSame('accueil', $byLabel[$overTwoLines]['route'], 'And its page went with the cut.');
         $this->assertSame(2, $byLabel[$overTwoLines]['total']);
 
-        // The other button, which the broken split turned into a twin of the
-        // first · same label, and only the route told them apart.
         $this->assertArrayHasKey('Demander', $byLabel);
         $this->assertSame('accueil', $byLabel['Demander']['route']);
         $this->assertSame(1, $byLabel['Demander']['total']);
     }
 
     /**
-     * Run twice, and nothing doubles.
-     *
-     * The scheduler, an administrator opening a screen and a hand-run command
-     * can all land on the same day. Rewriting rather than adding is what lets
-     * that be true, and it is worth holding: the failure would be silent
-     * inflation, which reads as growth.
+     * The scheduler, a screen load and a hand-run command can all land on the
+     * same day · adding instead of rewriting would inflate figures silently.
      */
     public function test_summarising_a_day_twice_changes_nothing(): void
     {
@@ -320,8 +298,6 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
     }
 
     /**
-     * A day without traffic is recorded as treated.
-     *
      * Deducing "archived" from the presence of counts would leave a quiet day
      * looking untreated forever, and the purge — which refuses untreated days —
      * would never move past it.
@@ -350,7 +326,6 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
         $this->assertFalse($this->archiver->isArchived(CarbonImmutable::parse('2026-06-15')), 'Today is not closed.');
     }
 
-    /** A bounded run catches up a slice, and the next one resumes where it left off. */
     public function test_a_bounded_run_resumes_where_it_stopped(): void
     {
         $this->pageview($this->newSession(), 'https://exemple.test/', CarbonImmutable::parse('2026-06-12 10:00'));
@@ -380,7 +355,6 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
         $this->assertSame(2, (int) DailyCount::query()->where('day', '2026-06-14')->sum('total'));
     }
 
-    /** A sequence that stopped earlier is caught up too, so the register keeps no gap. */
     public function test_summarising_again_leaves_no_gap_behind_a_stalled_sequence(): void
     {
         $this->travelTo(CarbonImmutable::parse('2026-06-11 12:00:00'));
@@ -417,7 +391,7 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
     /**
      * Each day is summarised in its own transaction · a day that fails is
      * undone whole, and the days before it stay summarised, so the next run
-     * resumes at the one that failed rather than starting over.
+     * resumes at the one that failed instead of starting over.
      */
     public function test_a_day_that_fails_leaves_the_days_before_it_summarised(): void
     {
@@ -444,18 +418,9 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
     }
 
     /**
-     * Just after midnight, yesterday is not closed yet.
-     *
-     * **A row can land after the day it belongs to has ended** · the collector
-     * stamps an event with the moment it happened and sends it seconds later,
-     * and the endpoint writes it after the response has gone. A visit at
-     * 23:59:58 reaches the table at 00:00:05. The nightly run at 03:00 never
-     * meets this ; the catch-up on a screen load can, since an administrator
-     * opens screens at midnight too.
-     *
-     * Summarised in that gap, the day would be missing those rows for good —
-     * and the erasing would still take them. So yesterday only closes once a
-     * grace has passed, which no delay the collector can produce comes near.
+     * The collector sends an event seconds after it happens, so a row can land
+     * after its day has ended, and a screen load can run the catch-up at
+     * midnight. Yesterday closes only after a grace no collector delay comes near.
      */
     public function test_just_after_midnight_yesterday_is_still_open(): void
     {
@@ -466,7 +431,6 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
         $this->assertFalse($this->archiver->isArchived(CarbonImmutable::parse('2026-06-14')), 'Yesterday is still open.');
     }
 
-    /** And once the grace has passed, it is. */
     public function test_after_the_grace_yesterday_is_closed(): void
     {
         $this->travelTo(CarbonImmutable::parse('2026-06-15 01:00:00'));
@@ -476,32 +440,22 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
     }
 
     /**
-     * And the row that lands late is counted, which is what the grace is for.
-     *
-     * Told as it happens · the day ends, the last visit's rows arrive a few
-     * seconds later, a screen is opened in between. The summary written once
-     * the day really closes holds that visit.
+     * A screen load at 00:00:01 runs the catch-up, then the row of a page opened
+     * at 23:59:58 lands · the nightly run at 03:00 summarises it into its own day.
      */
     public function test_a_row_that_lands_after_midnight_is_still_counted(): void
     {
         $day = CarbonImmutable::parse('2026-06-14');
         $session = $this->newSession();
 
-        // The day already holds a visit · without one there is nothing to
-        // summarise at midnight and the essay would pass with no grace at all,
-        // which is not the situation it is written for.
+        // Without a visit the day has nothing to summarise at midnight, and the grace would go untested.
         $this->pageview($session, 'https://exemple.test/', $day->setTime(10, 0));
 
-        // 23:59:58 · a page is opened. Its row is not in the table yet.
-
-        // 00:00:01 · an administrator opens a screen, which tries to catch up.
         $this->travelTo(CarbonImmutable::parse('2026-06-15 00:00:01'));
         $this->archiveClosedDays->execute();
 
-        // 00:00:05 · the row lands, stamped with the moment it happened.
         $this->pageview($session, 'https://exemple.test/tarifs', $day->setTime(23, 59, 58));
 
-        // 03:00 · the nightly run.
         $this->travelTo(CarbonImmutable::parse('2026-06-15 03:00:00'));
         $this->archiveClosedDays->execute();
 

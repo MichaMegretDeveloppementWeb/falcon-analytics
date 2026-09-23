@@ -11,7 +11,7 @@ use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Models\AdObjective;
 
 /**
- * Names the objectives of an ad · by their declared tunnel or event, or by
+ * Names the objectives of an ad · by their declared funnel or event, or by
  * their reference once it is no longer declared.
  *
  * @internal

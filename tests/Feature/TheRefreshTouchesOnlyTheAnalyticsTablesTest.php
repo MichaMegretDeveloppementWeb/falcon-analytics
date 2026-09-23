@@ -69,9 +69,7 @@ final class TheRefreshTouchesOnlyTheAnalyticsTablesTest extends TestCase
 
         $this->artisan('analytics:refresh', ['--force' => true])->assertSuccessful();
 
-        // The same reading and the same written-down schema as
-        // TheSchemaIsExactlyWhatItSaysTest: after the command, the package is
-        // where a host installing it today would be.
+        // The written-down schema of a fresh installation, as TheSchemaIsExactlyWhatItSaysTest reads it.
         $expected = file(__DIR__.'/../Fixtures/schema.txt', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
 
         $this->assertNotFalse($expected);

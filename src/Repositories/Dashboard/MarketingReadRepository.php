@@ -60,7 +60,7 @@ final class MarketingReadRepository
         return new TaggedSessions($rows->take($ceiling), $ceiling, truncated: true);
     }
 
-    /** The host's ceiling, refused rather than replaced when it means nothing. */
+    /** The host's ceiling · a value that means nothing is refused, never replaced. */
     private function ceiling(): int
     {
         $ceiling = $this->maxTaggedSessions ?? config('analytics.marketing.max_sessions');
@@ -77,9 +77,7 @@ final class MarketingReadRepository
      */
     public function activeCampaigns(): array
     {
-        // `array_values` because callers want a list: an Eloquent collection is
-        // already keyed from zero, but its type does not say so. Same reason
-        // everywhere in this file.
+        // `array_values` only to carry the `list` type: the keys already run from zero.
         return array_values(Campaign::query()->where('is_active', true)->get()->all());
     }
 

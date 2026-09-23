@@ -14,9 +14,9 @@ use Falcon\Ui\View\Components\Root as BaseRoot;
  * it would be there on opening and gone on the next interaction: the appearance
  * would change after a click, with no error anywhere.
  *
- * The area is written here rather than inherited from the page, and that is the
- * same reason — inheriting would make the first render and the recomputation
- * differ. Required for the same reason as on {@see Page}.
+ * The area is written here, never inherited from the page, hence the required
+ * argument: inheriting would make the first render and the recomputation
+ * differ.
  *
  * @internal
  */

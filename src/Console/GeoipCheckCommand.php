@@ -12,8 +12,7 @@ use Illuminate\Console\Command;
  * Say why localities are missing.
  *
  * Geolocation degrades to an empty location whatever goes wrong: no database, a truncated one, a
- * private address. All three showed the same blank column, and the only way to tell them apart
- * was to read the source.
+ * private address. This command tells those cases apart.
  *
  * @internal
  */

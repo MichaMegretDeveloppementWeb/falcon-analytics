@@ -18,23 +18,17 @@ use Throwable;
  * The maintenance's second way in · an administrator opening a screen.
  *
  * **Schedulers on shared hosting stop without a word.** When that happens the
- * summarising stops with them, so the erasing stops too — nothing is lost, by
- * design — but the backlog grows and the summaries fall behind the depth the
- * screens can read. Someone has to notice, and nobody does.
+ * summarising stops with them, so the erasing stops too and nothing is lost,
+ * but the backlog grows and the summaries fall behind the depth the screens
+ * can read.
  *
- * So opening any analytics screen catches the backlog up a little. Matomo has
- * done this for years.
+ * So opening any analytics screen catches the backlog up a little.
  *
- * **What it does is settled here, not by the host.** How often it may run and
- * how much it takes on are design decisions, so they live in the package's own
- * settings file — the one nothing publishes. Two reasonable hosts would not
- * answer these differently, and a value that suits nobody is a defect to fix
- * rather than a question to ask of every project.
+ * **How often it runs and how much it takes on are package settings**, in the
+ * internal settings file that nothing publishes.
  *
  * **It does the same thing the scheduler does**, through the same action and
- * service, and that is deliberate rather than convenient: a second path with
- * its own logic would be a second set of guards to keep in step, and the one
- * that runs least often is the one that would rot.
+ * service, so there is a single set of guards to keep in step.
  *
  * Four things keep it from being felt ·
  *
@@ -95,12 +89,7 @@ final class CatchesUpTheMaintenance
             return;
         }
 
-        /*
-         * The lock is taken for the length of one run and released at the end,
-         * so a process that dies holding it blocks nothing for long. `get()`
-         * with a callback does both, and answers false when someone else has
-         * it — in which case this visit simply does nothing.
-         */
+        // Held for one run at most, so a process that dies holding it blocks nothing for long.
         Cache::lock(self::LOCK, 300)->get(function () use ($interval): void {
             // Written before the work, not after: a run that fails halfway must
             // not have the next page load start it all over again.
@@ -108,14 +97,7 @@ final class CatchesUpTheMaintenance
 
             $days = max(1, (int) config('analytics.internal.maintenance.days_per_run', 7));
 
-            /*
-             * The very thing the scheduler's two commands do, in their order,
-             * and NOT through those commands · booting the console kernel
-             * inside a request's terminate disturbed the session store, whose
-             * handler then no longer had the request it was given. Four Search
-             * Console essays fell on it. Nothing about analytics, everything
-             * about calling a console from a request.
-             */
+            // Not through the commands: booting the console kernel in terminate() breaks the session store.
             app(ArchiveClosedDaysAction::class)->execute($days);
             app(Maintenance::class)->prune();
         });

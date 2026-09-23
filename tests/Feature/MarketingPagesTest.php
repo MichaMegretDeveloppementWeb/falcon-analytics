@@ -76,11 +76,7 @@ final class MarketingPagesTest extends TestCase
             ->assertSeeText(__('Taux de conversion'));
     }
 
-    /**
-     * A campaign with several ads reads their objectives with them · read one ad
-     * at a time, the performance block costs a query per ad, and the strict
-     * bench turns it into the block's error state.
-     */
+    /** Read one ad at a time, the strict bench would turn the lazy load into the block's error state. */
     public function test_the_campaign_performance_reads_the_objectives_of_its_ads_with_them(): void
     {
         $campaign = $this->campaign();
@@ -116,10 +112,7 @@ final class MarketingPagesTest extends TestCase
         AdObjective::factory()->for(Ad::factory()->for($campaign)->matching('src', 'meta'))->event('Lead')->create();
         $this->actingAs($this->admin, 'admin');
 
-        // Fixed plan: the campaign, the active campaigns, the active ads and
-        // their objectives (2), the tagged sessions of the period and of the one
-        // before (2), then the conversions of the period's visitors
-        // (occurrences, then distinct visitors) = 8.
+        // Fixed plan: campaign, active campaigns, ads + objectives (2), tagged sessions now and before (2), conversions (2) = 8.
         $budget = $this->assertCostIsFlat(
             fn () => Event::factory()->for(Session::factory()->state(['mkt_params' => ['src' => 'meta']]))->custom('Lead')->create(),
             fn () => Livewire::test(CampaignDetailContent::class, ['refId' => $campaign->id, 'period' => 30])->call('$refresh'),
@@ -148,10 +141,7 @@ final class MarketingPagesTest extends TestCase
         AdObjective::factory()->for($ad)->event('Lead')->create();
         $this->actingAs($this->admin, 'admin');
 
-        // Fixed plan: the active ads and their objectives (2), among which the
-        // ad itself, the tagged sessions of the period and of the one before
-        // (2), then the conversions of the period's visitors (occurrences, then
-        // distinct visitors) = 6.
+        // Fixed plan: active ads + objectives (2), tagged sessions now and before (2), conversions (2) = 6.
         $budget = $this->assertCostIsFlat(
             fn () => Event::factory()->for(Session::factory()->state(['mkt_params' => ['src' => 'meta']]))->custom('Lead')->create(),
             fn () => Livewire::test(AdDetailContent::class, ['refId' => $ad->id, 'period' => 30])->call('$refresh'),
@@ -310,7 +300,6 @@ final class MarketingPagesTest extends TestCase
         return array_map(fn (string $button): bool => (bool) preg_match('/\sdisabled(\s|>|=)/', $button), $buttons[0]);
     }
 
-    /** Both objective lists of the ad form close on the escape key, and say whether they are open. */
     public function test_the_objective_lists_close_on_escape_and_say_whether_they_are_open(): void
     {
         $campaign = $this->campaign();
@@ -427,8 +416,7 @@ final class MarketingPagesTest extends TestCase
 
     public function test_it_excludes_already_selected_objectives_from_the_pickers(): void
     {
-        // Two declared events, one of which will be picked: without the second,
-        // an empty list would pass the test while proving nothing.
+        // Two events, one picked, so the offer list cannot pass by being empty.
         $this->app->forgetInstance(EventRegistry::class);
         $registry = app(EventRegistry::class);
         $registry->register(new TrackedEvent('Lead', 'Demande de contact', 3));
@@ -441,9 +429,7 @@ final class MarketingPagesTest extends TestCase
             ->call('editAd')
             ->call('addObjective', 'event', 'Lead', 'Lead', 3.0);
 
-        // `viewData()` and not `get()`: the options are view data, not a
-        // property of the component. With `get()` this test read null, walked
-        // an empty collection, and passed without checking anything.
+        // `viewData()`: the options are view data, where `get()` would read null.
         $options = $component->viewData('eventOptions');
 
         $this->assertIsArray($options);
@@ -543,8 +529,7 @@ final class MarketingPagesTest extends TestCase
         $campaign = $this->campaign('Ete', null, 'meta_ete');
         $this->actingAs($this->admin, 'admin');
 
-        // Strictly false: `assertReturned(false)` would also take a null, which
-        // is what a method that answers nothing leaves behind.
+        // Strictly false: `assertReturned(false)` also accepts the null of a method that answers nothing.
         Livewire::test(CampaignForm::class)
             ->call('editCampaign', 999_999)
             ->assertDispatched('ui-toast', type: 'danger')
@@ -566,7 +551,6 @@ final class MarketingPagesTest extends TestCase
             ->assertReturned(fn (mixed $answer): bool => $answer === false);
     }
 
-    /** The ad form edits the ads of the campaign it is laid for, and of no other. */
     public function test_the_ad_form_opens_no_ad_of_another_campaign(): void
     {
         $campaign = $this->campaign('Été', null, 'meta_ete');

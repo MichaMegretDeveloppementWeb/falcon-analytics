@@ -3,8 +3,8 @@ import { defineConfig } from 'vite';
 /*
  * The dashboard's script: the Alpine components of the administration screens.
  *
- * A second pass rather than a second input of `vite.config.js`: the format
- * below takes one entry per build. It runs after the collector's pass, so it
+ * A pass of its own, not a second input of `vite.config.js`: the format below
+ * takes one entry per build. It runs after the collector's pass, so it
  * adds its file and leaves the directory as it found it.
  */
 export default defineConfig({

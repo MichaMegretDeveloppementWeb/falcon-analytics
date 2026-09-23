@@ -12,8 +12,8 @@ use Illuminate\Support\Facades\DB;
 /**
  * Erase a visitor and everything attached to them (sessions, events, merged
  * aliases), for a GDPR right-to-erasure request. Deletes explicitly inside a
- * transaction rather than relying on the FK cascade, so it behaves identically
- * on every driver.
+ * transaction, so it behaves the same on every driver whatever its foreign-key
+ * cascades.
  *
  * @internal
  */

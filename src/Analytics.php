@@ -167,9 +167,7 @@ final class Analytics
 
             $id = auth()->guard($guard)->id();
 
-            // subject_id is an integer column: a non-numeric key (e.g. a UUID)
-            // cannot be stored, so the subject is left unstitched rather than
-            // silently collapsed to 0.
+            // subject_id is an integer column: a non-numeric key would collapse to 0.
             if (is_int($id) || (is_string($id) && ctype_digit($id))) {
                 return ['type' => $guard, 'id' => (int) $id];
             }
@@ -209,11 +207,7 @@ final class Analytics
         $type = $subject['type'];
         $id = $subject['id'];
 
-        // Same rule as `subjectFromGuards()`, applied to what a host's resolver
-        // hands over: subject_id is an integer column, so a non-numeric key
-        // (e.g. a UUID) cannot be stored. Casting it would attach every one of
-        // those visits to subject 0, a subject that does not exist and that
-        // would gather everybody's journeys.
+        // A non-numeric key would cast to subject 0 and gather everybody's journeys under it.
         if (! is_int($id) && ! (is_string($id) && ctype_digit($id))) {
             return null;
         }

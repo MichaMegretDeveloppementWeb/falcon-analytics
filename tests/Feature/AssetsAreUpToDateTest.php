@@ -13,23 +13,11 @@ use SplFileInfo;
 /**
  * Does what the package ships match the sources that produce it?
  *
- * The package compiles and ships compiled files: a stylesheet and a script. An
- * application publishes and serves them without ever rebuilding them, so a
- * stale file gives it badly drawn screens without a single message.
- *
- * The mistake is easy to make: you change a view, you see it work locally
- * because you have just compiled, and you push without replaying the build.
- *
- * **The views count as much as the CSS.** The utility generator reads them: a
- * class added to a screen changes the shipped stylesheet as surely as a
- * hand-written rule does.
- *
- * The fingerprint is written by `scripts/fingerprint.mjs`, called by
- * `npm run build`. What this test cannot say is whether the build produces the
- * same file twice: that needs node, and it is the job of
+ * An application serves the compiled files without rebuilding them, so a stale
+ * file draws bad screens silently. The views count as much as the CSS, since
+ * the utility generator reads them. The fingerprint comes from
+ * `scripts/fingerprint.mjs`; whether a build is reproducible is the job of
  * `npm run check-assets`.
- *
- * No database here: it reads files, and nothing else.
  */
 final class AssetsAreUpToDateTest extends TestCase
 {
@@ -44,17 +32,9 @@ final class AssetsAreUpToDateTest extends TestCase
     }
 
     /**
-     * The eight layers, all present and in this order.
-     *
-     * This is the contract that lets the kit's stylesheet, the package's and
-     * the application's live together: the first declaration encountered fixes
-     * the order for the whole document, and a stylesheet loaded later cannot
-     * reorder what is already declared.
-     *
-     * The compiler is allowed to split the declaration — it lays down the
-     * layers it fills, then names the rest — and to add its own, a `properties`
-     * layer at the head. It reorders nothing, so what is read here is the
-     * RELATIVE order of the eight, which is the contract, and not the raw list.
+     * The first declaration fixes the layer order for the whole document. The
+     * compiler may split it or add a `properties` layer, so the relative order
+     * of the eight is what is read.
      */
     public function test_the_eight_layers_are_declared_in_the_agreed_order(): void
     {
@@ -70,13 +50,7 @@ final class AssetsAreUpToDateTest extends TestCase
         );
     }
 
-    /**
-     * The stylesheet really carries the package's utilities.
-     *
-     * A stylesheet holding nothing but the layer line would pass both tests
-     * above while drawing nothing — which is exactly the state the package was
-     * in before its views carried their prefix.
-     */
+    /** A sheet holding only the layer line would pass the tests above while drawing nothing. */
     public function test_the_sheet_carries_prefixed_utilities(): void
     {
         $css = (string) file_get_contents($this->publicPath('analytics.css'));
@@ -87,11 +61,7 @@ final class AssetsAreUpToDateTest extends TestCase
             'The stylesheet carries almost no prefixed rule: did the view scan find anything?',
         );
 
-        // The `base` layer is where a reset lives, and it belongs to the kit:
-        // two resets on one page fight each other. Read as a layer and not as a
-        // property name, because a package may legitimately ship third-party
-        // CSS that sets `box-sizing` on its own scoped selectors — those are
-        // scoped rules, not a reset.
+        // Read as a layer, since scoped third-party rules may set `box-sizing` without being a reset.
         $this->assertStringNotContainsString(
             '@layer base{',
             $css,
@@ -99,11 +69,6 @@ final class AssetsAreUpToDateTest extends TestCase
         );
     }
 
-    /**
-     * Has a source changed since the last build?
-     *
-     * This is what turns "remember to rebuild" into a test that fails.
-     */
     public function test_the_fingerprint_matches_the_sources(): void
     {
         $this->assertSame(

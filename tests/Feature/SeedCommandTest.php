@@ -167,7 +167,7 @@ final class SeedCommandTest extends TestCase
         $this->assertEachClosedDaySaysWhatItsDetailSays(4);
     }
 
-    /** The site already summarised its own days · the visits laid behind them count too. */
+    /** Starts from a summary registry that already holds the closed days. */
     public function test_days_already_summarised_take_the_visits_laid_in_them(): void
     {
         Event::factory()->create(['url' => 'https://exemple.test/', 'occurred_at' => CarbonImmutable::now()->subDay()]);

@@ -7,26 +7,16 @@ namespace Falcon\Analytics\Support;
 /**
  * What counts as « the same page » when stored addresses are grouped.
  *
- * **The address is stored whole, as the visitor opened it** — query string and
- * fragment included — and that is right: a session's journey shows the exact
- * link. But « les pages les plus vues » asks a different question, and asking
- * it of the whole address answers badly.
+ * The address is stored whole, as the visitor opened it, query string and
+ * fragment included, so a session's journey shows the exact link. Grouped on
+ * the whole address, one page would split into as many rows as it has
+ * variants: `fbclid` is unique per click, anchor links vary the fragment, and
+ * two hosts serving one site vary the host.
  *
- * Grouped on the whole address, one page opened three times — twice through a
- * campaign link — comes back as three rows of one view each, and the screen
- * shows the same path on all three, since it renders the path. `fbclid` is
- * unique per click, so on campaign traffic the real top page never reaches the
- * top of the list. Anchor links do the same with `#`, and two hosts serving one
- * site would do it with the host.
- *
- * **A page is the path of its route, and nothing else.** No host, no query
+ * A page is the path of its address, and nothing else: no host, no query
  * string, no fragment. It is computed once, when the row is written, by the
- * same function the screen uses to display an address — so what is grouped
- * and what is shown cannot part company, on any engine, without a line of SQL.
- *
- * It was a driver-specific SQL expression cutting the address at the `?` at
- * first. Correct for that one case, blind to the two others, and four dialects
- * to keep in step. Writing the page down is simpler and exact.
+ * same function the screen uses to display an address, so what is grouped and
+ * what is shown cannot part company, on any engine.
  *
  * @internal
  */
@@ -36,8 +26,7 @@ final class StoredUrl
      * The page an address belongs to · its path, or null when the address has
      * none worth grouping on.
      *
-     * The same reading as `PageUrl::resolve()` makes for display, which is the
-     * whole point.
+     * `PageUrl::resolve()` displays an address through this same reading.
      */
     public static function page(?string $url): ?string
     {

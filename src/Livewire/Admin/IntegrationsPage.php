@@ -16,7 +16,7 @@ use Livewire\Component;
 use Throwable;
 
 /**
- * The integrations screen, currently hosting the Google Search Console card:
+ * The integrations screen, holding the Google Search Console card:
  * connect (OAuth start), pick the property to attach, disconnect (confirmed
  * by modal, token revoked best-effort). While the host has not configured the
  * OAuth credentials the card explains what to provide instead of offering a
@@ -83,10 +83,10 @@ final class IntegrationsPage extends Component
     }
 
     /**
-     * On-demand sync, same code path as the daily command. Runs inline (no
-     * worker required anywhere, by design): the first backfill can take a
-     * while on busy sites, so the button carries a loading state and the
-     * execution window is widened when the host allows it.
+     * On-demand sync, same code path as the daily command. Runs inline, with no
+     * worker required: the first backfill can take a while on busy sites, so
+     * the button carries a loading state and the execution window is widened
+     * when the host allows it.
      */
     public function syncNow(SearchConsoleSynchronizer $synchronizer): void
     {

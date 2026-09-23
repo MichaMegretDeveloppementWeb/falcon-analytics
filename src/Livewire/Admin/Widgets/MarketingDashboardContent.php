@@ -117,7 +117,7 @@ final class MarketingDashboardContent extends Component
     /**
      * One row per ad that brought traffic, the busiest first · an ad gone
      * between the aggregation and this read shows as a dash, as a campaign
-     * does, rather than taking the dashboard down for one line.
+     * does, and never takes the dashboard down for one line.
      *
      * @param  array<int, array{sessions: int, visitors: int}>  $performance  ad id => traffic
      * @param  array<int, int>  $conversions  ad id => conversions

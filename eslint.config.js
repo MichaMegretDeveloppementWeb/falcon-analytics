@@ -2,21 +2,19 @@ import js from '@eslint/js';
 import globals from 'globals';
 
 /*
- * The same rules as the kit, and deliberately the same: a variable kept without
- * being used, a comparison that converts behind your back, a declaration whose
- * scope spills over, a promise nobody awaits.
+ * The same rules as the kit: a variable kept without being used, a comparison
+ * that converts behind your back, a declaration whose scope spills over, a
+ * promise nobody awaits.
  *
- * **The collector is what this is for.** It is 308 lines that run on every page
- * of every visitor of every host — the most executed script the suite ships —
- * and until 2026-09-13 it was the only one nothing read mechanically. The kit
- * had a linter from the start; this package simply never got one.
+ * **The collector is what this is for.** It runs on every page of every
+ * visitor of every host — the most executed script the suite ships.
  */
 const rules = {
     'no-unused-vars': ['error', {
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_',
 
-        // A `catch` whose error is deliberately dropped says so by naming it
+        // A `catch` that drops its error says so by naming it
         // `_e`. The alternative — `catch {}` — is ES2019, which the collector
         // cannot use.
         caughtErrorsIgnorePattern: '^_',
@@ -66,13 +64,13 @@ export default [
         /*
          * The collector, which reaches the browsers that can send a beacon ·
          * they read the JavaScript of 2015 and no later, so its source is read
-         * as such, and a classic script rather than a module.
+         * as such, as a classic script and not a module.
          *
-         * **One rule is relaxed, because it would have broken it.** `x != null`
-         * is the deliberate test for « neither null nor undefined »; rewritten
-         * as `!== null` it would let `undefined` through, and `--fix` would
-         * have done it without a word. So `eqeqeq` keeps its strictness except
-         * against `null`, which is ESLint's own option for exactly this.
+         * **One rule is relaxed.** `x != null` is the test for « neither null
+         * nor undefined »; rewritten as `!== null` it lets `undefined` through,
+         * and `--fix` would do it without a word. So `eqeqeq` keeps its
+         * strictness except against `null`, which is ESLint's own option for
+         * exactly this.
          */
         files: ['resources/js/collector.js'],
         languageOptions: {

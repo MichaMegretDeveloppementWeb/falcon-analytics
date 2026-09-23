@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Route;
 
 /**
  * A clean, human path for a tracked page. The stored URL wins (its real dynamic
- * value, minus domain and query), falling back to the route's URI pattern and
+ * value, minus domain, query and fragment), falling back to the route's URI pattern and
  * finally the raw route name.
  *
  * @internal
@@ -30,9 +30,7 @@ final class PageUrl
                 return $route;
             }
 
-            // No concrete URL to show (e.g. an aggregated route): render the
-            // pattern cleanly, replacing {param} placeholders with an ellipsis
-            // rather than exposing the raw template.
+            // No concrete URL to show: the pattern, with an ellipsis for each placeholder.
             return '/'.ltrim(preg_replace('/\{[^}]+\}/', '…', $uri) ?? $uri, '/');
         }
 

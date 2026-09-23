@@ -396,8 +396,7 @@ final class SearchConsoleConnectionTest extends TestCase
         $this->configureCredentials();
         $this->actingAs($this->admin, 'admin');
 
-        // A real read is forced into failure: looking the connection up falls
-        // on an absent table, at mount as well as in the guarded render.
+        // The lookup fails at mount as well as in the guarded render.
         $this->withoutTable('falcon_analytics_search_console', function (): void {
             Livewire::test(IntegrationsPage::class)->assertSee(__('Données indisponibles'));
         });

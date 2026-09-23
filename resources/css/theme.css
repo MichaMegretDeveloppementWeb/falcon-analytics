@@ -3,10 +3,8 @@
  |
  | **A token, not a literal, because a canvas cannot read a class.** A chart is
  | drawn by Chart.js on a canvas, so nothing declared in a stylesheet reaches it
- | on its own. The values were therefore written by hand, in both themes, in
- | every view that drew something — and four views ended up declaring what was
- | meant to be one ramp of blues, three of them disagreeing on two steps. Nobody
- | decided that; a copy aged, and nothing could say so.
+ | on its own. A value copied into each view that draws would drift from one
+ | copy to the next, and nothing could say so.
  |
  | Declared here once, in both themes, they are read at runtime · by
  | `var()` in a class, or by `window.falconToken()` for whatever goes onto a
@@ -14,9 +12,8 @@
  | **with no build**.
  |
  | What is NOT here · everything the kit already names. Grid, ticks, tooltip,
- | surfaces, text and borders come from `--ui-…`, and the socle's order of
- | preference is explicit: an existing kit token first. This file holds only
- | what the kit has no opinion about.
+ | surfaces, text and borders come from `--ui-…`: an existing kit token always
+ | comes first. This file holds only what the kit has no opinion about.
  */
 
 @layer theme {
@@ -49,11 +46,10 @@
         --an-map-land: #f5f5f5;
         --an-map-border: #dddddd;
 
-        /* The realtime board's own ramp, and it is a second ramp on purpose ·
-           that screen is built to be read from across a room, so it opens on
-           the accent and the live green rather than on six shades of one blue.
-           Its first two steps DERIVE from those two tokens instead of copying
-           them: a host retinting the accent gets a board that still agrees
+        /* The realtime board's own ramp, apart from the series one · that
+           screen is built to be read from across a room, so it opens on the
+           accent and the live green. Its first two steps DERIVE from those two
+           tokens: a host retinting the accent gets a board that still agrees
            with itself. */
         --an-live-1: var(--an-accent);
         --an-live-2: var(--an-online);
@@ -94,10 +90,9 @@
 /*
  | The mapping, for the tokens a view writes as a class.
  |
- | `an:bg-accent/70` rather than `an:bg-[var(--an-accent)]/70` · the same CSS
- | comes out, and the second form is what a view stops being readable with.
- | Measured on 2026-09-12 · the opacity modifier composes either way, Tailwind
- | emitting a `color-mix` with a `@supports` fallback.
+ | Each token becomes a named colour, so a view writes the token's name, with an
+ | opacity modifier where it needs one · Tailwind composes the opacity on the
+ | custom property through a `color-mix`, with a `@supports` fallback.
  |
  | `inline` matters · it keeps the utility pointing at the custom property
  | instead of freezing today's value into the class. That is what makes the dark

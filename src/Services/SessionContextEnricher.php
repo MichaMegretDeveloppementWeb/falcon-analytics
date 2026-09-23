@@ -68,9 +68,7 @@ final readonly class SessionContextEnricher
 
     private function storableIp(?string $ip): ?string
     {
-        // Any truthy value asks for anonymisation. Unlike the master switch,
-        // read as `=== true`, we do not want a configuration written `1` to
-        // have the raw IP stored.
+        // Not `=== true` like the master switch: a configuration written `1` must not store the raw IP.
         $anonymise = (bool) config('analytics.privacy.anonymize_ip');
 
         if ($ip === null || ! $anonymise) {

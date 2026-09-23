@@ -41,8 +41,7 @@ final class TheDiagnosticSpeaksTest extends TestCase
     {
         parent::setUp();
 
-        // A sound installation, so each test fails for the reason it speaks of
-        // and not because of another point left open.
+        // Sound by default, so each test fails only on the point it cuts.
         $this->soundInstallation();
     }
 
@@ -57,13 +56,7 @@ final class TheDiagnosticSpeaksTest extends TestCase
         parent::tearDown();
     }
 
-    /**
-     * What the host has to do, and nothing more: the directive in a view.
-     *
-     * The two imports this setup used to write went with the model that asked
-     * for them: the package compiles and publishes its files, and the host
-     * imports none of them.
-     */
+    /** What the host has to do, and nothing more: the directive in a view. */
     private function soundInstallation(): void
     {
         File::ensureDirectoryExists(resource_path('views/layouts'));
@@ -83,12 +76,8 @@ final class TheDiagnosticSpeaksTest extends TestCase
     }
 
     /**
-     * Le premier des points, et il nomme le moteur trouvé.
-     *
-     * Avant les migrations, parce que le moteur décide si elles veulent seulement
-     * dire quelque chose. Et à chaque déploiement plutôt qu'une seule fois : une
-     * connexion change en cours de vie, quand un hôte déplace sa base ou en
-     * pointe une seconde ailleurs.
+     * The engine is checked before the migrations, since it decides whether they
+     * mean anything, and on every run, since a host can move its database.
      */
     public function test_it_names_the_database_engine_it_found(): void
     {
@@ -98,18 +87,9 @@ final class TheDiagnosticSpeaksTest extends TestCase
     }
 
     /**
-     * Et il **tombe** sur un moteur que le paquet ne promet pas.
-     *
-     * Une connexion de configuration suffit · la garde ne lit que le nom du
-     * pilote, aucun schéma n'est touché. La valeur d'origine est remise dans le
-     * `finally`, sans quoi le banc ne pourrait plus annuler sa transaction.
-     *
-     * **Ce qui est attendu est « MariaDB », et pas « sqlite ».** Une base vide
-     * fait aussi tomber les migrations et les résumés · un essai qui se
-     * contenterait du code de sortie, ou du nom du pilote qui paraît ailleurs,
-     * passerait sans que la ligne du moteur existe. Le mot MariaDB n'est écrit
-     * que dans ce refus-là, et il ne se coupe pas au retour à la ligne du
-     * tableau. Vérifié en neutralisant la garde · l'essai tombe.
+     * The expected word is MariaDB, which only this refusal writes · an empty
+     * database also fails the migrations and the summaries, so the exit code or
+     * the driver name alone would pass without the engine line.
      */
     public function test_it_falls_on_an_engine_the_package_does_not_promise(): void
     {
@@ -130,8 +110,7 @@ final class TheDiagnosticSpeaksTest extends TestCase
     }
 
     /**
-     * **The point that is missing most often**, and the only one whose symptom
-     * is strictly invisible: the screens work, the routes answer, the tables
+     * Its symptom is invisible: the screens work, the routes answer, the tables
      * exist, and not a single visit arrives.
      */
     public function test_it_says_when_no_view_carries_the_collector_directive(): void
@@ -144,14 +123,9 @@ final class TheDiagnosticSpeaksTest extends TestCase
     }
 
     /**
-     * The case every existing installation lands in, and the one where a
-     * generic answer would be least useful.
-     *
-     * Blade does not reject an unknown directive: it copies it to the output
-     * as it stands, which was measured rather than assumed. So a host left on
-     * the old name does not merely stop measuring — it prints the raw text
-     * `@analyticsConfig` on its public pages. The diagnostic has to name the
-     * view, or the reader goes looking for something that is already there.
+     * Blade copies an unknown directive to the output as it stands, so a view
+     * left on the former name prints `@analyticsConfig` on public pages. The
+     * diagnostic names the view, or the reader looks for what is already there.
      */
     public function test_it_names_the_view_left_on_the_former_directive(): void
     {
@@ -163,12 +137,8 @@ final class TheDiagnosticSpeaksTest extends TestCase
     }
 
     /**
-     * A rename done halfway, which is what a rename actually looks like.
-     *
-     * The sound layout is not the answer here: the other one still prints the
-     * old directive to whoever opens the page it carries. Reporting a sound
-     * installation because one file is right would hide exactly the state
-     * someone needs told about.
+     * One sound layout does not make a sound installation · the other one still
+     * prints the former directive on the pages it carries.
      */
     public function test_it_still_says_it_when_only_one_of_two_views_was_renamed(): void
     {
@@ -180,7 +150,6 @@ final class TheDiagnosticSpeaksTest extends TestCase
             ->assertFailed();
     }
 
-    /** The directive laid inside a `vendor/` is not ours. */
     public function test_it_does_not_accept_the_directive_found_in_a_package_view(): void
     {
         File::put(resource_path('views/layouts/web.blade.php'), '<body></body>');
@@ -208,17 +177,10 @@ final class TheDiagnosticSpeaksTest extends TestCase
     }
 
     /**
-     * The copy being served, and not the shipped file.
-     *
-     * The package compiles and ships; the application publishes a copy. A
-     * deployment that updates the package without republishing leaves last
-     * month's stylesheet in place, and **nothing says so until somebody opens a
-     * screen** — the kit raises then, but that can come long afterwards.
-     *
-     * **The expected directory is moved rather than the copy deleted.** The
-     * tests run in parallel and share one public directory: removing the files
-     * from it brought down, at random, another test in the middle of drawing a
-     * screen. A configuration setting does not leave the process.
+     * The copy being served is read, not the shipped file · a deployment that
+     * skips the republication keeps an old stylesheet nothing reports until a
+     * screen opens. The expected directory is moved by configuration, which
+     * stays in this process, so no published file is deleted under another test.
      */
     public function test_it_says_when_the_compiled_sheet_was_never_published(): void
     {
@@ -265,11 +227,9 @@ final class TheDiagnosticSpeaksTest extends TestCase
     }
 
     /**
-     * The collector's stack without a session, and every beacon then fails.
-     *
-     * Without consent — the default — the visitor's identifier lives in the
-     * session. The stack is fixed when the routes load, so the configuration is
-     * laid before the application boots, and the route itself is what is read.
+     * Without consent, the default, the visitor's identifier lives in the session,
+     * so every beacon fails. The stack is fixed when the routes load, so the
+     * configuration is laid before boot and the route itself is read.
      */
     #[DefineEnvironment('withACollectorStackWithoutSession')]
     public function test_it_says_when_the_collector_stack_carries_no_session(): void
@@ -295,11 +255,8 @@ final class TheDiagnosticSpeaksTest extends TestCase
     }
 
     /**
-     * A declarations file that stops on an error.
-     *
-     * What came before the error is kept and the rest is ignored, so the
-     * conversions declared after it vanish from the screens, and the log is
-     * the only other place that says so.
+     * What precedes the error is kept and the rest ignored, so the conversions
+     * declared after it vanish from the screens and only the log says so.
      */
     public function test_it_names_an_events_file_that_does_not_load_whole(): void
     {
@@ -337,13 +294,8 @@ final class TheDiagnosticSpeaksTest extends TestCase
     }
 
     /**
-     * The identity block is the one thing a host still fills by hand, and a
-     * typo in it is the quietest failure of the whole installation.
-     *
-     * The subject resolution filters the configured guards against
-     * `auth.guards`, which is right at runtime — a typo must not break a page.
-     * The cost is that every visitor then stays anonymous, no screen is empty,
-     * and nothing says why.
+     * The subject resolution drops a guard missing from `auth.guards`, so a typo
+     * breaks no page · every visitor then stays anonymous and nothing says why.
      */
     public function test_it_says_when_a_named_guard_does_not_exist(): void
     {
@@ -365,11 +317,8 @@ final class TheDiagnosticSpeaksTest extends TestCase
     }
 
     /**
-     * A name column the guard's own table does not carry.
-     *
-     * The screens then show the label and the id — « Client #12 » — for as long
-     * as nobody looks. The table is asked of the resolver, so the diagnostic
-     * and the reads cannot come to disagree.
+     * The screens would show the label and the id, « Client #12 ». The table is
+     * asked of the resolver, so the diagnostic and the reads cannot disagree.
      */
     public function test_it_says_when_a_name_column_does_not_exist(): void
     {
@@ -383,7 +332,6 @@ final class TheDiagnosticSpeaksTest extends TestCase
             ->assertFailed();
     }
 
-    /** Tracking nobody is a valid choice, and it is not reported as a fault. */
     public function test_it_accepts_an_installation_that_tracks_no_subject(): void
     {
         config([
@@ -395,19 +343,8 @@ final class TheDiagnosticSpeaksTest extends TestCase
     }
 
     /**
-     * Trusted proxies cannot be settled from a console, and the point says so
-     * rather than pretending to a verdict · it never blocks.
-     *
-     * Behind a reverse proxy without that setting, every visit carries the
-     * proxy's address: one visitor, one country, for the whole site. The
-     * numbers stay plausible, which is what makes it expensive to find.
-     */
-    /**
-     * A retention that cannot be read as a number of days is blocking.
-     *
-     * Zero used to mean « keep everything », which is the opposite of what one
-     * writes it for. It is refused now, and the erasing fails every night while
-     * saying so to a log nobody reads · this is what makes it visible.
+     * Zero is refused, so the nightly erasing fails and says so only to a log ·
+     * this is where it shows.
      */
     public function test_it_blocks_on_a_retention_that_is_not_a_number_of_days(): void
     {
@@ -418,10 +355,7 @@ final class TheDiagnosticSpeaksTest extends TestCase
             ->assertFailed();
     }
 
-    /**
-     * A marketing ceiling that means nothing stops the marketing screens, and
-     * this is where it is said.
-     */
+    /** A ceiling that means nothing stops the marketing screens. */
     public function test_it_blocks_on_a_marketing_ceiling_that_is_not_a_number_of_sessions(): void
     {
         config(['analytics.marketing.max_sessions' => 0]);
@@ -448,7 +382,6 @@ final class TheDiagnosticSpeaksTest extends TestCase
             ->assertSuccessful();
     }
 
-    /** Never erasing is a choice, not a defect. */
     public function test_it_accepts_an_installation_that_never_erases(): void
     {
         config(['analytics.retention_days' => null]);
@@ -457,15 +390,9 @@ final class TheDiagnosticSpeaksTest extends TestCase
     }
 
     /**
-     * A backlog of summaries is how a dead scheduler shows, and nothing else
-     * says it.
-     *
-     * When the scheduler stops, the erasing stops with it — nothing is lost —
-     * and every screen goes on answering from the rows. The only visible trace
-     * is this number, which is why the diagnostic carries it.
-     *
-     * Not blocking · an installation working through the history it had before
-     * the summaries existed shows the same thing, and it is catching up.
+     * A backlog of summaries is how a stopped scheduler shows, the screens going
+     * on answering from the rows. It does not block · an installation catching
+     * up on older history shows the same backlog.
      */
     public function test_it_points_at_a_backlog_of_summaries_without_blocking_on_it(): void
     {
@@ -476,7 +403,6 @@ final class TheDiagnosticSpeaksTest extends TestCase
             ->assertSuccessful();
     }
 
-    /** And it says nothing about it once the summarising has caught up. */
     public function test_it_stays_quiet_about_summaries_once_they_are_up_to_date(): void
     {
         $this->artisan('analytics:archive')->assertSuccessful();
@@ -486,6 +412,11 @@ final class TheDiagnosticSpeaksTest extends TestCase
             ->assertSuccessful();
     }
 
+    /**
+     * Trusted proxies cannot be settled from a console, so the point never
+     * blocks. Without that setting behind a reverse proxy, every visit carries
+     * the proxy's address: one visitor, one country, for the whole site.
+     */
     public function test_it_points_at_the_proxy_setting_without_blocking_on_it(): void
     {
         config(['trustedproxy.proxies' => null, 'app.trusted_proxies' => null]);
@@ -496,11 +427,8 @@ final class TheDiagnosticSpeaksTest extends TestCase
     }
 
     /**
-     * Geolocation is only a defect if it was asked for.
-     *
-     * With no key the feature is off and its absence is normal; a key set
-     * without a downloaded database leaves a "country" column empty that
-     * nothing explains.
+     * With no key the feature is off and its absence is normal · a key without a
+     * downloaded database leaves the country column empty with nothing to say why.
      */
     public function test_it_stays_quiet_about_geolocation_until_a_licence_key_is_set(): void
     {

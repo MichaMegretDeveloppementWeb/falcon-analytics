@@ -221,7 +221,7 @@ final class AdForm extends Component
     }
 
     /**
-     * The tunnels and events the two pickers offer, less the ones the ad
+     * The funnels and events the two pickers offer, less the ones the ad
      * already counts.
      *
      * @return array{funnelOptions: list<array{reference: string, label: string}>, eventOptions: list<array{reference: string, label: string}>}

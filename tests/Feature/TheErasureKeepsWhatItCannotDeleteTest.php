@@ -16,45 +16,23 @@ use Livewire\Livewire;
 /**
  * Erasing a visitor fails, and the screen says so without losing anything.
  *
- * **A file of its own, and for a mechanical reason.** `ForgetVisitorAction`
- * deletes inside a transaction, deliberately, to behave the same way on every
- * engine. Breaking a table needs DDL, and a DDL statement implicitly commits
- * the transaction the bench holds open: the savepoints go with it, and the code
- * fails on "SAVEPOINT trans2 does not exist" instead of failing on its
- * deletion. That is no longer the same thing being measured.
- *
- * This class therefore keeps `RefreshDatabase` for the migration and
- * **neutralises its transactional wrapper**: the action's transaction is then a
- * real one, and the rename disturbs nothing. The price is having to tidy up
- * afterwards, which `tearDown` does.
- *
- * Two other routes were tried and set aside, so nobody takes them up again.
- * Shifting the table prefix does not work here: Livewire rehydrates the visitor
- * on every interaction, so the read would break before the write and the test
- * would pass for the wrong reason. And `DatabaseMigrations` does not mount the
- * fixture migrations under Testbench, so the administrators table is missing
- * before the first call even happens.
+ * Breaking a table needs DDL, which implicitly commits the transaction the
+ * bench holds open, and the action would then fail on a missing savepoint
+ * instead of on its deletion. This class keeps `RefreshDatabase` for the
+ * migration without its transactional wrapper, so `tearDown` tidies up.
  */
 final class TheErasureKeepsWhatItCannotDeleteTest extends TestCase
 {
     use RefreshDatabase;
 
-    /**
-     * The bench's transactional wrapper, removed.
-     *
-     * `RefreshDatabase` migrates then opens a transaction it rolls back at the
-     * end, which makes every test free. Here, that transaction is precisely
-     * what prevents measuring what we want.
-     */
     public function beginDatabaseTransaction(): void
     {
-        //
+        // No transaction: the DDL in the test would commit it.
     }
 
     protected function tearDown(): void
     {
-        // Nothing rolls back on its own: what this test wrote is deleted here,
-        // otherwise it would leave it to the next one.
+        // Nothing rolls back on its own, so what this test wrote is deleted here.
         if (Schema::hasTable('falcon_analytics_visitors')) {
             DB::table('falcon_analytics_visitors')->delete();
         }
@@ -72,15 +50,13 @@ final class TheErasureKeepsWhatItCannotDeleteTest extends TestCase
 
         $this->actingAs(TestAdmin::create(['email' => 'admin@example.test']), 'admin');
 
-        // The events table is the first the action empties: the deletion fails
-        // there, and the visitor must not go for all that.
+        // The events table is the first the action empties, so the deletion fails there.
         $this->withoutTable('falcon_analytics_events', function () use ($visitor): void {
             Livewire::test(VisitorDetailPage::class, ['visitor' => $visitor])
                 ->call('forget')
                 ->assertHasErrors('visitor-erasure-failed')
                 ->assertSee('La suppression a échoué.')
-                // Drawn as an error, not as a piece of information: the kit's
-                // alert reads `type`, and ignores any other name for it.
+                // Drawn as an error: the kit's alert reads `type` and ignores any other name.
                 ->assertSee('ui:bg-red-50', false)
                 ->assertNoRedirect();
         });

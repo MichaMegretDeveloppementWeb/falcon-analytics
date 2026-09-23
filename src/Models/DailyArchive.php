@@ -35,19 +35,13 @@ final class DailyArchive extends Model
     /**
      * The key, always written as a plain date.
      *
-     * **A model has ONE `$dateFormat`, and this table has two kinds of column**
-     * · a date that everything queries on, and a timestamp. Set to `Y-m-d` for
-     * the key, it reaches the timestamp too: an archiving run at 03:30 is then
-     * recorded as having happened at 00:00, without a word.
+     * Not `$dateFormat`: a model has only one, and `Y-m-d` would also strip the
+     * hour from `archived_at`. Not a cast format either: it serves `toArray()`,
+     * never the statement. Only a mutator reaches the write.
      *
-     * So the format is left alone — the timestamp keeps its hour — and the key
-     * says for itself what it is. A mutator is the only thing that reaches
-     * the write: a format given to a cast serves `toArray()`, never the
-     * statement.
-     *
-     * Written as a date rather than at midnight because a `date` column is
-     * compared as a string, and `2026-01-05 00:00:00` finds nothing on an
-     * engine that stores what it was given.
+     * A plain date and not midnight: a `date` column compares as a string, and a
+     * value ending in `00:00:00` finds nothing on an engine that stores what it
+     * was given.
      *
      * @return Attribute<CarbonImmutable, string>
      */

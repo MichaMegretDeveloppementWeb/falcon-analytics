@@ -12,8 +12,8 @@ final class OverviewMetricsCalculatorTest extends TestCase
     public function test_it_computes_the_new_visitor_rate_period_over_period(): void
     {
         $rate = (new OverviewMetricsCalculator)->newVisitorRate(
-            ['new' => 3, 'returning' => 1], // 75 %
-            ['new' => 1, 'returning' => 1], // 50 %
+            ['new' => 3, 'returning' => 1],
+            ['new' => 1, 'returning' => 1],
         );
 
         $this->assertSame(75.0, $rate->current);

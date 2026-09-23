@@ -2,8 +2,7 @@
 #
 # Without this file, git converts them on checkout under Windows, and
 # `pint --test` then fails on **every** file of a fresh clone: the laravel
-# preset wants LF. The validation chain was red for anyone cloning under
-# Windows, with nothing wrong in the code.
+# preset wants LF.
 *               text=auto eol=lf
 
 # What the build produces is neither normalised nor shown in a diff: it is
@@ -22,9 +21,9 @@ public/*        -text -diff
 # sits under a host's dependencies, and the script is already compiled next
 # door. Leaving them in says the opposite. `resources/svg` likewise: the world
 # map ships as its copy in `public/`.
-# La liste est tenue par `TheArchiveCarriesOnlyWhatAHostNeeds`, en liste
-# BLANCHE · un oubli ici ne se voyait pas, et deux fichiers d'outillage sont
-# partis chez les hôtes avant qu'on s'en aperçoive.
+#
+# The list is held by `TheArchiveCarriesOnlyWhatAHostNeeds`, as a WHITE list ·
+# a file missing from it fails that test instead of reaching the hosts.
 /.env.test.example  export-ignore
 /.github            export-ignore
 /.gitattributes     export-ignore

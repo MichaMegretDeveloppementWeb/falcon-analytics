@@ -131,21 +131,15 @@ final class RealtimeReadRepository
     }
 
     /**
-     * Most viewed pages of the window, by page · the path of the route, the
-     * same grouping as the overview block, see `StoredUrl`.
-     *
-     * Two screens that both say « les pages les plus vues » have to count a
-     * page the same way, or the live figure and the daily one disagree for
-     * reasons nobody can see · here the window is minutes long, so a campaign
-     * landing would simply arrive as one row per visitor.
+     * Most viewed pages of the window, by page · the path of the address, the
+     * same grouping as the overview block, so the live figure and the daily one
+     * count a page the same way. See `StoredUrl`.
      *
      * @return list<array{url: string, total: int}>
      */
     public function topPages(CarbonImmutable $since, ?string $subjectType, int $limit = 5): array
     {
-        // `array_values` because this file declares lists: the result is
-        // already keyed from zero, but its type does not say so. Same reason
-        // everywhere here.
+        // `array_values` only to carry the `list` type: the keys already run from zero.
         return array_values($this->windowEvents($since, $subjectType)
             ->where('type', EventType::Pageview)
             ->whereNotNull('page')

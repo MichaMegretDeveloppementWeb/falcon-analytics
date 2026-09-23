@@ -15,7 +15,7 @@
         @include('analytics::livewire.dashboard.partials.filters')
     </x-ui::page-header>
 
-    {{-- The locality went missing with no way to tell why: absent database, truncated one, or private address. --}}
+    {{-- Why a locality reads as unknown: absent database, truncated one, or private address. --}}
     <x-analytics::geo-notice />
 
     {{-- Engagement stats (deferred) --}}

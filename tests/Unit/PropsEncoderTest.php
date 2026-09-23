@@ -13,8 +13,7 @@ final class PropsEncoderTest extends TestCase
     {
         $json = (new PropsEncoder)->encode(['a' => 1, 'b' => 'x', 'c' => true, 'd' => ['nested'], 'e' => null]);
 
-        // `encode` returns null when nothing is left to write: here something
-        // is, and saying so avoids decoding nothing.
+        // `encode` returns null when nothing is left to write; here something is.
         $this->assertNotNull($json);
         $this->assertSame(['a' => 1, 'b' => 'x', 'c' => true, 'e' => null], json_decode($json, true));
     }
@@ -84,7 +83,6 @@ final class PropsEncoderTest extends TestCase
         $this->assertLessThanOrEqual(8192, strlen($json));
         $this->assertNotEmpty($decoded);
 
-        // The entries kept are the first ones, in order.
         $this->assertSame('key_01', array_key_first($decoded));
         $this->assertLessThan(30, count($decoded));
     }

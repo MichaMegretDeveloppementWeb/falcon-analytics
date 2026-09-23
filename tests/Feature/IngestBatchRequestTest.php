@@ -130,8 +130,7 @@ final class IngestBatchRequestTest extends TestCase
             'events' => [['type' => 'pageview', 'ts' => 1, 'url' => 'https://boutique.test/?token=secret&gclid=abc']],
         ])->toBatch();
 
-        // Both are nullable: with no URL and no referrer there would be nothing
-        // to redact, and the test would prove nothing.
+        // Asserted non-null first: without a URL and a referrer there is nothing to redact.
         $url = $batch->events[0]->url;
         $referrer = $batch->referrer;
 

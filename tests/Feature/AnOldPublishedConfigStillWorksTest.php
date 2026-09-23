@@ -8,31 +8,21 @@ use Falcon\Analytics\Tests\TestCase;
 use Falcon\Ui\Config\Defaults;
 
 /**
- * A host holding a published copy from before the areas.
+ * A host holding a published configuration from before the areas.
  *
- * Publishing the configuration is a common move, and a published copy does not
- * update itself. Our own host's dates from before the areas sub-chantier: it
- * carries `dashboard`, `marketing` and `assets` at the top level, and knows
- * neither `admin` nor `web`.
+ * A published copy does not update itself: this one carries `dashboard`,
+ * `marketing` and `assets` at the top level, and knows neither `admin` nor
+ * `web`. This checks the package's file put through the kit's completion, where
+ * a key filed in the wrong place shows.
  *
- * **The package has to keep working in that state**, otherwise an update would
- * break the screens of anyone who published their configuration one day. That
- * is exactly what `completeConfigFrom` buys, and this test checks that the
- * package's file does draw what it needs from it.
- *
- * What is checked here is not the kit's mechanism — that has its own tests —
- * but **our file put through it**: a key filed in the wrong place would not
- * show any other way.
- *
- * The application is booted, without the database: the package's file calls
- * `storage_path()` for the geolocation database, and that cannot be read
- * outside an application.
+ * The application is booted without the database: the package's file calls
+ * `storage_path()`, which needs an application.
  */
 final class AnOldPublishedConfigStillWorksTest extends TestCase
 {
     /**
      * The shape the configuration had before the areas, cut down to what
-     * matters: this is the copy our host holds today.
+     * matters.
      *
      * @return array<string, mixed>
      */
@@ -80,12 +70,6 @@ final class AnOldPublishedConfigStillWorksTest extends TestCase
         $this->assertNotSame([], $completed['web']['middleware'], 'Ingestion has to keep a session stack.');
     }
 
-    /**
-     * What the host had chosen must not be overwritten by the completion.
-     *
-     * This is the other half of the contract: complete what is missing, without
-     * ever taking back control of what is written.
-     */
     public function test_it_leaves_what_the_host_had_chosen_alone(): void
     {
         $completed = $this->completed();
@@ -94,10 +78,7 @@ final class AnOldPublishedConfigStillWorksTest extends TestCase
         $this->assertSame('layouts.analytics-admin', $completed['dashboard']['layout']);
     }
 
-    /**
-     * The stale blocks survive, and that is harmless: nothing reads them any
-     * more. Saying so here saves worrying about them on sight.
-     */
+    /** Nothing reads the stale blocks, so keeping them is harmless. */
     public function test_the_stale_blocks_survive_harmlessly(): void
     {
         $completed = $this->completed();

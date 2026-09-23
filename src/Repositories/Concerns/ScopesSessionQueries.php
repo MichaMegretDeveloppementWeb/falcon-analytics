@@ -14,16 +14,10 @@ use Illuminate\Database\Eloquent\Builder;
  * scope and the three bits of date/duration SQL Eloquent cannot express, so
  * each finality-specific repository builds on the same trusted base.
  *
- * **The SQL below is MySQL's, and only MySQL's.** The package supports MySQL
- * and MariaDB, which write these three expressions identically — `DATE`,
- * `DATE_FORMAT` and `TIMESTAMPDIFF` exist in both under the same names, so the
- * second costs not one line here. {@see DatabaseEngine} holds that list, and
- * refuses the install on anything else.
- *
- * It used to branch on the driver, with arms for PostgreSQL, SQL Server and
- * SQLite. No test ever ran on any of them — which is exactly what made the
- * branches worth removing: the code promised four engines, the notice promised
- * three, and the suite proved one.
+ * The SQL below is in MySQL's dialect, which MariaDB shares: `DATE`,
+ * `DATE_FORMAT` and `TIMESTAMPDIFF` exist in both under the same names.
+ * {@see DatabaseEngine} holds the supported engines, and refuses the install on
+ * any other.
  *
  * @internal
  */
@@ -47,11 +41,11 @@ trait ScopesSessionQueries
      * group on the day rather than on the instant. The column is a trusted
      * internal constant, never user input.
      *
-     * `literal-string` holds that last sentence: a column coming from a request
-     * stops compiling rather than reaching `selectRaw()`.
+     * `literal-string` holds that last sentence: static analysis refuses a column
+     * coming from a request before it reaches `selectRaw()`.
      *
-     * A method rather than a constant, for the ten call sites that name it: the
-     * name says what the SQL means, which the SQL itself does not.
+     * A method, so each call site names what the SQL means, which the SQL itself
+     * does not.
      *
      * @param  literal-string  $column
      * @return literal-string

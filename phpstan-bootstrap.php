@@ -18,6 +18,6 @@ use Illuminate\Support\Facades\View;
 try {
     View::addNamespace('analytics', __DIR__.'/resources/views');
 } catch (Throwable) {
-    // The analysis can run without a booted container. The view check is then
-    // inoperative, which is the state it was in before: nothing worse.
+    // The analysis can run without a booted container; the view check is then
+    // inoperative, and nothing else is lost.
 }

@@ -49,8 +49,7 @@ final class TheInstantsAreStoredAsTheyAreMeantTest extends TestCase
         $written = CarbonImmutable::parse($instant, 'UTC');
         $session = $this->sessionStartedAt($written);
 
-        // Read under a zone this test names, so the assertion does not depend
-        // on the machine it runs on.
+        // Read under a named zone, so the assertion does not depend on the machine.
         DB::statement("SET time_zone = '+00:00'");
 
         $stored = DB::table(Session::TABLE)
@@ -75,23 +74,17 @@ final class TheInstantsAreStoredAsTheyAreMeantTest extends TestCase
 
         $this->assertNotNull($fresh);
 
-        // Green before the change of type as well: the round trip was already
-        // consistent, which is exactly what hid the defect. This is the
-        // non-regression assertion, not the proof.
+        // A converted type passes this round trip too; the test above is the proof.
         $this->assertSame($written->toDateTimeString(), $fresh->started_at->toDateTimeString());
     }
 
     /**
      * The hour the local clock skips does not exist as a local time, and a
      * column the engine converts has no room for it.
-     *
-     * The audit could not settle this: establishing it needs a write, and an
-     * audit does not write. Its first run is therefore the measurement.
      */
     public function test_an_instant_in_the_hour_the_local_clock_skips_is_stored_whole(): void
     {
-        // 2026-03-29, Paris: at 02:00 the clocks jump to 03:00, so 02:30 is
-        // never on the wall that day.
+        // Paris clocks jump from 02:00 to 03:00 that day, so 02:30 never shows on the wall.
         $written = CarbonImmutable::parse('2026-03-29 02:30:00', 'UTC');
         $session = $this->sessionStartedAt($written);
 

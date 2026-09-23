@@ -12,21 +12,13 @@ use SplFileInfo;
 /**
  * No class of the package goes out without its prefix.
  *
- * That is what lets the package's stylesheet share a page with the kit's and
- * the host's without either cancelling the other: two different names do not
- * fight. The same plain rule and its responsive variant have the same
- * specificity beyond the breakpoint, and it is then the stylesheet loaded
- * second that wins, silently.
+ * Two different names do not fight, so the package's stylesheet shares a page
+ * with the kit's and the host's. A forgotten class is not generated at all: the
+ * generator only knows the prefixed names, so the element draws unstyled and
+ * nothing says so.
  *
- * **A forgotten class is not generated at all**: the generator only knows the
- * prefixed names, so the element draws unstyled and nothing says so. That is
- * the breakage this test refuses.
- *
- * It is mostly for later: it catches the screen someone adds in six months by
- * copying ordinary Tailwind.
- *
- * It does not read comments: a `bg-white` quoted in an explanation never drew
- * anything.
+ * It does not read comments: a `bg-white` quoted in an explanation draws
+ * nothing.
  *
  * No database here, hence no `TestCase` of the package: it reads files, and
  * nothing else.
@@ -35,17 +27,11 @@ final class EveryClassCarriesThePrefixTest extends TestCase
 {
     /**
      * Shapes that belong to Tailwind alone, and so cannot be anything other
-     * than a forgotten class.
+     * than a forgotten class; the variants come first.
      *
-     * The variants first: their shape is unambiguous.
-     *
-     * **What is missing here will not be caught**, and that is the one defect
-     * of this approach. The list therefore covers everything the views use,
-     * read off them, and not only the commonest families.
-     *
-     * One family is deliberately absent: `cursor-`, because the kit has an icon
-     * named `cursor-arrow-rays` and no shape rule tells an icon name from a
-     * class.
+     * A shape missing here goes uncaught, so the list covers every family the
+     * views use. `cursor-` is absent: the kit has an icon named
+     * `cursor-arrow-rays`, and no shape tells an icon name from a class.
      *
      * @var list<string>
      */

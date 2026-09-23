@@ -13,20 +13,9 @@ use PHPUnit\Framework\Attributes\DataProvider;
  * The addresses move, the names do not.
  *
  * Where the screens hang belongs to the host: it mounts them wherever its own
- * administration lives, and the package has no opinion. But the host also
- * *writes names down* — in a menu, in a redirect, in a rule that lets someone
- * through — and a name that follows the configuration cannot be written down
- * anywhere.
- *
- * It did follow it until 2026-09-11. Two keys, `dashboard.route_name` and
- * `marketing.route_name`, decided what `route()` answered to, so twenty-one
- * call sites rebuilt the name from the configuration before asking for a URL,
- * and a host that renamed either broke every one of them at once — with a
- * RouteNotFoundException raised from inside a view, at the first visit and
- * never before.
- *
- * The keys are gone. What is left is this contract, and these are the tests
- * that hold it.
+ * administration lives. But the host also *writes names down* — in a menu, in a
+ * redirect, in a rule that lets someone through — and a name that followed the
+ * configuration could not be written down anywhere.
  */
 final class TheRouteNamesDoNotMoveTest extends TestCase
 {
@@ -62,18 +51,9 @@ final class TheRouteNamesDoNotMoveTest extends TestCase
     }
 
     /**
-     * The four detail screens, which take a parameter.
-     *
-     * **They are the ones a host is most likely to write down**, because a list
-     * of its own linking to one of our details is the ordinary way in — and
-     * they were the four this file did not hold. Added on 2026-09-13, while
-     * comparing what the documentation promises to what is actually guarded:
-     * `docs/fonctionnalites.md` names all seventeen routes, and twelve were
-     * kept from moving.
-     *
-     * The parameter name is part of the promise too · `route($name, ['visitor'
-     * => …])` is what a caller writes, so renaming `{visitor}` to `{id}` breaks
-     * them exactly as renaming the route would.
+     * The detail screens take a parameter, and a host's own lists link to them.
+     * The parameter name is part of the promise · a caller writes
+     * `route($name, ['visitor' => …])`, so renaming `{visitor}` breaks it.
      *
      * @return array<string, array{0: string, 1: string, 2: string}>
      */
@@ -106,18 +86,9 @@ final class TheRouteNamesDoNotMoveTest extends TestCase
     }
 
     /**
-     * The whole point, in one test: three addresses moved, and not one name did.
-     *
-     * **The provider is registered again**, from a moved configuration · that
-     * is where the mounting lives, and replaying the route files alone would
-     * add them with no group at all. Then the routes are read straight from the
-     * collection rather than through `route()` — a name already taken keeps
-     * pointing at its first registration, so the helper would answer with the
-     * old address and prove nothing either way.
-     *
-     * Each name is expected to carry *two* addresses: the one the provider
-     * registered at boot, and the one this replay just added. Anything else
-     * means the name followed the prefix.
+     * The provider, which mounts the routes, is registered again from a moved
+     * configuration, and the collection is read directly since `route()` keeps a
+     * name's first registration. Each name then carries the boot address and the new one.
      */
     public function test_it_keeps_every_name_when_the_host_moves_the_addresses(): void
     {

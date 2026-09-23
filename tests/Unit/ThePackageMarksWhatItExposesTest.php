@@ -14,21 +14,18 @@ use SplFileInfo;
  * Every name the package puts in the page carries its mark.
  *
  * **A utility prefix renames classes and nothing else.** An event name keeps
- * whatever it was called, and two providers that pick the same one warn nobody:
- * both listeners answer each other's calls.
+ * whatever it is called, and two providers that pick the same one warn nobody:
+ * both listeners answer each other's calls. A bare name only fails on another
+ * package's page, so it is read here.
  *
- * Adding a bare name works perfectly here and only fails at somebody else's,
- * which is why this is read rather than trusted.
- *
- * **The tracking attributes are not read here, and that is deliberate.**
- * `data-track-event` and its neighbours are not names this package gave itself:
- * they are the vocabulary a host writes on its own pages to declare what it
- * wants counted. A readable name is the point of them.
+ * The tracking attributes, `data-track-event` and its neighbours, are not read:
+ * they are the vocabulary a host writes on its own pages, and a readable name
+ * is the point of them.
  */
 final class ThePackageMarksWhatItExposesTest extends TestCase
 {
     /**
-     * Names the package listens to rather than declares · the browser's, and
+     * Names the package listens to and does not declare · the browser's, and
      * those the two frameworks announce themselves under.
      *
      * @var list<string>
@@ -70,8 +67,7 @@ final class ThePackageMarksWhatItExposesTest extends TestCase
         foreach ($this->views() as $file) {
             $source = (string) file_get_contents($file->getPathname());
 
-            // What a view emits, and what it binds a listener to · Alpine
-            // writes the second as `@name.window` or `x-on:name.window`.
+            // Alpine binds a window listener as `@name.window` or `x-on:name.window`.
             preg_match_all("/\\\$dispatch\(\s*'([a-zA-Z][a-zA-Z0-9:_-]*)'/", $source, $emitted);
             preg_match_all('/(?:@|x-on:)([a-z][a-zA-Z0-9:_-]*)\.window/', $source, $heard);
 

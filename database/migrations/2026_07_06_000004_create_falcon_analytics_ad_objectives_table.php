@@ -11,11 +11,9 @@ use Illuminate\Support\Facades\Schema;
  * steps in order) or a named custom event (the visitor fired it).
  *
  * Either way the ad is credited one converting visitor, scoped to its own
- * attributed traffic so one ad never scores another's conversions. **There is
- * no per-objective weight**: marketing conversions count distinct converting
- * visitors, each worth one, and a weight that no score reads would silently do
- * nothing. The funnels screen weights its own steps, which is a different
- * question.
+ * attributed traffic so one ad never scores another's conversions. Not
+ * weighted: marketing conversions count distinct converting visitors, each
+ * worth one. Funnel step weights belong to the funnels screen only.
  */
 return new class extends Migration
 {
@@ -26,11 +24,9 @@ return new class extends Migration
             $table->foreignId('ad_id')
                 ->constrained('falcon_analytics_ads')
                 ->cascadeOnDelete();
-            $table->string('type', 20);            // funnel | event
-            $table->string('reference', 191);      // funnel key or event name
+            $table->string('type', 20);
+            $table->string('reference', 191);
 
-            // Written by hand rather than through the timestamps helper: see the
-            // visitors table.
             $table->dateTime('created_at')->nullable();
             $table->dateTime('updated_at')->nullable();
 

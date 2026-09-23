@@ -15,8 +15,8 @@ use Livewire\WithPagination;
 /**
  * Visitor directory: period-scoped headline metrics on top, then the all-time
  * list of every visitor profile, each row summarising their sessions, first and
- * last visit, locality and acquisition source. The period filter deliberately
- * drives ONLY the headline: the directory reflects the general state.
+ * last visit, locality and acquisition source. The period filter drives ONLY
+ * the headline: the directory reflects the whole population.
  *
  * @internal
  */

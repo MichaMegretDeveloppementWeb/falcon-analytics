@@ -22,7 +22,7 @@ return new class extends Migration
             $table->string('query', 255);
             $table->unsignedInteger('clicks')->default(0);
             $table->unsignedInteger('impressions')->default(0);
-            $table->decimal('position', 6, 2)->nullable(); // average position, e.g. 3.42
+            $table->decimal('position', 6, 2)->nullable();
 
             $table->unique(['date', 'query'], 'fa_search_queries_date_query_unique');
             $table->index('date', 'fa_search_queries_date_idx');

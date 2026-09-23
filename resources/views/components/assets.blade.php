@@ -13,7 +13,7 @@
     **The area decides the list.** `analytics-admin.js` carries the dashboard's
     Alpine components, and only an administration screen uses them.
 
-    **And `analytics.js` is absent on purpose, not by omission.** It is the
+    **And `analytics.js` stays out of the list.** It is the
     collector — the tracker a host puts on its own public pages — and
     `collector.blade.php` declares it for itself, where it is rendered. Named
     here, every screen of the dashboard would download it to count nothing.

@@ -47,7 +47,6 @@ final class DeviceLabelTest extends TestCase
         $this->assertSame($icon, DeviceLabel::icon($type));
     }
 
-    /** A name the library adds tomorrow still reads, rather than disappearing. */
     public function test_a_name_not_yet_known_reads_as_recorded(): void
     {
         $this->assertSame('Hologram', DeviceLabel::for('hologram'));

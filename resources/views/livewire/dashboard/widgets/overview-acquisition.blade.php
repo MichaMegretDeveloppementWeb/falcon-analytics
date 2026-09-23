@@ -50,9 +50,9 @@
             <x-ui::section-header :title="__('Localités')" class="an:mb-4" />
             @if ($topLocalities !== [])
                 {{--
-                    A figure to open on, the way the doughnut gives its neighbour one. Without
-                    it this block opened on a list with nothing to catch the eye: it is the
-                    contrast in size that makes the hierarchy, and no area stood out.
+                    A figure to open on, the way the doughnut gives its neighbour one: it is
+                    the contrast in size that makes the hierarchy, and a list alone has
+                    nothing to catch the eye.
                 --}}
                 <p class="an:text-2xl an:font-semibold an:tracking-tight an:text-primary">{{ NumberLabel::for($localitiesTotal) }}</p>
                 <p class="an:mb-4 an:text-[11px] an:uppercase an:tracking-wider an:text-muted">{{ __('sessions localisées') }}</p>

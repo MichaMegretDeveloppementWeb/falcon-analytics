@@ -9,9 +9,8 @@ use Falcon\Analytics\Tests\TestCase;
 
 /**
  * Geolocation degrades to an empty location whatever goes wrong: no database, a
- * truncated one, a private address. All three showed the same blank column, and
- * the only way to tell them apart was to read the source. This command says
- * which one it is.
+ * truncated one, a private address. All three show the same blank column, and
+ * this command says which one it is.
  */
 final class GeoipCheckCommandTest extends TestCase
 {

@@ -46,7 +46,7 @@ final class EventsCommandsTest extends TestCase
         $this->app->forgetInstance(EventRegistry::class);
 
         $this->artisan('analytics:events:scan')
-            ->expectsOutputToContain('sample.click')   // attribut data-track-event
+            ->expectsOutputToContain('sample.click')   // data-track-event attribute
             ->expectsOutputToContain('sample.server')  // record('literal')
             ->expectsOutputToContain('Foo')            // record(Enum::Case->name)
             ->assertExitCode(Command::FAILURE);

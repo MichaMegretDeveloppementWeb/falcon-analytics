@@ -39,8 +39,7 @@ final class SourceLabelTest extends TestCase
 
     public function test_an_absent_channel_is_described_as_the_direct_one_it_is_labelled(): void
     {
-        // The label already decides that a missing source is the direct
-        // channel: the line under it cannot say the origin is unknown.
+        // The label calls a missing source direct, so the line under it cannot say unknown.
         $this->assertSame(SourceLabel::description('direct'), SourceLabel::description(''));
         $this->assertSame(SourceLabel::description('direct'), SourceLabel::description(null));
     }

@@ -14,9 +14,9 @@ use Throwable;
  * error state, never a raw 500. The view builder runs outside the guard so a
  * genuine rendering bug is not masked as a read failure.
  *
- * The error state no longer carries a layout of its own. The screen is mounted
- * by a controller and a thin view now, so this renders inside them: a failed
- * read costs the panel, not the sidebar, the header and the page title with it.
+ * The error state carries no layout of its own: the screen is mounted by a
+ * controller and a thin view, and this renders inside them, so a failed read
+ * costs the panel, not the sidebar, the header and the page title with it.
  *
  * @internal
  */

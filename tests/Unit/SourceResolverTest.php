@@ -97,7 +97,7 @@ final class SourceResolverTest extends TestCase
         );
     }
 
-    /** Un clic organique depuis Facebook porte `fbclid` lui aussi. */
+    /** An organic click from Facebook carries `fbclid` too. */
     public function test_it_does_not_treat_fbclid_as_paid(): void
     {
         $this->assertSame(

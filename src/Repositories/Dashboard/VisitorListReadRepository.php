@@ -89,14 +89,14 @@ final readonly class VisitorListReadRepository
     /**
      * Paginated visitor directory: every real profile, with their all-time
      * session count, first/last seen, the locality of their latest session and
-     * their acquisition source (the very first session's source). Deliberately
-     * NOT bounded to the dashboard period: the directory reflects the general
-     * state of the population, only the headline KPIs read the period. Merged
-     * aliases and bot-only visitors are excluded.
+     * their acquisition source (the very first session's source). Not bounded
+     * to the dashboard period: the directory reflects the whole population, and
+     * only the headline KPIs read the period. Merged aliases and bot-only
+     * visitors are excluded.
      *
      * Search covers visitor-level attributes (uuid, subject id and resolved
-     * name); locality is intentionally excluded, as it is a per-session
-     * subquery too costly to filter on at the visitor level.
+     * name); not locality, a per-session subquery too costly to filter on at
+     * the visitor level.
      *
      * @return LengthAwarePaginator<int, Visitor>
      */
@@ -124,9 +124,7 @@ final readonly class VisitorListReadRepository
         $sortable = ['last_seen_at', 'first_seen_at', 'session_count'];
         $query->orderBy(in_array($sort, $sortable, true) ? $sort : 'last_seen_at', $direction);
 
-        // See `SessionListReadRepository`: none of the sortable columns is
-        // unique, and an order left open duplicates rows across pages. The
-        // table is named because the query joins on the sessions.
+        // The key closes the order, see `SessionListReadRepository`; qualified for the sessions subqueries.
         $query->orderBy('falcon_analytics_visitors.id', $direction);
 
         return $query->paginate($perPage);

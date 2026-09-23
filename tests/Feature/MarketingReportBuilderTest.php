@@ -98,8 +98,7 @@ final class MarketingReportBuilderTest extends TestCase
         $builder = new MarketingReportBuilder;
         $period = Period::ofDays(30);
 
-        // Only sessions attached to a campaign count as paid traffic: the
-        // src=other session is set aside.
+        // Only sessions a campaign claims count as paid traffic: src=other is set aside.
         $this->assertSame(['sessions' => 3, 'visitors' => 2], $builder->headline($period, null));
 
         $performance = $builder->performance($period, null);
@@ -202,7 +201,7 @@ final class MarketingReportBuilderTest extends TestCase
         $session = $this->taggedSession(['src' => 'meta_ete'], $converter);
         Event::factory()->for($session)->custom('Lead')->create();
 
-        // A second visitor who came through the ad and never fired the event.
+        // A second visitor through the ad, with no conversion.
         $this->taggedSession(['src' => 'meta_ete']);
 
         $result = (new MarketingReportBuilder)->conversions(Period::ofDays(30), null, app(FunnelRegistry::class));
@@ -214,17 +213,9 @@ final class MarketingReportBuilderTest extends TestCase
     }
 
     /**
-     * A visitor driven by two ads credits both, and this is not first-touch.
-     *
-     * **The documentation claimed first-touch until 2026-09-13**, which is the
-     * opposite of what happens: the attribution phase collects the SET of ads a
-     * visitor arrived through in the period, and the conversion is credited to
-     * every one of them. So the per-ad conversions can add up to more than the
-     * total, and that is coherent rather than a double count — the total counts
-     * distinct converting visitors.
-     *
-     * Written the day the claim was corrected, so that whichever of the two
-     * rules is wanted has to be chosen out loud rather than drifted into.
+     * Attribution is not first-touch: the conversion is credited to every ad the
+     * visitor arrived through in the period. Per-ad conversions can add up to
+     * more than the total, which counts distinct converting visitors.
      */
     public function test_a_visitor_driven_by_two_ads_credits_both_and_counts_once_in_the_total(): void
     {
@@ -239,7 +230,6 @@ final class MarketingReportBuilderTest extends TestCase
             AdObjective::factory()->for($ad)->event('Lead')->create();
         }
 
-        // One person, two arrivals, two different ads — then one conversion.
         $visitor = Visitor::factory()->create();
         $this->taggedSession(['src' => 'a'], $visitor);
         $session = $this->taggedSession(['src' => 'b'], $visitor);
@@ -248,9 +238,7 @@ final class MarketingReportBuilderTest extends TestCase
 
         $result = (new MarketingReportBuilder)->conversions(Period::ofDays(30), null, app(FunnelRegistry::class));
 
-        // Read through a default rather than by key: crediting only one ad is
-        // exactly what a slide back to first-touch looks like, and an undefined
-        // key would report it as a missing index instead of as a rule change.
+        // Read with a default, so crediting one ad fails as a rule change, not as a missing index.
         $this->assertSame(1, $result['ads'][$first->id] ?? 0, 'The first ad is credited.');
         $this->assertSame(1, $result['ads'][$second->id] ?? 0, 'And so is the second: attribution is not first-touch.');
         $this->assertSame(1, $result['total'], 'One person converted once, whatever the ads say.');
@@ -266,15 +254,13 @@ final class MarketingReportBuilderTest extends TestCase
         $ad = Ad::factory()->for($ete)->matching('src', 'meta_ete')->create(['name' => 'Cabrio']);
         AdObjective::factory()->for($ad)->funnel('sample')->create();
 
-        // A visitor attached to the ad, who walks the funnel in order:
-        // pageview home, then sample.action.
+        // Converts: home, then sample.action.
         $converter = Visitor::factory()->create();
         $session = $this->taggedSession(['src' => 'meta_ete'], $converter);
         Event::factory()->for($session)->create(['route' => 'home', 'occurred_at' => now()->subMinutes(2)]);
         Event::factory()->for($session)->custom('sample.action')->create(['occurred_at' => now()->subMinute()]);
 
-        // Another visitor who came through the ad and only reaches the first
-        // step: no conversion.
+        // Reaches the first step only: no conversion.
         $halfway = Visitor::factory()->create();
         $halfSession = $this->taggedSession(['src' => 'meta_ete'], $halfway);
         Event::factory()->for($halfSession)->create(['route' => 'home', 'occurred_at' => now()->subMinutes(2)]);
@@ -337,10 +323,7 @@ final class MarketingReportBuilderTest extends TestCase
 
         $byAd = Collection::make($elements)->keyBy('adId');
 
-        // Each ad is credited only with its own visitor's conversion, from one
-        // single grouped read.
-        // Each ad has to have its element: without it, reading a column would
-        // fail without saying which of the two is missing.
+        // Each element is asserted present first, so a failure names the missing ad.
         $firstAd = $byAd->get($ad1->id);
         $secondAd = $byAd->get($ad2->id);
 

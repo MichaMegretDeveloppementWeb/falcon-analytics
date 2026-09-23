@@ -33,11 +33,7 @@ final class RealtimePage extends Component
 {
     use RecoversFromReadFailure;
 
-    // The ramp's names, never its colours: the values live in the package's
-    // theme, in both modes, and the chart asks the page what each name holds.
-    // See {@see ChartPalette}.
-
-    /** Bound of the "Pays" list next to the map. */
+    /** Bound of the countries list next to the map. */
     private const MAX_COUNTRY_ROWS = 8;
 
     public function render(RealtimeReadRepository $repository, RealtimeRowBuilder $rows, EventRegistry $events): View
@@ -179,7 +175,7 @@ final class RealtimePage extends Component
     }
 
     /**
-     * Country rows for the "Pays" list, derived from the map points (no extra
+     * Country rows for the countries list, derived from the map points (no extra
      * query): totals and online counts per country, busiest first.
      *
      * @param  list<array{city: string|null, country: string|null, latitude: float, longitude: float, total: int, online: int}>  $points

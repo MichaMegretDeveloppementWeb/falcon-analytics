@@ -31,9 +31,7 @@ final readonly class VisitorProfileReadRepository
             ->selectRaw("COUNT(*) as sessions, COALESCE(SUM(pageview_count), 0) as pageviews, COALESCE(SUM({$duration}), 0) as seconds")
             ->first();
 
-        // An aggregate without `GROUP BY` always returns one row, even with no
-        // session at all: the fallback to zero should never be needed, and
-        // writing it costs nothing over assuming it.
+        // `first()` is typed nullable, though an aggregate without `GROUP BY` always returns a row.
         return [
             'sessions' => (int) $totals?->getAttribute('sessions'),
             'pageviews' => (int) $totals?->getAttribute('pageviews'),
@@ -52,8 +50,7 @@ final readonly class VisitorProfileReadRepository
             ->where('visitor_id', $visitorId)
             ->select(['id', 'visitor_id', 'subject_type', 'subject_id', 'started_at', 'last_activity_at', 'pageview_count', 'device_type', 'browser', 'source', 'landing_route', 'landing_url', 'country', 'city'])
             ->orderByDesc('started_at')
-            // Two sessions of the same visitor can share a start: the key closes
-            // the order, which a paginated list needs to be total.
+            // Two sessions can share a start: the key makes the paginated order total.
             ->orderByDesc('id')
             ->paginate($perPage);
     }
@@ -76,8 +73,6 @@ final readonly class VisitorProfileReadRepository
             ->orderByDesc('total')
             ->get()
             ->mapWithKeys(function (Session $row) use ($default): array {
-                // An empty or null column falls into the default bucket:
-                // "direct" for a source, unknown for a device type.
                 $bucket = (string) $row->getAttribute('bucket');
 
                 return [($bucket === '' ? $default : $bucket) => (int) $row->getAttribute('total')];

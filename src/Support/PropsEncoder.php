@@ -55,9 +55,7 @@ final class PropsEncoder
     private function encodeWithinBudget(array $clean): ?string
     {
         while ($clean !== []) {
-            // JSON_INVALID_UTF8_SUBSTITUTE keeps bad bytes from failing the encode;
-            // the false guard covers any remaining edge so we never write a literal
-            // "false" into the column.
+            // Bad bytes are substituted, and any other failure never reaches the column as "false".
             $json = json_encode($clean, JSON_INVALID_UTF8_SUBSTITUTE);
 
             if ($json === false) {

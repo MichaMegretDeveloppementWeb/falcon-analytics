@@ -20,16 +20,15 @@ use stdClass;
  * Summarises a closed day's anonymous page views and clicks, so that erasing
  * them later costs nothing.
  *
- * **The summary has to say exactly what the raw reading says**, or the two
- * blocks it feeds would jump the day the purge crosses them. So the queries
- * here mirror `OverviewReadRepository` line for line · the same bot exclusion,
- * the same subject read off the session rather than the event, the same label
- * for a click. An essay compares the two on a day where both exist, which is
- * the only way to keep them agreeing as either one moves.
+ * The summary has to say exactly what the raw reading says, or the two blocks
+ * it feeds would jump the day the purge crosses them. So the queries here
+ * mirror `OverviewReadRepository` · the same bot exclusion, the same subject
+ * read off the session and not the event, the same label for a click. A test
+ * compares the two on a day where both exist.
  *
- * **Days are taken in order, and a day without traffic is recorded too.**
- * Advancing from the last archived day means a gap can never open; recording an
- * empty day means the sequence never stalls on one.
+ * Days are taken in order, and a day without traffic is recorded too:
+ * advancing from the last archived day means a gap can never open, and
+ * recording an empty day means the sequence never stalls on one.
  *
  * @internal
  */
@@ -57,13 +56,13 @@ final readonly class DailyCountArchiver
     /**
      * The closed days not yet summarised, oldest first.
      *
-     * **It starts after the last archived day**, not at the oldest unarchived
-     * one · going forward from a known point is what forbids a gap. On a
-     * database that has never been archived it starts at the oldest event
-     * there is, so an installation upgrading to this keeps all of its depth.
+     * It starts after the last archived day, not at the oldest unarchived one ·
+     * going forward from a known point is what forbids a gap. On a database
+     * never archived it starts at the oldest event there is, so no day of
+     * history is left out.
      *
-     * **And it stops at the last day that is really closed** · yesterday, once
-     * the grace after midnight has passed. See `GRACE_MINUTES`.
+     * And it stops at the last day that is really closed · yesterday, once the
+     * grace after midnight has passed. See `GRACE_MINUTES`.
      *
      * @return list<CarbonImmutable>
      */
@@ -79,11 +78,11 @@ final readonly class DailyCountArchiver
      * rows into days already summarised, which the forward sequence never
      * goes back to.
      *
-     * **Never before the retention window** · the detail there may already be
+     * Never before the retention window · the detail there may already be
      * erased, and a day summarised again would count less than the summary it
-     * replaces. **And from the first pending day when that one is earlier**, so
-     * the register keeps no gap · a pending day is always whole, the purge
-     * refusing a day that has not been summarised.
+     * replaces. And from the first pending day when that one is earlier, so the
+     * register keeps no gap · a pending day is always whole, the purge refusing
+     * a day that has not been summarised.
      *
      * @return list<CarbonImmutable>
      */
@@ -107,9 +106,9 @@ final readonly class DailyCountArchiver
     /**
      * Summarise one day, replacing whatever was there.
      *
-     * **Replacing rather than adding** is what lets it be run twice · the
-     * scheduler, an administrator opening a screen and a hand-run command can
-     * all land on the same day without inflating it.
+     * It replaces and never adds, so it can run twice · the scheduler, an
+     * administrator opening a screen and a hand-run command can all land on the
+     * same day without inflating it.
      *
      * The replacement stands or falls whole, so it runs inside the caller's
      * transaction and refuses to run without one.
@@ -194,7 +193,7 @@ final readonly class DailyCountArchiver
     }
 
     /**
-     * Page views of the day, by address and by subject.
+     * Page views of the day, by page path and by subject.
      *
      * The subject is read off the SESSION, as the screen does · a visitor who
      * signs in mid-session has the whole session attributed to them, and a
@@ -205,13 +204,7 @@ final readonly class DailyCountArchiver
      */
     private function pageRows(CarbonImmutable $start, CarbonImmutable $end): array
     {
-        /*
-         * By PAGE, exactly as the screen groups · the path of the route,
-         * written down at ingestion, see `StoredUrl`. A summary grouped
-         * differently from the reading it stands in for would make the block
-         * jump the day the erasing crossed it, and the essay comparing the two
-         * would be the only thing standing between that and a shipped release.
-         */
+        // By page, exactly as the screen groups (see `StoredUrl`), or the block jumps when the erasing crosses it.
         $rows = $this->scope(EventType::Pageview, $start, $end)
             ->whereNotNull(Event::TABLE.'.page')
             ->selectRaw(Event::TABLE.'.page as label, s.subject_type as subject_type, COUNT(*) as total')
@@ -247,10 +240,9 @@ final readonly class DailyCountArchiver
     }
 
     /**
-     * The three columns every aggregate answers with, read through an array
-     * rather than through dynamic properties · a query builder hands back a
-     * `stdClass` whose shape nothing declares, and reading a key is something
-     * the analysis can follow.
+     * The three columns every aggregate answers with, read as array keys · a
+     * query builder hands back a `stdClass` whose shape nothing declares, and
+     * static analysis can follow a key.
      *
      * @param  Collection<int, stdClass>  $rows
      * @return list<array{label: string, route: string|null, subject_type: string|null, total: int}>

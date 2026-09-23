@@ -48,10 +48,7 @@ final readonly class UrlRedactor
         $position = strpos($url, '?');
         $base = $position === false ? $url : substr($url, 0, $position);
 
-        // The address is stored as the visitor opened it, fragment included ·
-        // rebuilding from the query alone dropped `#prix` from `/tarifs?…#prix`,
-        // so a redacted address stopped saying which section was opened while
-        // an unredacted one still did.
+        // The fragment is kept, so a redacted address still says which section was opened.
         $fragment = parse_url($url, PHP_URL_FRAGMENT);
 
         return $base.'?'.http_build_query($params).(is_string($fragment) && $fragment !== '' ? '#'.$fragment : '');

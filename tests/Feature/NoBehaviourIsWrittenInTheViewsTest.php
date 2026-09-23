@@ -28,7 +28,7 @@ final class NoBehaviourIsWrittenInTheViewsTest extends TestCase
      * A native event attribute, whatever it holds.
      *
      * Written without the equals sign a browser needs, so this file does not
-     * trip the guard it carries · `tests.md` §5.
+     * trip the guard it carries.
      */
     private const NATIVE_EVENT = '/\son[a-z]+[\s]*=/';
 
@@ -63,13 +63,10 @@ final class NoBehaviourIsWrittenInTheViewsTest extends TestCase
     }
 
     /**
-     * A native event attribute is refused outright, whatever it holds.
-     *
      * The two guards above read what an attribute contains, so a short enough
-     * handler slips through both · one of them did, on seven table rows, until
-     * this test was written. A native handler is also invisible to the
-     * behaviour registry and unreachable by keyboard, so the ban is flat
-     * rather than measured.
+     * handler slips through both. A native handler is also invisible to the
+     * behaviour registry and unreachable by keyboard, so it is refused whatever
+     * it holds.
      */
     public function test_no_view_carries_a_native_event_attribute(): void
     {
@@ -83,10 +80,8 @@ final class NoBehaviourIsWrittenInTheViewsTest extends TestCase
     }
 
     /**
-     * The guard catches what it is written for.
-     *
-     * Both shapes it exists to refuse, and one it has to let through, so a
-     * pattern that matched nothing would not pass for a clean package.
+     * Each pattern matches the shapes it refuses and lets through the ones it
+     * accepts, so a pattern that matched nothing would not pass for a clean package.
      */
     public function test_the_guard_tells_logic_from_state(): void
     {

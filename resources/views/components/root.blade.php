@@ -1,13 +1,11 @@
 {{--
     What wraps a reactive view.
 
-    The element is rendered, not only the slot: the package keeps one single
-    hold for the day one of its sub-interfaces has to pin a font or a colour
-    that is inherited from nowhere. Adding it later would cost going through the
-    same thirty-four views a second time.
+    The element is rendered, not only the slot: `.an-root` is the one hold the
+    package's own rules have on a reactive view, as on a screen.
 
-    Attributes are passed through: a view whose root carried placement classes
-    moves them here rather than having them sit one level down.
+    Attributes are passed through, so a view's placement classes sit on this
+    element and not one level down.
 
     The asset declaration goes here as well: a reactive block can be drawn
     inside a host's page that is not a screen of the package, and it then has to

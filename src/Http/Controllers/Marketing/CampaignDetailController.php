@@ -8,8 +8,8 @@ use Falcon\Analytics\Models\Campaign;
 use Illuminate\Contracts\View\View;
 
 /**
- * The title names the campaign, so it is composed here rather than inside the
- * component: the browser tab is decided before the screen renders.
+ * The title names the campaign, so it is composed here: the browser tab is
+ * decided before the screen renders.
  *
  * @internal
  */

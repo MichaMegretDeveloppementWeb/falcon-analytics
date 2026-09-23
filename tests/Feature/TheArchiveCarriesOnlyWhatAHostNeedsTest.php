@@ -7,37 +7,30 @@ namespace Falcon\Analytics\Tests\Feature;
 use Falcon\Analytics\Tests\TestCase;
 
 /**
- * Ce qu'un hôte reçoit, et rien d'autre.
+ * What a host receives, and nothing else · the `git archive` output, with the
+ * `export-ignore` rules applied. Whatever enters it by accident is downloaded by
+ * every project on every deploy.
  *
- * Un hôte n'installe pas un dépôt, il installe une **archive** · ce que
- * `git archive` produit, une fois les `export-ignore` appliqués. Tout ce qui y
- * entre par accident est téléchargé par chaque projet, à chaque déploiement, et
- * suggère un outillage que l'hôte n'a pas à connaître.
- *
- * **Une liste blanche, et pas une liste noire.** Un oubli dans une liste noire
- * ne se voit jamais · c'est exactement ce qui est arrivé le 2026-09-14, où
- * `eslint.config.js` et `testbench.yaml` partaient chez l'hôte parce que
- * personne ne les avait ajoutés à `.gitattributes`. Écrite en liste blanche, la
- * garantie tient aussi pour le fichier d'outillage que quelqu'un ajoutera
- * demain · il faudra le nommer ici, donc y penser.
+ * The list is an allow-list, so a new top-level entry fails the test until it
+ * is named here or excluded.
  */
 final class TheArchiveCarriesOnlyWhatAHostNeedsTest extends TestCase
 {
     /**
-     * Tout ce qu'une application a besoin de recevoir, et la raison de chacun.
+     * Everything an application needs to receive, and why each entry ships.
      *
      * @var list<string>
      */
     private const SHIPPED = [
-        'CHANGELOG.md',     // ce qu'une mise à jour demande de faire
-        'README.md',        // la porte d'entrée
-        'composer.json',    // le manifeste
-        'composer.lock',    // l'environnement d'essai de l'auteur, pour référence
-        'config/',          // les réglages publiables
-        'database/',        // les migrations
-        'docs/',            // la documentation fait partie de la livraison
-        'public/',          // les fichiers déjà compilés
-        'resources/',       // les vues · le style, les scripts et la carte sont exclus
+        'CHANGELOG.md',     // what an update asks the host to do
+        'README.md',        // the entry point
+        'composer.json',    // the manifest
+        'composer.lock',    // the author's test environment, for reference
+        'config/',          // the publishable settings
+        'database/',        // the migrations
+        'docs/',            // the documentation is part of the delivery
+        'public/',          // the compiled files
+        'resources/',       // the views · styles, scripts and the map are excluded
         'routes/',
         'src/',
     ];
@@ -45,13 +38,10 @@ final class TheArchiveCarriesOnlyWhatAHostNeedsTest extends TestCase
     /**
      * What the archive would carry if the working tree were committed now.
      *
-     * `git archive` reads a commit, and a file not committed yet is missing
-     * from it: the test would pass until the very commit that ships the file.
-     * So the working tree is written into a tree of its own, through an index
-     * of its own, and the repository's index is left as it was.
-     *
-     * `--worktree-attributes`, for the same reason · a `.gitattributes` modified
-     * and not committed yet is the one read.
+     * `git archive` reads a commit, which lacks any file not committed yet, so
+     * the working tree is written into a tree of its own through a separate
+     * index, and the repository's index is left as it was.
+     * `--worktree-attributes` reads an uncommitted `.gitattributes` likewise.
      *
      * @return list<string>
      */
@@ -117,12 +107,9 @@ final class TheArchiveCarriesOnlyWhatAHostNeedsTest extends TestCase
     }
 
     /**
-     * Et les trois choses dont l'absence est le plus coûteuse à découvrir tard.
-     *
-     * Le style et les scripts sources, parce que **livrés, ils ne peuvent pas
-     * servir** · la feuille atteint les couches et le thème du kit par un
-     * chemin relatif qui ne mène nulle part une fois le paquet sous les
-     * dépendances d'un hôte. Les laisser dit le contraire.
+     * Shipped, the style and script sources could not serve · the stylesheet
+     * reaches the kit's layers and theme by a relative path that leads nowhere
+     * once the package sits among a host's dependencies.
      */
     public function test_it_never_ships_the_build_chain_or_the_bench(): void
     {

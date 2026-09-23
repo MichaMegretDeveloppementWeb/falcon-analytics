@@ -30,10 +30,9 @@ final class WhatMustHoldTogetherAsksForATransactionTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** The bench's transactional wrapper, removed. */
     public function beginDatabaseTransaction(): void
     {
-        //
+        // No transaction: the services under test must meet none.
     }
 
     protected function tearDown(): void

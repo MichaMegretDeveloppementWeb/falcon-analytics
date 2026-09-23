@@ -91,8 +91,7 @@ final class IngestEndpointTest extends TestCase
 
     public function test_it_drops_a_request_with_a_malformed_origin_without_erroring(): void
     {
-        // `parse_url` returns false, not null, here: the request has to be set
-        // aside, not return a 500.
+        // `parse_url` returns false here, and the request is set aside without a 500.
         $this->withoutDefer()
             ->withHeader('Origin', 'http://:80')
             ->postJson('/__analytics', $this->payload())
@@ -124,8 +123,7 @@ final class IngestEndpointTest extends TestCase
 
     public function test_it_swallows_a_persistence_failure_and_still_returns_no_content(): void
     {
-        // The write target is broken so the deferred ingestion raises a real
-        // query error.
+        // A broken write target makes the deferred ingestion raise a real query error.
         $this->withoutDatabase(function (): void {
             $this->withoutDefer()
                 ->withHeader('Origin', config('app.url'))

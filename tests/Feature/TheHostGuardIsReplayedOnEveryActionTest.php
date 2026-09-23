@@ -17,9 +17,9 @@ use Livewire\Livewire;
  * a host names by an alias of its own, or reaches through a group, is therefore
  * replayed only if the package hands Livewire the class behind the name.
  *
- * Asserted on the registration rather than on a request · Livewire hides its
- * endpoint behind a hash and rejects a payload that names no component, so a
- * hand-made call would answer the same with or without the guard.
+ * Asserted on the registration · Livewire hides its endpoint behind a hash and
+ * rejects a payload that names no component, so a hand-made call would answer
+ * the same with or without the guard.
  */
 final class TheHostGuardIsReplayedOnEveryActionTest extends TestCase
 {

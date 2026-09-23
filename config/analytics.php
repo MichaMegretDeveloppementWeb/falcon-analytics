@@ -28,8 +28,10 @@ return [
     | Log channel
     |--------------------------------------------------------------------------
     |
-    | Channel for the package's own logs (ingestion and download errors). An
-    | empty value falls back to the application's default channel.
+    | Channel for every log line the package writes: ingestion, screen reads,
+    | downloads, Search Console, erasures, maintenance, marketing edits. Null
+    | uses the application's default channel. An empty string is not null:
+    | Laravel reads it as an undefined channel and writes to its emergency log.
     |
     */
 
@@ -116,9 +118,8 @@ return [
     | write it: 'layout.admin' for <x-layout.admin>. null uses the package's own
     | shell, which is a complete, self-contained administration.
     |
-    | Marketing has no key of its own, and that is deliberate: the layout
-    | belongs to the AREA, and marketing is the same administration. A host
-    | mounting both wants one chrome around them.
+    | Marketing has no key of its own: the layout belongs to the AREA, and
+    | marketing is the same administration, drawn in the same chrome.
     |
     */
     'layouts' => [
@@ -130,8 +131,8 @@ return [
     | Administration area
     |--------------------------------------------------------------------------
     |
-    | Where the screens mount, and behind what. The route NAMES are not here on
-    | purpose: they are fixed (analytics.admin.overview,
+    | Where the screens mount, and behind what. The route NAMES are not
+    | configurable: they are fixed (analytics.admin.overview,
     | analytics.admin.marketing.campaigns, ...) so that a menu or a redirect can
     | write one down. Only the addresses move.
     |
@@ -327,8 +328,8 @@ return [
             : storage_path('app/analytics/GeoLite2-City.mmdb'),
 
         // Local development: public IP substituted for private/reserved request
-        // IPs (127.0.0.1 can never be located). Inert in production by design,
-        // since real public IPs are never overridden.
+        // IPs (127.0.0.1 can never be located). Inert in production, since real
+        // public IPs are never overridden.
         'dev_ip' => env('ANALYTICS_GEOIP_DEV_IP'),
 
         // MaxMind permalink ({edition} and {license_key} are substituted).

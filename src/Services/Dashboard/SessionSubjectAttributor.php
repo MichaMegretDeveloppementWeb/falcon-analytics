@@ -16,8 +16,8 @@ use Falcon\Analytics\Models\Visitor;
  * session as "not connected").
  *
  * The fallback is withheld for a visitor whose identified sessions point to
- * more than one distinct subject (shared browser, client and lessor accounts
- * side by side): naming its anonymous sessions would be guesswork.
+ * more than one distinct subject (shared browser, two kinds of account side
+ * by side): naming its anonymous sessions would be guesswork.
  *
  * @internal
  */

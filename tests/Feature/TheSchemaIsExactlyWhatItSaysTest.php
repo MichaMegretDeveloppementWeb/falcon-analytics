@@ -37,10 +37,7 @@ final class TheSchemaIsExactlyWhatItSaysTest extends TestCase
         );
     }
 
-    /**
-     * And the reading knows how to find something: an empty comparison would
-     * otherwise pass for agreement.
-     */
+    /** An empty reading would otherwise pass for agreement. */
     public function test_the_reading_sees_a_schema_that_is_really_there(): void
     {
         $actual = $this->schemaOfThePackage();

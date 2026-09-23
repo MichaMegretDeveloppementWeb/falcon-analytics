@@ -15,7 +15,7 @@ use Falcon\Analytics\Repositories\VisitorWriteRepository;
  * - the browser's profile is unowned and the person already has a profile
  *   elsewhere -> the two fold together (oldest survives);
  * - the browser belongs to someone else (shared device) -> the batch is routed
- *   to the person's own profile, the browser keeps its owner;
+ *   to the person's own profile when there is one, the browser keeps its owner;
  * - first identification ever -> the browser's profile simply becomes theirs.
  *
  * A fold and the sessions it pulls in stand or fall together, so this runs
@@ -41,9 +41,6 @@ final readonly class VisitorProfileResolver
             $other = $this->visitors->canonicalFor($subject['type'], $subject['id'], excludeId: $browser->id);
 
             if ($other === null) {
-                // First identification ever: the browser's profile becomes the
-                // person's. Pull in any identified stray sessions (logins on
-                // browsers owned by someone else, before this profile existed).
                 $this->merges->relocateForeignSessions($subject['type'], $subject['id'], $browser);
 
                 return $browser;
@@ -55,10 +52,6 @@ final readonly class VisitorProfileResolver
             return $canonical;
         }
 
-        // Shared browser: it belongs to someone else. The batch is the logged-in
-        // person's activity, so it lands on their own profile when they have
-        // one; otherwise it stays on the browser's profile, and the sessions'
-        // own subject keeps the display truthful until a profile exists.
         $own = $this->visitors->canonicalFor($subject['type'], $subject['id']);
 
         if ($own !== null) {

@@ -11,8 +11,8 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Delete a campaign and everything it owns (its ads and their objectives). Deletes
- * explicitly inside a transaction rather than relying on the FK cascade, so it
- * behaves identically on every driver. The captured traffic is left untouched.
+ * explicitly inside a transaction, so it behaves the same on every driver whatever
+ * its foreign-key cascades. The captured traffic is left untouched.
  *
  * @internal
  */

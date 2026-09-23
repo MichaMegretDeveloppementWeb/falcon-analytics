@@ -8,41 +8,25 @@ use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Foundation\Application;
 
 /**
- * Chaque processus d'essai a son propre cache de démarrage.
+ * Each test process has its own bootstrap cache.
  *
- * **L'échec intermittent de la suite, enfin pris sur le fait le 2026-09-14.**
- * Les quatre processus de paratest démarrent la même application d'essai, dont
- * les manifestes `bootstrap/cache/services.php` et `packages.php` sont UN seul
- * fichier chacun. Quand un manifeste est périmé — un `vendor/bin/testbench`
- * l'a écrit avec d'autres fournisseurs, un `composer update` a changé la liste
- * — chaque processus le réécrit au démarrage, par un fichier temporaire et un
- * `rename()`. Sous Windows, renommer par-dessus un fichier qu'un autre
- * processus lit est refusé · un essai sur quatre cents tombait dans son
- * `setUp` avec « Accès refusé (code: 5) », sur rien de ce qu'il éprouvait.
- * Une fois tous les processus d'accord avec le fichier, dix passages verts
- * suivaient — ce qui lui donnait l'air du hasard.
- *
- * Le cadre laisse nommer ces deux chemins par l'environnement, et paratest
- * nomme ses processus dans `TEST_TOKEN` · chacun reçoit donc sa paire.
+ * Paratest workers boot the same bench application, whose provider and package
+ * manifests are one file each, rewritten through a `rename()` that Windows
+ * refuses onto a file another process reads. The framework takes both paths
+ * from the environment, and paratest names each worker in `TEST_TOKEN`.
  */
 final class EachWorkerKeepsItsOwnBootstrapCacheTest extends TestCase
 {
     protected function tearDown(): void
     {
-        // Put the environment back to what the run itself decided · the real
-        // worker's token under paratest, nothing at all otherwise.
+        // Restore the run's own setting: the worker's token under paratest, none otherwise.
         $token = getenv('TEST_TOKEN');
         self::isolateTheBootstrapCache(is_string($token) ? $token : '');
 
         parent::tearDown();
     }
 
-    /**
-     * Asked of a bare application rather than of the booted one · what is
-     * held is that the framework resolves the two paths from what the bench
-     * put in the environment, and a fresh `Application` is where that reading
-     * happens, without a database behind it.
-     */
+    /** A fresh `Application` is where the framework reads both paths from the environment. */
     public function test_a_named_worker_gets_its_own_manifests(): void
     {
         self::isolateTheBootstrapCache('essai');
@@ -62,7 +46,6 @@ final class EachWorkerKeepsItsOwnBootstrapCacheTest extends TestCase
         );
     }
 
-    /** And a sequential run keeps the ordinary paths, so nothing piles up for nothing. */
     public function test_a_sequential_run_keeps_the_default_paths(): void
     {
         self::isolateTheBootstrapCache('');
