@@ -45,7 +45,7 @@
         <x-ui::stat-card :label="__('Clics')" :value="(string) $detail->clicksCount" icon="cursor-arrow-rays" />
         <x-ui::stat-card :label="__('Événements')" :value="(string) $detail->eventsCount" icon="bolt" />
         <x-ui::stat-card :label="__('Conversions')" :value="(string) $detail->conversionsCount" icon="check-circle" />
-        <x-ui::stat-card :label="__('Temps moy./page')" :value="$detail->averagePageDuration" icon="clock" />
+        <x-ui::stat-card :label="__('Durée moy. par page')" :value="$detail->averagePageDuration" icon="clock" />
     </div>
 
     {{-- Body: journey + details. Below lg the aside stacks, so we switch to tabs. --}}
@@ -78,13 +78,13 @@
                     <x-ui::empty-state
                         icon="archive-box"
                         :title="__('Détail effacé')"
-                        :description="__('Le pas à pas de cette session a été effacé, sa journée étant sortie de la durée de conservation. Les chiffres ci-dessus, eux, restent ceux de la visite.')" />
+                        :description="__('Le pas à pas de cette session a été effacé, sa journée étant sortie de la durée de conservation. Les chiffres ci-dessus, eux, restent ceux de la session.')" />
                 @elseif (empty($detail->journey))
-                    <x-ui::empty-state icon="signal" :title="__('Aucun évènement')" :description="__('Cette session n\'a enregistré aucun évènement.')" />
+                    <x-ui::empty-state icon="signal" :title="__('Aucun événement')" :description="__('Cette session n\'a enregistré aucun événement.')" />
                 @else
                     @if ($detail->detailErased)
                         <x-ui::alert type="info" class="an:mb-5">
-                            {{ __('Une partie du pas à pas a été effacée : la journée de cette session est sortie de la durée de conservation, et les pages vues et les clics qui ne portent pas de nom y sont effacés. Les chiffres ci-dessus, eux, restent ceux de la visite entière.') }}
+                            {{ __('Une partie du pas à pas a été effacée : la journée de cette session est sortie de la durée de conservation, et les pages vues et les clics qui ne portent pas de nom y sont effacés. Les chiffres ci-dessus, eux, restent ceux de la session entière.') }}
                         </x-ui::alert>
                     @endif
                     <ol class="an:relative">
@@ -155,10 +155,10 @@
                 </div>
                 <dl class="an:mt-3 an:space-y-2.5">
                     @if ($detail->acquisition->searchQuery !== null)
-                        <x-analytics::detail-row :label="__('Terme de recherche')" :value="$detail->acquisition->searchQuery" icon="magnifying-glass" />
+                        <x-analytics::detail-row :label="__('Recherche')" :value="$detail->acquisition->searchQuery" icon="magnifying-glass" />
                     @endif
                     @if ($detail->acquisition->campaignTerm !== null)
-                        <x-analytics::detail-row :label="__('Terme de campagne (utm_term)')" :value="$detail->acquisition->campaignTerm" icon="tag" />
+                        <x-analytics::detail-row label="utm_term" :value="$detail->acquisition->campaignTerm" icon="tag" />
                     @endif
                     <x-analytics::detail-row :label="__('Page d\'entrée')" icon="document-text">@if ($detail->acquisition->landingRoute || $detail->acquisition->landingUrl)<x-analytics::page-url :route="$detail->acquisition->landingRoute" :url="$detail->acquisition->landingUrl" />@endif</x-analytics::detail-row>
                     <x-analytics::detail-row :label="__('Référent')" :value="$detail->acquisition->referrer" icon="arrow-top-right-on-square" />
@@ -169,7 +169,7 @@
             </x-ui::card>
 
             <x-ui::card>
-                <x-ui::section-header :title="__('Répartition du temps')" :description="__('Par page')" class="an:mb-4" />
+                <x-ui::section-header :title="__('Répartition de la durée')" :description="__('Par page')" class="an:mb-4" />
                 @if ($detail->timeTotal !== null)
                     <div class="an:flex an:items-center an:gap-5">
                         <div wire:key="donut-time-{{ $detail->id }}">
@@ -192,7 +192,7 @@
                         </div>
                     </div>
                 @else
-                    <p class="an:text-[12px] an:text-muted">{{ __('Temps par page indisponible.') }}</p>
+                    <p class="an:text-[12px] an:text-muted">{{ __('Durée par page indisponible.') }}</p>
                 @endif
             </x-ui::card>
 

@@ -6,7 +6,7 @@
 
 <x-analytics::root area="admin" class="an:border-t an:border-default an:pt-8">
     <div class="an:mb-4 an:flex an:items-end an:justify-between an:gap-4">
-        <x-ui::section-header :title="__('Événements & conversions')" />
+        <x-ui::section-header :title="__('Événements et conversions')" />
         <a href="{{ $eventsRoute }}" class="an:shrink-0 an:cursor-pointer an:whitespace-nowrap an:text-[12px] an:font-medium an:text-secondary an:transition-colors an:hover:text-primary">{{ __('Voir tout') }} <span aria-hidden="true">&rarr;</span></a>
     </div>
 
@@ -37,7 +37,7 @@
             </div>
 
             <div class="an:pt-5 an:lg:pl-8 an:lg:pt-0">
-                <x-ui::section-header :title="__('Top événements')" class="an:mb-4" />
+                <x-ui::section-header :title="__('Événements principaux')" class="an:mb-4" />
                 @if ($topEvents !== [])
                     <dl class="an:grid an:max-w-[22rem] an:grid-cols-[minmax(0,1fr)_auto] an:items-center an:gap-x-5 an:gap-y-2.5">
                         @foreach ($topEvents as $item)

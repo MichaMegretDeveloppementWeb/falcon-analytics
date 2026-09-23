@@ -152,13 +152,13 @@ final class AnOldSessionSaysWhatItStillKnowsTest extends TestCase
         $this->open($recent)->assertDontSee('durée de conservation', false);
     }
 
-    /** Here « aucun évènement » is true, and « effacé » would be false. */
+    /** Here « aucun événement » is true, and « effacé » would be false. */
     public function test_a_session_that_recorded_nothing_is_told_apart(): void
     {
         $empty = $this->aSessionOn(CarbonImmutable::now()->subDays(2), withEvents: false);
 
         $this->open($empty)
-            ->assertSee(__('Aucun évènement'))
+            ->assertSee(__('Aucun événement'))
             ->assertDontSee(__('Détail effacé'));
     }
 
@@ -178,7 +178,7 @@ final class AnOldSessionSaysWhatItStillKnowsTest extends TestCase
         $this->archiveThenPrune();
 
         $this->open($empty)
-            ->assertSee(__('Aucun évènement'))
+            ->assertSee(__('Aucun événement'))
             ->assertDontSee(__('Détail effacé'));
     }
 

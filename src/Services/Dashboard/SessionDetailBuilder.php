@@ -166,7 +166,8 @@ final readonly class SessionDetailBuilder
     }
 
     /**
-     * The campaign parameters the landing address carried, by their label.
+     * The campaign parameters the landing address carried, by their own name,
+     * as a campaign's conditions write them.
      *
      * @return array<string, string>
      */
@@ -175,10 +176,10 @@ final readonly class SessionDetailBuilder
         $parameters = [];
 
         foreach ([
-            __('Campagne') => $session->utm_campaign,
-            __('Source UTM') => $session->utm_source,
-            __('Support') => $session->utm_medium,
-            __('Contenu') => $session->utm_content,
+            'utm_campaign' => $session->utm_campaign,
+            'utm_source' => $session->utm_source,
+            'utm_medium' => $session->utm_medium,
+            'utm_content' => $session->utm_content,
         ] as $label => $value) {
             if (self::filled($value) !== null) {
                 $parameters[$label] = (string) $value;

@@ -22,14 +22,15 @@ final class SourceLabel
             'organic' => __('Recherche naturelle'),
             'social' => __('Social naturel'),
             'paid' => __('Payant'),
-            'referral', 'campaign' => __('Référent'),
+            'referral' => __('Référent'),
+            'campaign' => __('Lien de campagne'),
             'email' => __('E-mail'),
             default => Str::headline((string) $source),
         };
     }
 
     /**
-     * The line shown under the label: where the visit came from, in words the
+     * The line shown under the label: how the visit arrived, in words the
      * label does not already carry.
      */
     public static function description(?string $source): string
@@ -37,12 +38,13 @@ final class SourceLabel
         return match (self::key($source)) {
             // An absent source is the direct channel, as `for()` decides: the
             // line under the label cannot answer "unknown" to it.
-            'direct', '' => __('Accès direct'),
-            'organic' => __('Recherche naturelle'),
-            'social' => __('Social naturel'),
-            'paid' => __('Trafic publicitaire'),
-            'referral', 'campaign' => __('Site référent'),
-            'email' => __('Campagne e-mail'),
+            'direct', '' => __('Adresse saisie, favori, ou lien sans origine connue'),
+            'organic' => __('Depuis un moteur de recherche, hors annonce'),
+            'social' => __('Depuis un réseau social, hors publicité'),
+            'paid' => __('Depuis une annonce payante'),
+            'referral' => __('Depuis un lien sur un autre site'),
+            'campaign' => __('Lien de campagne dont le support n\'est pas reconnu (affiche, QR code…)'),
+            'email' => __('Depuis un lien dans un e-mail'),
             default => __('Provenance inconnue'),
         };
     }

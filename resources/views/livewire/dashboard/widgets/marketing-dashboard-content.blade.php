@@ -6,12 +6,12 @@
 
     {{-- KPIs with integrated sparklines --}}
     <div class="an:grid an:grid-cols-2 an:gap-4 an:lg:grid-cols-4">
-        <x-analytics::kpi-card :label="__('Sessions issues de pubs')" :value="NumberLabel::for($sessions)" icon="cursor-arrow-rays" :metric="$sessionsDelta">
+        <x-analytics::kpi-card :label="__('Sessions issues de publicités')" :value="NumberLabel::for($sessions)" icon="cursor-arrow-rays" :metric="$sessionsDelta">
             <div wire:key="spark-sessions-{{ $range->days }}-{{ $subject }}" class="an:mt-3">
                 <x-analytics::sparkline :values="$trendData" />
             </div>
         </x-analytics::kpi-card>
-        <x-analytics::kpi-card :label="__('Visiteurs issus de pubs')" :value="NumberLabel::for($visitors)" icon="users" :metric="$visitorsDelta">
+        <x-analytics::kpi-card :label="__('Visiteurs issus de publicités')" :value="NumberLabel::for($visitors)" icon="users" :metric="$visitorsDelta">
             <div wire:key="spark-visitors-{{ $range->days }}-{{ $subject }}" class="an:mt-3">
                 <x-analytics::sparkline :values="$trendData" />
             </div>
@@ -32,7 +32,7 @@
                 <x-analytics::area-chart :labels="$trendLabels" :data="$trendData" :label="__('Sessions')" :data2="$conversionsTrend" :label2="__('Conversions')" />
             </div>
         @else
-            <div class="an:flex an:h-48 an:items-center an:justify-center an:rounded-lg an:bg-elevated an:text-[12px] an:text-muted">{{ __('Aucune session issue de pubs sur la période.') }}</div>
+            <div class="an:flex an:h-48 an:items-center an:justify-center an:rounded-lg an:bg-elevated an:text-[12px] an:text-muted">{{ __('Aucune session issue de publicités sur la période.') }}</div>
         @endif
     </x-ui::card>
 
@@ -74,8 +74,8 @@
 
         <div class="an:lg:col-span-5">
             <div class="an:mb-4 an:flex an:items-center an:justify-between">
-                <x-ui::section-header :title="__('Top pubs')" />
-                <a href="{{ route('analytics.admin.marketing.ads') }}" class="an:inline-flex an:cursor-pointer an:items-center an:gap-x-1 an:text-[12px] an:font-medium an:text-secondary an:transition-colors an:hover:text-primary">{{ __('Toutes les pubs') }} <x-ui::icon name="arrow-right" class="an:h-3.5 an:w-3.5" /></a>
+                <x-ui::section-header :title="__('Publicités principales')" />
+                <a href="{{ route('analytics.admin.marketing.ads') }}" class="an:inline-flex an:cursor-pointer an:items-center an:gap-x-1 an:text-[12px] an:font-medium an:text-secondary an:transition-colors an:hover:text-primary">{{ __('Toutes les publicités') }} <x-ui::icon name="arrow-right" class="an:h-3.5 an:w-3.5" /></a>
             </div>
             <x-ui::card>
                 @forelse ($adRows as $row)
@@ -84,13 +84,13 @@
                             <span class="an:w-5 an:shrink-0 an:text-[11px] an:font-medium an:tabular-nums an:text-muted">{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
                             <span class="an:min-w-0">
                                 <span class="an:block an:truncate an:text-[13px] an:font-medium an:text-primary">{{ $row['name'] }}</span>
-                                <span class="an:block an:truncate an:text-[11px] an:text-muted">{{ NumberLabel::for($row['sessions']) }} {{ __('sessions') }} · {{ $row['campaign'] }}</span>
+                                <span class="an:block an:truncate an:text-[11px] an:text-muted">{{ NumberLabel::for($row['sessions']) }} {{ $row['sessions'] < 2 ? __('session') : __('sessions') }} · {{ $row['campaign'] }}</span>
                             </span>
                         </span>
                         <span class="an:shrink-0 an:text-right an:text-[13px] an:tabular-nums"><span class="an:font-semibold an:text-primary">{{ NumberLabel::for($row['conversions']) }}</span> <span class="an:text-[11px] an:text-muted">{{ __('conv.') }}</span></span>
                     </a>
                 @empty
-                    <div class="an:px-2 an:py-6 an:text-center an:text-[12px] an:text-muted">{{ __('Aucune pub avec du trafic sur la période.') }}</div>
+                    <div class="an:px-2 an:py-6 an:text-center an:text-[12px] an:text-muted">{{ __('Aucune publicité avec du trafic sur la période.') }}</div>
                 @endforelse
             </x-ui::card>
         </div>

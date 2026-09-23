@@ -248,7 +248,7 @@ final class RealtimeTest extends TestCase
             ->assertSuccessful()
             ->assertSeeText(__('Temps réel'))
             ->assertSeeText(__('Visiteurs en ligne'))
-            ->assertSeeText(__('Visiteurs récents'))
+            ->assertSeeText(__('Dernières sessions'))
             ->assertSeeText('Marie Dupont')
             ->assertSee('wire:poll.10s.visible', false);
     }

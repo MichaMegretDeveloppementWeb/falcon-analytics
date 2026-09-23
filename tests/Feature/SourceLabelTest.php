@@ -16,7 +16,7 @@ final class SourceLabelTest extends TestCase
         $this->assertSame('Social naturel', SourceLabel::for('social'));
         $this->assertSame('Payant', SourceLabel::for('paid'));
         $this->assertSame('Référent', SourceLabel::for('referral'));
-        $this->assertSame('Référent', SourceLabel::for('campaign'));
+        $this->assertSame('Lien de campagne', SourceLabel::for('campaign'));
         $this->assertSame('E-mail', SourceLabel::for('email'));
     }
 
@@ -27,14 +27,27 @@ final class SourceLabelTest extends TestCase
         $this->assertSame('Affiliate', SourceLabel::for('affiliate'));
     }
 
-    public function test_it_describes_each_channel_without_repeating_what_the_label_says(): void
+    public function test_it_describes_how_each_visit_arrived(): void
     {
-        $this->assertSame('Accès direct', SourceLabel::description('direct'));
-        $this->assertSame('Trafic publicitaire', SourceLabel::description('PAID'));
-        $this->assertSame('Site référent', SourceLabel::description('referral'));
-        $this->assertSame('Site référent', SourceLabel::description('campaign'));
-        $this->assertSame('Campagne e-mail', SourceLabel::description('email'));
+        $this->assertSame('Adresse saisie, favori, ou lien sans origine connue', SourceLabel::description('direct'));
+        $this->assertSame('Depuis un moteur de recherche, hors annonce', SourceLabel::description('organic'));
+        $this->assertSame('Depuis un réseau social, hors publicité', SourceLabel::description('social'));
+        $this->assertSame('Depuis une annonce payante', SourceLabel::description('PAID'));
+        $this->assertSame('Depuis un lien sur un autre site', SourceLabel::description('referral'));
+        $this->assertSame("Lien de campagne dont le support n'est pas reconnu (affiche, QR code…)", SourceLabel::description('campaign'));
+        $this->assertSame('Depuis un lien dans un e-mail', SourceLabel::description('email'));
         $this->assertSame('Provenance inconnue', SourceLabel::description('affiliate'));
+    }
+
+    public function test_no_line_repeats_the_label_above_it(): void
+    {
+        foreach (['direct', 'organic', 'social', 'paid', 'referral', 'campaign', 'email', 'affiliate'] as $source) {
+            $this->assertNotSame(
+                mb_strtolower(SourceLabel::for($source)),
+                mb_strtolower(SourceLabel::description($source)),
+                "The line under « {$source} » repeats its label.",
+            );
+        }
     }
 
     public function test_an_absent_channel_is_described_as_the_direct_one_it_is_labelled(): void

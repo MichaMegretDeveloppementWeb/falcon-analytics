@@ -1,22 +1,22 @@
 <x-analytics::root area="admin" class="an:space-y-6">
 
     <x-ui::page-header
-        :title="__('Pubs')"
-        :description="$total <= 1 ? __(':count pub', ['count' => $total]) : __(':count pubs', ['count' => \Falcon\Analytics\Support\NumberLabel::for($total)])" />
+        :title="__('Publicités')"
+        :description="$total <= 1 ? __(':count publicité', ['count' => $total]) : __(':count publicités', ['count' => \Falcon\Analytics\Support\NumberLabel::for($total)])" />
 
     <div class="an:w-full an:sm:max-w-xs">
-        <x-ui::search-input wire:model.live.debounce.300ms="search" :placeholder="__('Rechercher une pub ou campagne...')" class="an:w-full" />
+        <x-ui::search-input wire:model.live.debounce.300ms="search" :placeholder="__('Rechercher une publicité ou une campagne…')" class="an:w-full" />
     </div>
 
     @if ($ads->isEmpty())
         <x-ui::empty-state
             icon="rectangle-stack"
-            :title="__('Aucune pub')"
-            :description="__('Ajoutez des pubs depuis le détail d\'une campagne.')" />
+            :title="__('Aucune publicité')"
+            :description="__('Ajoutez des publicités depuis le détail d\'une campagne.')" />
     @else
         <x-ui::table>
             <x-ui::table.head>
-                <x-ui::table.header-cell :first="true">{{ __('Pub') }}</x-ui::table.header-cell>
+                <x-ui::table.header-cell :first="true">{{ __('Publicité') }}</x-ui::table.header-cell>
                 <x-ui::table.header-cell>{{ __('Campagne') }}</x-ui::table.header-cell>
                 <x-ui::table.header-cell>{{ __('Conditions') }}</x-ui::table.header-cell>
                 <x-ui::table.header-cell :last="true">{{ __('Objectifs') }}</x-ui::table.header-cell>

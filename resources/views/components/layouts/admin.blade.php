@@ -9,11 +9,11 @@
 --}}
 @props(['title' => null])
 
-<x-ui::layouts.admin :title="$title ?? __('Analytics')">
+<x-ui::layouts.admin :title="$title ?? __('Audience')">
 
     <x-slot:sidebar>
-        <x-ui::sidebar :brand="__('Analytics')" brand-icon="chart-bar">
-            <x-ui::sidebar.group :label="__('Analytics')">
+        <x-ui::sidebar :brand="__('Audience')" brand-icon="chart-bar">
+            <x-ui::sidebar.group :label="__('Audience')">
                 <x-ui::sidebar.link
                     :href="route('analytics.admin.overview')"
                     icon="chart-pie"
@@ -87,7 +87,7 @@
                     :href="route('analytics.admin.marketing.ads')"
                     icon="cursor-arrow-rays"
                     :active="request()->routeIs('analytics.admin.marketing.ads*')">
-                    {{ __('Pubs') }}
+                    {{ __('Publicités') }}
                 </x-ui::sidebar.link>
             </x-ui::sidebar.group>
         </x-ui::sidebar>

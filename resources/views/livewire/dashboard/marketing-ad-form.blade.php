@@ -1,13 +1,13 @@
 @php use Illuminate\Support\Str; @endphp
 
 <x-analytics::root area="admin">
-    <x-ui::modal name="an-ad-form" :title="$adId ? __('Modifier la pub') : __('Nouvelle pub')">
+    <x-ui::modal name="an-ad-form" :title="$adId ? __('Modifier la publicité') : __('Nouvelle publicité')">
         <form id="an-ad-form-fields" x-on:submit.prevent="$anCloseWhenDone($wire.saveAd(), 'an-ad-form')" class="an:space-y-4">
             <x-ui::form-group :label="__('Nom')" for="adName">
                 <x-ui::input wire:model="adName" id="adName" placeholder="{{ __('Ex. Cabriolet') }}" :error="$errors->has('adName')" />
             </x-ui::form-group>
 
-            <x-ui::form-group :label="__('Conditions d\'URL')" :hint="__('La pub correspond si TOUS ces paramètres sont présents dans l\'URL.')" :error="$errors->first('adConditions.*') ?: $errors->first('adConditions')">
+            <x-ui::form-group :label="__('Conditions d\'URL')" :hint="__('La publicité correspond si tous ces paramètres sont présents dans l\'URL d\'arrivée.')" :error="$errors->first('adConditions.*') ?: $errors->first('adConditions')">
                 <div class="an:space-y-2">
                     @foreach ($adConditions as $index => $condition)
                         <div wire:key="ac-{{ $index }}" class="an:flex an:items-center an:gap-2">
@@ -23,7 +23,7 @@
 
             <div class="an:border-t an:border-subtle an:pt-4">
                 <p class="an:text-[13px] an:font-medium an:text-primary">{{ __('Objectifs de conversion') }}</p>
-                <p class="an:mb-3 an:mt-0.5 an:text-[12px] an:text-secondary">{{ __('Cette pub n\'est créditée que des conversions ci-dessous.') }}</p>
+                <p class="an:mb-3 an:mt-0.5 an:text-[12px] an:text-secondary">{{ __('Cette publicité n\'est créditée que des conversions ci-dessous.') }}</p>
 
                 @if ($errors->first('objectives.*'))
                     <p class="an:mb-2 an:text-[12px] an:text-red-500 an:dark:text-red-400">{{ $errors->first('objectives.*') }}</p>
@@ -47,7 +47,7 @@
                         <x-ui::button type="button" variant="secondary" size="compact" x-ref="trigger" x-bind:aria-expanded="open" x-on:click="toggle()"><x-ui::icon name="funnel" class="an:h-3.5 an:w-3.5" /> {{ __('Tunnel') }}</x-ui::button>
                         <div x-show="open" x-cloak x-transition.opacity class="an:absolute an:bottom-full an:left-0 an:z-30 an:mb-1 an:w-72 an:overflow-hidden an:rounded-lg an:border an:border-default an:bg-surface an:shadow-xl">
                             <div class="an:border-b an:border-subtle an:p-2">
-                                <input x-model="search" x-on:click.stop x-on:keydown.enter.prevent type="text" placeholder="{{ __('Rechercher un tunnel...') }}" class="an:w-full an:rounded-lg an:border an:border-default an:bg-elevated an:px-2.5 an:py-1.5 an:text-[13px] an:text-primary an:placeholder:text-muted an:focus:outline-none an:focus:ring-2 an:focus:ring-gray-900/10 an:dark:focus:ring-white/10">
+                                <input x-model="search" x-on:click.stop x-on:keydown.enter.prevent type="text" placeholder="{{ __('Rechercher un tunnel…') }}" class="an:w-full an:rounded-lg an:border an:border-default an:bg-elevated an:px-2.5 an:py-1.5 an:text-[13px] an:text-primary an:placeholder:text-muted an:focus:outline-none an:focus:ring-2 an:focus:ring-gray-900/10 an:dark:focus:ring-white/10">
                             </div>
                             <div class="an:max-h-52 an:overflow-y-auto an:p-1">
                                 @forelse ($funnelOptions as $option)
@@ -66,7 +66,7 @@
                         <x-ui::button type="button" variant="secondary" size="compact" x-ref="trigger" x-bind:aria-expanded="open" x-on:click="toggle()"><x-ui::icon name="bolt" class="an:h-3.5 an:w-3.5" /> {{ __('Événement') }}</x-ui::button>
                         <div x-show="open" x-cloak x-transition.opacity class="an:absolute an:bottom-full an:left-0 an:z-30 an:mb-1 an:w-72 an:overflow-hidden an:rounded-lg an:border an:border-default an:bg-surface an:shadow-xl">
                             <div class="an:border-b an:border-subtle an:p-2">
-                                <input x-model="search" x-on:click.stop x-on:keydown.enter.prevent type="text" placeholder="{{ __('Rechercher un événement...') }}" class="an:w-full an:rounded-lg an:border an:border-default an:bg-elevated an:px-2.5 an:py-1.5 an:text-[13px] an:text-primary an:placeholder:text-muted an:focus:outline-none an:focus:ring-2 an:focus:ring-gray-900/10 an:dark:focus:ring-white/10">
+                                <input x-model="search" x-on:click.stop x-on:keydown.enter.prevent type="text" placeholder="{{ __('Rechercher un événement…') }}" class="an:w-full an:rounded-lg an:border an:border-default an:bg-elevated an:px-2.5 an:py-1.5 an:text-[13px] an:text-primary an:placeholder:text-muted an:focus:outline-none an:focus:ring-2 an:focus:ring-gray-900/10 an:dark:focus:ring-white/10">
                             </div>
                             <div class="an:max-h-52 an:overflow-y-auto an:p-1">
                                 @forelse ($eventOptions as $option)

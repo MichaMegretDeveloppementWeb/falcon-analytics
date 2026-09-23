@@ -22,7 +22,7 @@
 
     <x-ui::page-header
         :title="__('Temps réel')"
-        :description="__('Activité des :count dernières minutes, actualisée toutes les :seconds secondes', ['count' => $windowMinutes, 'seconds' => $pollSeconds])" />
+        :description="trans_choice('{1} Activité de la dernière minute|[2,*] Activité des :count dernières minutes', $windowMinutes).', '.trans_choice('{1} actualisée chaque seconde|[2,*] actualisée toutes les :count secondes', $pollSeconds)" />
 
     <div class="an:grid an:grid-cols-1 an:gap-6 an:lg:grid-cols-3">
 
@@ -38,7 +38,7 @@
                             class="an:flex-1 an:cursor-pointer an:border-b-[3px] an:pb-3 an:pr-4 an:pt-3 an:text-left an:transition-colors an:sm:pr-6"
                             {{-- `window` is a tab name, not a class; the other two are. --}}
                             :class="tab === 'window' ? 'an:border-accent' : 'an:border-transparent'">
-                        <span class="an:block an:text-[14px] an:font-medium {{ $ink }}">{{ __('Visiteurs (:count dernières minutes)', ['count' => $windowMinutes]) }}</span>
+                        <span class="an:block an:text-[14px] an:font-medium {{ $ink }}">{{ trans_choice('{1} Visiteurs (dernière minute)|[2,*] Visiteurs (:count dernières minutes)', $windowMinutes) }}</span>
                         <span class="an:mt-0.5 an:block an:text-[21px] an:font-bold an:leading-6 {{ $ink }}">{{ NumberLabel::for($window['visitors']) }}</span>
                     </button>
                     <button type="button"
@@ -97,7 +97,7 @@
                 {{-- Traffic source and device --}}
                 <div class="an:grid an:grid-cols-1 an:md:grid-cols-2 an:md:divide-x an:md:divide-[color:var(--color-gray-100)] an:dark:md:divide-gray-800">
                     <div class="an:p-5">
-                        <p class="an:mb-3 an:text-[14px] an:font-medium {{ $inkMuted }}">{{ __('Source de trafic') }}</p>
+                        <p class="an:mb-3 an:text-[14px] an:font-medium {{ $inkMuted }}">{{ __('Sources de trafic') }}</p>
                         @if ($sources['total'] > 0)
                             <div class="an:flex an:items-center an:gap-5">
                                 <x-analytics::live-donut
@@ -191,7 +191,7 @@
             {{-- Recent visitors (last 24 hours) --}}
             <div class="an:rounded-xl an:border an:border-default an:bg-surface">
                 <div class="an:px-5 an:py-4">
-                    <p class="an:text-[16px] an:font-bold {{ $ink }}">{{ __('Visiteurs récents') }}</p>
+                    <p class="an:text-[16px] an:font-bold {{ $ink }}">{{ __('Dernières sessions') }}</p>
                     <p class="an:mt-0.5 an:text-[12px] {{ $inkMuted }}">{{ __('24 dernières heures') }}</p>
                 </div>
                 <div class="an:border-t an:border-subtle"></div>
@@ -229,12 +229,12 @@
             <div class="an:rounded-xl an:border an:border-default an:bg-surface">
                 <div class="an:px-5 an:py-4">
                     <p class="an:text-[16px] an:font-bold {{ $ink }}">{{ __('Activité en direct') }}</p>
-                    <p class="an:mt-0.5 an:text-[12px] {{ $inkMuted }}">{{ __(':count dernières minutes', ['count' => $windowMinutes]) }}</p>
+                    <p class="an:mt-0.5 an:text-[12px] {{ $inkMuted }}">{{ trans_choice('{1} Dernière minute|[2,*] :count dernières minutes', $windowMinutes) }}</p>
                 </div>
                 <div class="an:border-t an:border-subtle"></div>
 
                 @if ($feed === [])
-                    <p class="an:px-5 an:py-10 an:text-center an:text-[13px] {{ $inkSoft }}">{{ __('Aucune activité sur les :count dernières minutes.', ['count' => $windowMinutes]) }}</p>
+                    <p class="an:px-5 an:py-10 an:text-center an:text-[13px] {{ $inkSoft }}">{{ trans_choice('{1} Aucune activité sur la dernière minute.|[2,*] Aucune activité sur les :count dernières minutes.', $windowMinutes) }}</p>
                 @else
                     <ul class="an:max-h-[24rem] an:divide-y an:divide-[color:var(--color-gray-100)] an:overflow-y-auto an:dark:divide-gray-800">
                         @foreach ($feed as $entry)

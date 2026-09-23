@@ -12,7 +12,7 @@ final readonly class EventsController
     public function __invoke(): View
     {
         return view('analytics::admin.dashboard.events', [
-            'analyticsTitle' => __('Événements').' · '.__('Analytics'),
+            'analyticsTitle' => __('Événements').' · '.__('Audience'),
         ]);
     }
 }

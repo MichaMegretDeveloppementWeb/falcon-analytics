@@ -29,7 +29,7 @@
                         </div>
                     </div>
                 @empty
-                    <x-ui::empty-state icon="document" :title="__('Aucune page')" :description="__('Aucune vue sur la période.')" />
+                    <x-ui::empty-state icon="document" :title="__('Aucune page')" :description="__('Aucune page vue sur la période.')" />
                 @endforelse
             </div>
         </div>

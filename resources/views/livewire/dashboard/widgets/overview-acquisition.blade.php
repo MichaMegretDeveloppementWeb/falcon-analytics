@@ -26,7 +26,7 @@
                             :values="array_column($topSources, 'total')"
                             :colors="array_slice($sourcePalette, 0, count($topSources))"
                             :total="NumberLabel::for($sourcesTotal)"
-                            :caption="__('sessions')" />
+                            :caption="$sourcesTotal > 1 ? __('sessions') : __('session')" />
                     </div>
                     <dl class="an:grid an:min-w-0 an:max-w-[19rem] an:flex-1 an:grid-cols-[minmax(0,1fr)_auto] an:items-center an:gap-x-5 an:gap-y-2.5">
                         @foreach ($topSources as $item)
@@ -55,7 +55,7 @@
                     nothing to catch the eye.
                 --}}
                 <p class="an:text-2xl an:font-semibold an:tracking-tight an:text-primary">{{ NumberLabel::for($localitiesTotal) }}</p>
-                <p class="an:mb-4 an:text-[11px] an:uppercase an:tracking-wider an:text-muted">{{ __('sessions localisées') }}</p>
+                <p class="an:mb-4 an:text-[11px] an:uppercase an:tracking-wider an:text-muted">{{ $localitiesTotal > 1 ? __('sessions localisées') : __('session localisée') }}</p>
 
                 <dl class="an:grid an:max-w-[22rem] an:grid-cols-[minmax(0,1fr)_auto] an:items-center an:gap-x-5 an:gap-y-2.5">
                     @foreach ($topLocalities as $item)

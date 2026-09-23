@@ -4,7 +4,7 @@
             <x-ui::form-group :label="__('Nom')" for="campaignName">
                 <x-ui::input wire:model="campaignName" id="campaignName" placeholder="{{ __('Ex. Été 2026') }}" :error="$errors->has('campaignName')" />
             </x-ui::form-group>
-            <x-ui::form-group :label="__('Plateforme')" for="campaignPlatform" :hint='__("Optionnel\u{00A0}: Meta, Google...")'>
+            <x-ui::form-group :label="__('Plateforme')" for="campaignPlatform" :hint='__("Optionnel\u{00A0}: Meta, Google…")'>
                 <x-ui::input wire:model="campaignPlatform" id="campaignPlatform" :error="$errors->has('campaignPlatform')" />
             </x-ui::form-group>
             <x-ui::form-group :label="__('Conditions d\'URL')" :hint="__('La campagne correspond si TOUS ces paramètres sont présents dans l\'URL.')" :error="$errors->first('campaignConditions.*') ?: $errors->first('campaignConditions')">
