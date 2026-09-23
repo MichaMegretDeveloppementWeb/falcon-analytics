@@ -308,8 +308,8 @@ final readonly class OverviewReadRepository
     }
 
     /**
-     * Most clicked elements (click events), each as a label + the page it sits
-     * on + its count.
+     * Most clicked elements, each keyed by its event (its text for a plain
+     * click) + the page it sits on + its count.
      *
      * @return list<array{label: string, route: ?string, total: int}>
      */
@@ -346,8 +346,8 @@ final readonly class OverviewReadRepository
      */
     private function detailedClickCounts(Period $period, ?string $subjectType): Collection
     {
-        // Prefer the visible button text (human-readable) over the technical event name.
-        $label = "COALESCE(NULLIF(target_text, ''), NULLIF(name, ''))";
+        // A named click counts by its event, a plain one by its text · the daily summary keys it the same way.
+        $label = "COALESCE(NULLIF(name, ''), NULLIF(target_text, ''))";
 
         // Resolve the label in a subquery so the aggregate groups by a plain
         // column: MySQL/MariaDB in ONLY_FULL_GROUP_BY reject grouping by this
