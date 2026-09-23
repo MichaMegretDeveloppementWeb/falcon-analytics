@@ -263,6 +263,27 @@ L'objet arrive aussi à une règle écrite plus haut dans l'arbre · une règle 
 `CampaignsEdit` reçoit la campagne quand `CampaignsDelete`, qui la suit, lui
 pose la question.
 
+**Plus haut encore, un objet peut donc être de plusieurs sortes** · une règle sur
+`analytics.marketing` reçoit une campagne ou une publicité, une règle sur la
+racine peut aussi recevoir un visiteur. **Un type écrit dans la signature
+refuserait les autres**, et l'écran répondrait par une erreur. Déclarez alors
+l'objet sans type, et regardez ce qu'il est ·
+
+```php
+use Falcon\Analytics\Models\Ad;
+
+Gate::define(Ability::Marketing, function (Admin $admin, mixed $item = null): bool {
+    if ($item instanceof Ad) {
+        return $admin->role === Role::Manager;
+    }
+
+    return true;
+});
+```
+
+Ici, une publicité existante ne se modifie et ne se supprime que par le gérant ·
+les campagnes, et la création d'une publicité, restent à tous.
+
 ### Vos propres écrans
 
 Si l'un de vos écrans lit ou modifie ces données par les modèles du paquet,
@@ -315,6 +336,9 @@ de l'arbre, par `admin.middleware_for` ·
   expirée, le clic suivant mène à la page de confirmation, puis revient.
 - **Les clés sont des écrans ou des groupes.** Un geste n'a pas d'adresse à lui ·
   pour réserver un geste, écrivez une capacité.
+- **Les étapes sont posées sur les routes**, et `php artisan route:cache` les
+  fige avec elles · refaites-le après avoir changé cette clé, comme après avoir
+  changé `admin.middleware`.
 
 **Un middleware de trace** verrait chaque clic, puisque chaque clic le rejoue.
 Pour ne compter que l'ouverture de la page, il laisse passer les demandes qui
