@@ -12,7 +12,6 @@ use Falcon\Analytics\Tests\Fixtures\Models\TestAdmin;
 use Falcon\Analytics\Tests\Fixtures\Models\TestClient;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Str;
 
 final class SessionSubjectAttributorTest extends TestCase
 {
@@ -36,11 +35,7 @@ final class SessionSubjectAttributorTest extends TestCase
      */
     private function visitor(array $attributes = []): Visitor
     {
-        return Visitor::create(array_merge([
-            'uuid' => (string) Str::uuid(),
-            'first_seen_at' => now(),
-            'last_seen_at' => now(),
-        ], $attributes));
+        return Visitor::factory()->create($attributes);
     }
 
     /**
@@ -54,13 +49,7 @@ final class SessionSubjectAttributorTest extends TestCase
      */
     private function sessionRow(Visitor $visitor, array $attributes = []): Session
     {
-        return Session::create(array_merge([
-            'visitor_id' => $visitor->id,
-            'started_at' => now(),
-            'last_activity_at' => now(),
-            'is_bot' => false,
-            'pageview_count' => 1,
-        ], $attributes));
+        return Session::factory()->for($visitor)->create(['pageview_count' => 1, ...$attributes]);
     }
 
     // ── The service ──────────────────────────────────────────────────────

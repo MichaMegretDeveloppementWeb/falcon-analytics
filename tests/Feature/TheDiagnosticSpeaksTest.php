@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Tests\Feature;
 
-use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
-use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -471,19 +469,7 @@ final class TheDiagnosticSpeaksTest extends TestCase
      */
     public function test_it_points_at_a_backlog_of_summaries_without_blocking_on_it(): void
     {
-        $visitor = Visitor::create(['uuid' => 'u-'.uniqid(), 'first_seen_at' => now(), 'last_seen_at' => now()]);
-        $session = Session::create([
-            'visitor_id' => $visitor->id,
-            'started_at' => now()->subDays(10),
-            'last_activity_at' => now()->subDays(10),
-            'is_bot' => false,
-        ]);
-        Event::create([
-            'session_id' => $session->id,
-            'visitor_id' => $visitor->id,
-            'type' => EventType::Pageview,
-            'occurred_at' => now()->subDays(10),
-        ]);
+        Event::factory()->for(Session::factory()->at(now()->subDays(10)))->create(['occurred_at' => now()->subDays(10)]);
 
         $this->artisan('analytics:check')
             ->expectsOutputToContain('résumés')

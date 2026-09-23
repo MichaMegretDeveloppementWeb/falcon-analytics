@@ -10,7 +10,6 @@ use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Repositories\SessionWriteRepository;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Str;
 
 final class SessionWriteRepositoryTest extends TestCase
 {
@@ -18,11 +17,7 @@ final class SessionWriteRepositoryTest extends TestCase
 
     private function visitorRow(): Visitor
     {
-        return Visitor::create([
-            'uuid' => (string) Str::uuid(),
-            'first_seen_at' => now(),
-            'last_seen_at' => now(),
-        ]);
+        return Visitor::factory()->create();
     }
 
     public function test_it_starts_a_session_mapping_the_resolved_context(): void

@@ -38,11 +38,10 @@ final class VisitorIdentityMergeTest extends TestCase
      */
     private function visitor(string $uuid, ?array $subject = null, string $firstSeen = '2026-07-01 10:00:00'): Visitor
     {
-        return Visitor::create([
+        return Visitor::factory()->create([
             'uuid' => $uuid,
             'first_seen_at' => CarbonImmutable::parse($firstSeen),
             'last_seen_at' => CarbonImmutable::parse($firstSeen),
-            'session_count' => 0,
             'subject_type' => $subject['type'] ?? null,
             'subject_id' => $subject['id'] ?? null,
         ]);
@@ -53,12 +52,7 @@ final class VisitorIdentityMergeTest extends TestCase
      */
     private function sessionRow(Visitor $visitor, string $startedAt, ?array $subject = null, bool $withEvent = false): Session
     {
-        $session = Session::create([
-            'visitor_id' => $visitor->id,
-            'browser_key' => $visitor->uuid,
-            'started_at' => CarbonImmutable::parse($startedAt),
-            'last_activity_at' => CarbonImmutable::parse($startedAt),
-            'is_bot' => false,
+        $session = Session::factory()->for($visitor)->at(CarbonImmutable::parse($startedAt))->create([
             'pageview_count' => 1,
             'subject_type' => $subject['type'] ?? null,
             'subject_id' => $subject['id'] ?? null,
@@ -67,12 +61,7 @@ final class VisitorIdentityMergeTest extends TestCase
         $visitor->increment('session_count');
 
         if ($withEvent) {
-            Event::create([
-                'session_id' => $session->id,
-                'visitor_id' => $visitor->id,
-                'occurred_at' => CarbonImmutable::parse($startedAt),
-                'type' => EventType::Pageview,
-            ]);
+            Event::factory()->for($session)->create(['occurred_at' => CarbonImmutable::parse($startedAt)]);
         }
 
         return $session;

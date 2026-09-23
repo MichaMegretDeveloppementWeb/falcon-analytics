@@ -6,11 +6,9 @@ namespace Falcon\Analytics\Tests\Feature;
 
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\DTOs\Dashboard\Period;
-use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Models\DailyCount;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
-use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Repositories\Dashboard\OverviewReadRepository;
 use Falcon\Analytics\Repositories\Dashboard\RealtimeReadRepository;
 use Falcon\Analytics\Services\DailyCountArchiver;
@@ -18,7 +16,6 @@ use Falcon\Analytics\Services\Dashboard\MarketingReportBuilder;
 use Falcon\Analytics\Support\StoredUrl;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Str;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
@@ -61,29 +58,12 @@ final class ACampaignLinkDoesNotSplitAPageTest extends TestCase
 
     private function newSession(): Session
     {
-        $visitor = Visitor::create([
-            'uuid' => (string) Str::uuid(),
-            'first_seen_at' => now(),
-            'last_seen_at' => now(),
-        ]);
-
-        return Session::create([
-            'visitor_id' => $visitor->id,
-            'started_at' => now(),
-            'last_activity_at' => now(),
-            'is_bot' => false,
-        ]);
+        return Session::factory()->create();
     }
 
     private function pageview(Session $session, string $url, CarbonImmutable $at): void
     {
-        Event::create([
-            'session_id' => $session->id,
-            'visitor_id' => $session->visitor_id,
-            'type' => EventType::Pageview,
-            'url' => $url,
-            'occurred_at' => $at,
-        ]);
+        Event::factory()->for($session)->create(['url' => $url, 'occurred_at' => $at]);
     }
 
     /**

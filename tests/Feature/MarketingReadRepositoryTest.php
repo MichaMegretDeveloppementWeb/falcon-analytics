@@ -12,31 +12,16 @@ use Falcon\Analytics\Repositories\Dashboard\MarketingReadRepository;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 use UnexpectedValueException;
 
 final class MarketingReadRepositoryTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** Tagged sessions, written in bulk to skip the model's casts. */
+    /** Sessions of one visitor, all arrived through the campaign link. */
     private function rawTaggedSessions(int $count): void
     {
-        $visitor = Visitor::create(['uuid' => (string) Str::uuid(), 'first_seen_at' => now(), 'last_seen_at' => now()]);
-
-        $rows = [];
-
-        for ($i = 0; $i < $count; $i++) {
-            $rows[] = [
-                'visitor_id' => $visitor->id,
-                'started_at' => now(),
-                'last_activity_at' => now(),
-                'is_bot' => false,
-                'mkt_params' => '{"src":"meta_ete"}',
-            ];
-        }
-
-        Session::query()->insert($rows);
+        Session::factory()->count($count)->for(Visitor::factory())->create(['mkt_params' => ['src' => 'meta_ete']]);
     }
 
     public function test_it_caps_the_tagged_session_read_at_its_ceiling_and_says_it_was_truncated(): void

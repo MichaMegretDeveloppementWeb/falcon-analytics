@@ -11,7 +11,6 @@ use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Str;
 use Livewire\Livewire;
 
 /**
@@ -69,12 +68,7 @@ final class TheErasureKeepsWhatItCannotDeleteTest extends TestCase
 
     public function test_it_shows_an_inline_error_and_keeps_the_visitor_when_the_erasure_fails(): void
     {
-        $visitor = Visitor::create([
-            'uuid' => (string) Str::uuid(),
-            'first_seen_at' => now(),
-            'last_seen_at' => now(),
-            'session_count' => 0,
-        ]);
+        $visitor = Visitor::factory()->create();
 
         $this->actingAs(TestAdmin::create(['email' => 'admin@example.test']), 'admin');
 

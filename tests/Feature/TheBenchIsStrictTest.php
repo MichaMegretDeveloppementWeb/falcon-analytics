@@ -10,7 +10,6 @@ use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Database\Eloquent\MissingAttributeException;
 use Illuminate\Database\LazyLoadingViolationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Str;
 
 /**
  * The bench runs Eloquent strict, as a host does outside production · a list
@@ -45,11 +44,9 @@ final class TheBenchIsStrictTest extends TestCase
     private function twoSessions(): void
     {
         foreach ([1, 2] as $rank) {
-            $visitor = Visitor::create(['uuid' => (string) Str::uuid(), 'first_seen_at' => now(), 'last_seen_at' => now(), 'session_count' => 1]);
-            Session::create([
-                'visitor_id' => $visitor->id, 'browser_key' => $visitor->uuid, 'started_at' => now(), 'last_activity_at' => now(),
-                'is_bot' => false, 'pageview_count' => $rank, 'source' => 'direct',
-            ]);
+            Session::factory()
+                ->for(Visitor::factory()->state(['session_count' => 1]))
+                ->create(['pageview_count' => $rank, 'source' => 'direct']);
         }
     }
 }

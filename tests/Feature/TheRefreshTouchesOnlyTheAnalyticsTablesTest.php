@@ -5,13 +5,11 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Tests\Feature;
 
 use Falcon\Analytics\Models\Session;
-use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Str;
 
 /**
  * `analytics:refresh` empties the package and leaves the host alone.
@@ -115,18 +113,6 @@ final class TheRefreshTouchesOnlyTheAnalyticsTablesTest extends TestCase
 
     private function aSessionExists(): void
     {
-        $visitor = Visitor::create([
-            'uuid' => (string) Str::uuid(),
-            'first_seen_at' => now(),
-            'last_seen_at' => now(),
-        ]);
-
-        Session::create([
-            'visitor_id' => $visitor->id,
-            'started_at' => now(),
-            'last_activity_at' => now(),
-            'is_bot' => false,
-            'pageview_count' => 1,
-        ]);
+        Session::factory()->create(['pageview_count' => 1]);
     }
 }

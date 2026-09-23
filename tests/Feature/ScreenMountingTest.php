@@ -124,11 +124,7 @@ final class ScreenMountingTest extends TestCase
      */
     public function test_it_lets_the_controller_name_the_tab_after_the_record_it_shows(): void
     {
-        $campaign = Campaign::create([
-            'name' => 'Été 2026',
-            'platform' => 'Meta',
-            'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']],
-        ]);
+        $campaign = Campaign::factory()->create(['name' => 'Été 2026']);
 
         $this->actingAs($this->admin(), 'admin')
             ->get(route('analytics.admin.marketing.campaigns.show', $campaign))

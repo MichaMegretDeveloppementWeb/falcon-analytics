@@ -32,18 +32,6 @@ final class SearchQueriesWidgetTest extends TestCase
         Livewire::withoutLazyLoading();
     }
 
-    /**
-     * @param  array<string, mixed>  $attributes
-     */
-    private function connection(array $attributes = []): SearchConsoleConnection
-    {
-        return SearchConsoleConnection::query()->create(array_merge([
-            'refresh_token' => 'refresh-token-plain',
-            'status' => SearchConsoleConnection::STATUS_CONNECTED,
-            'property' => 'sc-domain:example.com',
-        ], $attributes));
-    }
-
     private function queryRow(string $date, string $query, int $clicks, int $impressions, float $position): void
     {
         SearchQuery::query()->create(compact('date', 'query', 'clicks', 'impressions', 'position'));
@@ -106,7 +94,7 @@ final class SearchQueriesWidgetTest extends TestCase
 
     public function test_it_offers_a_reconnect_when_the_connection_is_in_error(): void
     {
-        $this->connection(['status' => SearchConsoleConnection::STATUS_ERROR]);
+        SearchConsoleConnection::factory()->create(['status' => SearchConsoleConnection::STATUS_ERROR]);
         $this->actingAs($this->admin, 'admin');
 
         Livewire::test(OverviewSearchQueries::class)
@@ -115,7 +103,7 @@ final class SearchQueriesWidgetTest extends TestCase
 
     public function test_it_renders_the_top_queries_with_their_freshness_note_when_connected(): void
     {
-        $this->connection();
+        SearchConsoleConnection::factory()->create();
         $this->queryRow('2026-07-17', 'louer une voiture', 30, 400, 4.5);
         $this->actingAs($this->admin, 'admin');
 
@@ -131,7 +119,7 @@ final class SearchQueriesWidgetTest extends TestCase
 
     public function test_it_renders_the_empty_state_when_connected_without_cached_data_on_the_period(): void
     {
-        $this->connection();
+        SearchConsoleConnection::factory()->create();
         $this->actingAs($this->admin, 'admin');
 
         Livewire::test(OverviewSearchQueries::class)

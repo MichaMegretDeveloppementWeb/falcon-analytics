@@ -41,15 +41,4 @@ final class SessionFactory extends Factory
     {
         return $this->state(fn (): array => ['started_at' => $moment, 'last_activity_at' => $moment]);
     }
-
-    public function bot(): self
-    {
-        return $this->state(fn (): array => ['is_bot' => true]);
-    }
-
-    /** A visit made by one of the host's accounts. */
-    public function forSubject(string $type, int $id): self
-    {
-        return $this->state(fn (): array => ['subject_type' => $type, 'subject_id' => $id]);
-    }
 }

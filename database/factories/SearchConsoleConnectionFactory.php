@@ -32,10 +32,4 @@ final class SearchConsoleConnectionFactory extends Factory
             'last_synced_at' => null,
         ];
     }
-
-    /** Authorised, but no property chosen yet. */
-    public function pendingProperty(): self
-    {
-        return $this->state(fn (): array => ['property' => null, 'status' => SearchConsoleConnection::STATUS_PENDING_PROPERTY]);
-    }
 }
