@@ -333,7 +333,9 @@ de l'arbre, par `admin.middleware_for` ·
   le reste de l'audience n'est pas touché.
 - **Chaque clic sur ces écrans refait les étapes**, comme la porte. Un écran
   resté ouvert ne devient pas une porte ouverte · une fois la confirmation
-  expirée, le clic suivant mène à la page de confirmation, puis revient.
+  expirée, le clic suivant mène à la page de confirmation, puis revient sur
+  l'écran. **Le geste de ce clic n'est pas fait**, rien n'est écrit · il se
+  refait au retour.
 - **Les clés sont des écrans ou des groupes.** Un geste n'a pas d'adresse à lui ·
   pour réserver un geste, écrivez une capacité.
 - **Les étapes sont posées sur les routes**, et `php artisan route:cache` les
