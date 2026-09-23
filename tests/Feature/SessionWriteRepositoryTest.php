@@ -31,7 +31,7 @@ final class SessionWriteRepositoryTest extends TestCase
         $visitor = $this->visitorRow();
 
         $context = new IngestionContext(
-            ip: '85.4.12.66',
+            ip: '203.0.113.66',
             country: 'CH',
             region: 'Geneva',
             city: 'Geneva',
@@ -44,7 +44,7 @@ final class SessionWriteRepositoryTest extends TestCase
             source: 'google',
             utmCampaign: 'spring',
             landingRoute: 'home',
-            landingUrl: 'https://vantadrive.ch/',
+            landingUrl: 'https://boutique.test/',
             mktParams: ['src' => 'meta_ete', 'creative' => 'cabrio'],
             subjectType: 'client',
             subjectId: 7,
@@ -58,7 +58,7 @@ final class SessionWriteRepositoryTest extends TestCase
         $this->assertSame('2026-06-30 09:00:00', $session->started_at->toDateTimeString());
         $this->assertSame('2026-06-30 09:00:00', $session->last_activity_at->toDateTimeString());
         $this->assertNull($session->ended_at);
-        $this->assertSame('85.4.12.66', $session->ip);
+        $this->assertSame('203.0.113.66', $session->ip);
         $this->assertSame('CH', $session->country);
         $this->assertSame('Geneva', $session->city);
         $this->assertEqualsWithDelta(46.2044, $session->latitude, 0.00001);

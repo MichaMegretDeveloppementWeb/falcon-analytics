@@ -30,14 +30,14 @@ final class MarketingCaptureTest extends TestCase
     public static function landingUrls(): array
     {
         return [
-            'marketing params' => ['https://vantadrive.ch/?src=meta_ete&creative=cabrio', ['src' => 'meta_ete', 'creative' => 'cabrio']],
-            'no params' => ['https://vantadrive.ch/voitures', []],
-            'deep path keeps params' => ['https://vantadrive.ch/voitures/cabriolet?src=meta_ete', ['src' => 'meta_ete']],
-            'coexists with utm' => ['https://vantadrive.ch/?utm_source=meta&src=meta_ete', ['utm_source' => 'meta', 'src' => 'meta_ete']],
-            'accented value (percent-encoded)' => ['https://vantadrive.ch/?campaign=%C3%A9te-2026', ['campaign' => 'éte-2026']],
-            'value with a space (plus-encoded)' => ['https://vantadrive.ch/?campaign=ete+2026', ['campaign' => 'ete 2026']],
-            'empty values dropped' => ['https://vantadrive.ch/?a=&b=x', ['b' => 'x']],
-            'parameter names are case-sensitive' => ['https://vantadrive.ch/?Src=Meta&AD=Cabrio', ['Src' => 'Meta', 'AD' => 'Cabrio']],
+            'marketing params' => ['https://boutique.test/?src=meta_ete&creative=cabrio', ['src' => 'meta_ete', 'creative' => 'cabrio']],
+            'no params' => ['https://boutique.test/voitures', []],
+            'deep path keeps params' => ['https://boutique.test/voitures/cabriolet?src=meta_ete', ['src' => 'meta_ete']],
+            'coexists with utm' => ['https://boutique.test/?utm_source=meta&src=meta_ete', ['utm_source' => 'meta', 'src' => 'meta_ete']],
+            'accented value (percent-encoded)' => ['https://boutique.test/?campaign=%C3%A9te-2026', ['campaign' => 'éte-2026']],
+            'value with a space (plus-encoded)' => ['https://boutique.test/?campaign=ete+2026', ['campaign' => 'ete 2026']],
+            'empty values dropped' => ['https://boutique.test/?a=&b=x', ['b' => 'x']],
+            'parameter names are case-sensitive' => ['https://boutique.test/?Src=Meta&AD=Cabrio', ['Src' => 'Meta', 'AD' => 'Cabrio']],
         ];
     }
 
@@ -72,7 +72,7 @@ final class MarketingCaptureTest extends TestCase
 
     public function test_it_caps_an_overly_long_value_at_150_characters(): void
     {
-        $this->ingestLanding('https://vantadrive.ch/?campaign='.str_repeat('x', 200).'&ad=cabrio');
+        $this->ingestLanding('https://boutique.test/?campaign='.str_repeat('x', 200).'&ad=cabrio');
 
         $params = Session::query()->latest('id')->firstOrFail()->mkt_params ?? [];
 
@@ -82,10 +82,10 @@ final class MarketingCaptureTest extends TestCase
 
     public function test_it_keeps_distinct_params_on_separate_sessions(): void
     {
-        $this->ingestLanding('https://vantadrive.ch/?src=meta_ete&creative=cabrio');
+        $this->ingestLanding('https://boutique.test/?src=meta_ete&creative=cabrio');
         $this->flushSession();
 
-        $this->ingestLanding('https://vantadrive.ch/?src=meta_ete&creative=suv');
+        $this->ingestLanding('https://boutique.test/?src=meta_ete&creative=suv');
 
         $sessions = Session::query()->orderBy('id')->get();
 

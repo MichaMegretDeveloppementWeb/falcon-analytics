@@ -152,7 +152,7 @@ final class DashboardPagesTest extends TestCase
     public function test_it_renders_the_overview_digest_for_an_authenticated_admin(): void
     {
         $session = $this->seedSession(['source' => 'google']);
-        Event::create(['session_id' => $session->id, 'visitor_id' => $session->visitor_id, 'occurred_at' => now()->subMinute(), 'type' => EventType::Pageview, 'route' => 'accueil', 'url' => 'https://vantadrive.test/accueil']);
+        Event::create(['session_id' => $session->id, 'visitor_id' => $session->visitor_id, 'occurred_at' => now()->subMinute(), 'type' => EventType::Pageview, 'route' => 'accueil', 'url' => 'https://boutique.test/accueil']);
 
         $this->actingAs($this->admin, 'admin');
 

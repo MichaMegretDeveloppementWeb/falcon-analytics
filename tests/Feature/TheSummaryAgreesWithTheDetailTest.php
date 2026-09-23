@@ -108,14 +108,14 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
         $client = $this->newSession(subjectType: 'client');
         $robot = $this->newSession(isBot: true);
 
-        $this->pageview($anonymous, 'https://exemple.fr/', $day->setTime(9, 0));
-        $this->pageview($anonymous, 'https://exemple.fr/', $day->setTime(10, 0));
-        $this->pageview($anonymous, 'https://exemple.fr/tarifs', $day->setTime(11, 0));
-        $this->pageview($client, 'https://exemple.fr/tarifs', $day->setTime(12, 0));
+        $this->pageview($anonymous, 'https://exemple.test/', $day->setTime(9, 0));
+        $this->pageview($anonymous, 'https://exemple.test/', $day->setTime(10, 0));
+        $this->pageview($anonymous, 'https://exemple.test/tarifs', $day->setTime(11, 0));
+        $this->pageview($client, 'https://exemple.test/tarifs', $day->setTime(12, 0));
 
         // A bot's rows are excluded from both readings, and a summary that
         // forgot to exclude them would be the easiest mistake to make.
-        $this->pageview($robot, 'https://exemple.fr/', $day->setTime(13, 0));
+        $this->pageview($robot, 'https://exemple.test/', $day->setTime(13, 0));
 
         $this->click($anonymous, 'Demander un devis', 'devis.demande', 'accueil', $day->setTime(9, 30));
         $this->click($anonymous, 'Demander un devis', 'devis.demande', 'accueil', $day->setTime(9, 40));
@@ -268,7 +268,7 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
         $twoDays = new Period($yesterday, CarbonImmutable::now(), 2);
         $before = collect($this->overview->topPages($twoDays, null, 20))->sum('total');
 
-        $this->pageview($this->newSession(), 'https://exemple.fr/contact', CarbonImmutable::now()->subMinute());
+        $this->pageview($this->newSession(), 'https://exemple.test/contact', CarbonImmutable::now()->subMinute());
 
         $this->assertSame($before + 1, collect($this->overview->topPages($twoDays, null, 20))->sum('total'));
     }
@@ -367,7 +367,7 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
      */
     public function test_it_takes_the_closed_days_in_order_and_leaves_today_alone(): void
     {
-        $this->pageview($this->newSession(), 'https://exemple.fr/', CarbonImmutable::parse('2026-06-12 10:00'));
+        $this->pageview($this->newSession(), 'https://exemple.test/', CarbonImmutable::parse('2026-06-12 10:00'));
 
         $done = $this->archiveClosedDays->execute();
 
@@ -378,7 +378,7 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
     /** A bounded run catches up a slice, and the next one resumes where it left off. */
     public function test_a_bounded_run_resumes_where_it_stopped(): void
     {
-        $this->pageview($this->newSession(), 'https://exemple.fr/', CarbonImmutable::parse('2026-06-12 10:00'));
+        $this->pageview($this->newSession(), 'https://exemple.test/', CarbonImmutable::parse('2026-06-12 10:00'));
 
         $this->assertSame(['2026-06-12'], $this->archiveClosedDays->execute(1));
         $this->assertSame(['2026-06-13'], $this->archiveClosedDays->execute(1));
@@ -393,8 +393,8 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
      */
     public function test_a_day_that_fails_leaves_the_days_before_it_summarised(): void
     {
-        $this->pageview($this->newSession(), 'https://exemple.fr/', CarbonImmutable::parse('2026-06-12 10:00'));
-        $this->pageview($this->newSession(), 'https://exemple.fr/', CarbonImmutable::parse('2026-06-13 10:00'));
+        $this->pageview($this->newSession(), 'https://exemple.test/', CarbonImmutable::parse('2026-06-12 10:00'));
+        $this->pageview($this->newSession(), 'https://exemple.test/', CarbonImmutable::parse('2026-06-13 10:00'));
 
         DB::listen(function (QueryExecuted $query): void {
             if (str_starts_with($query->sql, 'insert into `falcon_analytics_daily_archives`') && in_array('2026-06-13', $query->bindings, true)) {
@@ -432,7 +432,7 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
     public function test_just_after_midnight_yesterday_is_still_open(): void
     {
         $this->travelTo(CarbonImmutable::parse('2026-06-15 00:00:30'));
-        $this->pageview($this->newSession(), 'https://exemple.fr/', CarbonImmutable::parse('2026-06-13 10:00'));
+        $this->pageview($this->newSession(), 'https://exemple.test/', CarbonImmutable::parse('2026-06-13 10:00'));
 
         $this->assertSame(['2026-06-13'], $this->archiveClosedDays->execute(), 'Only the day before yesterday is closed at 00:00:30.');
         $this->assertFalse($this->archiver->isArchived(CarbonImmutable::parse('2026-06-14')), 'Yesterday is still open.');
@@ -442,7 +442,7 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
     public function test_after_the_grace_yesterday_is_closed(): void
     {
         $this->travelTo(CarbonImmutable::parse('2026-06-15 01:00:00'));
-        $this->pageview($this->newSession(), 'https://exemple.fr/', CarbonImmutable::parse('2026-06-13 10:00'));
+        $this->pageview($this->newSession(), 'https://exemple.test/', CarbonImmutable::parse('2026-06-13 10:00'));
 
         $this->assertSame(['2026-06-13', '2026-06-14'], $this->archiveClosedDays->execute());
     }
@@ -462,7 +462,7 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
         // The day already holds a visit · without one there is nothing to
         // summarise at midnight and the essay would pass with no grace at all,
         // which is not the situation it is written for.
-        $this->pageview($session, 'https://exemple.fr/', $day->setTime(10, 0));
+        $this->pageview($session, 'https://exemple.test/', $day->setTime(10, 0));
 
         // 23:59:58 · a page is opened. Its row is not in the table yet.
 
@@ -471,7 +471,7 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
         $this->archiveClosedDays->execute();
 
         // 00:00:05 · the row lands, stamped with the moment it happened.
-        $this->pageview($session, 'https://exemple.fr/tarifs', $day->setTime(23, 59, 58));
+        $this->pageview($session, 'https://exemple.test/tarifs', $day->setTime(23, 59, 58));
 
         // 03:00 · the nightly run.
         $this->travelTo(CarbonImmutable::parse('2026-06-15 03:00:00'));

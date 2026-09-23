@@ -25,15 +25,15 @@ final class SessionContextEnricherTest extends TestCase
     public function test_it_builds_a_full_context_from_the_snapshot_and_batch(): void
     {
         $snapshot = new RequestSnapshot(
-            ip: '85.4.12.66',
+            ip: '203.0.113.66',
             userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0',
-            host: 'vantadrive.ch',
+            host: 'boutique.test',
         );
 
         $context = app(SessionContextEnricher::class)->enrich(
             $snapshot,
             $this->pageviewBatch(
-                'https://vantadrive.ch/?utm_source=meta&utm_medium=cpc&utm_campaign=spring',
+                'https://boutique.test/?utm_source=meta&utm_medium=cpc&utm_campaign=spring',
                 'https://facebook.com/',
             ),
             ['type' => 'client', 'id' => 7],
@@ -44,7 +44,7 @@ final class SessionContextEnricherTest extends TestCase
         $this->assertSame('Firefox', $context->browser);
         $this->assertSame('Windows', $context->os);
         $this->assertFalse($context->isBot);
-        $this->assertSame('85.4.12.0', $context->ip, 'Truncated with nothing set.');
+        $this->assertSame('203.0.113.0', $context->ip, 'Truncated with nothing set.');
         $this->assertSame('paid', $context->source);
         $this->assertSame('spring', $context->utmCampaign);
         $this->assertSame('home', $context->landingRoute);
@@ -56,7 +56,7 @@ final class SessionContextEnricherTest extends TestCase
         $snapshot = new RequestSnapshot(
             ip: '66.249.66.1',
             userAgent: 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
-            host: 'vantadrive.ch',
+            host: 'boutique.test',
         );
 
         $this->assertTrue(
@@ -68,21 +68,21 @@ final class SessionContextEnricherTest extends TestCase
     {
         config(['analytics.privacy.anonymize_ip' => false]);
 
-        $snapshot = new RequestSnapshot(ip: '85.4.12.66', userAgent: null, host: 'vantadrive.ch');
+        $snapshot = new RequestSnapshot(ip: '203.0.113.66', userAgent: null, host: 'boutique.test');
 
         $this->assertSame(
-            '85.4.12.66',
+            '203.0.113.66',
             app(SessionContextEnricher::class)->enrich($snapshot, $this->pageviewBatch(), null)->ip,
         );
     }
 
     public function test_it_captures_the_landing_url_query_parameters_for_marketing_matching(): void
     {
-        $snapshot = new RequestSnapshot(ip: '85.4.12.66', userAgent: null, host: 'vantadrive.ch');
+        $snapshot = new RequestSnapshot(ip: '203.0.113.66', userAgent: null, host: 'boutique.test');
 
         $context = app(SessionContextEnricher::class)->enrich(
             $snapshot,
-            $this->pageviewBatch('https://vantadrive.ch/?src=meta_ete&creative=cabrio&utm_source=meta'),
+            $this->pageviewBatch('https://boutique.test/?src=meta_ete&creative=cabrio&utm_source=meta'),
             null,
         );
 

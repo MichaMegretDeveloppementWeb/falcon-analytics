@@ -82,8 +82,8 @@ final class AnOldSessionSaysWhatItStillKnowsTest extends TestCase
             return $session;
         }
 
-        Event::create(['session_id' => $session->id, 'visitor_id' => $visitor->id, 'type' => EventType::Pageview, 'url' => 'https://exemple.fr/', 'occurred_at' => $day->setTime(9, 0)]);
-        Event::create(['session_id' => $session->id, 'visitor_id' => $visitor->id, 'type' => EventType::Pageview, 'url' => 'https://exemple.fr/tarifs', 'occurred_at' => $day->setTime(9, 5)]);
+        Event::create(['session_id' => $session->id, 'visitor_id' => $visitor->id, 'type' => EventType::Pageview, 'url' => 'https://exemple.test/', 'occurred_at' => $day->setTime(9, 0)]);
+        Event::create(['session_id' => $session->id, 'visitor_id' => $visitor->id, 'type' => EventType::Pageview, 'url' => 'https://exemple.test/tarifs', 'occurred_at' => $day->setTime(9, 5)]);
 
         foreach ([10, 11, 12] as $minute) {
             Event::create(['session_id' => $session->id, 'visitor_id' => $visitor->id, 'type' => EventType::Click, 'target_text' => 'Demander un devis', 'occurred_at' => $day->setTime(9, $minute)]);
@@ -308,7 +308,7 @@ final class AnOldSessionSaysWhatItStillKnowsTest extends TestCase
                 'session_id' => $protected->id,
                 'visitor_id' => $visitor->id,
                 'type' => EventType::Pageview,
-                'url' => 'https://exemple.fr/panier',
+                'url' => 'https://exemple.test/panier',
                 'route' => 'home',
                 'occurred_at' => $day->setTime(9, $minute),
             ]);

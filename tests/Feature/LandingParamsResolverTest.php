@@ -23,13 +23,13 @@ final class LandingParamsResolverTest extends TestCase
     {
         $this->assertSame(
             ['src' => 'meta_ete', 'creative' => 'cabrio'],
-            $this->resolver->resolve('https://vantadrive.ch/voitures?src=meta_ete&creative=cabrio'),
+            $this->resolver->resolve('https://boutique.test/voitures?src=meta_ete&creative=cabrio'),
         );
     }
 
     public function test_it_returns_an_empty_array_without_a_query_string_or_url(): void
     {
-        $this->assertSame([], $this->resolver->resolve('https://vantadrive.ch/voitures'));
+        $this->assertSame([], $this->resolver->resolve('https://boutique.test/voitures'));
         $this->assertSame([], $this->resolver->resolve(null));
     }
 
@@ -37,13 +37,13 @@ final class LandingParamsResolverTest extends TestCase
     {
         $this->assertSame(
             ['a' => '1', 'd' => '2'],
-            $this->resolver->resolve('https://vantadrive.ch/?a=1&b=&c[]=x&d=2'),
+            $this->resolver->resolve('https://boutique.test/?a=1&b=&c[]=x&d=2'),
         );
     }
 
     public function test_it_caps_overly_long_values(): void
     {
-        $params = $this->resolver->resolve('https://vantadrive.ch/?campaign='.str_repeat('x', 200));
+        $params = $this->resolver->resolve('https://boutique.test/?campaign='.str_repeat('x', 200));
 
         $this->assertSame(150, mb_strlen($params['campaign']));
     }
@@ -52,6 +52,6 @@ final class LandingParamsResolverTest extends TestCase
     {
         $query = Collection::make(range(1, 40))->map(fn (int $i): string => "p{$i}=v{$i}")->implode('&');
 
-        $this->assertCount(30, $this->resolver->resolve("https://vantadrive.ch/?{$query}"));
+        $this->assertCount(30, $this->resolver->resolve("https://boutique.test/?{$query}"));
     }
 }

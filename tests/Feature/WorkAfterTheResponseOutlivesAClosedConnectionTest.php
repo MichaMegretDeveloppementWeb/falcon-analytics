@@ -48,7 +48,7 @@ final class WorkAfterTheResponseOutlivesAClosedConnectionTest extends TestCase
     {
         return [
             'sent_at' => 1000,
-            'events' => [['type' => 'pageview', 'ts' => 1000, 'route' => 'home', 'url' => 'https://vantadrive.ch/']],
+            'events' => [['type' => 'pageview', 'ts' => 1000, 'route' => 'home', 'url' => 'https://boutique.test/']],
         ];
     }
 

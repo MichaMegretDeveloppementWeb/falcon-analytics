@@ -95,15 +95,15 @@ final class ACampaignLinkDoesNotSplitAPageTest extends TestCase
     {
         $session = $this->newSession();
 
-        $this->pageview($session, 'https://www.exemple.fr/tarifs', $day->setTime(9, 0));
-        $this->pageview($session, 'https://www.exemple.fr/tarifs?fbclid=IwAR0aaa', $day->setTime(9, 5));
-        $this->pageview($session, 'https://www.exemple.fr/tarifs?fbclid=IwAR0bbb', $day->setTime(9, 10));
-        $this->pageview($session, 'https://www.exemple.fr/tarifs#prix', $day->setTime(9, 12));
-        $this->pageview($session, 'https://exemple.fr/tarifs', $day->setTime(9, 14));
+        $this->pageview($session, 'https://www.exemple.test/tarifs', $day->setTime(9, 0));
+        $this->pageview($session, 'https://www.exemple.test/tarifs?fbclid=IwAR0aaa', $day->setTime(9, 5));
+        $this->pageview($session, 'https://www.exemple.test/tarifs?fbclid=IwAR0bbb', $day->setTime(9, 10));
+        $this->pageview($session, 'https://www.exemple.test/tarifs#prix', $day->setTime(9, 12));
+        $this->pageview($session, 'https://exemple.test/tarifs', $day->setTime(9, 14));
 
         // Une autre page, pour que le classement ait de quoi se tromper : avec
         // le regroupement fautif elle passait devant, à une vue contre cinq.
-        $this->pageview($session, 'https://www.exemple.fr/contact', $day->setTime(9, 15));
+        $this->pageview($session, 'https://www.exemple.test/contact', $day->setTime(9, 15));
     }
 
     public function test_the_overview_counts_one_page_once(): void
@@ -159,9 +159,9 @@ final class ACampaignLinkDoesNotSplitAPageTest extends TestCase
     {
         $session = $this->newSession();
 
-        $this->pageview($session, 'https://exemple.fr/tarifs', CarbonImmutable::now()->subMinutes(10));
-        $this->pageview($session, 'https://exemple.fr/tarifs?gclid=xyz', CarbonImmutable::now()->subMinutes(5));
-        $this->pageview($session, 'https://exemple.fr/tarifs#prix', CarbonImmutable::now()->subMinutes(2));
+        $this->pageview($session, 'https://exemple.test/tarifs', CarbonImmutable::now()->subMinutes(10));
+        $this->pageview($session, 'https://exemple.test/tarifs?gclid=xyz', CarbonImmutable::now()->subMinutes(5));
+        $this->pageview($session, 'https://exemple.test/tarifs#prix', CarbonImmutable::now()->subMinutes(2));
 
         $read = $this->realtime->topPages(CarbonImmutable::now()->subMinutes(30), null);
 
@@ -179,10 +179,10 @@ final class ACampaignLinkDoesNotSplitAPageTest extends TestCase
         $this->fiveWaysToTheSamePage($day);
 
         $this->assertTrue(
-            Event::query()->where('url', 'https://www.exemple.fr/tarifs?fbclid=IwAR0aaa')->exists(),
+            Event::query()->where('url', 'https://www.exemple.test/tarifs?fbclid=IwAR0aaa')->exists(),
             "L'adresse doit rester entière en base : seule la page est posée à côté.",
         );
-        $this->assertTrue(Event::query()->where('url', 'https://www.exemple.fr/tarifs#prix')->exists());
+        $this->assertTrue(Event::query()->where('url', 'https://www.exemple.test/tarifs#prix')->exists());
     }
 
     /**
@@ -193,7 +193,7 @@ final class ACampaignLinkDoesNotSplitAPageTest extends TestCase
     public function test_a_row_written_through_the_model_carries_its_page(): void
     {
         $day = CarbonImmutable::parse('2026-06-10');
-        $this->pageview($this->newSession(), 'https://exemple.fr/a-propos?x=1#y', $day->setTime(9, 0));
+        $this->pageview($this->newSession(), 'https://exemple.test/a-propos?x=1#y', $day->setTime(9, 0));
 
         $this->assertSame('/a-propos', Event::query()->firstOrFail()->page);
     }
@@ -206,17 +206,17 @@ final class ACampaignLinkDoesNotSplitAPageTest extends TestCase
     public static function addresses(): array
     {
         return [
-            'une adresse nue' => ['https://exemple.fr/tarifs', '/tarifs'],
-            'un lien de campagne' => ['https://exemple.fr/tarifs?fbclid=IwAR0aaa', '/tarifs'],
-            'un lien d’ancre' => ['https://exemple.fr/tarifs#prix', '/tarifs'],
-            'les deux' => ['https://exemple.fr/tarifs?a=1#prix', '/tarifs'],
-            'un autre hôte' => ['http://www.exemple.fr/tarifs', '/tarifs'],
-            'la racine' => ['https://exemple.fr/', '/'],
-            'un chemin profond, avec sa barre finale' => ['https://exemple.fr/blog/mon-article/', '/blog/mon-article/'],
+            'une adresse nue' => ['https://exemple.test/tarifs', '/tarifs'],
+            'un lien de campagne' => ['https://exemple.test/tarifs?fbclid=IwAR0aaa', '/tarifs'],
+            'un lien d’ancre' => ['https://exemple.test/tarifs#prix', '/tarifs'],
+            'les deux' => ['https://exemple.test/tarifs?a=1#prix', '/tarifs'],
+            'un autre hôte' => ['http://www.exemple.test/tarifs', '/tarifs'],
+            'la racine' => ['https://exemple.test/', '/'],
+            'un chemin profond, avec sa barre finale' => ['https://exemple.test/blog/mon-article/', '/blog/mon-article/'],
             'un chemin seul' => ['/tarifs?x=1', '/tarifs'],
             'rien' => ['', null],
             'null' => [null, null],
-            'un hôte sans chemin' => ['https://exemple.fr', null],
+            'un hôte sans chemin' => ['https://exemple.test', null],
         ];
     }
 

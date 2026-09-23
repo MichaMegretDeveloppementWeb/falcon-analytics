@@ -69,7 +69,7 @@ final class TheMaintenanceRunsBothWaysTest extends TestCase
             'session_id' => $session->id,
             'visitor_id' => $visitor->id,
             'type' => EventType::Pageview,
-            'url' => 'https://exemple.fr/',
+            'url' => 'https://exemple.test/',
             'occurred_at' => CarbonImmutable::parse($day)->setTime(10, 0),
         ]);
     }
@@ -313,8 +313,8 @@ final class TheMaintenanceRunsBothWaysTest extends TestCase
         DailyCount::create([
             'day' => CarbonImmutable::parse('2026-01-05'),
             'kind' => DailyCount::KIND_PAGE,
-            'signature' => DailyCount::signature(DailyCount::KIND_PAGE, 'https://exemple.fr/', null, null),
-            'label' => 'https://exemple.fr/',
+            'signature' => DailyCount::signature(DailyCount::KIND_PAGE, 'https://exemple.test/', null, null),
+            'label' => 'https://exemple.test/',
             'route' => null,
             'subject_type' => null,
             'total' => 3,

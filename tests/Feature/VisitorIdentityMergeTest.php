@@ -84,11 +84,11 @@ final class VisitorIdentityMergeTest extends TestCase
     private function ingest(string $uuid, ?array $subject): void
     {
         app(IngestEventsAction::class)->execute($uuid, $subject, new RequestSnapshot(
-            ip: '85.4.12.66',
+            ip: '203.0.113.66',
             userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-            host: 'vantadrive.test',
+            host: 'boutique.test',
         ), new IncomingBatch(events: [
-            new IncomingEvent(type: EventType::Pageview, occurredAt: CarbonImmutable::now(), url: 'https://vantadrive.test/'),
+            new IncomingEvent(type: EventType::Pageview, occurredAt: CarbonImmutable::now(), url: 'https://boutique.test/'),
         ]));
     }
 

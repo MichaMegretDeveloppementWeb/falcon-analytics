@@ -30,9 +30,9 @@ final class IngestEventsActionTest extends TestCase
     private function snapshot(): RequestSnapshot
     {
         return new RequestSnapshot(
-            ip: '85.4.12.66',
+            ip: '203.0.113.66',
             userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0',
-            host: 'vantadrive.ch',
+            host: 'boutique.test',
         );
     }
 
@@ -40,7 +40,7 @@ final class IngestEventsActionTest extends TestCase
         EventType $type,
         CarbonImmutable $at,
         ?string $name = null,
-        string $url = 'https://vantadrive.ch/',
+        string $url = 'https://boutique.test/',
     ): IncomingEvent {
         return new IncomingEvent(type: $type, occurredAt: $at, name: $name, url: $url);
     }
@@ -127,19 +127,19 @@ final class IngestEventsActionTest extends TestCase
         $action = app(IngestEventsAction::class);
 
         $action->execute('u-1', null, $this->snapshot(), new IncomingBatch(events: [
-            $this->incoming(EventType::Pageview, $now, url: 'https://vantadrive.ch/a'),
+            $this->incoming(EventType::Pageview, $now, url: 'https://boutique.test/a'),
         ]));
 
         CarbonImmutable::setTestNow($now->addMinute());
         $action->execute('u-1', null, $this->snapshot(), new IncomingBatch(events: [
-            $this->incoming(EventType::Pageview, CarbonImmutable::now(), url: 'https://vantadrive.ch/a'),
+            $this->incoming(EventType::Pageview, CarbonImmutable::now(), url: 'https://boutique.test/a'),
         ]));
 
         $session = Session::firstOrFail();
 
         $this->assertSame(1, Session::count());
         $this->assertSame(1, $session->pageview_count, 'a reload is not a new pageview');
-        $this->assertSame('https://vantadrive.ch/a', $session->last_pageview_url);
+        $this->assertSame('https://boutique.test/a', $session->last_pageview_url);
     }
 
     public function test_it_counts_real_navigations_including_returning_to_a_page(): void
@@ -149,9 +149,9 @@ final class IngestEventsActionTest extends TestCase
 
         // A vers B puis retour a A fait trois.
         app(IngestEventsAction::class)->execute('u-1', null, $this->snapshot(), new IncomingBatch(events: [
-            $this->incoming(EventType::Pageview, $now->subSeconds(3), url: 'https://vantadrive.ch/a'),
-            $this->incoming(EventType::Pageview, $now->subSeconds(2), url: 'https://vantadrive.ch/b'),
-            $this->incoming(EventType::Pageview, $now->subSecond(), url: 'https://vantadrive.ch/a'),
+            $this->incoming(EventType::Pageview, $now->subSeconds(3), url: 'https://boutique.test/a'),
+            $this->incoming(EventType::Pageview, $now->subSeconds(2), url: 'https://boutique.test/b'),
+            $this->incoming(EventType::Pageview, $now->subSecond(), url: 'https://boutique.test/a'),
         ]));
 
         $this->assertSame(3, Session::firstOrFail()->pageview_count);

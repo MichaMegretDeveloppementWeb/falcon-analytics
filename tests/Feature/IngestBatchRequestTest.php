@@ -48,7 +48,7 @@ final class IngestBatchRequestTest extends TestCase
             'sent_at' => 10_000,
             'referrer' => 'https://google.com',
             'events' => [
-                ['type' => 'pageview', 'ts' => 10_000, 'route' => 'home', 'url' => 'https://vantadrive.ch/'],
+                ['type' => 'pageview', 'ts' => 10_000, 'route' => 'home', 'url' => 'https://boutique.test/'],
                 ['type' => 'click', 'ts' => 7_000, 'name' => 'listing.contact_click', 'props' => ['listing_id' => 42], 'value' => 3],
             ],
         ])->toBatch();
@@ -127,7 +127,7 @@ final class IngestBatchRequestTest extends TestCase
         $batch = $this->ingestRequest([
             'sent_at' => 1,
             'referrer' => 'https://ref.example/?token=zzz&utm_source=meta',
-            'events' => [['type' => 'pageview', 'ts' => 1, 'url' => 'https://vantadrive.ch/?token=secret&gclid=abc']],
+            'events' => [['type' => 'pageview', 'ts' => 1, 'url' => 'https://boutique.test/?token=secret&gclid=abc']],
         ])->toBatch();
 
         // Both are nullable: with no URL and no referrer there would be nothing

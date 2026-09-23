@@ -126,8 +126,8 @@ final class ThePurgeChangesNoFigureTest extends TestCase
             $visitor = $this->visitor();
             $session = $this->newSession($visitor, $when);
 
-            $this->event($session, EventType::Pageview, $when->setTime(9, 0), ['url' => 'https://exemple.fr/', 'route' => 'home']);
-            $this->event($session, EventType::Pageview, $when->setTime(9, 5), ['url' => 'https://exemple.fr/tarifs', 'route' => 'tarifs']);
+            $this->event($session, EventType::Pageview, $when->setTime(9, 0), ['url' => 'https://exemple.test/', 'route' => 'home']);
+            $this->event($session, EventType::Pageview, $when->setTime(9, 5), ['url' => 'https://exemple.test/tarifs', 'route' => 'tarifs']);
 
             /*
              * The same page, reached through two campaign links whose token is
@@ -140,8 +140,8 @@ final class ThePurgeChangesNoFigureTest extends TestCase
              * change shape on the day the erasing crossed this history —
              * silently, since both readings would look plausible on their own.
              */
-            $this->event($session, EventType::Pageview, $when->setTime(9, 6), ['url' => 'https://exemple.fr/tarifs?fbclid=IwAR0aaa', 'route' => 'tarifs']);
-            $this->event($session, EventType::Pageview, $when->setTime(9, 7), ['url' => 'https://exemple.fr/tarifs?utm_source=meta&utm_campaign=ete', 'route' => 'tarifs']);
+            $this->event($session, EventType::Pageview, $when->setTime(9, 6), ['url' => 'https://exemple.test/tarifs?fbclid=IwAR0aaa', 'route' => 'tarifs']);
+            $this->event($session, EventType::Pageview, $when->setTime(9, 7), ['url' => 'https://exemple.test/tarifs?utm_source=meta&utm_campaign=ete', 'route' => 'tarifs']);
 
             $this->event($session, EventType::Click, $when->setTime(9, 10), ['target_text' => 'Demander un devis', 'route' => 'home']);
             $this->event($session, EventType::Click, $when->setTime(9, 11), ['target_text' => 'Demander un devis', 'route' => 'home']);
@@ -157,7 +157,7 @@ final class ThePurgeChangesNoFigureTest extends TestCase
             $this->event($session, EventType::Custom, $when->setTime(9, 20), ['name' => 'sample.action', 'value' => 5]);
 
             $signed = $this->newSession($this->visitor(), $when, 'client');
-            $this->event($signed, EventType::Pageview, $when->setTime(10, 0), ['url' => 'https://exemple.fr/tarifs', 'route' => 'tarifs']);
+            $this->event($signed, EventType::Pageview, $when->setTime(10, 0), ['url' => 'https://exemple.test/tarifs', 'route' => 'tarifs']);
         }
 
         /*
@@ -172,7 +172,7 @@ final class ThePurgeChangesNoFigureTest extends TestCase
          */
         $lastDayOfThePreviousWindow = $this->wideEnoughToReachBack->previous()->to;
         $afternoon = $this->newSession($this->visitor(), $lastDayOfThePreviousWindow->setTime(15, 0));
-        $this->event($afternoon, EventType::Pageview, $lastDayOfThePreviousWindow->setTime(15, 0), ['url' => 'https://exemple.fr/tarifs', 'route' => 'tarifs']);
+        $this->event($afternoon, EventType::Pageview, $lastDayOfThePreviousWindow->setTime(15, 0), ['url' => 'https://exemple.test/tarifs', 'route' => 'tarifs']);
         $afternoon->update(['pageview_count' => 1, 'event_count' => 1]);
     }
 
