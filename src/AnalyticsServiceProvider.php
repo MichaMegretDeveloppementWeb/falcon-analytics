@@ -13,6 +13,7 @@ use Falcon\Analytics\Console\InstallCommand;
 use Falcon\Analytics\Console\PruneCommand;
 use Falcon\Analytics\Console\RefreshCommand;
 use Falcon\Analytics\Console\ScanEventsCommand;
+use Falcon\Analytics\Console\SeedCommand;
 use Falcon\Analytics\Console\SweepCommand;
 use Falcon\Analytics\Console\SyncSearchConsoleCommand;
 use Falcon\Analytics\Events\EventRegistry;
@@ -189,6 +190,7 @@ final class AnalyticsServiceProvider extends ServiceProvider
             ArchiveCommand::class,
             PruneCommand::class,
             RefreshCommand::class,
+            SeedCommand::class,
             SweepCommand::class,
             ScanEventsCommand::class,
             CheckEventsCommand::class,
