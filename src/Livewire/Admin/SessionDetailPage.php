@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Livewire\Admin;
 
+use Falcon\Analytics\Enums\Authorization\Ability;
 use Falcon\Analytics\Events\EventRegistry;
+use Falcon\Analytics\Livewire\Admin\Concerns\AsksTheScreenAbility;
 use Falcon\Analytics\Livewire\Admin\Concerns\RecoversFromReadFailure;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Services\Dashboard\SessionDetailBuilder;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 
@@ -20,6 +23,7 @@ use Livewire\Component;
  */
 final class SessionDetailPage extends Component
 {
+    use AsksTheScreenAbility;
     use RecoversFromReadFailure;
 
     /** What the screen shows of the session's visitor. */
@@ -50,9 +54,17 @@ final class SessionDetailPage extends Component
                     }
                 }
 
-                return ['detail' => $details->build($session, $session->events()->orderBy('occurred_at')->orderBy('id')->get(), $conversionNames)];
+                return [
+                    'detail' => $details->build($session, $session->events()->orderBy('occurred_at')->orderBy('id')->get(), $conversionNames),
+                    'mayOpenVisitors' => Gate::allows(Ability::Visitors),
+                ];
             },
             fn (array $data): View => view('analytics::livewire.dashboard.session-detail', $data),
         );
+    }
+
+    protected function screenAbility(): Ability
+    {
+        return Ability::Sessions;
     }
 }

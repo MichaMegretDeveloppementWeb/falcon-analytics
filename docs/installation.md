@@ -295,6 +295,11 @@ paquet le fait rejouer à chaque clic, qu'il soit nommé par sa classe, par un
 alias ou par un groupe. La pile de session (`web`) n'est pas rejouée une
 seconde fois, elle l'est déjà.
 
+**Restreignez ensuite, si vous le voulez, ce que chaque compte peut ouvrir et
+faire.** Par défaut, tout compte qui passe la porte a tout · réserver le
+marketing à un gérant, ou la suppression des données d'un visiteur, tient en une
+ligne. Voir [autorisation.md](autorisation.md).
+
 ### Un écran en particulier
 
 **Les écrans ne se publient pas** · ils appartiennent au paquet, qui les met à

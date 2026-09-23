@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Livewire\Admin\Widgets;
 
 use Falcon\Analytics\DTOs\Dashboard\Period;
+use Falcon\Analytics\Enums\Authorization\Ability;
 use Falcon\Analytics\Livewire\Admin\Concerns\GuardsWidgetRead;
 use Falcon\Analytics\Models\SearchConsoleConnection;
 use Falcon\Analytics\Repositories\Dashboard\SearchQueryReadRepository;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Lazy;
 use Livewire\Component;
 
@@ -49,7 +51,9 @@ final class OverviewSearchQueries extends Component
                 'totals' => $connected ? $repository->clicksTotals($range) : ['current' => 0, 'previous' => 0],
                 'freshestDate' => $connected ? $repository->freshestDate($range) : null,
                 'range' => $range,
-                'integrationsRoute' => route('analytics.admin.integrations'),
+                'integrationsRoute' => Gate::allows(Ability::Integrations) && Gate::allows(Ability::IntegrationsManage)
+                    ? route('analytics.admin.integrations')
+                    : null,
             ];
         }, fn (array $data): View => view('analytics::livewire.dashboard.widgets.overview-search-queries', $data));
     }

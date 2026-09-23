@@ -30,8 +30,12 @@
             </div>
         </div>
         <div class="an:flex an:shrink-0 an:items-center an:gap-2">
-            <x-ui::button variant="secondary" x-on:click="$anOpenWhenDone($wire.$refs.campaignForm.$wire.editCampaign({{ $detail->id }}), 'an-campaign-form')"><x-ui::icon name="pencil-square" class="an:h-4 an:w-4" /> {{ __('Modifier la campagne') }}</x-ui::button>
-            <x-ui::button variant="ghost" x-on:click="$dispatch('ui-open-modal', 'an-campaign-delete')" aria-label="{{ __('Supprimer') }}"><x-ui::icon name="trash" class="an:h-4 an:w-4" /></x-ui::button>
+            @if ($mayEditCampaign)
+                <x-ui::button variant="secondary" x-on:click="$anOpenWhenDone($wire.$refs.campaignForm.$wire.editCampaign({{ $detail->id }}), 'an-campaign-form')"><x-ui::icon name="pencil-square" class="an:h-4 an:w-4" /> {{ __('Modifier la campagne') }}</x-ui::button>
+            @endif
+            @if ($mayDeleteCampaign)
+                <x-ui::button variant="ghost" x-on:click="$dispatch('ui-open-modal', 'an-campaign-delete')" aria-label="{{ __('Supprimer') }}"><x-ui::icon name="trash" class="an:h-4 an:w-4" /></x-ui::button>
+            @endif
         </div>
     </div>
 
@@ -48,7 +52,9 @@
     <div>
         <div class="an:mb-4 an:flex an:items-center an:justify-between">
             <x-ui::section-header :title="__('Publicités')" :description="__('Les objectifs de conversion se définissent par publicité.')" />
-            <x-ui::button variant="secondary" size="compact" x-on:click="$anOpenWhenDone($wire.$refs.adForm.$wire.editAd(), 'an-ad-form')"><x-ui::icon name="plus" class="an:h-3.5 an:w-3.5" /> {{ __('Nouvelle publicité') }}</x-ui::button>
+            @if ($mayCreateAd)
+                <x-ui::button variant="secondary" size="compact" x-on:click="$anOpenWhenDone($wire.$refs.adForm.$wire.editAd(), 'an-ad-form')"><x-ui::icon name="plus" class="an:h-3.5 an:w-3.5" /> {{ __('Nouvelle publicité') }}</x-ui::button>
+            @endif
         </div>
 
         @if ($ads === [])
@@ -67,9 +73,13 @@
                     @foreach ($ads as $ad)
                         <x-ui::table.row
                             wire:key="ad-{{ $ad->id }}"
-                            class="an-row-link">
+                            :class="$mayOpenAds ? 'an-row-link' : ''">
                             <x-ui::table.cell :first="true" variant="primary">
-                                <a href="{{ route('analytics.admin.marketing.ads.show', $ad->id) }}" class="an-row-link__target an:cursor-pointer an:text-[13px] an:font-medium an:text-primary an:hover:underline">{{ $ad->name }}</a>
+                                @if ($mayOpenAds)
+                                    <a href="{{ route('analytics.admin.marketing.ads.show', $ad->id) }}" class="an-row-link__target an:cursor-pointer an:text-[13px] an:font-medium an:text-primary an:hover:underline">{{ $ad->name }}</a>
+                                @else
+                                    <span class="an:text-[13px] an:font-medium an:text-primary">{{ $ad->name }}</span>
+                                @endif
                             </x-ui::table.cell>
                             <x-ui::table.cell>
                                 <div class="an:flex an:flex-wrap an:items-center an:gap-1.5">
@@ -94,8 +104,12 @@
                             <x-ui::table.cell align="right" class="an:font-medium an:tabular-nums an:text-primary">@if ($adMetrics === [])<span class="an:inline-block an:h-3 an:w-6 an:animate-pulse an:rounded an:bg-elevated an:align-middle"></span>@else{{ NumberLabel::for($adConversions[$ad->id] ?? 0) }}@endif</x-ui::table.cell>
                             <x-ui::table.cell :last="true" align="right">
                                 <div class="an-row-link__above an:flex an:items-center an:justify-end an:gap-1">
-                                    <x-ui::button variant="ghost" size="compact" x-on:click="$anOpenWhenDone($wire.$refs.adForm.$wire.editAd({{ $ad->id }}), 'an-ad-form')" aria-label="{{ __('Modifier') }}"><x-ui::icon name="pencil-square" class="an:h-3.5 an:w-3.5" /></x-ui::button>
-                                    <x-ui::button variant="ghost" size="compact" x-on:click="$anOpenWhenDone($wire.confirmDeleteAd({{ $ad->id }}), 'an-ad-delete')" aria-label="{{ __('Supprimer') }}"><x-ui::icon name="trash" class="an:h-3.5 an:w-3.5" /></x-ui::button>
+                                    @if ($mayEditAd[$ad->id])
+                                        <x-ui::button variant="ghost" size="compact" x-on:click="$anOpenWhenDone($wire.$refs.adForm.$wire.editAd({{ $ad->id }}), 'an-ad-form')" aria-label="{{ __('Modifier') }}"><x-ui::icon name="pencil-square" class="an:h-3.5 an:w-3.5" /></x-ui::button>
+                                    @endif
+                                    @if ($mayDeleteAd[$ad->id])
+                                        <x-ui::button variant="ghost" size="compact" x-on:click="$anOpenWhenDone($wire.confirmDeleteAd({{ $ad->id }}), 'an-ad-delete')" aria-label="{{ __('Supprimer') }}"><x-ui::icon name="trash" class="an:h-3.5 an:w-3.5" /></x-ui::button>
+                                    @endif
                                 </div>
                             </x-ui::table.cell>
                         </x-ui::table.row>

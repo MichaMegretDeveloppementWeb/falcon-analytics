@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Falcon\Analytics\Enums\Authorization\Ability;
 use Falcon\Analytics\Http\Controllers\Dashboard\EventsController;
 use Falcon\Analytics\Http\Controllers\Dashboard\FunnelsController;
 use Falcon\Analytics\Http\Controllers\Dashboard\IntegrationsController;
@@ -25,19 +26,26 @@ use Illuminate\Support\Facades\Route;
  *
  * The route NAMES are fixed. A host reads them in its menu and its redirects; a
  * name that moved with the configuration could not be written down anywhere.
+ *
+ * Each address names the ability it asks. The provider adds, after it, the
+ * middleware a host lays on that ability's branch.
  */
 
-Route::get('/', OverviewController::class)->name('overview');
-Route::get('/realtime', RealtimeController::class)->name('realtime');
-Route::get('/visitors', VisitorsController::class)->name('visitors');
-Route::get('/visitors/{visitor}', VisitorDetailController::class)->name('visitors.show');
-Route::get('/events', EventsController::class)->name('events');
-Route::get('/funnels', FunnelsController::class)->name('funnels');
-Route::get('/sessions', SessionsController::class)->name('sessions');
-Route::get('/sessions/{session}', SessionDetailController::class)->name('sessions.show');
+Route::get('/', OverviewController::class)->name('overview')->can(Ability::Overview);
+Route::get('/realtime', RealtimeController::class)->name('realtime')->can(Ability::Realtime);
+Route::get('/visitors', VisitorsController::class)->name('visitors')->can(Ability::Visitors);
+Route::get('/visitors/{visitor}', VisitorDetailController::class)->name('visitors.show')->can(Ability::Visitors);
+Route::get('/events', EventsController::class)->name('events')->can(Ability::Events);
+Route::get('/funnels', FunnelsController::class)->name('funnels')->can(Ability::Funnels);
+Route::get('/sessions', SessionsController::class)->name('sessions')->can(Ability::Sessions);
+Route::get('/sessions/{session}', SessionDetailController::class)->name('sessions.show')->can(Ability::Sessions);
 
 // Integrations (Google Search Console): the page plus the two OAuth legs, all
 // behind the same middleware as the screens.
-Route::get('/integrations', IntegrationsController::class)->name('integrations');
-Route::get('/integrations/search-console/connect', SearchConsoleConnectController::class)->name('integrations.search-console.connect');
-Route::get('/integrations/search-console/callback', SearchConsoleCallbackController::class)->name('integrations.search-console.callback');
+Route::get('/integrations', IntegrationsController::class)->name('integrations')->can(Ability::Integrations);
+Route::get('/integrations/search-console/connect', SearchConsoleConnectController::class)
+    ->name('integrations.search-console.connect')
+    ->can(Ability::IntegrationsManage);
+Route::get('/integrations/search-console/callback', SearchConsoleCallbackController::class)
+    ->name('integrations.search-console.callback')
+    ->can(Ability::IntegrationsManage);

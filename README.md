@@ -60,7 +60,7 @@ l'authentification GitHub, le montage des écrans dans votre propre habillage, l
 déploiement — est dans **[docs/installation.md](docs/installation.md)**.
 
 Pour vérifier une installation à tout moment · `php artisan analytics:check`,
-douze contrôles sur des défauts qui échouent tous en silence.
+dix-neuf contrôles sur des défauts qui échouent tous en silence.
 
 ---
 
@@ -69,8 +69,9 @@ douze contrôles sur des défauts qui échouent tous en silence.
 | | |
 |---|---|
 | **[installation.md](docs/installation.md)** | l'installation, le montage des écrans, le déploiement |
-| **[configuration.md](docs/configuration.md)** | **les 37 réglages**, un tableau par bloc · la seule autorité |
-| **[fonctionnalites.md](docs/fonctionnalites.md)** | une fiche par écran, les douze commandes, l'instrumentation, les tunnels, le marketing, la vie privée |
+| **[configuration.md](docs/configuration.md)** | **les 38 réglages**, un tableau par bloc · la seule autorité |
+| **[autorisation.md](docs/autorisation.md)** | qui peut ouvrir quel écran et faire quel geste · l'arbre des capacités, et comment le restreindre |
+| **[fonctionnalites.md](docs/fonctionnalites.md)** | une fiche par écran, les treize commandes, l'instrumentation, les tunnels, le marketing, la vie privée |
 | **[mise-a-jour.md](docs/mise-a-jour.md)** | monter de version, le contrat public, revenir en arrière |
 | **[reprise-du-schema.md](docs/reprise-du-schema.md)** | **temporaire** · la montée d'un projet installé avant la reprise du schéma, en local puis en production |
 | **[developpement.md](docs/developpement.md)** | travailler sur le paquet |

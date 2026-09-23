@@ -15,10 +15,14 @@
             {{ __('Session') }} #{{ $detail->id }} <span class="an:text-muted">·</span> {{ $detail->startedAt->translatedFormat('d F Y à H:i') }}
         </h1>
         <div class="an:mt-1.5 an:flex an:flex-wrap an:items-center an:gap-x-2.5 an:gap-y-1 an:text-sm an:text-secondary">
-            <a href="{{ route('analytics.admin.visitors.show', $detail->visitor->id) }}" class="an:inline-flex an:cursor-pointer an:items-center an:gap-1 an:font-medium an:text-primary an:hover:underline" title="{{ __('Voir le profil du visiteur') }}">
-                {{ $detail->visitor->name }}
-                <x-ui::icon name="arrow-top-right-on-square" class="an:h-3 an:w-3 an:text-muted" />
-            </a>
+            @if ($mayOpenVisitors)
+                <a href="{{ route('analytics.admin.visitors.show', $detail->visitor->id) }}" class="an:inline-flex an:cursor-pointer an:items-center an:gap-1 an:font-medium an:text-primary an:hover:underline" title="{{ __('Voir le profil du visiteur') }}">
+                    {{ $detail->visitor->name }}
+                    <x-ui::icon name="arrow-top-right-on-square" class="an:h-3 an:w-3 an:text-muted" />
+                </a>
+            @else
+                <span class="an:font-medium an:text-primary">{{ $detail->visitor->name }}</span>
+            @endif
             @if ($detail->visitor->label !== null)
                 <span class="an:text-muted">·</span>
                 <span>{{ $detail->visitor->label }}</span>

@@ -1,11 +1,13 @@
 <x-analytics::root area="admin" class="an:space-y-6">
 
-    <div>
-        <a href="{{ route('analytics.admin.marketing.campaigns.show', $detail->campaignId) }}" class="an:inline-flex an:cursor-pointer an:items-center an:gap-x-1 an:text-[12px] an:font-medium an:text-secondary an:transition-colors an:hover:text-primary">
-            <x-ui::icon name="arrow-left" class="an:h-3.5 an:w-3.5" />
-            {{ __('Retour à :campaign', ['campaign' => $detail->campaignName]) }}
-        </a>
-    </div>
+    @if ($mayOpenCampaigns)
+        <div>
+            <a href="{{ route('analytics.admin.marketing.campaigns.show', $detail->campaignId) }}" class="an:inline-flex an:cursor-pointer an:items-center an:gap-x-1 an:text-[12px] an:font-medium an:text-secondary an:transition-colors an:hover:text-primary">
+                <x-ui::icon name="arrow-left" class="an:h-3.5 an:w-3.5" />
+                {{ __('Retour à :campaign', ['campaign' => $detail->campaignName]) }}
+            </a>
+        </div>
+    @endif
 
     {{-- Ad header --}}
     <div class="an:flex an:flex-wrap an:items-start an:justify-between an:gap-4">
@@ -16,11 +18,17 @@
             <h1 class="an:text-2xl an:font-semibold an:tracking-tight an:text-primary">{{ $detail->name }}</h1>
             <div class="an:mt-1.5 an:flex an:flex-wrap an:items-center an:gap-x-2 an:gap-y-1 an:text-[13px] an:text-secondary">
                 <span>{{ __('Campagne') }}</span>
-                <a href="{{ route('analytics.admin.marketing.campaigns.show', $detail->campaignId) }}" class="an:cursor-pointer an:font-medium an:text-primary an:hover:underline">{{ $detail->campaignName }}</a>
+                @if ($mayOpenCampaigns)
+                    <a href="{{ route('analytics.admin.marketing.campaigns.show', $detail->campaignId) }}" class="an:cursor-pointer an:font-medium an:text-primary an:hover:underline">{{ $detail->campaignName }}</a>
+                @else
+                    <span class="an:font-medium an:text-primary">{{ $detail->campaignName }}</span>
+                @endif
                 @if ($detail->campaignPlatform !== null)<x-ui::badge color="gray">{{ $detail->campaignPlatform }}</x-ui::badge>@endif
             </div>
         </div>
-        <x-ui::button variant="secondary" x-on:click="$anOpenWhenDone($wire.$refs.adForm.$wire.editAd({{ $detail->id }}), 'an-ad-form')"><x-ui::icon name="pencil-square" class="an:h-4 an:w-4" /> {{ __('Modifier la publicité') }}</x-ui::button>
+        @if ($mayEdit)
+            <x-ui::button variant="secondary" x-on:click="$anOpenWhenDone($wire.$refs.adForm.$wire.editAd({{ $detail->id }}), 'an-ad-form')"><x-ui::icon name="pencil-square" class="an:h-4 an:w-4" /> {{ __('Modifier la publicité') }}</x-ui::button>
+        @endif
     </div>
 
     {{-- Performance (deferred content) --}}

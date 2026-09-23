@@ -157,6 +157,14 @@ return [
             'route_prefix' => 'admin/marketing',
             'middleware' => ['web', 'auth'],
         ],
+
+        // Extra middleware for one branch of the ability tree, keyed by ability
+        // name (e.g. ['analytics.marketing' => ['password.confirm']]). Every
+        // screen of that branch takes it after the door and its ability, and
+        // every click on those screens replays it. Empty, no screen takes more
+        // than the door. Who may open or do what is not set here: see
+        // docs/autorisation.md.
+        'middleware_for' => [],
     ],
 
     /*

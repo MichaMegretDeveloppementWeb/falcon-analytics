@@ -32,6 +32,7 @@ final class TheSurfaceIsDeclaredTest extends TestCase
     private const PUBLIC_SURFACE = [
         'Analytics',
         'AnalyticsServiceProvider',
+        'Enums\Authorization\Ability',
         'Enums\EventType',
         'Enums\ObjectiveType',
         'Events\TrackedEvent',

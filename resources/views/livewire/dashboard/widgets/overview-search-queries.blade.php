@@ -17,9 +17,11 @@
                 <p class="an:max-w-md an:text-[12px] an:text-secondary">
                     {{ __('Connectez Google Search Console pour suivre les recherches qui mènent au site : clics, impressions et position.') }}
                 </p>
-                <x-ui::button variant="secondary" :href="$integrationsRoute">
-                    {{ $connectionStatus === \Falcon\Analytics\Models\SearchConsoleConnection::STATUS_ERROR ? __('Reconnecter Search Console') : __('Connecter Search Console') }}
-                </x-ui::button>
+                @if ($integrationsRoute !== null)
+                    <x-ui::button variant="secondary" :href="$integrationsRoute">
+                        {{ $connectionStatus === \Falcon\Analytics\Models\SearchConsoleConnection::STATUS_ERROR ? __('Reconnecter Search Console') : __('Connecter Search Console') }}
+                    </x-ui::button>
+                @endif
             </div>
         @elseif ($queries === [])
             <x-ui::empty-state

@@ -102,10 +102,14 @@
                 </x-ui::table.head>
                 <x-ui::table.body>
                     @foreach ($sessions as $session)
-                        <x-ui::table.row wire:key="session-{{ $session->id }}" class="an-row-link">
+                        <x-ui::table.row wire:key="session-{{ $session->id }}" :class="$mayOpenSessions ? 'an-row-link' : ''">
                             <x-ui::table.cell :first="true" variant="primary" class="an:whitespace-nowrap">
                                 <span class="an:inline-flex an:items-center an:gap-x-2">
-                                    <a href="{{ route('analytics.admin.sessions.show', $session->id) }}" class="an-row-link__target an:cursor-pointer an:hover:underline">{{ $session->startedAt->translatedFormat('d M Y, H:i') }}</a>
+                                    @if ($mayOpenSessions)
+                                        <a href="{{ route('analytics.admin.sessions.show', $session->id) }}" class="an-row-link__target an:cursor-pointer an:hover:underline">{{ $session->startedAt->translatedFormat('d M Y, H:i') }}</a>
+                                    @else
+                                        {{ $session->startedAt->translatedFormat('d M Y, H:i') }}
+                                    @endif
                                     @if ($detail->isIdentified && $session->signedIn)
                                         <x-ui::badge color="blue">{{ __('Connecté') }}</x-ui::badge>
                                     @endif
@@ -134,29 +138,31 @@
     </div>
 
     {{-- Danger zone --}}
-    <div class="an:pt-2">
-        <x-ui::section-header :title="__('Zone de danger')" :danger="true" :description="__('La suppression des données de ce visiteur est définitive.')" class="an:mb-4" />
+    @if ($mayDelete)
+        <div class="an:pt-2">
+            <x-ui::section-header :title="__('Zone de danger')" :danger="true" :description="__('La suppression des données de ce visiteur est définitive.')" class="an:mb-4" />
 
-        @error('visitor-erasure-failed')
-            <x-ui::alert type="error" class="an:mb-4">{{ $message }}</x-ui::alert>
-        @enderror
+            @error('visitor-erasure-failed')
+                <x-ui::alert type="error" class="an:mb-4">{{ $message }}</x-ui::alert>
+            @enderror
 
-        <div class="an:flex an:flex-col an:gap-3 an:rounded-xl an:border an:border-red-200 an:bg-red-50/40 an:px-5 an:py-4 an:dark:border-red-500/20 an:dark:bg-red-500/[0.06] an:sm:flex-row an:sm:items-center an:sm:justify-between">
-            <div>
-                <p class="an:text-[13px] an:font-medium an:text-primary">{{ __('Supprimer les données de ce visiteur') }}</p>
-                <p class="an:mt-0.5 an:text-[12px] an:text-secondary">{{ __('Supprime le visiteur, ses sessions et ses événements. Action irréversible (droit à l\'effacement).') }}</p>
+            <div class="an:flex an:flex-col an:gap-3 an:rounded-xl an:border an:border-red-200 an:bg-red-50/40 an:px-5 an:py-4 an:dark:border-red-500/20 an:dark:bg-red-500/[0.06] an:sm:flex-row an:sm:items-center an:sm:justify-between">
+                <div>
+                    <p class="an:text-[13px] an:font-medium an:text-primary">{{ __('Supprimer les données de ce visiteur') }}</p>
+                    <p class="an:mt-0.5 an:text-[12px] an:text-secondary">{{ __('Supprime le visiteur, ses sessions et ses événements. Action irréversible (droit à l\'effacement).') }}</p>
+                </div>
+                <x-ui::button variant="danger" class="an:shrink-0" @click="$dispatch('ui-open-modal', 'forget-visitor')">
+                    <x-ui::icon name="trash" class="an:h-4 an:w-4" /> {{ __('Supprimer') }}
+                </x-ui::button>
             </div>
-            <x-ui::button variant="danger" class="an:shrink-0" @click="$dispatch('ui-open-modal', 'forget-visitor')">
-                <x-ui::icon name="trash" class="an:h-4 an:w-4" /> {{ __('Supprimer') }}
-            </x-ui::button>
         </div>
-    </div>
 
-    <x-ui::modal name="forget-visitor" variant="confirm" :title="__('Supprimer ce visiteur ?')">
-        {{ $detail->sessionCount < 2 ? __("Cette action est irréversible\u{00A0}: le visiteur, sa session et tous ses événements seront définitivement supprimés.") : __('Cette action est irréversible : le visiteur, ses :count sessions et tous leurs événements seront définitivement supprimés.', ['count' => $detail->sessionCount]) }}
-        <x-slot:actions>
-            <x-ui::button variant="ghost" @click="$dispatch('ui-close-modal', 'forget-visitor')">{{ __('Annuler') }}</x-ui::button>
-            <x-ui::button variant="danger" wire:click="forget" @click="$dispatch('ui-close-modal', 'forget-visitor')">{{ __('Supprimer définitivement') }}</x-ui::button>
-        </x-slot:actions>
-    </x-ui::modal>
+        <x-ui::modal name="forget-visitor" variant="confirm" :title="__('Supprimer ce visiteur ?')">
+            {{ $detail->sessionCount < 2 ? __("Cette action est irréversible\u{00A0}: le visiteur, sa session et tous ses événements seront définitivement supprimés.") : __('Cette action est irréversible : le visiteur, ses :count sessions et tous leurs événements seront définitivement supprimés.', ['count' => $detail->sessionCount]) }}
+            <x-slot:actions>
+                <x-ui::button variant="ghost" @click="$dispatch('ui-close-modal', 'forget-visitor')">{{ __('Annuler') }}</x-ui::button>
+                <x-ui::button variant="danger" wire:click="forget" @click="$dispatch('ui-close-modal', 'forget-visitor')">{{ __('Supprimer définitivement') }}</x-ui::button>
+            </x-slot:actions>
+        </x-ui::modal>
+    @endif
 </x-analytics::root>

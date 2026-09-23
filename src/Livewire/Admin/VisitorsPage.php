@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Livewire\Admin;
 
+use Falcon\Analytics\Enums\Authorization\Ability;
+use Falcon\Analytics\Livewire\Admin\Concerns\AsksTheScreenAbility;
 use Falcon\Analytics\Livewire\Admin\Concerns\SortsAndSearchesList;
 use Falcon\Analytics\Repositories\Dashboard\VisitorListReadRepository;
 use Falcon\Analytics\Services\Dashboard\VisitorRowBuilder;
@@ -22,6 +24,7 @@ use Livewire\WithPagination;
  */
 final class VisitorsPage extends DashboardComponent
 {
+    use AsksTheScreenAbility;
     use SortsAndSearchesList;
     use WithPagination;
 
@@ -50,5 +53,10 @@ final class VisitorsPage extends DashboardComponent
             },
             fn (array $data): View => view('analytics::livewire.dashboard.visitors', $data),
         );
+    }
+
+    protected function screenAbility(): Ability
+    {
+        return Ability::Visitors;
     }
 }

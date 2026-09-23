@@ -3,11 +3,11 @@
 **Cette page fait autorité.** Le `README.md` montre le minimum pour démarrer ;
 tout ce qui est réglable est ici, et rien n'est ici qui ne soit réglable.
 
-Trente-sept clés, en treize blocs. Le paquet **fonctionne sans en toucher une
+Trente-huit clés, en treize blocs. Le paquet **fonctionne sans en toucher une
 seule** · les valeurs ci-dessous sont celles qui s'appliquent tant que vous ne
 dites rien, et un essai le tient.
 
-> **Trente-sept réglages, et non quarante-sept.** Le fichier porte dix noms de
+> **Trente-huit réglages, et non quarante-huit.** Le fichier porte dix noms de
 > plus — `identity`, `admin`, `geoip`… — mais ce sont des groupes, pas des
 > valeurs · on ne règle pas `identity`, on règle ce qu'il contient.
 
@@ -162,6 +162,7 @@ Le nom d'un sujet est **lu au moment de l'affichage et jamais stocké**.
 |---|---|---|---|
 | `admin.route_prefix` | chemin | `'admin/analytics'` | Ce qui apparaît dans l'URL de chaque écran d'analytique. |
 | `admin.middleware` | liste | `['web', 'auth']` | Ce qui protège ces écrans. Le défaut convient à une application à un seul garde · adaptez-le, par exemple `['web', 'auth:admin']`. |
+| `admin.middleware_for` | dictionnaire | `[]` | Des middlewares en plus pour une branche de l'arbre des capacités, indexés par son nom · `['analytics.marketing' => ['password.confirm']]`. Chaque écran de la branche les franchit après la porte et sa capacité, marketing compris, et chaque clic Livewire les rejoue. **Sans valeur**, aucun écran ne franchit plus que la porte. Voir [autorisation.md](autorisation.md). |
 | `layouts.admin` | nom de composant ou `null` | `null` | Le composant Blade qui dessine ces écrans. **Sans valeur**, la coquille du paquet, qui est une administration complète et autonome. Une clé par espace, nommée d'après lui · le paquet n'en a qu'un. |
 
 | Clé | Type | Défaut | Ce qu'elle fait |
@@ -172,6 +173,10 @@ Le nom d'un sujet est **lu au moment de l'affichage et jamais stocké**.
 > **Une liste vide monte les écrans sans aucune protection** · ni session, ni
 > authentification. Le paquet l'inscrit dans son journal et `analytics:check` le
 > rapporte comme bloquant.
+
+> **Qui peut ouvrir quel écran et faire quel geste ne se règle pas ici.** Ce sont
+> les capacités, que vous écrivez dans votre application · par défaut, tout
+> compte connecté a tout. Voir [autorisation.md](autorisation.md).
 
 > **La pile doit être complète**, session comprise · les routes du paquet sont
 > déclarées hors de vos groupes, donc elles n'héritent d'aucun de vos

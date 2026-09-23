@@ -30,7 +30,11 @@
                             <a href="{{ route('analytics.admin.marketing.ads.show', $ad->id) }}" class="an-row-link__target an:cursor-pointer an:text-[13px] an:font-medium an:text-primary an:hover:underline">{{ $ad->name }}</a>
                         </x-ui::table.cell>
                         <x-ui::table.cell>
-                            <a href="{{ route('analytics.admin.marketing.campaigns.show', $ad->campaignId) }}" class="an-row-link__above an:cursor-pointer an:text-[13px] an:text-secondary an:hover:text-primary an:hover:underline">{{ $ad->campaignName }}</a>
+                            @if ($mayOpenCampaigns)
+                                <a href="{{ route('analytics.admin.marketing.campaigns.show', $ad->campaignId) }}" class="an-row-link__above an:cursor-pointer an:text-[13px] an:text-secondary an:hover:text-primary an:hover:underline">{{ $ad->campaignName }}</a>
+                            @else
+                                <span class="an:text-[13px] an:text-secondary">{{ $ad->campaignName }}</span>
+                            @endif
                         </x-ui::table.cell>
                         <x-ui::table.cell>
                             <div class="an:flex an:flex-wrap an:items-center an:gap-1.5">

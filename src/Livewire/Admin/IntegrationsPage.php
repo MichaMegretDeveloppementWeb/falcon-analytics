@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Livewire\Admin;
 
+use Falcon\Analytics\Enums\Authorization\Ability;
+use Falcon\Analytics\Livewire\Admin\Concerns\AsksTheScreenAbility;
 use Falcon\Analytics\Livewire\Admin\Concerns\RecoversFromReadFailure;
 use Falcon\Analytics\Models\SearchConsoleConnection;
 use Falcon\Analytics\Services\SearchConsole\SearchConsoleAuth;
@@ -11,6 +13,7 @@ use Falcon\Analytics\Services\SearchConsole\SearchConsoleClient;
 use Falcon\Analytics\Services\SearchConsole\SearchConsoleSynchronizer;
 use Falcon\Analytics\Support\NumberLabel;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 use Throwable;
@@ -27,6 +30,7 @@ use Throwable;
  */
 final class IntegrationsPage extends Component
 {
+    use AsksTheScreenAbility;
     use RecoversFromReadFailure;
 
     /** Widened execution window for the inline on-demand sync, when allowed. */
@@ -45,11 +49,15 @@ final class IntegrationsPage extends Component
             $this->dispatch('ui-toast', type: (string) $flash['type'], title: (string) $flash['title']);
         }
 
-        $this->loadPropertiesIfPending();
+        if (Gate::allows(Ability::IntegrationsManage)) {
+            $this->loadPropertiesIfPending();
+        }
     }
 
     public function reloadProperties(): void
     {
+        $this->authorize(Ability::IntegrationsManage);
+
         $this->loadPropertiesIfPending();
 
         if ($this->propertiesFailed) {
@@ -59,6 +67,8 @@ final class IntegrationsPage extends Component
 
     public function selectProperty(string $siteUrl): void
     {
+        $this->authorize(Ability::IntegrationsManage);
+
         $connection = SearchConsoleConnection::current();
 
         if ($connection === null || ! in_array($siteUrl, array_column($this->properties, 'site_url'), true)) {
@@ -90,6 +100,8 @@ final class IntegrationsPage extends Component
      */
     public function syncNow(SearchConsoleSynchronizer $synchronizer): void
     {
+        $this->authorize(Ability::IntegrationsManage);
+
         $connection = SearchConsoleConnection::current();
 
         if ($connection === null || ! $connection->isConnected()) {
@@ -115,6 +127,8 @@ final class IntegrationsPage extends Component
     /** Whether Search Console was disconnected · the confirmation closes on a yes. */
     public function disconnectConfirmed(SearchConsoleAuth $auth): bool
     {
+        $this->authorize(Ability::IntegrationsManage);
+
         $connection = SearchConsoleConnection::current();
 
         if ($connection !== null) {
@@ -141,9 +155,15 @@ final class IntegrationsPage extends Component
             fn (): array => [
                 'configured' => $auth->configured(),
                 'connection' => SearchConsoleConnection::current(),
+                'mayManage' => Gate::allows(Ability::IntegrationsManage),
             ],
             fn (array $data): View => view('analytics::livewire.dashboard.integrations', $data),
         );
+    }
+
+    protected function screenAbility(): Ability
+    {
+        return Ability::Integrations;
     }
 
     /**

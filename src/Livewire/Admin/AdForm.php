@@ -6,6 +6,7 @@ namespace Falcon\Analytics\Livewire\Admin;
 
 use Falcon\Analytics\Actions\SaveAdAction;
 use Falcon\Analytics\DTOs\Dashboard\Marketing\ObjectiveTag;
+use Falcon\Analytics\Enums\Authorization\Ability;
 use Falcon\Analytics\Enums\ObjectiveType;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
@@ -64,6 +65,7 @@ final class AdForm extends Component
         $this->reset(self::FORM_FIELDS);
 
         if ($adId === null) {
+            $this->authorize(Ability::AdsEdit);
             $this->adConditions = [UrlConditions::BLANK];
 
             return true;
@@ -80,6 +82,8 @@ final class AdForm extends Component
 
             return false;
         }
+
+        $this->authorize(Ability::AdsEdit, $ad);
 
         $this->adId = $ad->id;
         $this->adName = $ad->name;
@@ -123,6 +127,8 @@ final class AdForm extends Component
      */
     public function saveAd(SaveAdAction $action): bool
     {
+        $this->authorize(Ability::AdsEdit, $this->adId === null ? null : Ad::query()->find($this->adId));
+
         $this->validate();
 
         try {

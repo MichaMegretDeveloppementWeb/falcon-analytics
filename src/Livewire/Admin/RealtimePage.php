@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Livewire\Admin;
 
 use Carbon\CarbonImmutable;
+use Falcon\Analytics\Enums\Authorization\Ability;
 use Falcon\Analytics\Events\EventRegistry;
+use Falcon\Analytics\Livewire\Admin\Concerns\AsksTheScreenAbility;
 use Falcon\Analytics\Livewire\Admin\Concerns\RecoversFromReadFailure;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Repositories\Dashboard\RealtimeReadRepository;
@@ -15,6 +17,7 @@ use Falcon\Analytics\Support\DeviceLabel;
 use Falcon\Analytics\Support\SourceLabel;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Component;
 
 /**
@@ -31,6 +34,7 @@ use Livewire\Component;
  */
 final class RealtimePage extends Component
 {
+    use AsksTheScreenAbility;
     use RecoversFromReadFailure;
 
     /** Bound of the countries list next to the map. */
@@ -39,7 +43,10 @@ final class RealtimePage extends Component
     public function render(RealtimeReadRepository $repository, RealtimeRowBuilder $rows, EventRegistry $events): View
     {
         return $this->guardedRender(
-            fn (): array => $this->board($repository, $rows, $events),
+            fn (): array => [
+                ...$this->board($repository, $rows, $events),
+                'mayOpenSessions' => Gate::allows(Ability::Sessions),
+            ],
             fn (array $data): View => view('analytics::livewire.dashboard.realtime', $data),
         );
     }
@@ -223,5 +230,10 @@ final class RealtimePage extends Component
             'total' => array_sum($values),
             'count' => count($labels),
         ];
+    }
+
+    protected function screenAbility(): Ability
+    {
+        return Ability::Realtime;
     }
 }

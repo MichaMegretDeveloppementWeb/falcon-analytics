@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Livewire\Admin\Widgets;
 
 use Falcon\Analytics\DTOs\Dashboard\Period;
+use Falcon\Analytics\Enums\Authorization\Ability;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Livewire\Admin\Concerns\GuardsWidgetRead;
 use Falcon\Analytics\Repositories\Dashboard\EventReadRepository;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Lazy;
 use Livewire\Component;
 
@@ -44,7 +46,7 @@ final class OverviewEvents extends Component
             return [
                 'topConversions' => array_slice($conversions, 0, 6),
                 'topEvents' => array_slice($breakdown, 0, 6),
-                'eventsRoute' => route('analytics.admin.events'),
+                'eventsRoute' => Gate::allows(Ability::Events) ? route('analytics.admin.events') : null,
             ];
         }, fn (array $data): View => view('analytics::livewire.dashboard.widgets.overview-events', $data));
     }

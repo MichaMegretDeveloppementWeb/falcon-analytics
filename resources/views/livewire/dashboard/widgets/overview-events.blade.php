@@ -7,7 +7,9 @@
 <x-analytics::root area="admin" class="an:border-t an:border-default an:pt-8">
     <div class="an:mb-4 an:flex an:items-end an:justify-between an:gap-4">
         <x-ui::section-header :title="__('Événements et conversions')" />
-        <a href="{{ $eventsRoute }}" class="an:shrink-0 an:cursor-pointer an:whitespace-nowrap an:text-[12px] an:font-medium an:text-secondary an:transition-colors an:hover:text-primary">{{ __('Voir tout') }} <span aria-hidden="true">&rarr;</span></a>
+        @if ($eventsRoute !== null)
+            <a href="{{ $eventsRoute }}" class="an:shrink-0 an:cursor-pointer an:whitespace-nowrap an:text-[12px] an:font-medium an:text-secondary an:transition-colors an:hover:text-primary">{{ __('Voir tout') }} <span aria-hidden="true">&rarr;</span></a>
+        @endif
     </div>
 
     <x-ui::card>

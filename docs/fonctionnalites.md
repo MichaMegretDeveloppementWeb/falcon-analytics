@@ -1,6 +1,6 @@
 # Ce que Falcon Analytics fait, écran par écran
 
-Quatorze écrans, douze commandes, un point de collecte. Cette page dit ce que
+Quatorze écrans, treize commandes, un point de collecte. Cette page dit ce que
 chacun fait, ce qu'il attend et ce qu'il rend.
 
 Pour les réglages, une seule autorité · [configuration.md](configuration.md).
@@ -84,7 +84,7 @@ On ne le répète donc pas, et chaque exception est dite dans sa fiche ·
 | | |
 |---|---|
 | **méthode** | `GET` |
-| **permissions** | ce que `admin.middleware` contient · `['web', 'auth']` au défaut |
+| **permissions** | ce que `admin.middleware` contient · `['web', 'auth']` au défaut · puis la **capacité** que chaque fiche nomme, ouverte à tout compte connecté tant que vous ne la restreignez pas · voir [autorisation.md](autorisation.md) |
 | **layout** | ce que `layouts.admin` nomme · la coquille du paquet au défaut |
 | **mode d'usage** | une page, dans votre layout ou dans notre coquille. **Jamais un composant à poser dans une de vos pages** · un écran attend une page entière autour de lui |
 | **lecture seule** | sauf **trois** écrans marketing et l'effacement RGPD, tous signalés dans leur fiche |
@@ -178,6 +178,7 @@ signaler ; ce qu'il faut régler est ici, dans la documentation, et dans
 |---|---|
 | **route** | `analytics.admin.overview` |
 | **adresse** | `{admin.route_prefix}` · `/admin/analytics` |
+| **capacité** | `analytics.overview` |
 | **paramètres** | aucun dans l'adresse · période et sujet par la barre de filtres |
 
 L'en-tête et les filtres paraissent tout de suite ; les indicateurs de tête avec
@@ -203,6 +204,7 @@ suivante.**
 |---|---|
 | **route** | `analytics.admin.realtime` |
 | **adresse** | `{admin.route_prefix}/realtime` |
+| **capacité** | `analytics.realtime` |
 | **paramètres** | aucun |
 
 Qui est en ligne maintenant, et l'activité de la fenêtre récente · indicateurs,
@@ -230,6 +232,7 @@ points ; sans base, les sessions comptent comme non localisées.
 |---|---|
 | **route** | `analytics.admin.visitors` |
 | **adresse** | `{admin.route_prefix}/visitors` |
+| **capacité** | `analytics.visitors` |
 | **paramètres** | aucun |
 
 Les indicateurs de la période en tête, puis **la liste de tous les profils depuis
@@ -244,6 +247,7 @@ annuaire.
 |---|---|
 | **route** | `analytics.admin.visitors.show` |
 | **adresse** | `{admin.route_prefix}/visitors/{visitor}` |
+| **capacité** | `analytics.visitors` · supprimer ses données · `analytics.visitors.delete` |
 | **paramètres** | `visitor` · l'identifiant du profil |
 
 Son identité, ses chiffres, et la liste de ses sessions menant chacune à son
@@ -256,6 +260,7 @@ détail. **Lecture seule, sauf l'effacement RGPD** · voir
 |---|---|
 | **route** | `analytics.admin.sessions` |
 | **adresse** | `{admin.route_prefix}/sessions` |
+| **capacité** | `analytics.sessions` |
 | **paramètres** | aucun |
 
 Les statistiques d'engagement de la période, et la liste paginée et filtrable de
@@ -267,6 +272,7 @@ Les statistiques d'engagement de la période, et la liste paginée et filtrable 
 |---|---|
 | **route** | `analytics.admin.sessions.show` |
 | **adresse** | `{admin.route_prefix}/sessions/{session}` |
+| **capacité** | `analytics.sessions` |
 | **paramètres** | `session` · l'identifiant de la session |
 
 Ses informations principales et **son parcours chronologique** · les pages
@@ -284,6 +290,7 @@ visitées, les clics rangés sous la page où ils ont eu lieu, et le temps pass�
 |---|---|
 | **route** | `analytics.admin.events` |
 | **adresse** | `{admin.route_prefix}/events` |
+| **capacité** | `analytics.events` |
 | **paramètres** | aucun |
 
 Les volumes, les scores et les conversions de vos [événements
@@ -296,6 +303,7 @@ leurs courbes, la tendance, et le détail par événement.
 |---|---|
 | **route** | `analytics.admin.funnels` |
 | **adresse** | `{admin.route_prefix}/funnels` |
+| **capacité** | `analytics.funnels` |
 | **paramètres** | aucun |
 
 Pour chaque [tunnel déclaré](#les-tunnels) · les volumes par étape, les taux de
@@ -310,6 +318,7 @@ panne.
 |---|---|
 | **route** | `analytics.admin.integrations` |
 | **adresse** | `{admin.route_prefix}/integrations` |
+| **capacité** | `analytics.integrations` · connecter, choisir la propriété, synchroniser, déconnecter · `analytics.integrations.manage` |
 | **paramètres** | aucun |
 
 Aujourd'hui, la carte Google Search Console · connecter, choisir la propriété à
@@ -337,6 +346,7 @@ garde, **ou ne pas les proposer du tout**.
 |---|---|
 | **route** | `analytics.admin.marketing.dashboard` |
 | **adresse** | `{admin.marketing.route_prefix}` · `/admin/marketing` |
+| **capacité** | `analytics.marketing-dashboard` |
 | **paramètres** | aucun |
 
 La performance des campagnes et des publicités sur la période · portée,
@@ -349,6 +359,7 @@ paquet n'appelle aucune régie.
 |---|---|
 | **route** | `analytics.admin.marketing.campaigns` |
 | **adresse** | `{admin.marketing.route_prefix}/campaigns` |
+| **capacité** | `analytics.campaigns` · créer, modifier · `analytics.campaigns.edit` · supprimer · `analytics.campaigns.delete` |
 | **paramètres** | aucun |
 
 La table cherchable et paginée des campagnes, avec leurs conditions d'URL et leur
@@ -360,6 +371,7 @@ nombre de publicités. **Les campagnes se créent et se modifient ici.**
 |---|---|
 | **route** | `analytics.admin.marketing.campaigns.show` |
 | **adresse** | `{admin.marketing.route_prefix}/campaigns/{campaign}` |
+| **capacité** | `analytics.campaigns` · la campagne · `analytics.campaigns.edit`, `analytics.campaigns.delete` · ses publicités · `analytics.ads.edit`, `analytics.ads.delete` |
 | **paramètres** | `campaign` |
 
 Son trafic sur la période, son identité, ses conditions d'URL, et la table de ses
@@ -372,6 +384,7 @@ les objectifs se gèrent ici**, et la campagne peut être modifiée ou supprimé
 |---|---|
 | **route** | `analytics.admin.marketing.ads` |
 | **adresse** | `{admin.marketing.route_prefix}/ads` |
+| **capacité** | `analytics.ads` |
 | **paramètres** | aucun |
 
 La table à plat de toutes les publicités, toutes campagnes confondues. **Leur
@@ -383,6 +396,7 @@ modification se fait sur la campagne parente.**
 |---|---|
 | **route** | `analytics.admin.marketing.ads.show` |
 | **adresse** | `{admin.marketing.route_prefix}/ads/{ad}` |
+| **capacité** | `analytics.ads` · la modifier · `analytics.ads.edit` |
 | **paramètres** | `ad` |
 
 Sa campagne parente, ses conditions d'URL et son éditeur paraissent tout de
@@ -399,7 +413,8 @@ suite ; son trafic, sa tendance et le détail de ses conversions suivent.
 | `analytics.admin.integrations.search-console.connect` | `{admin.route_prefix}/integrations/search-console/connect` | Part vers Google. **Refuse si les identifiants ne sont pas configurés.** |
 | `analytics.admin.integrations.search-console.callback` | `{admin.route_prefix}/integrations/search-console/callback` | Le retour de Google. **C'est cette adresse qu'il faut déclarer sur le client OAuth**, sauf si vous en imposez une autre par `search_console.redirect`. |
 
-Les deux sont derrière les mêmes protections que les écrans.
+Les deux sont derrière les mêmes protections que les écrans, et demandent la
+capacité `analytics.integrations.manage`.
 
 ### Le point de collecte
 
@@ -419,11 +434,12 @@ limite de débit tiennent sa place, et ils sont posés **après** votre pile · 
 page publique très fréquentée veut la monter. Le contrôle d'origine, lui, n'a
 aucun réglage.
 
-### Les douze commandes
+### Les treize commandes
 
 | Commande | Ce qu'elle fait | Quand |
 |---|---|---|
 | `analytics:install` | publie la configuration, ajoute les variables d'environnement, lance les migrations | à l'installation |
+| `analytics:abilities` | dessine l'arbre des capacités et dit qui répond à chacune · `--user=` ajoute ce qu'elles répondent à un compte | quand vous écrivez vos règles · voir [autorisation.md](autorisation.md) |
 | `analytics:seed` | remplit les écrans de visites inventées · refuse hors développement sans `--force` | en développement, pour éprouver les écrans · voir plus bas |
 | `analytics:refresh` | supprime les tables de l'analytique et rejoue ses migrations · les statistiques repartent de zéro | une fois, pour un projet installé avant la reprise du schéma · voir [reprise-du-schema.md](reprise-du-schema.md) |
 | `analytics:check` | dit si le paquet est correctement installé et opérationnel | après l'installation, et quand quelque chose cloche |

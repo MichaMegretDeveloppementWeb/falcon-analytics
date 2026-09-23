@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Livewire\Admin;
 
+use Falcon\Analytics\Enums\Authorization\Ability;
 use Falcon\Analytics\Events\EventRegistry;
+use Falcon\Analytics\Livewire\Admin\Concerns\AsksTheScreenAbility;
 use Falcon\Analytics\Livewire\Admin\Concerns\SortsAndSearchesList;
 use Falcon\Analytics\Repositories\Dashboard\SessionListReadRepository;
 use Falcon\Analytics\Services\Dashboard\SessionRowBuilder;
@@ -23,6 +25,7 @@ use Livewire\WithPagination;
  */
 final class SessionsPage extends DashboardComponent
 {
+    use AsksTheScreenAbility;
     use SortsAndSearchesList;
     use WithPagination;
 
@@ -107,5 +110,10 @@ final class SessionsPage extends DashboardComponent
         }
 
         return $options;
+    }
+
+    protected function screenAbility(): Ability
+    {
+        return Ability::Sessions;
     }
 }

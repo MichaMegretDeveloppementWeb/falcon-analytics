@@ -293,12 +293,12 @@ Cinq règles tiennent l'ensemble, et chacune a son essai ·
 | Dossier | Ce qu'on y trouve |
 |---|---|
 | `Models/` | les dix tables, et leurs relations · huit portent vos mesures, deux la mécanique de la conservation |
-| `Enums/` | les types d'événement et d'objectif |
+| `Enums/` | les types d'événement et d'objectif, et l'arbre des capacités (`Authorization/Ability`) |
 | `Funnels/` | les tunnels · déclarés par l'hôte, évalués ici |
 | `Events/` | les événements nommés, déclarés par l'hôte |
 | `Services/SearchConsole/` | l'authentification OAuth, le client, la synchronisation |
 | `Support/` | ce qui ne tient à aucune couche · géolocalisation, agent utilisateur, expurgation d'URL, palette |
-| `Console/` | les douze commandes |
+| `Console/` | les treize commandes |
 | `View/` | ce que la directive du collecteur a besoin de savoir |
 
 ---

@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Livewire\Admin;
 
 use Falcon\Analytics\Actions\ForgetVisitorAction;
+use Falcon\Analytics\Enums\Authorization\Ability;
+use Falcon\Analytics\Livewire\Admin\Concerns\AsksTheScreenAbility;
 use Falcon\Analytics\Livewire\Admin\Concerns\RecoversFromReadFailure;
 use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Repositories\Dashboard\VisitorProfileReadRepository;
 use Falcon\Analytics\Services\Dashboard\VisitorDetailBuilder;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
@@ -24,6 +27,7 @@ use Livewire\WithPagination;
  */
 final class VisitorDetailPage extends Component
 {
+    use AsksTheScreenAbility;
     use RecoversFromReadFailure;
     use WithPagination;
 
@@ -53,6 +57,8 @@ final class VisitorDetailPage extends Component
      */
     public function forget(ForgetVisitorAction $action): void
     {
+        $this->authorize(Ability::VisitorsDelete, $this->visitor());
+
         try {
             $action->execute($this->visitor());
         } catch (\Throwable $e) {
@@ -80,9 +86,16 @@ final class VisitorDetailPage extends Component
             fn (): array => [
                 'detail' => $details->build($this->visitor(), $repository->engagement($this->visitorId)),
                 'sessions' => $details->sessions($repository->paginateSessions($this->visitorId, self::PER_PAGE)),
+                'mayDelete' => Gate::allows(Ability::VisitorsDelete, $this->visitor()),
+                'mayOpenSessions' => Gate::allows(Ability::Sessions),
             ],
             fn (array $data): View => view('analytics::livewire.dashboard.visitor-detail', $data),
         );
+    }
+
+    protected function screenAbility(): Ability
+    {
+        return Ability::Visitors;
     }
 
     private function visitor(): Visitor

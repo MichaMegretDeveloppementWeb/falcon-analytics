@@ -34,11 +34,20 @@ architecture qui n'existe plus.
   donc un visiteur est *ce client-là*, ce qu'aucun outil externe ne peut faire ;
 - **Google Search Console**, pour les vraies requêtes organiques ;
 - **la géolocalisation locale**, par base MaxMind téléchargée chez vous ;
-- **douze commandes** · installation, diagnostic, deux pour les événements, deux
-  pour la géolocalisation, une pour la Search Console, trois d'entretien, une
-  pour repartir de zéro et une qui remplit les écrans de visites inventées en
-  développement — **dont cinq que le paquet planifie lui-même**, sans que vous
-  ayez de tâche à créer ;
+- **treize commandes** · installation, diagnostic, une qui dessine l'arbre des
+  capacités, deux pour les événements, deux pour la géolocalisation, une pour la
+  Search Console, trois d'entretien, une pour repartir de zéro et une qui remplit
+  les écrans de visites inventées en développement — **dont cinq que le paquet
+  planifie lui-même**, sans que vous ayez de tâche à créer ;
+- **des droits que vous réglez vous-même** · chaque écran et chaque geste
+  sensible pose une question nommée, une capacité, rangée dans un arbre de dix-neuf ·
+  `analytics.marketing` ferme tout le marketing d'une ligne,
+  `analytics.campaigns.delete` ne ferme que la suppression d'une campagne. Par
+  défaut, tout compte connecté a tout · rien n'est à écrire tant que vous ne
+  voulez rien restreindre. Un geste refusé ne s'affiche pas, et le serveur le
+  refuse aussi quand on l'envoie sans l'écran. Des middlewares en plus peuvent se
+  poser sur une branche, par `admin.middleware_for`. Voir
+  [autorisation.md](docs/autorisation.md) ;
 - **des fabriques** pour chaque modèle public, utilisables dans vos propres
   essais ;
 - **un vocabulaire écrit** · un mot par notion sur tous les écrans, et la liste
@@ -55,7 +64,7 @@ architecture qui n'existe plus.
   vues par jour, le bloc des pages passe ainsi de plusieurs secondes à une
   fraction de seconde. Une journée y reste comptée telle que la nuit l'a
   comptée · un visiteur effacé ensuite y demeure, anonymement ;
-- **trente-sept réglages**, tous facultatifs · le paquet fonctionne sans qu'on en
+- **trente-huit réglages**, tous facultatifs · le paquet fonctionne sans qu'on en
   touche un seul, et un essai le tient ;
 - **des fichiers déjà compilés** · aucun Node n'est requis chez l'hôte. Le
   script des écrans, `analytics-admin.js`, ne part que vers les écrans

@@ -32,8 +32,10 @@
                             <x-ui::icon :name="$el['type'] === 'funnel' ? 'funnel' : 'bolt'" class="an:h-4 an:w-4 an:shrink-0 {{ $el['type'] === 'funnel' ? 'an:text-blue-500' : 'an:text-emerald-500' }}" />
                             <span class="an:min-w-0 an:flex-1 an:text-[13px] an:font-medium an:text-primary an:sm:truncate">{{ $el['label'] }}</span>
                             <x-ui::badge :color="$el['type'] === 'funnel' ? 'blue' : 'emerald'" class="an:hidden an:sm:inline-flex">{{ $el['type'] === 'funnel' ? __('Tunnel') : __('Événement') }}</x-ui::badge>
-                            @if ($showAd)
+                            @if ($showAd && $mayOpenAds)
                                 <a href="{{ route('analytics.admin.marketing.ads.show', $el['adId']) }}" class="an:hidden an:w-32 an:shrink-0 an:cursor-pointer an:truncate an:text-right an:text-[12px] an:text-secondary an:hover:text-primary an:hover:underline an:sm:inline">{{ $el['adName'] }}</a>
+                            @elseif ($showAd)
+                                <span class="an:hidden an:w-32 an:shrink-0 an:truncate an:text-right an:text-[12px] an:text-secondary an:sm:inline">{{ $el['adName'] }}</span>
                             @endif
                             <span class="an:shrink-0 an:text-right an:text-base an:font-semibold an:text-primary an:tabular-nums an:sm:w-16">{{ NumberLabel::for($el['conversions']) }}</span>
                         </div>
