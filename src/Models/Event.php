@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Models;
 
 use Carbon\CarbonImmutable;
+use Falcon\Analytics\Database\Factories\EventFactory;
 use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Support\StoredUrl;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -31,6 +33,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 final class Event extends Model
 {
+    /** @use HasFactory<EventFactory> */
+    use HasFactory;
+
     /** Named because the archiving and the purge build joins by hand. */
     public const TABLE = 'falcon_analytics_events';
 
@@ -74,6 +79,11 @@ final class Event extends Model
     public function visitor(): BelongsTo
     {
         return $this->belongsTo(Visitor::class);
+    }
+
+    protected static function newFactory(): EventFactory
+    {
+        return EventFactory::new();
     }
 
     /** @return array<string, string> */

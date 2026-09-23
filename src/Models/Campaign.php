@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Models;
 
 use Carbon\CarbonImmutable;
+use Falcon\Analytics\Database\Factories\CampaignFactory;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -21,6 +23,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 final class Campaign extends Model
 {
+    /** @use HasFactory<CampaignFactory> */
+    use HasFactory;
+
     protected $table = 'falcon_analytics_campaigns';
 
     /** @var list<string> */
@@ -30,6 +35,11 @@ final class Campaign extends Model
     public function ads(): HasMany
     {
         return $this->hasMany(Ad::class);
+    }
+
+    protected static function newFactory(): CampaignFactory
+    {
+        return CampaignFactory::new();
     }
 
     /** @return array<string, string> */

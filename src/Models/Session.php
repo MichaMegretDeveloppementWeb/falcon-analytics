@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Models;
 
 use Carbon\CarbonImmutable;
+use Falcon\Analytics\Database\Factories\SessionFactory;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -52,6 +54,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 final class Session extends Model
 {
+    /** @use HasFactory<SessionFactory> */
+    use HasFactory;
+
     /**
      * The table name as a constant, because
      * `SessionWriteRepository::recordActivity()` writes a literal UPDATE and
@@ -83,6 +88,11 @@ final class Session extends Model
     public function events(): HasMany
     {
         return $this->hasMany(Event::class);
+    }
+
+    protected static function newFactory(): SessionFactory
+    {
+        return SessionFactory::new();
     }
 
     /** @return array<string, string> */
