@@ -7,12 +7,10 @@ namespace Falcon\Analytics\Tests\Feature;
 use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Models\DailyCount;
 use Falcon\Analytics\Models\Session;
-use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use ReflectionClass;
 
 /**
@@ -129,17 +127,7 @@ final class TheEngineKeepsTheListsTest extends TestCase
 
     private function makeSession(): Session
     {
-        $visitor = Visitor::create([
-            'uuid' => (string) Str::uuid(),
-            'first_seen_at' => now(),
-            'last_seen_at' => now(),
-        ]);
-
-        return Session::create([
-            'visitor_id' => $visitor->id,
-            'started_at' => now(),
-            'last_activity_at' => now(),
-        ]);
+        return Session::factory()->create();
     }
 
     private function insertEvent(Session $session, string $type): void

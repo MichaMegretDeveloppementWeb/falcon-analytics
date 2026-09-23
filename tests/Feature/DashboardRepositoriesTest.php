@@ -28,7 +28,6 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Str;
 
 final class DashboardRepositoriesTest extends TestCase
 {
@@ -109,30 +108,17 @@ final class DashboardRepositoriesTest extends TestCase
         }
     }
 
-    private function makeVisitor(): Visitor
-    {
-        return Visitor::create([
-            'uuid' => (string) Str::uuid(),
-            'first_seen_at' => now(),
-            'last_seen_at' => now(),
-        ]);
-    }
-
     /**
+     * A visit of one page, counted on its visitor as the ingestion counts it.
+     *
      * @param  array<string, mixed>  $attributes
      */
     private function makeSession(array $attributes = [], ?Visitor $visitor = null): Session
     {
-        $visitor ??= $this->makeVisitor();
+        $visitor ??= Visitor::factory()->create();
         $visitor->increment('session_count');
 
-        return Session::create(array_merge([
-            'visitor_id' => $visitor->id,
-            'started_at' => now(),
-            'last_activity_at' => now(),
-            'is_bot' => false,
-            'pageview_count' => 1,
-        ], $attributes));
+        return Session::factory()->for($visitor)->create(['pageview_count' => 1, ...$attributes]);
     }
 
     /**
@@ -140,12 +126,7 @@ final class DashboardRepositoriesTest extends TestCase
      */
     private function makeEvent(Session $session, EventType $type, array $attributes = []): Event
     {
-        return Event::create(array_merge([
-            'session_id' => $session->id,
-            'visitor_id' => $session->visitor_id,
-            'occurred_at' => now()->subMinute(),
-            'type' => $type,
-        ], $attributes));
+        return Event::factory()->for($session)->create(['occurred_at' => now()->subMinute(), 'type' => $type, ...$attributes]);
     }
 
     public function test_it_fetches_raw_headline_counts_for_the_period_excluding_bots(): void
@@ -167,7 +148,7 @@ final class DashboardRepositoriesTest extends TestCase
 
     public function test_it_narrows_the_raw_headline_counts_to_a_subject_type(): void
     {
-        $client = $this->makeVisitor();
+        $client = Visitor::factory()->create();
         $this->makeSession(['subject_type' => 'client', 'subject_id' => 1], $client);
         $this->makeSession(['subject_type' => 'client', 'subject_id' => 1], $client);
         $this->makeSession(['subject_type' => 'lessor', 'subject_id' => 7]);
@@ -235,7 +216,7 @@ final class DashboardRepositoriesTest extends TestCase
 
     public function test_it_reclassifies_campaign_matched_sessions_as_paid_in_the_channel_breakdown(): void
     {
-        Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
+        Campaign::factory()->matching('src', 'meta_ete')->create(['name' => 'Été']);
 
         // Two sessions classified organic that actually match the campaign,
         // plus one that does not.
@@ -395,7 +376,7 @@ final class DashboardRepositoriesTest extends TestCase
     {
         $this->makeSession();
 
-        $returning = $this->makeVisitor();
+        $returning = Visitor::factory()->create();
         $returning->update(['first_seen_at' => now()->subMonths(3)]);
         $this->makeSession([], $returning);
 
@@ -466,7 +447,7 @@ final class DashboardRepositoriesTest extends TestCase
         config()->set('analytics.identity.subjects.client', ['label' => 'Client', 'name' => ['first_name', 'last_name']]);
 
         $marie = TestClient::create(['first_name' => 'Marie', 'last_name' => 'Dupont']);
-        $visitor = $this->makeVisitor();
+        $visitor = Visitor::factory()->create();
         $visitor->update(['subject_type' => 'client', 'subject_id' => $marie->id]);
         $anonymous = $this->makeSession([], $visitor);
         $this->makeSession();
@@ -479,11 +460,11 @@ final class DashboardRepositoriesTest extends TestCase
 
     public function test_it_searches_sessions_by_the_visitor_uuid_shown_as_the_id(): void
     {
-        $visitor = Visitor::create(['uuid' => 'vd-known-42', 'first_seen_at' => now(), 'last_seen_at' => now()]);
+        $visitor = Visitor::factory()->create(['uuid' => 'known-42']);
         $this->makeSession([], $visitor);
         $this->makeSession();
 
-        $found = $this->sessions->paginateSessions($this->period, null, 'vd-known', null, null, new SubjectResolver);
+        $found = $this->sessions->paginateSessions($this->period, null, 'known', null, null, new SubjectResolver);
 
         $this->assertSame(1, $found->total());
         $this->assertSame($visitor->id, $this->firstRow($found)->visitor_id);
@@ -514,7 +495,7 @@ final class DashboardRepositoriesTest extends TestCase
     {
         $ids = [];
         foreach (range(1, 6) as $ignored) {
-            $visitor = $this->makeVisitor();
+            $visitor = Visitor::factory()->create();
             $this->makeSession([], $visitor);
             $ids[] = $visitor->id;
         }
@@ -541,14 +522,14 @@ final class DashboardRepositoriesTest extends TestCase
 
     public function test_it_paginates_the_all_time_visitor_directory_with_its_derived_columns(): void
     {
-        $visitor = $this->makeVisitor();
+        $visitor = Visitor::factory()->create();
         $this->makeSession(['source' => 'organic', 'started_at' => now()->subDays(60)], $visitor); // la toute première : acquisition
         $this->makeSession(['city' => 'Lyon', 'source' => 'referral', 'started_at' => now()->subDays(3)], $visitor);
         $this->makeSession(['city' => 'Paris', 'source' => 'paid', 'started_at' => now()->subDay()], $visitor); // la dernière : localité
 
-        $this->makeSession(['is_bot' => true], $this->makeVisitor()); // visiteur robot seulement : écarté
+        $this->makeSession(['is_bot' => true], Visitor::factory()->create()); // visiteur robot seulement : écarté
 
-        $alias = $this->makeVisitor(); // alias fusionné : écarté
+        $alias = Visitor::factory()->create(); // alias fusionné : écarté
         $alias->update(['merged_into_id' => $visitor->id]);
 
         $result = $this->visitors->paginateVisitors(null, null, new SubjectResolver);
@@ -565,10 +546,10 @@ final class DashboardRepositoriesTest extends TestCase
 
     public function test_it_sorts_visitors_by_their_all_time_session_count(): void
     {
-        $busy = $this->makeVisitor();
+        $busy = Visitor::factory()->create();
         $this->makeSession([], $busy);
         $this->makeSession([], $busy);
-        $this->makeSession([], $this->makeVisitor());
+        $this->makeSession([], Visitor::factory()->create());
 
         $desc = $this->visitors->paginateVisitors(null, null, new SubjectResolver, 'session_count', 'desc');
 
@@ -578,16 +559,16 @@ final class DashboardRepositoriesTest extends TestCase
 
     public function test_it_counts_period_visitors_new_visitors_and_sessions_excluding_bots(): void
     {
-        $returning = $this->makeVisitor();
+        $returning = Visitor::factory()->create();
         $returning->update(['first_seen_at' => now()->subDays(60)]); // vu avant la période
         $this->makeSession([], $returning);
         $this->makeSession([], $returning);
 
-        $new = $this->makeVisitor();
+        $new = Visitor::factory()->create();
         $new->update(['first_seen_at' => now()->subDay()]); // vu pour la première fois dans la période
         $this->makeSession([], $new);
 
-        $this->makeSession(['is_bot' => true], $this->makeVisitor()); // robot : écarté
+        $this->makeSession(['is_bot' => true], Visitor::factory()->create()); // robot : écarté
 
         $counts = $this->visitors->visitorCounts($this->period, null);
 
@@ -598,11 +579,11 @@ final class DashboardRepositoriesTest extends TestCase
 
     public function test_it_returns_raw_daily_rows_keyed_by_day_with_new_visitors_bot_excluded(): void
     {
-        $visitor = $this->makeVisitor();
+        $visitor = Visitor::factory()->create();
         $visitor->update(['first_seen_at' => CarbonImmutable::parse('2026-06-10 09:00')]);
         $this->makeSession(['started_at' => CarbonImmutable::parse('2026-06-10 09:00')], $visitor);
 
-        $botVisitor = $this->makeVisitor();
+        $botVisitor = Visitor::factory()->create();
         $botVisitor->update(['first_seen_at' => CarbonImmutable::parse('2026-06-10 10:00')]);
         $this->makeSession(['is_bot' => true, 'started_at' => CarbonImmutable::parse('2026-06-10 10:00')], $botVisitor);
 
@@ -631,7 +612,7 @@ final class DashboardRepositoriesTest extends TestCase
 
     public function test_it_aggregates_a_visitor_engagement_over_all_their_sessions_and_scopes_to_them(): void
     {
-        $visitor = $this->makeVisitor();
+        $visitor = Visitor::factory()->create();
         $this->makeSession(['device_type' => 'mobile', 'source' => 'google', 'pageview_count' => 3], $visitor);
         $this->makeSession(['device_type' => 'mobile', 'source' => 'google', 'pageview_count' => 2], $visitor);
         $this->makeSession(['device_type' => 'desktop', 'source' => null, 'pageview_count' => 1], $visitor);
@@ -649,7 +630,7 @@ final class DashboardRepositoriesTest extends TestCase
 
     public function test_it_paginates_a_visitor_sessions_list(): void
     {
-        $visitor = $this->makeVisitor();
+        $visitor = Visitor::factory()->create();
 
         foreach (range(1, 25) as $i) {
             $this->makeSession(['started_at' => now()->subMinutes($i)], $visitor);

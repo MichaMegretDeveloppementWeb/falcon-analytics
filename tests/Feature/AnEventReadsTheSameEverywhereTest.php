@@ -19,7 +19,6 @@ use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Tests\Fixtures\Models\TestAdmin;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Str;
 use Livewire\Livewire;
 
 /**
@@ -42,11 +41,9 @@ final class AnEventReadsTheSameEverywhereTest extends TestCase
         $this->travelTo(CarbonImmutable::parse('2026-07-10 12:00:00'));
         $this->actingAs(TestAdmin::create([]), 'admin');
 
-        $visitor = Visitor::create(['uuid' => (string) Str::uuid(), 'first_seen_at' => now(), 'last_seen_at' => now(), 'session_count' => 1]);
-        $this->session = Session::create([
-            'visitor_id' => $visitor->id, 'browser_key' => $visitor->uuid, 'started_at' => now()->subMinutes(5),
-            'last_activity_at' => now(), 'is_bot' => false, 'pageview_count' => 1, 'click_count' => 2,
-        ]);
+        $this->session = Session::factory()
+            ->for(Visitor::factory()->state(['session_count' => 1]))
+            ->create(['started_at' => now()->subMinutes(5), 'pageview_count' => 1, 'click_count' => 2]);
 
         $this->event(EventType::Pageview, ['route' => 'home', 'url' => 'https://exemple.test/'], 4);
         $this->event(EventType::Click, ['name' => 'sample.action', 'target_text' => 'Réserver maintenant', 'route' => 'home'], 3);
@@ -90,12 +87,6 @@ final class AnEventReadsTheSameEverywhereTest extends TestCase
      */
     private function event(EventType $type, array $attributes, int $minutesAgo): void
     {
-        Event::create([
-            'session_id' => $this->session->id,
-            'visitor_id' => $this->session->visitor_id,
-            'occurred_at' => now()->subMinutes($minutesAgo),
-            'type' => $type,
-            ...$attributes,
-        ]);
+        Event::factory()->for($this->session)->create(['occurred_at' => now()->subMinutes($minutesAgo), 'type' => $type, ...$attributes]);
     }
 }

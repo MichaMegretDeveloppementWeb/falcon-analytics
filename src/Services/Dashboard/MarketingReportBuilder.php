@@ -117,6 +117,29 @@ final class MarketingReportBuilder
     }
 
     /**
+     * The campaign's active ads, with their objectives, out of the ones already
+     * loaded.
+     *
+     * @return list<Ad>
+     */
+    public function activeAdsOf(Campaign $campaign): array
+    {
+        return array_values(array_filter($this->activeAds(), fn (Ad $ad): bool => $ad->campaign_id === $campaign->id));
+    }
+
+    /** One ad with its objectives, read again only when it is not among the active ones. */
+    public function adWithObjectives(int $id): Ad
+    {
+        foreach ($this->activeAds() as $ad) {
+            if ($ad->id === $id) {
+                return $ad;
+            }
+        }
+
+        return $this->repository->adWithObjectives($id);
+    }
+
+    /**
      * @param  array<string, string>|null  $params
      */
     public function resolveAd(?array $params): ?Ad
@@ -259,7 +282,7 @@ final class MarketingReportBuilder
             fn (Session $session): bool => $this->attribution->mostSpecific($campaigns, $session->mkt_params ?? [])?->id === $campaign->id,
         ));
 
-        $ads = $this->repository->activeCampaignAds($campaign);
+        $ads = $this->activeAdsOf($campaign);
         /** @var array<int, int> $adSessions */
         $adSessions = [];
         /** @var array<int, array<int, true>> $adVisitors */

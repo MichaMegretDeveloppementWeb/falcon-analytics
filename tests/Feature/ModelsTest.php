@@ -11,33 +11,14 @@ use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Str;
 
 final class ModelsTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function makeVisitor(): Visitor
-    {
-        return Visitor::create([
-            'uuid' => (string) Str::uuid(),
-            'first_seen_at' => now(),
-            'last_seen_at' => now(),
-        ]);
-    }
-
-    private function makeSession(Visitor $visitor): Session
-    {
-        return Session::create([
-            'visitor_id' => $visitor->id,
-            'started_at' => now(),
-            'last_activity_at' => now(),
-        ]);
-    }
-
     public function test_it_casts_session_attributes(): void
     {
-        $session = $this->makeSession($this->makeVisitor());
+        $session = Session::factory()->create();
         $session->update(['latitude' => 46.2044, 'longitude' => 6.1432, 'is_bot' => false]);
 
         $fresh = $session->fresh();
@@ -62,14 +43,7 @@ final class ModelsTest extends TestCase
 
     public function test_it_casts_the_event_type_to_the_enum_props_to_an_array_and_value_to_float(): void
     {
-        $visitor = $this->makeVisitor();
-
-        $event = Event::create([
-            'session_id' => $this->makeSession($visitor)->id,
-            'visitor_id' => $visitor->id,
-            'occurred_at' => now(),
-            'type' => EventType::Click,
-            'name' => 'listing.contact_click',
+        $event = Event::factory()->click('listing.contact_click')->create([
             'props' => ['listing_id' => 42],
             'value' => 3,
         ]);
@@ -85,15 +59,10 @@ final class ModelsTest extends TestCase
 
     public function test_it_wires_the_relationships_in_both_directions(): void
     {
-        $visitor = $this->makeVisitor();
-        $session = $this->makeSession($visitor);
+        $visitor = Visitor::factory()->create();
+        $session = Session::factory()->for($visitor)->create();
 
-        $event = Event::create([
-            'session_id' => $session->id,
-            'visitor_id' => $visitor->id,
-            'occurred_at' => now(),
-            'type' => EventType::Pageview,
-        ]);
+        $event = Event::factory()->for($session)->create();
 
         $firstSession = $visitor->sessions->first();
         $firstEvent = $visitor->events->first();

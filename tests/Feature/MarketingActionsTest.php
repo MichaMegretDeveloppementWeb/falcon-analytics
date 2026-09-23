@@ -36,7 +36,7 @@ final class MarketingActionsTest extends TestCase
 
     public function test_it_saves_an_ad_and_rebuilds_its_objectives_in_one_transaction(): void
     {
-        $campaign = Campaign::create(['name' => 'C', 'match_conditions' => [['param' => 'src', 'value' => 'meta']]]);
+        $campaign = Campaign::factory()->create();
 
         $ad = (new SaveAdAction)->execute(null, $campaign->id, 'Cabrio', [['param' => 'creative', 'value' => 'cabrio']], [
             ['type' => 'event', 'reference' => 'Lead', 'label' => 'Lead'],
@@ -57,9 +57,9 @@ final class MarketingActionsTest extends TestCase
 
     public function test_it_deletes_a_campaign_with_its_ads_and_objectives(): void
     {
-        $campaign = Campaign::create(['name' => 'C', 'match_conditions' => [['param' => 'src', 'value' => 'meta']]]);
-        $ad = Ad::create(['campaign_id' => $campaign->id, 'name' => 'A', 'match_conditions' => [['param' => 'x', 'value' => 'y']]]);
-        AdObjective::create(['ad_id' => $ad->id, 'type' => 'event', 'reference' => 'Lead']);
+        $campaign = Campaign::factory()->create();
+        $ad = Ad::factory()->for($campaign)->create();
+        AdObjective::factory()->for($ad)->event('Lead')->create();
 
         (new DeleteCampaignAction)->execute($campaign->id);
 
@@ -70,9 +70,9 @@ final class MarketingActionsTest extends TestCase
 
     public function test_it_deletes_an_ad_only_when_it_belongs_to_the_given_campaign(): void
     {
-        $campaign = Campaign::create(['name' => 'C', 'match_conditions' => [['param' => 'src', 'value' => 'meta']]]);
-        $ad = Ad::create(['campaign_id' => $campaign->id, 'name' => 'A', 'match_conditions' => [['param' => 'x', 'value' => 'y']]]);
-        AdObjective::create(['ad_id' => $ad->id, 'type' => 'event', 'reference' => 'Lead']);
+        $campaign = Campaign::factory()->create();
+        $ad = Ad::factory()->for($campaign)->create();
+        AdObjective::factory()->for($ad)->event('Lead')->create();
 
         // Wrong campaign identifier: the ad and its objectives stay intact.
         (new DeleteAdAction)->execute($ad->id, $campaign->id + 999);

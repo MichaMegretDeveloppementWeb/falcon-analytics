@@ -128,7 +128,7 @@ suivante.**
 
 > **« Les pages les plus vues » compte des pages, pas des adresses.** Une page,
 > c'est le chemin de sa route — sans hôte, sans paramètres, sans ancre · donc
-> `/tarifs`, `/tarifs?fbclid=…`, `/tarifs#prix` et `www.exemple.fr/tarifs` sont
+> `/tarifs`, `/tarifs?fbclid=…`, `/tarifs#prix` et `www.exemple.test/tarifs` sont
 > la même ligne. Sans cela une page d'atterrissage de campagne se diviserait en
 > autant de lignes qu'elle a eu de visites — `fbclid` est unique à chaque clic —
 > et n'atteindrait jamais le haut de la liste. Le temps réel compte de la même

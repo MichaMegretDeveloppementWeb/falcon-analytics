@@ -6,7 +6,6 @@ namespace Falcon\Analytics\Tests\Feature;
 
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\Actions\ArchiveClosedDaysAction;
-use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
@@ -27,11 +26,6 @@ final class MaintenanceCommandsTest extends TestCase
         parent::tearDown();
     }
 
-    private function visitor(): Visitor
-    {
-        return Visitor::create(['uuid' => 'u-'.uniqid(), 'first_seen_at' => now(), 'last_seen_at' => now()]);
-    }
-
     /** Marks every day up to yesterday as summarised, so the purge may proceed. */
     private function everythingIsArchived(): void
     {
@@ -44,11 +38,10 @@ final class MaintenanceCommandsTest extends TestCase
         CarbonImmutable::setTestNow($now);
         config(['analytics.retention_days' => 90]);
 
-        $visitor = $this->visitor();
-        $session = Session::create(['visitor_id' => $visitor->id, 'started_at' => $now, 'last_activity_at' => $now, 'is_bot' => false]);
+        $session = Session::factory()->at($now)->create();
 
-        $old = Event::create(['session_id' => $session->id, 'visitor_id' => $visitor->id, 'occurred_at' => $now->subDays(100), 'type' => EventType::Pageview]);
-        $recent = Event::create(['session_id' => $session->id, 'visitor_id' => $visitor->id, 'occurred_at' => $now->subDays(10), 'type' => EventType::Pageview]);
+        $old = Event::factory()->for($session)->create(['occurred_at' => $now->subDays(100)]);
+        $recent = Event::factory()->for($session)->create(['occurred_at' => $now->subDays(10)]);
 
         $this->everythingIsArchived();
         $this->artisan('analytics:prune')->assertSuccessful();
@@ -71,13 +64,12 @@ final class MaintenanceCommandsTest extends TestCase
         CarbonImmutable::setTestNow($now);
         config(['analytics.retention_days' => 90]);
 
-        $visitor = $this->visitor();
-        $session = Session::create(['visitor_id' => $visitor->id, 'started_at' => $now, 'last_activity_at' => $now, 'is_bot' => false]);
+        $session = Session::factory()->at($now)->create();
         $ancient = $now->subDays(500);
 
-        $named = Event::create(['session_id' => $session->id, 'visitor_id' => $visitor->id, 'occurred_at' => $ancient, 'type' => EventType::Custom, 'name' => 'commande.payee']);
-        $namedClick = Event::create(['session_id' => $session->id, 'visitor_id' => $visitor->id, 'occurred_at' => $ancient, 'type' => EventType::Click, 'name' => 'devis.demande']);
-        $anonymous = Event::create(['session_id' => $session->id, 'visitor_id' => $visitor->id, 'occurred_at' => $ancient, 'type' => EventType::Click, 'name' => '']);
+        $named = Event::factory()->for($session)->custom('commande.payee')->create(['occurred_at' => $ancient]);
+        $namedClick = Event::factory()->for($session)->click('devis.demande')->create(['occurred_at' => $ancient]);
+        $anonymous = Event::factory()->for($session)->click('')->create(['occurred_at' => $ancient]);
 
         $this->everythingIsArchived();
         $this->artisan('analytics:prune')->assertSuccessful();
@@ -104,12 +96,11 @@ final class MaintenanceCommandsTest extends TestCase
         ]);
         $this->app->forgetInstance(FunnelRegistry::class);
 
-        $visitor = $this->visitor();
-        $session = Session::create(['visitor_id' => $visitor->id, 'started_at' => $now, 'last_activity_at' => $now, 'is_bot' => false]);
+        $session = Session::factory()->at($now)->create();
         $ancient = $now->subDays(500);
 
-        $steppedThrough = Event::create(['session_id' => $session->id, 'visitor_id' => $visitor->id, 'occurred_at' => $ancient, 'type' => EventType::Pageview, 'route' => $this->aFunnelRoute()]);
-        $ordinary = Event::create(['session_id' => $session->id, 'visitor_id' => $visitor->id, 'occurred_at' => $ancient, 'type' => EventType::Pageview, 'route' => 'une.route.quelconque']);
+        $steppedThrough = Event::factory()->for($session)->create(['occurred_at' => $ancient, 'route' => $this->aFunnelRoute()]);
+        $ordinary = Event::factory()->for($session)->create(['occurred_at' => $ancient, 'route' => 'une.route.quelconque']);
 
         $this->everythingIsArchived();
         $this->artisan('analytics:prune')->assertSuccessful();
@@ -145,9 +136,7 @@ final class MaintenanceCommandsTest extends TestCase
         CarbonImmutable::setTestNow($now);
         config(['analytics.retention_days' => 90]);
 
-        $visitor = $this->visitor();
-        $session = Session::create(['visitor_id' => $visitor->id, 'started_at' => $now, 'last_activity_at' => $now, 'is_bot' => false]);
-        Event::create(['session_id' => $session->id, 'visitor_id' => $visitor->id, 'occurred_at' => $now->subDays(500), 'type' => EventType::Pageview]);
+        Event::factory()->for(Session::factory()->at($now))->create(['occurred_at' => $now->subDays(500)]);
 
         // No archiving at all: the scheduler never ran.
         $this->artisan('analytics:prune')->assertSuccessful();
@@ -161,9 +150,7 @@ final class MaintenanceCommandsTest extends TestCase
         CarbonImmutable::setTestNow($now);
         config(['analytics.retention_days' => null]);
 
-        $visitor = $this->visitor();
-        $session = Session::create(['visitor_id' => $visitor->id, 'started_at' => $now, 'last_activity_at' => $now, 'is_bot' => false]);
-        Event::create(['session_id' => $session->id, 'visitor_id' => $visitor->id, 'occurred_at' => $now->subDays(500), 'type' => EventType::Pageview]);
+        Event::factory()->for(Session::factory()->at($now))->create(['occurred_at' => $now->subDays(500)]);
 
         $this->everythingIsArchived();
         $this->artisan('analytics:prune')->assertSuccessful();
@@ -188,10 +175,10 @@ final class MaintenanceCommandsTest extends TestCase
         CarbonImmutable::setTestNow($now);
         config(['analytics.session.timeout_minutes' => 5]);
 
-        $visitor = $this->visitor();
+        $visitor = Visitor::factory()->create();
 
-        $idle = Session::create(['visitor_id' => $visitor->id, 'started_at' => $now->subMinutes(20), 'last_activity_at' => $now->subMinutes(10), 'is_bot' => false]);
-        $active = Session::create(['visitor_id' => $visitor->id, 'started_at' => $now->subMinutes(3), 'last_activity_at' => $now->subMinutes(2), 'is_bot' => false]);
+        $idle = Session::factory()->for($visitor)->create(['started_at' => $now->subMinutes(20), 'last_activity_at' => $now->subMinutes(10)]);
+        $active = Session::factory()->for($visitor)->create(['started_at' => $now->subMinutes(3), 'last_activity_at' => $now->subMinutes(2)]);
 
         $this->artisan('analytics:sweep')->assertSuccessful();
 
@@ -217,12 +204,10 @@ final class MaintenanceCommandsTest extends TestCase
         CarbonImmutable::setTestNow($now);
         config(['analytics.session.timeout_minutes' => 5]);
 
-        $visitor = $this->visitor();
-        $idleSession = fn (): Session => Session::create([
-            'visitor_id' => $visitor->id,
+        $visitor = Visitor::factory()->create();
+        $idleSession = fn (): Session => Session::factory()->for($visitor)->create([
             'started_at' => $now->subMinutes(20),
             'last_activity_at' => $now->subMinutes(10),
-            'is_bot' => false,
         ]);
 
         foreach (range(1, 5) as $ignored) {
@@ -252,15 +237,12 @@ final class MaintenanceCommandsTest extends TestCase
         CarbonImmutable::setTestNow($now);
         config(['analytics.session.timeout_minutes' => 5]);
 
-        $visitor = $this->visitor();
         $closedAt = $now->subMinutes(30);
 
-        $session = Session::create([
-            'visitor_id' => $visitor->id,
+        $session = Session::factory()->create([
             'started_at' => $now->subMinutes(40),
             'last_activity_at' => $now->subMinutes(35),
             'ended_at' => $closedAt,
-            'is_bot' => false,
         ]);
 
         $this->artisan('analytics:sweep')->assertSuccessful();
@@ -300,9 +282,7 @@ final class MaintenanceCommandsTest extends TestCase
         // Something old enough to erase, and its day summarised — otherwise the
         // command stops on one of its two guards before ever reaching the table,
         // and the failure this watches could not happen.
-        $visitor = $this->visitor();
-        $session = Session::create(['visitor_id' => $visitor->id, 'started_at' => $now, 'last_activity_at' => $now, 'is_bot' => false]);
-        Event::create(['session_id' => $session->id, 'visitor_id' => $visitor->id, 'occurred_at' => $now->subDays(100), 'type' => EventType::Pageview]);
+        Event::factory()->for(Session::factory()->at($now))->create(['occurred_at' => $now->subDays(100)]);
 
         $this->everythingIsArchived();
 

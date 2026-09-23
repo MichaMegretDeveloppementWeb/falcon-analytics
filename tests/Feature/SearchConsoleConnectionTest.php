@@ -40,13 +40,11 @@ final class SearchConsoleConnectionTest extends TestCase
      */
     private function connection(array $attributes = []): SearchConsoleConnection
     {
-        return SearchConsoleConnection::query()->create(array_merge([
+        return SearchConsoleConnection::factory()->create([
             'refresh_token' => 'refresh-token-plain',
             'access_token' => 'access-token-plain',
-            'token_expires_at' => now()->addHour(),
-            'status' => SearchConsoleConnection::STATUS_CONNECTED,
-            'property' => 'sc-domain:example.com',
-        ], $attributes));
+            ...$attributes,
+        ]);
     }
 
     public function test_it_reports_the_feature_unconfigured_until_both_oauth_credentials_are_set(): void

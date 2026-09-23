@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Models;
 
 use Carbon\CarbonImmutable;
+use Falcon\Analytics\Database\Factories\VisitorFactory;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -23,6 +25,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 final class Visitor extends Model
 {
+    /** @use HasFactory<VisitorFactory> */
+    use HasFactory;
+
     protected $table = 'falcon_analytics_visitors';
 
     public $timestamps = false;
@@ -46,6 +51,11 @@ final class Visitor extends Model
     public function events(): HasMany
     {
         return $this->hasMany(Event::class);
+    }
+
+    protected static function newFactory(): VisitorFactory
+    {
+        return VisitorFactory::new();
     }
 
     /** @return array<string, string> */

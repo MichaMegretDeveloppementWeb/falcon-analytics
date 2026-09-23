@@ -5,12 +5,10 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Tests\Feature;
 
 use Carbon\CarbonImmutable;
-use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Models\DailyArchive;
 use Falcon\Analytics\Models\DailyCount;
 use Falcon\Analytics\Models\Event as AnalyticsEvent;
 use Falcon\Analytics\Models\Session;
-use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Tests\Fixtures\Models\TestAdmin;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Console\Scheduling\Event;
@@ -18,7 +16,6 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 /**
  * The maintenance has two ways in, and they must be the same way.
@@ -56,22 +53,9 @@ final class TheMaintenanceRunsBothWaysTest extends TestCase
     /** Something old enough for there to be days worth summarising. */
     private function aVisitOn(string $day): void
     {
-        $visitor = Visitor::create(['uuid' => (string) Str::uuid(), 'first_seen_at' => now(), 'last_seen_at' => now()]);
-
-        $session = Session::create([
-            'visitor_id' => $visitor->id,
-            'started_at' => CarbonImmutable::parse($day),
-            'last_activity_at' => CarbonImmutable::parse($day),
-            'is_bot' => false,
-        ]);
-
-        AnalyticsEvent::create([
-            'session_id' => $session->id,
-            'visitor_id' => $visitor->id,
-            'type' => EventType::Pageview,
-            'url' => 'https://exemple.fr/',
-            'occurred_at' => CarbonImmutable::parse($day)->setTime(10, 0),
-        ]);
+        AnalyticsEvent::factory()
+            ->for(Session::factory()->at(CarbonImmutable::parse($day)))
+            ->create(['url' => 'https://exemple.test/', 'occurred_at' => CarbonImmutable::parse($day)->setTime(10, 0)]);
     }
 
     private function anAdmin(): TestAdmin
@@ -313,8 +297,8 @@ final class TheMaintenanceRunsBothWaysTest extends TestCase
         DailyCount::create([
             'day' => CarbonImmutable::parse('2026-01-05'),
             'kind' => DailyCount::KIND_PAGE,
-            'signature' => DailyCount::signature(DailyCount::KIND_PAGE, 'https://exemple.fr/', null, null),
-            'label' => 'https://exemple.fr/',
+            'signature' => DailyCount::signature(DailyCount::KIND_PAGE, 'https://exemple.test/', null, null),
+            'label' => 'https://exemple.test/',
             'route' => null,
             'subject_type' => null,
             'total' => 3,

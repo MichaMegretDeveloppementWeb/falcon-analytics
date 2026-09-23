@@ -6,7 +6,6 @@ namespace Falcon\Analytics\Tests\Feature;
 
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\DTOs\Dashboard\Period;
-use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Funnels\Funnel;
 use Falcon\Analytics\Funnels\FunnelBranch;
 use Falcon\Analytics\Funnels\FunnelEvaluator;
@@ -15,7 +14,6 @@ use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Str;
 use InvalidArgumentException;
 
 final class FunnelEvaluatorTest extends TestCase
@@ -51,39 +49,23 @@ final class FunnelEvaluatorTest extends TestCase
      */
     private function journey(array $events, ?string $subjectType = null, bool $isBot = false): void
     {
-        $visitor = Visitor::create([
-            'uuid' => (string) Str::uuid(),
-            'first_seen_at' => now(),
-            'last_seen_at' => now(),
+        $visitor = Visitor::factory()->create([
             'subject_type' => $subjectType,
             'subject_id' => $subjectType !== null ? 1 : null,
         ]);
 
-        $session = Session::create([
-            'visitor_id' => $visitor->id,
-            'started_at' => now(),
-            'last_activity_at' => now(),
-            'is_bot' => $isBot,
-        ]);
+        $session = Session::factory()->for($visitor)->create(['is_bot' => $isBot]);
 
         foreach ($events as $order => $spec) {
-            $attributes = [
-                'session_id' => $session->id,
-                'visitor_id' => $visitor->id,
-                // In the past, the events always preceding "now", and filed by
-                // their rank.
-                'occurred_at' => now()->subMinutes(10)->addSeconds($order),
-            ];
+            // In the past, the events always preceding "now", and filed by
+            // their rank.
+            $occurredAt = now()->subMinutes(10)->addSeconds($order);
 
-            if (is_array($spec)) {
-                $attributes['type'] = EventType::Pageview;
-                $attributes['route'] = $spec['route'];
-            } else {
-                $attributes['type'] = EventType::Custom;
-                $attributes['name'] = $spec;
-            }
+            $event = is_array($spec)
+                ? Event::factory()->state(['route' => $spec['route']])
+                : Event::factory()->custom($spec);
 
-            Event::create($attributes);
+            $event->for($session)->create(['occurred_at' => $occurredAt]);
         }
     }
 

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Models;
 
 use Carbon\CarbonImmutable;
+use Falcon\Analytics\Database\Factories\SearchConsoleConnectionFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -25,6 +27,9 @@ use Illuminate\Database\Eloquent\Model;
  */
 final class SearchConsoleConnection extends Model
 {
+    /** @use HasFactory<SearchConsoleConnectionFactory> */
+    use HasFactory;
+
     public const STATUS_PENDING_PROPERTY = 'pending_property';
 
     public const STATUS_CONNECTED = 'connected';
@@ -44,6 +49,11 @@ final class SearchConsoleConnection extends Model
     public function isConnected(): bool
     {
         return $this->status === self::STATUS_CONNECTED && $this->property !== null;
+    }
+
+    protected static function newFactory(): SearchConsoleConnectionFactory
+    {
+        return SearchConsoleConnectionFactory::new();
     }
 
     /** @return array<string, string> */

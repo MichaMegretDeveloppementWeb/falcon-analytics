@@ -10,7 +10,6 @@ use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
@@ -108,18 +107,9 @@ final class TheInstantsAreStoredAsTheyAreMeantTest extends TestCase
 
     private function sessionStartedAt(CarbonImmutable $instant): Session
     {
-        $visitor = Visitor::create([
-            'uuid' => (string) Str::uuid(),
-            'first_seen_at' => $instant,
-            'last_seen_at' => $instant,
-        ]);
-
-        return Session::create([
-            'visitor_id' => $visitor->id,
-            'started_at' => $instant,
-            'last_activity_at' => $instant,
-            'is_bot' => false,
-            'pageview_count' => 1,
-        ]);
+        return Session::factory()
+            ->for(Visitor::factory()->state(['first_seen_at' => $instant, 'last_seen_at' => $instant]))
+            ->at($instant)
+            ->create(['pageview_count' => 1]);
     }
 }

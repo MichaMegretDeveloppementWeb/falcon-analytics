@@ -23,20 +23,6 @@ final class SearchConsoleSyncTest extends TestCase
         config()->set('analytics.search_console.client_secret', 'secret-456');
     }
 
-    /**
-     * @param  array<string, mixed>  $attributes
-     */
-    private function connection(array $attributes = []): SearchConsoleConnection
-    {
-        return SearchConsoleConnection::query()->create(array_merge([
-            'refresh_token' => 'refresh-token-plain',
-            'access_token' => 'access-token-plain',
-            'token_expires_at' => now()->addHour(),
-            'status' => SearchConsoleConnection::STATUS_CONNECTED,
-            'property' => 'sc-domain:example.com',
-        ], $attributes));
-    }
-
     public function test_it_does_nothing_without_an_attached_connection(): void
     {
         Http::fake();
@@ -58,7 +44,7 @@ final class SearchConsoleSyncTest extends TestCase
             ]]),
         ]);
 
-        $connection = $this->connection();
+        $connection = SearchConsoleConnection::factory()->create();
 
         $this->artisan('analytics:search-console:sync')->assertSuccessful();
 
@@ -89,7 +75,7 @@ final class SearchConsoleSyncTest extends TestCase
             ]]),
         ]);
 
-        $this->connection(['last_synced_at' => CarbonImmutable::parse('2026-07-19 05:00:00')]);
+        SearchConsoleConnection::factory()->create(['last_synced_at' => CarbonImmutable::parse('2026-07-19 05:00:00')]);
 
         $this->artisan('analytics:search-console:sync')->assertSuccessful();
 
@@ -114,7 +100,7 @@ final class SearchConsoleSyncTest extends TestCase
                 ->push(['rows' => [['keys' => ['2026-07-16', 'last one'], 'clicks' => 1, 'impressions' => 2, 'position' => 1.0]]]),
         ]);
 
-        $this->connection();
+        SearchConsoleConnection::factory()->create();
 
         $this->app->bind(
             SearchConsoleClient::class,
@@ -136,7 +122,7 @@ final class SearchConsoleSyncTest extends TestCase
             'www.googleapis.com/webmasters/v3/sites/*/searchAnalytics/query' => Http::response(['error' => 'quota'], 429),
         ]);
 
-        $connection = $this->connection();
+        $connection = SearchConsoleConnection::factory()->create();
 
         $this->artisan('analytics:search-console:sync')->assertFailed();
 

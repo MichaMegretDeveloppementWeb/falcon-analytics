@@ -15,7 +15,6 @@ use Falcon\Analytics\Tests\Fixtures\Models\TestAdmin;
 use Falcon\Analytics\Tests\Fixtures\Models\TestClient;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Str;
 use Livewire\Livewire;
 use Locale;
 
@@ -44,11 +43,8 @@ final class RealtimeTest extends TestCase
      */
     private function visitor(?array $subject = null): Visitor
     {
-        return Visitor::create([
-            'uuid' => (string) Str::uuid(),
+        return Visitor::factory()->create([
             'first_seen_at' => now()->subHour(),
-            'last_seen_at' => now(),
-            'session_count' => 0,
             'subject_type' => $subject['type'] ?? null,
             'subject_id' => $subject['id'] ?? null,
         ]);
@@ -62,14 +58,7 @@ final class RealtimeTest extends TestCase
         $visitor ??= $this->visitor();
         $visitor->increment('session_count');
 
-        return Session::create(array_merge([
-            'visitor_id' => $visitor->id,
-            'browser_key' => $visitor->uuid,
-            'started_at' => now()->subMinutes(2),
-            'last_activity_at' => now(),
-            'is_bot' => false,
-            'pageview_count' => 1,
-        ], $attributes));
+        return Session::factory()->for($visitor)->create(['started_at' => now()->subMinutes(2), 'pageview_count' => 1, ...$attributes]);
     }
 
     /**
@@ -77,12 +66,7 @@ final class RealtimeTest extends TestCase
      */
     private function event(Session $session, EventType $type, array $attributes = []): Event
     {
-        return Event::create(array_merge([
-            'session_id' => $session->id,
-            'visitor_id' => $session->visitor_id,
-            'occurred_at' => now()->subMinute(),
-            'type' => $type,
-        ], $attributes));
+        return Event::factory()->for($session)->create(['occurred_at' => now()->subMinute(), 'type' => $type, ...$attributes]);
     }
 
     // ── The repository ───────────────────────────────────────────────────

@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Models;
 
 use Carbon\CarbonImmutable;
+use Falcon\Analytics\Database\Factories\AdObjectiveFactory;
 use Falcon\Analytics\Enums\ObjectiveType;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -20,6 +22,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 final class AdObjective extends Model
 {
+    /** @use HasFactory<AdObjectiveFactory> */
+    use HasFactory;
+
     protected $table = 'falcon_analytics_ad_objectives';
 
     /** @var list<string> */
@@ -29,6 +34,11 @@ final class AdObjective extends Model
     public function ad(): BelongsTo
     {
         return $this->belongsTo(Ad::class);
+    }
+
+    protected static function newFactory(): AdObjectiveFactory
+    {
+        return AdObjectiveFactory::new();
     }
 
     /** @return array<string, string> */

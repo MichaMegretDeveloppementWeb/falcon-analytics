@@ -14,12 +14,12 @@ final class PageUrlTest extends TestCase
     {
         $this->assertSame(
             '/listings/23',
-            PageUrl::resolve('listing.detail', 'https://vantadrive.test/listings/23?utm_source=x'),
+            PageUrl::resolve('listing.detail', 'https://boutique.test/listings/23?utm_source=x'),
         );
 
         $this->assertSame(
             '/listings/ma-super-annonce',
-            PageUrl::resolve('listing.detail', 'https://vantadrive.test/listings/ma-super-annonce'),
+            PageUrl::resolve('listing.detail', 'https://boutique.test/listings/ma-super-annonce'),
         );
     }
 

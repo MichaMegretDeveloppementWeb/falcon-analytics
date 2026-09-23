@@ -19,39 +19,26 @@ use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 final class MarketingReportBuilderTest extends TestCase
 {
     use RefreshDatabase;
-
-    private function newVisitor(): Visitor
-    {
-        return Visitor::create(['uuid' => (string) Str::uuid(), 'first_seen_at' => now(), 'last_seen_at' => now()]);
-    }
 
     /**
      * @param  array<string, string>  $params
      */
     private function taggedSession(array $params, ?Visitor $visitor = null, ?CarbonImmutable $startedAt = null): Session
     {
-        $visitor ??= $this->newVisitor();
-        $startedAt ??= CarbonImmutable::now();
-
-        return Session::create([
-            'visitor_id' => $visitor->id,
-            'started_at' => $startedAt,
-            'last_activity_at' => $startedAt,
-            'is_bot' => false,
-            'mkt_params' => $params,
-        ]);
+        return Session::factory()
+            ->at($startedAt ?? CarbonImmutable::now())
+            ->create(['visitor_id' => $visitor ?? Visitor::factory(), 'mkt_params' => $params]);
     }
 
     public function test_it_resolves_the_most_specific_ad_whose_conditions_all_match_the_session_params(): void
     {
-        $ete = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
-        $generic = Ad::create(['campaign_id' => $ete->id, 'name' => 'Été générique', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
-        $cabrio = Ad::create(['campaign_id' => $ete->id, 'name' => 'Cabriolet', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete'], ['param' => 'creative', 'value' => 'cabrio']]]);
+        $ete = Campaign::factory()->matching('src', 'meta_ete')->create(['name' => 'Été']);
+        $generic = Ad::factory()->for($ete)->matching('src', 'meta_ete')->create(['name' => 'Été générique']);
+        $cabrio = Ad::factory()->for($ete)->create(['name' => 'Cabriolet', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete'], ['param' => 'creative', 'value' => 'cabrio']]]);
 
         $builder = new MarketingReportBuilder;
 
@@ -71,8 +58,8 @@ final class MarketingReportBuilderTest extends TestCase
 
     public function test_it_returns_null_when_a_condition_is_unmet_and_resolves_the_campaign_independently(): void
     {
-        $ete = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
-        Ad::create(['campaign_id' => $ete->id, 'name' => 'Cabrio', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete'], ['param' => 'creative', 'value' => 'cabrio']]]);
+        $ete = Campaign::factory()->matching('src', 'meta_ete')->create(['name' => 'Été']);
+        Ad::factory()->for($ete)->create(['name' => 'Cabrio', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete'], ['param' => 'creative', 'value' => 'cabrio']]]);
 
         $builder = new MarketingReportBuilder;
 
@@ -88,9 +75,9 @@ final class MarketingReportBuilderTest extends TestCase
 
     public function test_it_ignores_inactive_ads_and_conditionless_definitions(): void
     {
-        $ete = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
-        Ad::create(['campaign_id' => $ete->id, 'name' => 'Off', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']], 'is_active' => false]);
-        Ad::create(['campaign_id' => $ete->id, 'name' => 'Empty', 'match_conditions' => []]);
+        $ete = Campaign::factory()->matching('src', 'meta_ete')->create(['name' => 'Été']);
+        Ad::factory()->for($ete)->matching('src', 'meta_ete')->create(['name' => 'Off', 'is_active' => false]);
+        Ad::factory()->for($ete)->create(['name' => 'Empty', 'match_conditions' => []]);
 
         $this->assertNull((new MarketingReportBuilder)->resolveAd(['src' => 'meta_ete']));
     }
@@ -99,10 +86,10 @@ final class MarketingReportBuilderTest extends TestCase
     {
         $this->travelTo(CarbonImmutable::parse('2026-06-15 12:00:00'));
 
-        $ete = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
-        $cabrio = Ad::create(['campaign_id' => $ete->id, 'name' => 'Cabrio', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete'], ['param' => 'creative', 'value' => 'cabrio']]]);
+        $ete = Campaign::factory()->matching('src', 'meta_ete')->create(['name' => 'Été']);
+        $cabrio = Ad::factory()->for($ete)->create(['name' => 'Cabrio', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete'], ['param' => 'creative', 'value' => 'cabrio']]]);
 
-        $visitor = $this->newVisitor();
+        $visitor = Visitor::factory()->create();
         $this->taggedSession(['src' => 'meta_ete', 'creative' => 'cabrio'], $visitor);
         $this->taggedSession(['src' => 'meta_ete', 'creative' => 'cabrio'], $visitor);
         $this->taggedSession(['src' => 'meta_ete', 'creative' => 'other']);
@@ -130,13 +117,13 @@ final class MarketingReportBuilderTest extends TestCase
     {
         $this->travelTo(CarbonImmutable::parse('2026-06-15 12:00:00'));
 
-        $ete = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
-        $hiver = Campaign::create(['name' => 'Hiver', 'match_conditions' => [['param' => 'src', 'value' => 'meta_hiver']]]);
-        $generic = Ad::create(['campaign_id' => $ete->id, 'name' => 'Été générique', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
-        $cabrio = Ad::create(['campaign_id' => $ete->id, 'name' => 'Cabriolet', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete'], ['param' => 'creative', 'value' => 'cabrio']]]);
-        $neige = Ad::create(['campaign_id' => $hiver->id, 'name' => 'Neige', 'match_conditions' => [['param' => 'src', 'value' => 'meta_hiver']]]);
+        $ete = Campaign::factory()->matching('src', 'meta_ete')->create(['name' => 'Été']);
+        $hiver = Campaign::factory()->matching('src', 'meta_hiver')->create(['name' => 'Hiver']);
+        $generic = Ad::factory()->for($ete)->matching('src', 'meta_ete')->create(['name' => 'Été générique']);
+        $cabrio = Ad::factory()->for($ete)->create(['name' => 'Cabriolet', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete'], ['param' => 'creative', 'value' => 'cabrio']]]);
+        $neige = Ad::factory()->for($hiver)->matching('src', 'meta_hiver')->create(['name' => 'Neige']);
 
-        $loyal = $this->newVisitor();
+        $loyal = Visitor::factory()->create();
         $matched = [
             $this->taggedSession(['src' => 'meta_ete', 'creative' => 'cabrio'], $loyal, CarbonImmutable::parse('2026-06-10 09:00')),
             $this->taggedSession(['src' => 'meta_ete', 'creative' => 'cabrio'], $loyal, CarbonImmutable::parse('2026-06-11 09:00')),
@@ -207,13 +194,13 @@ final class MarketingReportBuilderTest extends TestCase
     {
         $this->travelTo(CarbonImmutable::parse('2026-06-15 12:00:00'));
 
-        $ete = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
-        $ad = Ad::create(['campaign_id' => $ete->id, 'name' => 'Cabrio', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
-        AdObjective::create(['ad_id' => $ad->id, 'type' => 'event', 'reference' => 'Lead']);
+        $ete = Campaign::factory()->matching('src', 'meta_ete')->create(['name' => 'Été']);
+        $ad = Ad::factory()->for($ete)->matching('src', 'meta_ete')->create(['name' => 'Cabrio']);
+        AdObjective::factory()->for($ad)->event('Lead')->create();
 
-        $converter = $this->newVisitor();
+        $converter = Visitor::factory()->create();
         $session = $this->taggedSession(['src' => 'meta_ete'], $converter);
-        Event::create(['session_id' => $session->id, 'visitor_id' => $converter->id, 'type' => 'custom', 'name' => 'Lead', 'occurred_at' => now()]);
+        Event::factory()->for($session)->custom('Lead')->create();
 
         // A second visitor who came through the ad and never fired the event.
         $this->taggedSession(['src' => 'meta_ete']);
@@ -243,21 +230,21 @@ final class MarketingReportBuilderTest extends TestCase
     {
         $this->travelTo(CarbonImmutable::parse('2026-06-15 12:00:00'));
 
-        $campaign = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'a']]]);
+        $campaign = Campaign::factory()->matching('src', 'a')->create(['name' => 'Été']);
 
-        $first = Ad::create(['campaign_id' => $campaign->id, 'name' => 'Première', 'match_conditions' => [['param' => 'src', 'value' => 'a']]]);
-        $second = Ad::create(['campaign_id' => $campaign->id, 'name' => 'Seconde', 'match_conditions' => [['param' => 'src', 'value' => 'b']]]);
+        $first = Ad::factory()->for($campaign)->matching('src', 'a')->create(['name' => 'Première']);
+        $second = Ad::factory()->for($campaign)->matching('src', 'b')->create(['name' => 'Seconde']);
 
         foreach ([$first, $second] as $ad) {
-            AdObjective::create(['ad_id' => $ad->id, 'type' => 'event', 'reference' => 'Lead']);
+            AdObjective::factory()->for($ad)->event('Lead')->create();
         }
 
         // One person, two arrivals, two different ads — then one conversion.
-        $visitor = $this->newVisitor();
+        $visitor = Visitor::factory()->create();
         $this->taggedSession(['src' => 'a'], $visitor);
         $session = $this->taggedSession(['src' => 'b'], $visitor);
 
-        Event::create(['session_id' => $session->id, 'visitor_id' => $visitor->id, 'type' => 'custom', 'name' => 'Lead', 'occurred_at' => now()]);
+        Event::factory()->for($session)->custom('Lead')->create();
 
         $result = (new MarketingReportBuilder)->conversions(Period::ofDays(30), null, app(FunnelRegistry::class));
 
@@ -275,22 +262,22 @@ final class MarketingReportBuilderTest extends TestCase
         $this->app->forgetInstance(FunnelRegistry::class);
         $this->travelTo(CarbonImmutable::parse('2026-06-15 12:00:00'));
 
-        $ete = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
-        $ad = Ad::create(['campaign_id' => $ete->id, 'name' => 'Cabrio', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
-        AdObjective::create(['ad_id' => $ad->id, 'type' => 'funnel', 'reference' => 'sample']);
+        $ete = Campaign::factory()->matching('src', 'meta_ete')->create(['name' => 'Été']);
+        $ad = Ad::factory()->for($ete)->matching('src', 'meta_ete')->create(['name' => 'Cabrio']);
+        AdObjective::factory()->for($ad)->funnel('sample')->create();
 
         // A visitor attached to the ad, who walks the funnel in order:
         // pageview home, then sample.action.
-        $converter = $this->newVisitor();
+        $converter = Visitor::factory()->create();
         $session = $this->taggedSession(['src' => 'meta_ete'], $converter);
-        Event::create(['session_id' => $session->id, 'visitor_id' => $converter->id, 'type' => 'pageview', 'route' => 'home', 'occurred_at' => now()->subMinutes(2)]);
-        Event::create(['session_id' => $session->id, 'visitor_id' => $converter->id, 'type' => 'custom', 'name' => 'sample.action', 'occurred_at' => now()->subMinute()]);
+        Event::factory()->for($session)->create(['route' => 'home', 'occurred_at' => now()->subMinutes(2)]);
+        Event::factory()->for($session)->custom('sample.action')->create(['occurred_at' => now()->subMinute()]);
 
         // Another visitor who came through the ad and only reaches the first
         // step: no conversion.
-        $halfway = $this->newVisitor();
+        $halfway = Visitor::factory()->create();
         $halfSession = $this->taggedSession(['src' => 'meta_ete'], $halfway);
-        Event::create(['session_id' => $halfSession->id, 'visitor_id' => $halfway->id, 'type' => 'pageview', 'route' => 'home', 'occurred_at' => now()->subMinutes(2)]);
+        Event::factory()->for($halfSession)->create(['route' => 'home', 'occurred_at' => now()->subMinutes(2)]);
 
         $funnels = app(FunnelRegistry::class);
         $result = (new MarketingReportBuilder)->conversions(Period::ofDays(30), null, $funnels);
@@ -321,19 +308,19 @@ final class MarketingReportBuilderTest extends TestCase
     {
         $this->travelTo(CarbonImmutable::parse('2026-06-15 12:00:00'));
 
-        $ete = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
-        $ad1 = Ad::create(['campaign_id' => $ete->id, 'name' => 'A1', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete'], ['param' => 'creative', 'value' => 'c1']]]);
-        $ad2 = Ad::create(['campaign_id' => $ete->id, 'name' => 'A2', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete'], ['param' => 'creative', 'value' => 'c2']]]);
-        AdObjective::create(['ad_id' => $ad1->id, 'type' => 'event', 'reference' => 'Lead']);
-        AdObjective::create(['ad_id' => $ad2->id, 'type' => 'event', 'reference' => 'Lead']);
+        $ete = Campaign::factory()->matching('src', 'meta_ete')->create(['name' => 'Été']);
+        $ad1 = Ad::factory()->for($ete)->create(['name' => 'A1', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete'], ['param' => 'creative', 'value' => 'c1']]]);
+        $ad2 = Ad::factory()->for($ete)->create(['name' => 'A2', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete'], ['param' => 'creative', 'value' => 'c2']]]);
+        AdObjective::factory()->for($ad1)->event('Lead')->create();
+        AdObjective::factory()->for($ad2)->event('Lead')->create();
 
-        $v1 = $this->newVisitor();
+        $v1 = Visitor::factory()->create();
         $s1 = $this->taggedSession(['src' => 'meta_ete', 'creative' => 'c1'], $v1);
-        Event::create(['session_id' => $s1->id, 'visitor_id' => $v1->id, 'type' => 'custom', 'name' => 'Lead', 'occurred_at' => now()]);
+        Event::factory()->for($s1)->custom('Lead')->create();
 
-        $v2 = $this->newVisitor();
+        $v2 = Visitor::factory()->create();
         $s2 = $this->taggedSession(['src' => 'meta_ete', 'creative' => 'c2'], $v2);
-        Event::create(['session_id' => $s2->id, 'visitor_id' => $v2->id, 'type' => 'custom', 'name' => 'Lead', 'occurred_at' => now()]);
+        Event::factory()->for($s2)->custom('Lead')->create();
 
         DB::enableQueryLog();
 
@@ -369,14 +356,14 @@ final class MarketingReportBuilderTest extends TestCase
     {
         $this->travelTo(CarbonImmutable::parse('2026-06-15 12:00:00'));
 
-        $ete = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
-        $ad = Ad::create(['campaign_id' => $ete->id, 'name' => 'Cabrio', 'match_conditions' => [['param' => 'src', 'value' => 'meta_ete']]]);
-        AdObjective::create(['ad_id' => $ad->id, 'type' => 'event', 'reference' => 'Lead']);
+        $ete = Campaign::factory()->matching('src', 'meta_ete')->create(['name' => 'Été']);
+        $ad = Ad::factory()->for($ete)->matching('src', 'meta_ete')->create(['name' => 'Cabrio']);
+        AdObjective::factory()->for($ad)->event('Lead')->create();
 
         foreach (range(1, 2) as $ignored) {
-            $visitor = $this->newVisitor();
+            $visitor = Visitor::factory()->create();
             $session = $this->taggedSession(['src' => 'meta_ete'], $visitor);
-            Event::create(['session_id' => $session->id, 'visitor_id' => $visitor->id, 'type' => 'custom', 'name' => 'Lead', 'occurred_at' => now()]);
+            Event::factory()->for($session)->custom('Lead')->create();
         }
 
         $elements = (new MarketingReportBuilder)->conversionElements(

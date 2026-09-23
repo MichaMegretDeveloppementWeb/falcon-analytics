@@ -87,7 +87,7 @@ final class TheDefaultsAreEnoughTest extends TestCase
             ->withHeader('Origin', config('app.url'))
             ->postJson('/__analytics', [
                 'sent_at' => 1000,
-                'events' => [['type' => 'pageview', 'ts' => 1000, 'route' => 'home', 'url' => 'https://exemple.fr/']],
+                'events' => [['type' => 'pageview', 'ts' => 1000, 'route' => 'home', 'url' => 'https://exemple.test/']],
             ])
             ->assertNoContent();
 
@@ -113,7 +113,7 @@ final class TheDefaultsAreEnoughTest extends TestCase
             ->withHeader('Origin', config('app.url'))
             ->postJson('/__analytics', [
                 'sent_at' => 1000,
-                'events' => [['type' => 'pageview', 'ts' => 1000, 'route' => 'home', 'url' => 'https://exemple.fr/']],
+                'events' => [['type' => 'pageview', 'ts' => 1000, 'route' => 'home', 'url' => 'https://exemple.test/']],
             ]);
 
         $response->assertNoContent();

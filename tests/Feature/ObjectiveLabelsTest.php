@@ -10,7 +10,6 @@ use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Models\Ad;
 use Falcon\Analytics\Models\AdObjective;
-use Falcon\Analytics\Models\Campaign;
 use Falcon\Analytics\Services\Dashboard\ObjectiveLabels;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -32,11 +31,10 @@ final class ObjectiveLabelsTest extends TestCase
         $this->app->forgetInstance(FunnelRegistry::class);
         $this->app->forgetInstance(EventRegistry::class);
 
-        $campaign = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta']]]);
-        $ad = Ad::create(['campaign_id' => $campaign->id, 'name' => 'Annonce', 'match_conditions' => [['param' => 'creative', 'value' => 'v']]]);
+        $ad = Ad::factory()->create();
 
         foreach ([['funnel', 'sample'], ['event', 'sample.action'], ['event', 'gone'], ['funnel', 'sample.action']] as [$type, $reference]) {
-            AdObjective::create(['ad_id' => $ad->id, 'type' => $type, 'reference' => $reference]);
+            AdObjective::factory()->for($ad)->create(['type' => $type, 'reference' => $reference]);
         }
 
         $tags = app(ObjectiveLabels::class)->tagsOf($ad->objectives()->orderBy('id')->get());

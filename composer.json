@@ -45,7 +45,8 @@
     },
     "autoload": {
         "psr-4": {
-            "Falcon\\Analytics\\": "src/"
+            "Falcon\\Analytics\\": "src/",
+            "Falcon\\Analytics\\Database\\Factories\\": "database/factories/"
         }
     },
     "autoload-dev": {

@@ -20,14 +20,14 @@ final class SourceResolverTest extends TestCase
 
     public function test_it_classifies_direct_traffic(): void
     {
-        $this->assertSame('direct', $this->resolver->resolve('https://vantadrive.ch/', null, 'vantadrive.ch')->source);
+        $this->assertSame('direct', $this->resolver->resolve('https://boutique.test/', null, 'boutique.test')->source);
     }
 
     public function test_it_treats_an_internal_referrer_as_direct(): void
     {
         $this->assertSame(
             'direct',
-            $this->resolver->resolve('https://vantadrive.ch/x', 'https://www.vantadrive.ch/', 'vantadrive.ch')->source,
+            $this->resolver->resolve('https://boutique.test/x', 'https://www.boutique.test/', 'boutique.test')->source,
         );
     }
 
@@ -35,7 +35,7 @@ final class SourceResolverTest extends TestCase
     {
         $this->assertSame(
             'organic',
-            $this->resolver->resolve('https://vantadrive.ch/', 'https://www.google.com/search?q=x', 'vantadrive.ch')->source,
+            $this->resolver->resolve('https://boutique.test/', 'https://www.google.com/search?q=x', 'boutique.test')->source,
         );
     }
 
@@ -43,7 +43,7 @@ final class SourceResolverTest extends TestCase
     {
         $this->assertSame(
             'social',
-            $this->resolver->resolve('https://vantadrive.ch/', 'https://facebook.com/', 'vantadrive.ch')->source,
+            $this->resolver->resolve('https://boutique.test/', 'https://facebook.com/', 'boutique.test')->source,
         );
     }
 
@@ -51,16 +51,16 @@ final class SourceResolverTest extends TestCase
     {
         $this->assertSame(
             'referral',
-            $this->resolver->resolve('https://vantadrive.ch/', 'https://someblog.example/', 'vantadrive.ch')->source,
+            $this->resolver->resolve('https://boutique.test/', 'https://someblog.example/', 'boutique.test')->source,
         );
     }
 
     public function test_it_derives_paid_source_and_utm_parameters_utm_winning_over_the_referrer(): void
     {
         $acquisition = $this->resolver->resolve(
-            'https://vantadrive.ch/?utm_source=meta&utm_medium=cpc&utm_campaign=spring',
+            'https://boutique.test/?utm_source=meta&utm_medium=cpc&utm_campaign=spring',
             'https://facebook.com/',
-            'vantadrive.ch',
+            'boutique.test',
         );
 
         $this->assertSame('paid', $acquisition->source);
@@ -73,7 +73,7 @@ final class SourceResolverTest extends TestCase
     {
         $this->assertSame(
             'paid',
-            $this->resolver->resolve('https://vantadrive.ch/?gclid=abc123', 'https://www.google.com/', 'vantadrive.ch')->source,
+            $this->resolver->resolve('https://boutique.test/?gclid=abc123', 'https://www.google.com/', 'boutique.test')->source,
         );
     }
 
@@ -81,7 +81,7 @@ final class SourceResolverTest extends TestCase
     {
         $this->assertSame(
             'paid',
-            $this->resolver->resolve('https://vantadrive.ch/?msclkid=abc', null, 'vantadrive.ch')->source,
+            $this->resolver->resolve('https://boutique.test/?msclkid=abc', null, 'boutique.test')->source,
         );
     }
 
@@ -90,9 +90,9 @@ final class SourceResolverTest extends TestCase
         $this->assertSame(
             'paid',
             $this->resolver->resolve(
-                'https://vantadrive.ch/?utm_source=meta&utm_medium=paid_social',
+                'https://boutique.test/?utm_source=meta&utm_medium=paid_social',
                 'https://facebook.com/',
-                'vantadrive.ch',
+                'boutique.test',
             )->source,
         );
     }
@@ -102,13 +102,13 @@ final class SourceResolverTest extends TestCase
     {
         $this->assertSame(
             'social',
-            $this->resolver->resolve('https://vantadrive.ch/?fbclid=xyz', 'https://facebook.com/', 'vantadrive.ch')->source,
+            $this->resolver->resolve('https://boutique.test/?fbclid=xyz', 'https://facebook.com/', 'boutique.test')->source,
         );
     }
 
     public function test_it_returns_null_utm_when_absent(): void
     {
-        $acquisition = $this->resolver->resolve('https://vantadrive.ch/', null, 'vantadrive.ch');
+        $acquisition = $this->resolver->resolve('https://boutique.test/', null, 'boutique.test');
 
         $this->assertNull($acquisition->utmSource);
         $this->assertNull($acquisition->utmCampaign);
@@ -119,9 +119,9 @@ final class SourceResolverTest extends TestCase
         $long = str_repeat('a', 400);
 
         $acquisition = $this->resolver->resolve(
-            'https://vantadrive.ch/?utm_source='.$long.'&utm_campaign='.$long,
+            'https://boutique.test/?utm_source='.$long.'&utm_campaign='.$long,
             null,
-            'vantadrive.ch',
+            'boutique.test',
         );
 
         $this->assertSame(str_repeat('a', 150), $acquisition->utmSource);

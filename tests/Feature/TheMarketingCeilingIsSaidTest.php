@@ -14,7 +14,6 @@ use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Str;
 use Livewire\Livewire;
 
 /**
@@ -39,19 +38,14 @@ final class TheMarketingCeilingIsSaidTest extends TestCase
     {
         parent::setUp();
 
-        $this->campaign = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta']]]);
-        $this->ad = Ad::create(['campaign_id' => $this->campaign->id, 'name' => 'Cabriolet', 'match_conditions' => [['param' => 'src', 'value' => 'meta']]]);
+        $this->campaign = Campaign::factory()->matching('src', 'meta')->create(['name' => 'Été']);
+        $this->ad = Ad::factory()->for($this->campaign)->matching('src', 'meta')->create(['name' => 'Cabriolet']);
 
-        $visitor = Visitor::create(['uuid' => (string) Str::uuid(), 'first_seen_at' => now(), 'last_seen_at' => now()]);
-
-        Session::query()->insert(array_fill(0, 3, [
-            'visitor_id' => $visitor->id,
-            'started_at' => now()->subHour(),
-            'last_activity_at' => now()->subHour(),
-            'is_bot' => false,
-            'source' => 'social',
-            'mkt_params' => '{"src":"meta"}',
-        ]));
+        Session::factory()
+            ->count(3)
+            ->for(Visitor::factory())
+            ->at(now()->subHour())
+            ->create(['source' => 'social', 'mkt_params' => ['src' => 'meta']]);
     }
 
     public function test_every_screen_built_on_those_sessions_says_it_past_the_ceiling(): void

@@ -15,13 +15,11 @@ use Falcon\Analytics\Models\AdObjective;
 use Falcon\Analytics\Models\Campaign;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
-use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Repositories\Dashboard\EventReadRepository;
 use Falcon\Analytics\Repositories\Dashboard\OverviewReadRepository;
 use Falcon\Analytics\Services\Dashboard\MarketingReportBuilder;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Str;
 
 /**
  * The promise the whole design exists for · erasing changes no figure.
@@ -79,18 +77,10 @@ final class ThePurgeChangesNoFigureTest extends TestCase
         );
     }
 
-    private function visitor(): Visitor
+    /** A new visitor's visit, arrived through the campaign link. */
+    private function newSession(CarbonImmutable $at, ?string $subjectType = null): Session
     {
-        return Visitor::create(['uuid' => (string) Str::uuid(), 'first_seen_at' => now(), 'last_seen_at' => now()]);
-    }
-
-    private function newSession(Visitor $visitor, CarbonImmutable $at, ?string $subjectType = null): Session
-    {
-        return Session::create([
-            'visitor_id' => $visitor->id,
-            'started_at' => $at,
-            'last_activity_at' => $at,
-            'is_bot' => false,
+        return Session::factory()->at($at)->create([
             'subject_type' => $subjectType,
             'subject_id' => $subjectType !== null ? 1 : null,
             'mkt_params' => ['src' => 'meta'],
@@ -100,13 +90,7 @@ final class ThePurgeChangesNoFigureTest extends TestCase
     /** @param  array<string, mixed>  $extra */
     private function event(Session $session, EventType $type, CarbonImmutable $at, array $extra = []): void
     {
-        Event::create([
-            'session_id' => $session->id,
-            'visitor_id' => $session->visitor_id,
-            'type' => $type,
-            'occurred_at' => $at,
-            ...$extra,
-        ]);
+        Event::factory()->for($session)->create(['type' => $type, 'occurred_at' => $at, ...$extra]);
     }
 
     /**
@@ -118,16 +102,15 @@ final class ThePurgeChangesNoFigureTest extends TestCase
         $old = CarbonImmutable::parse(self::ANCIENT);
         $recent = CarbonImmutable::now()->subDays(3);
 
-        $campaign = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta']]]);
-        $ad = Ad::create(['campaign_id' => $campaign->id, 'name' => 'Cabrio', 'match_conditions' => [['param' => 'src', 'value' => 'meta']]]);
-        AdObjective::create(['ad_id' => $ad->id, 'type' => 'event', 'reference' => 'sample.action']);
+        $campaign = Campaign::factory()->matching('src', 'meta')->create(['name' => 'Été']);
+        $ad = Ad::factory()->for($campaign)->matching('src', 'meta')->create(['name' => 'Cabrio']);
+        AdObjective::factory()->for($ad)->event('sample.action')->create();
 
         foreach ([$old, $recent] as $when) {
-            $visitor = $this->visitor();
-            $session = $this->newSession($visitor, $when);
+            $session = $this->newSession($when);
 
-            $this->event($session, EventType::Pageview, $when->setTime(9, 0), ['url' => 'https://exemple.fr/', 'route' => 'home']);
-            $this->event($session, EventType::Pageview, $when->setTime(9, 5), ['url' => 'https://exemple.fr/tarifs', 'route' => 'tarifs']);
+            $this->event($session, EventType::Pageview, $when->setTime(9, 0), ['url' => 'https://exemple.test/', 'route' => 'home']);
+            $this->event($session, EventType::Pageview, $when->setTime(9, 5), ['url' => 'https://exemple.test/tarifs', 'route' => 'tarifs']);
 
             /*
              * The same page, reached through two campaign links whose token is
@@ -140,8 +123,8 @@ final class ThePurgeChangesNoFigureTest extends TestCase
              * change shape on the day the erasing crossed this history —
              * silently, since both readings would look plausible on their own.
              */
-            $this->event($session, EventType::Pageview, $when->setTime(9, 6), ['url' => 'https://exemple.fr/tarifs?fbclid=IwAR0aaa', 'route' => 'tarifs']);
-            $this->event($session, EventType::Pageview, $when->setTime(9, 7), ['url' => 'https://exemple.fr/tarifs?utm_source=meta&utm_campaign=ete', 'route' => 'tarifs']);
+            $this->event($session, EventType::Pageview, $when->setTime(9, 6), ['url' => 'https://exemple.test/tarifs?fbclid=IwAR0aaa', 'route' => 'tarifs']);
+            $this->event($session, EventType::Pageview, $when->setTime(9, 7), ['url' => 'https://exemple.test/tarifs?utm_source=meta&utm_campaign=ete', 'route' => 'tarifs']);
 
             $this->event($session, EventType::Click, $when->setTime(9, 10), ['target_text' => 'Demander un devis', 'route' => 'home']);
             $this->event($session, EventType::Click, $when->setTime(9, 11), ['target_text' => 'Demander un devis', 'route' => 'home']);
@@ -156,8 +139,8 @@ final class ThePurgeChangesNoFigureTest extends TestCase
             // objective all read this one.
             $this->event($session, EventType::Custom, $when->setTime(9, 20), ['name' => 'sample.action', 'value' => 5]);
 
-            $signed = $this->newSession($this->visitor(), $when, 'client');
-            $this->event($signed, EventType::Pageview, $when->setTime(10, 0), ['url' => 'https://exemple.fr/tarifs', 'route' => 'tarifs']);
+            $signed = $this->newSession($when, 'client');
+            $this->event($signed, EventType::Pageview, $when->setTime(10, 0), ['url' => 'https://exemple.test/tarifs', 'route' => 'tarifs']);
         }
 
         /*
@@ -171,8 +154,8 @@ final class ThePurgeChangesNoFigureTest extends TestCase
          * previous window was made of whole days.
          */
         $lastDayOfThePreviousWindow = $this->wideEnoughToReachBack->previous()->to;
-        $afternoon = $this->newSession($this->visitor(), $lastDayOfThePreviousWindow->setTime(15, 0));
-        $this->event($afternoon, EventType::Pageview, $lastDayOfThePreviousWindow->setTime(15, 0), ['url' => 'https://exemple.fr/tarifs', 'route' => 'tarifs']);
+        $afternoon = $this->newSession($lastDayOfThePreviousWindow->setTime(15, 0));
+        $this->event($afternoon, EventType::Pageview, $lastDayOfThePreviousWindow->setTime(15, 0), ['url' => 'https://exemple.test/tarifs', 'route' => 'tarifs']);
         $afternoon->update(['pageview_count' => 1, 'event_count' => 1]);
     }
 

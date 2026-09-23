@@ -16,7 +16,6 @@ use Falcon\Analytics\Services\Dashboard\RealtimeRowBuilder;
 use Falcon\Analytics\Tests\Fixtures\Models\TestClient;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Str;
 
 /**
  * The two lists of the realtime board, as their lines read · what happened,
@@ -157,23 +156,9 @@ final class TheLiveBoardSaysWhatHappenedTest extends TestCase
      */
     private function aSession(array $attributes = [], array $visitor = []): Session
     {
-        $owner = Visitor::create([
-            'uuid' => (string) Str::uuid(),
-            'first_seen_at' => now()->subDay(),
-            'last_seen_at' => now(),
-            'session_count' => 1,
-            ...$visitor,
-        ]);
-
-        return Session::create([
-            'visitor_id' => $owner->id,
-            'browser_key' => $owner->uuid,
-            'started_at' => now()->subMinutes(5),
-            'last_activity_at' => now(),
-            'is_bot' => false,
-            'pageview_count' => 1,
-            ...$attributes,
-        ]);
+        return Session::factory()
+            ->for(Visitor::factory()->state(['first_seen_at' => now()->subDay(), 'session_count' => 1, ...$visitor]))
+            ->create(['started_at' => now()->subMinutes(5), 'pageview_count' => 1, ...$attributes]);
     }
 
     /**
@@ -181,12 +166,6 @@ final class TheLiveBoardSaysWhatHappenedTest extends TestCase
      */
     private function anEvent(Session $session, EventType $type, array $attributes = []): Event
     {
-        return Event::create([
-            'session_id' => $session->id,
-            'visitor_id' => $session->visitor_id,
-            'occurred_at' => now()->subMinute(),
-            'type' => $type,
-            ...$attributes,
-        ]);
+        return Event::factory()->for($session)->create(['occurred_at' => now()->subMinute(), 'type' => $type, ...$attributes]);
     }
 }
