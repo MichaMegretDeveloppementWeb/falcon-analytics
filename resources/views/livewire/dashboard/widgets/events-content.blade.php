@@ -14,7 +14,7 @@
         <x-analytics::kpi-card :label="__('Conversions')" :value="NumberLabel::for($conversions)" icon="check-circle" :metric="$conversionsDelta">
             <div wire:key="ev-spark-conv-{{ $period }}-{{ $subject }}" class="an:mt-3"><x-analytics::sparkline :values="$conversionsData" color="--an-conversion" /></div>
         </x-analytics::kpi-card>
-        <x-analytics::kpi-card :label="__('Score des conversions')" :value="NumberLabel::for($value).' pts'" icon="sparkles" :metric="$valueDelta" :description="__('la somme des points rapportés par les conversions')" />
+        <x-analytics::kpi-card :label="__('Score des conversions')" :value="NumberLabel::points($value)" icon="sparkles" :metric="$valueDelta" :description="__('la somme des points rapportés par les conversions')" />
     </div>
 
     {{-- Trend --}}
@@ -62,8 +62,8 @@
                             </x-ui::table.cell>
                             <x-ui::table.cell align="right" class="an:font-medium an:tabular-nums an:text-primary">{{ NumberLabel::for($row['count']) }}</x-ui::table.cell>
                             <x-ui::table.cell align="right" class="an:tabular-nums">{{ NumberLabel::for($row['visitors']) }}</x-ui::table.cell>
-                            <x-ui::table.cell align="right" class="an:tabular-nums an:text-secondary">{{ $row['value'] !== null ? NumberLabel::for($row['value'])."\u{00A0}pts" : '·' }}</x-ui::table.cell>
-                            <x-ui::table.cell :last="true" align="right" class="an:tabular-nums">{{ $row['isScored'] ? NumberLabel::for($row['valueTotal'])."\u{00A0}pts" : '·' }}</x-ui::table.cell>
+                            <x-ui::table.cell align="right" class="an:tabular-nums an:text-secondary">{{ $row['value'] !== null ? NumberLabel::points($row['value']) : '·' }}</x-ui::table.cell>
+                            <x-ui::table.cell :last="true" align="right" class="an:tabular-nums">{{ $row['isScored'] ? NumberLabel::points($row['valueTotal']) : '·' }}</x-ui::table.cell>
                         </x-ui::table.row>
                     @endforeach
                 </x-ui::table.body>

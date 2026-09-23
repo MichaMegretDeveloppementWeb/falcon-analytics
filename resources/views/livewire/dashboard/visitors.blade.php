@@ -58,10 +58,10 @@
                 <x-ui::table.header-cell :first="true">{{ __('Visiteur') }}</x-ui::table.header-cell>
                 <x-ui::table.header-cell>{{ __('Type') }}</x-ui::table.header-cell>
                 <x-ui::table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'session_count', 'label' => __('Sessions')])</x-ui::table.header-cell>
-                <x-ui::table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'first_seen_at', 'label' => __('Première visite')])</x-ui::table.header-cell>
-                <x-ui::table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'last_seen_at', 'label' => __('Dernière visite')])</x-ui::table.header-cell>
+                <x-ui::table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'first_seen_at', 'label' => __('Première session')])</x-ui::table.header-cell>
+                <x-ui::table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'last_seen_at', 'label' => __('Dernière session')])</x-ui::table.header-cell>
                 <x-ui::table.header-cell>{{ __('Localité') }}</x-ui::table.header-cell>
-                <x-ui::table.header-cell :last="true">{{ __('Acquisition') }}</x-ui::table.header-cell>
+                <x-ui::table.header-cell :last="true">{{ __('Source') }}</x-ui::table.header-cell>
             </x-ui::table.head>
             <x-ui::table.body>
                 @foreach ($visitors as $visitor)

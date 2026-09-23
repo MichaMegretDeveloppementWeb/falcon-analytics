@@ -36,7 +36,7 @@
                             :values="[$newVsReturning['new'], $newVsReturning['returning']]"
                             :colors="[ChartPalette::SERIES[0], ChartPalette::SERIES[4]]"
                             :total="NumberLabel::for($newTotal)"
-                            :caption="__('visiteurs')" />
+                            :caption="$newTotal > 1 ? __('visiteurs') : __('visiteur')" />
                     </div>
                     {{--
                         A grid, not a stretch: the column of numbers starts after the longest
@@ -70,7 +70,7 @@
                             :values="array_values($devices)"
                             :colors="array_slice($devicePalette, 0, count($devices))"
                             :total="NumberLabel::for($deviceTotal)"
-                            :caption="__('sessions')" />
+                            :caption="$deviceTotal > 1 ? __('sessions') : __('session')" />
                     </div>
                     <dl class="an:grid an:min-w-0 an:max-w-[15rem] an:flex-1 an:grid-cols-[minmax(0,1fr)_auto] an:items-center an:gap-x-6 an:gap-y-2.5">
                         @foreach ($devices as $device => $count)

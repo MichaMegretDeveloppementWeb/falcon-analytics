@@ -221,8 +221,8 @@ final class CheckCommand extends Command
         return [
             'Résumés',
             'À voir',
-            "{$waiting} jour(s) clos attendent d’être résumés. Rien n’est perdu — l’effacement refuse un jour "
-            .'non résumé — mais ce nombre doit baisser d’un jour à l’autre. S’il ne baisse pas, votre '
+            "{$waiting} jour(s) clos attendent d’être résumés. Rien n’est perdu, puisque l’effacement refuse un jour "
+            .'non résumé, mais ce nombre doit baisser d’un jour à l’autre. S’il ne baisse pas, votre '
             .'planificateur ne tourne pas : vérifiez que schedule:run est déclenché chaque minute. '
             .'Pour rattraper tout de suite : php artisan analytics:archive.',
         ];

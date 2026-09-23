@@ -12,7 +12,7 @@ final readonly class IntegrationsController
     public function __invoke(): View
     {
         return view('analytics::admin.dashboard.integrations', [
-            'analyticsTitle' => __('Intégrations').' · '.__('Analytics'),
+            'analyticsTitle' => __('Intégrations').' · '.__('Audience'),
         ]);
     }
 }

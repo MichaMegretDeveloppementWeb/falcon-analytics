@@ -87,7 +87,7 @@ final class ScreenMountingTest extends TestCase
     {
         $this->actingAs($this->admin(), 'admin')
             ->get(route('analytics.admin.realtime'))
-            ->assertSee('<title>'.__('Temps réel').' · '.__('Analytics').'</title>', false);
+            ->assertSee('<title>'.__('Temps réel').' · '.__('Audience').'</title>', false);
     }
 
     public function test_it_lets_the_controller_name_the_tab_after_the_record_it_shows(): void
@@ -108,7 +108,7 @@ final class ScreenMountingTest extends TestCase
     {
         $this->actingAs($this->admin(), 'admin')
             ->get(route('analytics.admin.overview'))
-            ->assertSee('<title>Vue d&#039;ensemble · '.__('Analytics').'</title>', false)
+            ->assertSee('<title>Vue d&#039;ensemble · '.__('Audience').'</title>', false)
             ->assertDontSee('&amp;#039;', false);
     }
 }

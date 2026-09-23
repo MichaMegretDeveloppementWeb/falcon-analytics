@@ -7,10 +7,10 @@
 {{-- Sorted list of conversion elements (objectives): what converted, how many
      times, via which ad. A funnel objective expands into its step events. --}}
 <div>
-    <x-ui::section-header :title="__('Conversions')" :description="__('Ce qui a converti, combien de fois' . ($showAd ? ', et via quelle pub' : '') . ', du plus au moins converti.')" class="an:mb-4" />
+    <x-ui::section-header :title="__('Conversions')" :description="$showAd ? __('Ce qui a converti, combien de fois, et via quelle publicité, du plus au moins converti.') : __('Ce qui a converti, combien de fois, du plus au moins converti.')" class="an:mb-4" />
 
     @if ($conversionElements === [])
-        <x-ui::empty-state icon="check-circle" :title="__('Aucun objectif défini')" :description="__('Définis des objectifs sur tes pubs pour mesurer les conversions ici.')" />
+        <x-ui::empty-state icon="check-circle" :title="__('Aucun objectif défini')" :description="__('Définissez des objectifs sur vos publicités pour mesurer les conversions ici.')" />
     @else
         <x-ui::card padding="false">
             <div class="an:divide-y an:divide-subtle">

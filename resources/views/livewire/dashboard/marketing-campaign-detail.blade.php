@@ -30,7 +30,7 @@
             </div>
         </div>
         <div class="an:flex an:shrink-0 an:items-center an:gap-2">
-            <x-ui::button variant="secondary" x-on:click="$anOpenWhenDone($wire.$refs.campaignForm.$wire.editCampaign({{ $detail->id }}), 'an-campaign-form')"><x-ui::icon name="pencil-square" class="an:h-4 an:w-4" /> {{ __('Modifier') }}</x-ui::button>
+            <x-ui::button variant="secondary" x-on:click="$anOpenWhenDone($wire.$refs.campaignForm.$wire.editCampaign({{ $detail->id }}), 'an-campaign-form')"><x-ui::icon name="pencil-square" class="an:h-4 an:w-4" /> {{ __('Modifier la campagne') }}</x-ui::button>
             <x-ui::button variant="ghost" x-on:click="$dispatch('ui-open-modal', 'an-campaign-delete')" aria-label="{{ __('Supprimer') }}"><x-ui::icon name="trash" class="an:h-4 an:w-4" /></x-ui::button>
         </div>
     </div>
@@ -47,16 +47,16 @@
     {{-- Ads --}}
     <div>
         <div class="an:mb-4 an:flex an:items-center an:justify-between">
-            <x-ui::section-header :title="__('Pubs')" :description="__('Les objectifs de conversion se définissent par pub.')" />
-            <x-ui::button variant="secondary" size="compact" x-on:click="$anOpenWhenDone($wire.$refs.adForm.$wire.editAd(), 'an-ad-form')"><x-ui::icon name="plus" class="an:h-3.5 an:w-3.5" /> {{ __('Nouvelle pub') }}</x-ui::button>
+            <x-ui::section-header :title="__('Publicités')" :description="__('Les objectifs de conversion se définissent par publicité.')" />
+            <x-ui::button variant="secondary" size="compact" x-on:click="$anOpenWhenDone($wire.$refs.adForm.$wire.editAd(), 'an-ad-form')"><x-ui::icon name="plus" class="an:h-3.5 an:w-3.5" /> {{ __('Nouvelle publicité') }}</x-ui::button>
         </div>
 
         @if ($ads === [])
-            <x-ui::empty-state icon="rectangle-stack" :title="__('Aucune pub')" :description="__('Ajoutez une pub à cette campagne pour la suivre.')" />
+            <x-ui::empty-state icon="rectangle-stack" :title="__('Aucune publicité')" :description="__('Ajoutez une publicité à cette campagne pour la suivre.')" />
         @else
             <x-ui::table>
                 <x-ui::table.head>
-                    <x-ui::table.header-cell :first="true">{{ __('Pub') }}</x-ui::table.header-cell>
+                    <x-ui::table.header-cell :first="true">{{ __('Publicité') }}</x-ui::table.header-cell>
                     <x-ui::table.header-cell>{{ __('Conditions') }}</x-ui::table.header-cell>
                     <x-ui::table.header-cell>{{ __('Objectifs') }}</x-ui::table.header-cell>
                     <x-ui::table.header-cell align="right">{{ __('Sessions') }}</x-ui::table.header-cell>
@@ -113,7 +113,7 @@
 
     {{-- Delete campaign --}}
     <x-ui::modal name="an-campaign-delete" variant="confirm" :title="__('Supprimer la campagne ?')">
-        {{ __('« :name » et toutes ses pubs et objectifs seront supprimés. Le trafic déjà capté reste en base.', ['name' => $detail->name]) }}
+        {{ __('« :name » et toutes ses publicités et objectifs seront supprimés. Le trafic déjà capté reste en base.', ['name' => $detail->name]) }}
 
         <x-slot:actions>
             <x-ui::button type="button" variant="ghost" x-on:click="$dispatch('ui-close-modal', 'an-campaign-delete')">{{ __('Annuler') }}</x-ui::button>
@@ -122,7 +122,7 @@
     </x-ui::modal>
 
     {{-- Delete ad --}}
-    <x-ui::modal name="an-ad-delete" variant="confirm" :title="__('Supprimer la pub ?')">
+    <x-ui::modal name="an-ad-delete" variant="confirm" :title="__('Supprimer la publicité ?')">
         {{ __('« :name » et ses objectifs seront supprimés. Le trafic déjà capté reste en base.', ['name' => $deleteAdLabel]) }}
 
         <x-slot:actions>

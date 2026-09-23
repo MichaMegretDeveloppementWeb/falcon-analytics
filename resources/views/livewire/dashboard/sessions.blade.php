@@ -47,7 +47,7 @@
                 <x-ui::table.header-cell :first="true">{{ __('Visiteur') }}</x-ui::table.header-cell>
                 <x-ui::table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'started_at', 'label' => __('Début')])</x-ui::table.header-cell>
                 <x-ui::table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'duration', 'label' => __('Durée')])</x-ui::table.header-cell>
-                <x-ui::table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'pageview_count', 'label' => __('Pages')])</x-ui::table.header-cell>
+                <x-ui::table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'pageview_count', 'label' => __('Pages vues')])</x-ui::table.header-cell>
                 <x-ui::table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'events_count', 'label' => __('Événements')])</x-ui::table.header-cell>
                 <x-ui::table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'conversions_count', 'label' => __('Conv.')])</x-ui::table.header-cell>
                 <x-ui::table.header-cell>@include('analytics::livewire.dashboard.partials.sort-header', ['column' => 'source', 'label' => __('Source')])</x-ui::table.header-cell>

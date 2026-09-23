@@ -76,7 +76,7 @@ final class AdForm extends Component
                 'ad_id' => $adId,
                 'exception' => $e,
             ]);
-            $this->dispatch('ui-toast', type: 'danger', title: __('Cette pub est introuvable. Actualisez la page.'));
+            $this->dispatch('ui-toast', type: 'danger', title: __('Cette publicité est introuvable. Actualisez la page.'));
 
             return false;
         }
@@ -138,7 +138,7 @@ final class AdForm extends Component
                 'ad_id' => $this->adId,
                 'exception' => $e,
             ]);
-            $this->dispatch('ui-toast', type: 'danger', title: __('L\'enregistrement de la pub a échoué. Réessayez.'));
+            $this->dispatch('ui-toast', type: 'danger', title: __('L\'enregistrement de la publicité a échoué. Réessayez.'));
 
             return false;
         }

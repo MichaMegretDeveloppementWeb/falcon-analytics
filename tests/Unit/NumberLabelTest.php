@@ -53,6 +53,26 @@ final class NumberLabelTest extends TestCase
         $this->assertSame($expected, NumberLabel::percent($percent, $decimals));
     }
 
+    /** @return array<string, array{int, string}> */
+    public static function points(): array
+    {
+        return [
+            'none' => [0, "0\u{00A0}pt"],
+            'one' => [1, "1\u{00A0}pt"],
+            'two' => [2, "2\u{00A0}pts"],
+            'a penalty of one' => [-1, "-1\u{00A0}pt"],
+            'thousands' => [1234, "1\u{202F}234\u{00A0}pts"],
+        ];
+    }
+
+    #[DataProvider('points')]
+    public function test_a_score_carries_its_unit_in_the_right_number(int $points, string $expected): void
+    {
+        app()->setLocale('fr');
+
+        $this->assertSame($expected, NumberLabel::points($points));
+    }
+
     public function test_changing_language_mid_request_changes_the_writing(): void
     {
         app()->setLocale('fr');

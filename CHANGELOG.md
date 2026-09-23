@@ -41,6 +41,10 @@ architecture qui n'existe plus.
   ayez de tâche à créer ;
 - **des fabriques** pour chaque modèle public, utilisables dans vos propres
   essais ;
+- **un vocabulaire écrit** · un mot par notion sur tous les écrans, et la liste
+  dans [fonctionnalites.md](docs/fonctionnalites.md#le-vocabulaire), pour écrire
+  votre menu ou traduire. Aucun écran ne nomme un fichier, une commande ou une
+  variable · il dit ce qui manque et à qui le signaler ;
 - **une conservation qui ne fausse aucun chiffre** · le pas à pas d'une session
   s'efface au bout de 90 jours, et c'est tout ce qui s'efface · les pages et
   clics les plus vus sont comptés d'avance chaque nuit, et **tout ce qui porte un
@@ -68,14 +72,14 @@ architecture qui n'existe plus.
   distinguer un par son nom de route · voir
   [installation.md](docs/installation.md#un-écran-en-particulier) ;
 - **des fenêtres qui se tiennent au clavier** · créer, modifier ou supprimer une
-  campagne ou une pub, et déconnecter la Search Console, se font dans la
+  campagne ou une publicité, et déconnecter la Search Console, se font dans la
   fenêtre du kit. Le clavier y entre, la touche Tab y reste, l'échappement la
   ferme et rend le focus, et un lecteur d'écran l'annonce par son titre. Elle
   ne s'ouvre que si le serveur a pu lire ce qu'elle montre, et ne se ferme
   qu'une fois l'enregistrement fait · un refus la laisse ouverte, avec ses
   erreurs, et met le curseur sur le premier champ refusé. La touche Entrée
   enregistre comme le bouton. Son bouton reste désactivé pendant l'appel, donc un double clic
-  n'enregistre qu'une fois. Les deux listes d'objectifs d'une pub se ferment à l'échappement de
+  n'enregistre qu'une fois. Les deux listes d'objectifs d'une publicité se ferment à l'échappement de
   même, et disent si elles sont ouvertes. **Rien à faire pour cela** ;
 - **une protection rejouée à chaque clic** · le middleware que vous nommez pour
   les écrans, qu'il soit une classe, un alias ou un groupe, protège chaque

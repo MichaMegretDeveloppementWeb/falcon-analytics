@@ -10,6 +10,6 @@
 
 @if ($status !== \Falcon\Analytics\Enums\GeoStatus::Ready && $status !== \Falcon\Analytics\Enums\GeoStatus::NotInDatabase)
     <x-ui::alert type="warning" :title="$status->label()" class="an:mb-6">
-        {{ $status->hint() }}
+        {{ $status->notice() }}
     </x-ui::alert>
 @endif

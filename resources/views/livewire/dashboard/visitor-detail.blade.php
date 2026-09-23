@@ -22,7 +22,7 @@
             <span class="an:text-muted">·</span>
             <x-analytics::visitor-id :uuid="$detail->uuid" />
             <span class="an:text-muted">·</span>
-            <span>{{ __('Première visite le :date', ['date' => $detail->firstSeenAt->translatedFormat('d M Y')]) }}</span>
+            <span>{{ __('Première session le :date', ['date' => $detail->firstSeenAt->translatedFormat('d M Y')]) }}</span>
         </div>
     </div>
 
@@ -31,7 +31,7 @@
         <x-ui::stat-card :label="__('Sessions')" :value="(string) $detail->sessionCount" icon="rectangle-stack" />
         <x-ui::stat-card :label="__('Pages vues')" :value="(string) $detail->pageviewCount" icon="document-text" />
         <x-ui::stat-card :label="__('Durée moy.')" :value="$detail->averageDuration" icon="clock" />
-        <x-ui::stat-card :label="__('Pages / session')" :value="$detail->pagesPerSession" icon="chart-bar" />
+        <x-ui::stat-card :label="__('Pages par session')" :value="$detail->pagesPerSession" icon="chart-bar" />
     </div>
 
     {{-- Behaviour: devices and acquisition --}}
@@ -45,7 +45,7 @@
                         :values="array_column($detail->devices, 'sessions')"
                         :colors="array_column($detail->devices, 'color')"
                         :total="(string) $detail->deviceSessions"
-                        :caption="__('sessions')" />
+                        :caption="$detail->deviceSessions > 1 ? __('sessions') : __('session')" />
                     <div class="an:flex-1 an:space-y-2.5">
                         @foreach ($detail->devices as $share)
                             <div class="an:flex an:items-center an:justify-between an:gap-2">
@@ -95,7 +95,7 @@
                 <x-ui::table.head>
                     <x-ui::table.header-cell :first="true">{{ __('Session') }}</x-ui::table.header-cell>
                     <x-ui::table.header-cell>{{ __('Durée') }}</x-ui::table.header-cell>
-                    <x-ui::table.header-cell>{{ __('Pages') }}</x-ui::table.header-cell>
+                    <x-ui::table.header-cell>{{ __('Pages vues') }}</x-ui::table.header-cell>
                     <x-ui::table.header-cell>{{ __('Appareil') }}</x-ui::table.header-cell>
                     <x-ui::table.header-cell>{{ __('Source') }}</x-ui::table.header-cell>
                     <x-ui::table.header-cell :last="true">{{ __('Localité') }}</x-ui::table.header-cell>
@@ -135,7 +135,7 @@
 
     {{-- Danger zone --}}
     <div class="an:pt-2">
-        <x-ui::section-header :title="__('Zone de danger')" :danger="true" :description="__('L\'effacement des données de ce visiteur est définitif.')" class="an:mb-4" />
+        <x-ui::section-header :title="__('Zone de danger')" :danger="true" :description="__('La suppression des données de ce visiteur est définitive.')" class="an:mb-4" />
 
         @error('visitor-erasure-failed')
             <x-ui::alert type="error" class="an:mb-4">{{ $message }}</x-ui::alert>
@@ -144,7 +144,7 @@
         <div class="an:flex an:flex-col an:gap-3 an:rounded-xl an:border an:border-red-200 an:bg-red-50/40 an:px-5 an:py-4 an:dark:border-red-500/20 an:dark:bg-red-500/[0.06] an:sm:flex-row an:sm:items-center an:sm:justify-between">
             <div>
                 <p class="an:text-[13px] an:font-medium an:text-primary">{{ __('Supprimer les données de ce visiteur') }}</p>
-                <p class="an:mt-0.5 an:text-[12px] an:text-secondary">{{ __('Efface le visiteur, ses sessions et ses évènements. Action irréversible (droit à l\'effacement).') }}</p>
+                <p class="an:mt-0.5 an:text-[12px] an:text-secondary">{{ __('Supprime le visiteur, ses sessions et ses événements. Action irréversible (droit à l\'effacement).') }}</p>
             </div>
             <x-ui::button variant="danger" class="an:shrink-0" @click="$dispatch('ui-open-modal', 'forget-visitor')">
                 <x-ui::icon name="trash" class="an:h-4 an:w-4" /> {{ __('Supprimer') }}
@@ -153,7 +153,7 @@
     </div>
 
     <x-ui::modal name="forget-visitor" variant="confirm" :title="__('Supprimer ce visiteur ?')">
-        {{ __('Cette action est irréversible : le visiteur, ses :count session(s) et tous leurs évènements seront définitivement supprimés.', ['count' => $detail->sessionCount]) }}
+        {{ $detail->sessionCount < 2 ? __("Cette action est irréversible\u{00A0}: le visiteur, sa session et tous ses événements seront définitivement supprimés.") : __('Cette action est irréversible : le visiteur, ses :count sessions et tous leurs événements seront définitivement supprimés.', ['count' => $detail->sessionCount]) }}
         <x-slot:actions>
             <x-ui::button variant="ghost" @click="$dispatch('ui-close-modal', 'forget-visitor')">{{ __('Annuler') }}</x-ui::button>
             <x-ui::button variant="danger" wire:click="forget" @click="$dispatch('ui-close-modal', 'forget-visitor')">{{ __('Supprimer définitivement') }}</x-ui::button>

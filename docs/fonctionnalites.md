@@ -111,6 +111,65 @@ debout, et il n'y a pas d'erreur 500.
 
 ---
 
+## Le vocabulaire
+
+**Un mot par notion, sur tous les écrans.** C'est ce que vous écrivez dans votre
+menu pour que vos libellés et les nôtres se répondent, et ce que vous traduisez
+si votre site ne parle pas français. Le vocabulaire de votre propre site reste
+le vôtre · celui-ci ne décrit que ce que le paquet affiche.
+
+| La notion | Le mot | Jamais |
+|---|---|---|
+| l'espace des neuf écrans de mesure | **Audience** · les onglets s'appellent « Vue d'ensemble · Audience »… | Analytics, qui reste le nom du produit |
+| l'objet créé au marketing | **publicité** | pub |
+| une action nommée | **événement** | évènement |
+| une visite, du premier affichage à la dernière action | **session** | visite, connexion |
+| une page affichée | **page vue** | vue seule |
+| le temps passé | **durée** | temps |
+| la provenance d'une session | **source** · le bloc s'appelle « Sources de trafic », la section « Acquisition » | canal, en colonne « Acquisition » |
+| ce qu'on a tapé dans un moteur | **recherche** | mot-clé, terme, requête |
+| les paramètres d'un lien de campagne | leur nom tel quel · `utm_campaign`, `utm_source`, `utm_medium`, `utm_content`, `utm_term` | Campagne, Source, Contenu, Terme |
+| une session dont l'adresse d'arrivée porte des paramètres | **une session arrivée par un lien qui porte des paramètres** | trafic taggé |
+| le fichier où le site déclare ses événements ou ses tunnels | **le fichier qui déclare les événements du site**, **… les tunnels du site** | son chemin, qu'un écran ne nomme jamais |
+| retirer à la main | **supprimer** · « effacer » ne désigne que la purge automatique | l'effacement d'un visiteur |
+| couper Search Console | **déconnecter** | annuler la connexion |
+| un classement | « les plus vues », « principaux » | Top |
+| ce que rapportent les conversions ou un tunnel | **score**, compté en **points** · **1 pt**, **12 pts** | montant, valeur · 1 pts |
+
+**Les types d'appareil** · Ordinateur, Mobile, Téléphone simple, Phablette,
+Tablette, Télévision, Écran connecté, Appareil photo, Enceinte connectée,
+Console, Voiture, Baladeur, Objet connecté, Périphérique, Inconnu.
+
+**Les sources d'une session**, et la ligne qui les explique sur la fiche d'une
+session ·
+
+| Source | La ligne dessous |
+|---|---|
+| Direct | Adresse saisie, favori, ou lien sans origine connue |
+| Recherche naturelle | Depuis un moteur de recherche, hors annonce |
+| Social naturel | Depuis un réseau social, hors publicité |
+| Payant | Depuis une annonce payante |
+| Référent | Depuis un lien sur un autre site |
+| Lien de campagne | Lien de campagne dont le support n'est pas reconnu (affiche, QR code…) |
+| E-mail | Depuis un lien dans un e-mail |
+
+> **Une session qui correspond à l'une de vos campagnes compte comme Payant** sur
+> la vue d'ensemble, pour que la répartition des sources s'accorde avec le
+> marketing. « Lien de campagne » ne garde que les liens qui n'en reconnaissent
+> aucune.
+
+**Le nom d'un visiteur identifié vient de vos gardes.** Donnez à chacun un
+libellé, `identity.subjects.{garde}.label` · sans lui, les écrans affichent le
+nom technique du garde. Un site sans espace membre n'en déclare aucun, et le
+filtre qui les distingue disparaît.
+
+**Aucun écran ne nomme un fichier, une commande ou une variable** · celui qui
+lit les écrans ne peut rien en faire. Un écran dit ce qui manque et à qui le
+signaler ; ce qu'il faut régler est ici, dans la documentation, et dans
+`analytics:check`.
+
+---
+
 ## Les écrans d'analytique
 
 ### Vue d'ensemble
@@ -255,7 +314,9 @@ panne.
 
 Aujourd'hui, la carte Google Search Console · connecter, choisir la propriété à
 rattacher, déconnecter. **Tant que l'hôte n'a pas fourni d'identifiants OAuth,
-la carte dit ce qui manque** et la connexion refuse.
+la carte dit que la connexion n'est pas configurée** et à qui le signaler, et la
+connexion refuse · ce qu'il faut fournir, et l'adresse de retour à déclarer chez
+Google, sont dans [configuration.md](configuration.md#google-search-console).
 
 ---
 
@@ -401,7 +462,7 @@ campagnes de démonstration, elles, ne sont posées qu'une fois.
 
 **Ce qu'elle pose** ·
 
-- **deux campagnes de démonstration** et leurs pubs, reconnues par les
+- **deux campagnes de démonstration** et leurs publicités, reconnues par les
   paramètres `utm_campaign` et `utm_content` de leurs liens, avec pour objectifs
   votre première conversion et votre premier tunnel déclarés ;
 - **les visites**, **enregistrées comme celles du collecteur** · même chemin,

@@ -137,7 +137,7 @@ sujet suivi, les exclusions et le consentement, sans une ligne de code.
 
 | Clé | Type | Défaut | Ce qu'elle fait |
 |---|---|---|---|
-| `identity.subject_guards` | liste de gardes | `['web']` | Les gardes dont l'utilisateur connecté devient le sujet suivi. |
+| `identity.subject_guards` | liste de gardes | `['web']` | Les gardes dont l'utilisateur connecté devient le sujet suivi. **Chacun se nomme** dans `identity.subjects.{garde}.label`, sinon les écrans affichent son nom technique. Un site sans espace membre écrit `[]`, et le filtre des visiteurs disparaît. |
 | `identity.exclude_guards` | liste de gardes | `[]` | Les gardes dont l'utilisateur connecté est **entièrement** exclu du suivi. Vide veut dire « personne ». |
 | `identity.consent_cookie` | nom de cookie ou `null` | `null` | Le cookie dont la valeur `"1"` autorise l'identifiant de visiteur persistant. **Sans valeur**, aucun identifiant ne survit à la session. Le nommer ici suffit · le paquet le sort du chiffrement de Laravel lui-même, sinon il serait relu à `null` et le consentement ne serait jamais vu. |
 | `identity.subjects` | dictionnaire | `[]` | Comment afficher un sujet · un libellé, et les colonnes à concaténer pour son nom. **Vide**, l'écran affiche le nom du garde mis en forme — `client` devient `Client` — et l'identifiant, faute de savoir quelles colonnes lire. |

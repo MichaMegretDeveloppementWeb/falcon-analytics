@@ -11,7 +11,8 @@ namespace Falcon\Analytics\Enums;
  * whoever reads the screen: a missing database and a private address give the same blank column.
  * This says which one to fix.
  *
- * One set of wording serves the screen and the console alike.
+ * The label serves the screen and the console alike · the screen then says
+ * what it means for its reader, the console what to run.
  *
  * @internal nothing public returns it · the two enumerations cast on a model
  *           are, and this one is not one of them.
@@ -46,21 +47,39 @@ enum GeoStatus: string
     }
 
     /**
-     * What to do about it, when there is something to do.
-     *
-     * `__()` returns `array|string|null`, the translator answering an array
-     * when a key designates one. An array counts as no advice: cast to a
-     * string, it would render « Array ».
+     * What it means for whoever reads a screen, and who to turn to · no file,
+     * command or variable, which that reader cannot act on.
      */
+    public function notice(): ?string
+    {
+        return self::sentence(match ($this) {
+            self::NoDatabase => __('La base de géolocalisation est absente, donc les localités restent vides. Signalez-le à la personne qui maintient le site.'),
+            self::UnreadableDatabase => __('La base de géolocalisation ne se lit pas, donc les localités restent vides. Signalez-le à la personne qui maintient le site.'),
+            self::PrivateAddress => __('Les visiteurs arrivés depuis une adresse privée, comme en développement local, ne se localisent pas.'),
+            self::Ready, self::NotInDatabase => null,
+        });
+    }
+
+    /** What to run about it, for the console, when there is something to do. */
     public function hint(): ?string
     {
-        $hint = match ($this) {
+        return self::sentence(match ($this) {
             self::NoDatabase => __('Lancez analytics:geoip:download.'),
             self::UnreadableDatabase => __('Relancez analytics:geoip:download pour remplacer le fichier.'),
             self::PrivateAddress => __('Renseignez ANALYTICS_GEOIP_DEV_IP avec une adresse publique pour voir les localités en développement local.'),
             self::Ready, self::NotInDatabase => null,
-        };
+        });
+    }
 
-        return is_string($hint) ? $hint : null;
+    /**
+     * `__()` returns `array|string|null`, the translator answering an array
+     * when a key designates one. An array counts as nothing to say: cast to a
+     * string, it would render « Array ».
+     *
+     * @param  array<array-key, mixed>|string|null  $translated
+     */
+    private static function sentence(array|string|null $translated): ?string
+    {
+        return is_string($translated) ? $translated : null;
     }
 }

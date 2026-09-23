@@ -7,21 +7,21 @@
     </x-ui::page-header>
 
     <div class="an:w-full an:sm:max-w-xs">
-        <x-ui::search-input wire:model.live.debounce.300ms="search" :placeholder="__('Rechercher une campagne...')" class="an:w-full" />
+        <x-ui::search-input wire:model.live.debounce.300ms="search" :placeholder="__('Rechercher une campagne…')" class="an:w-full" />
     </div>
 
     @if ($campaigns->isEmpty())
         <x-ui::empty-state
             icon="megaphone"
             :title="__('Aucune campagne')"
-            :description="__('Créez une campagne pour commencer à mesurer vos pubs.')" />
+            :description="__('Créez une campagne pour commencer à mesurer vos publicités.')" />
     @else
         <x-ui::table>
             <x-ui::table.head>
                 <x-ui::table.header-cell :first="true">{{ __('Campagne') }}</x-ui::table.header-cell>
                 <x-ui::table.header-cell>{{ __('Plateforme') }}</x-ui::table.header-cell>
                 <x-ui::table.header-cell>{{ __('Conditions') }}</x-ui::table.header-cell>
-                <x-ui::table.header-cell align="right">{{ __('Pubs') }}</x-ui::table.header-cell>
+                <x-ui::table.header-cell align="right">{{ __('Publicités') }}</x-ui::table.header-cell>
                 <x-ui::table.header-cell :last="true" align="right">{{ __('Actions') }}</x-ui::table.header-cell>
             </x-ui::table.head>
             <x-ui::table.body>
@@ -66,7 +66,7 @@
 
     {{-- Campaign deletion --}}
     <x-ui::modal name="an-campaign-delete" variant="confirm" :title="__('Supprimer la campagne ?')">
-        {{ __('« :name » et toutes ses pubs et objectifs seront supprimés. Le trafic déjà capté reste en base.', ['name' => $deleteLabel]) }}
+        {{ __('« :name » et toutes ses publicités et objectifs seront supprimés. Le trafic déjà capté reste en base.', ['name' => $deleteLabel]) }}
 
         <x-slot:actions>
             <x-ui::button type="button" variant="ghost" x-on:click="$dispatch('ui-close-modal', 'an-campaign-delete')">{{ __('Annuler') }}</x-ui::button>

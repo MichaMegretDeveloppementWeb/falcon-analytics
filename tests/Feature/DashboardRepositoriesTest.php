@@ -224,6 +224,18 @@ final class DashboardRepositoriesTest extends TestCase
         $this->assertSame(1, $sources['organic'] ?? 0);
     }
 
+    public function test_a_campaign_link_is_its_own_channel_and_never_a_referral(): void
+    {
+        $this->makeSession(['source' => 'campaign']);
+        $this->makeSession(['source' => 'campaign']);
+        $this->makeSession(['source' => 'referral']);
+
+        $sources = Collection::make($this->overview->topSources($this->period, null))->pluck('total', 'label');
+
+        $this->assertSame(2, $sources['campaign'] ?? 0);
+        $this->assertSame(1, $sources['referral'] ?? 0);
+    }
+
     public function test_it_breaks_down_events_by_name_and_flags_declared_conversions(): void
     {
         $session = $this->makeSession();

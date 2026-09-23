@@ -24,7 +24,7 @@
                         @endif
                     </p>
                 </div>
-                <x-ui::badge color="gray" class="an:shrink-0">{{ __('Score') }} {{ NumberLabel::for($report->totalScore)."\u{00A0}pts" }}</x-ui::badge>
+                <x-ui::badge color="gray" class="an:shrink-0">{{ __('Score') }} {{ NumberLabel::points($report->totalScore) }}</x-ui::badge>
             </div>
 
             @if ($report->entrants === 0)
@@ -88,8 +88,8 @@
                             @endif
 
                             <p class="an:mt-1 an:text-[11px] an:text-muted">{{ __(':v par visiteur · score :s', [
-                                'v' => NumberLabel::for($step->value)."\u{00A0}pts",
-                                's' => NumberLabel::for($step->score)."\u{00A0}pts",
+                                'v' => NumberLabel::points($step->value),
+                                's' => NumberLabel::points($step->score),
                             ]) }}</p>
                         </div>
                     @endforeach
@@ -101,7 +101,7 @@
             <x-ui::empty-state
                 icon="funnel"
                 :title="__('Aucun tunnel')"
-                :description="__('Aucun tunnel n\'est déclaré dans app/Analytics/funnels.php.')" />
+                :description="__('Aucun tunnel n\'est déclaré pour ce site. Pour en suivre un, adressez-vous à la personne qui maintient le site.')" />
         </div>
     @endforelse
 </x-analytics::root>

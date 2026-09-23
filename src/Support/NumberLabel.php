@@ -25,6 +25,12 @@ final class NumberLabel
         return self::written(self::formatter(NumberFormatter::DECIMAL, $decimals), $number);
     }
 
+    /** A score with its unit, singular below two · « 1 pt », « 12 pts ». */
+    public static function points(int $points): string
+    {
+        return self::for($points)."\u{00A0}".(abs($points) < 2 ? __('pt') : __('pts'));
+    }
+
     /** A share already expressed in percent · 45.3 reads « 45,3 % ». */
     public static function percent(int|float $percent, int $decimals = 0): string
     {

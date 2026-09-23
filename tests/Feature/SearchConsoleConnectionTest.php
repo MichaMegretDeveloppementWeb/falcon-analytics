@@ -215,14 +215,16 @@ final class SearchConsoleConnectionTest extends TestCase
         $this->assertStringContainsString('invalid_grant', $connection->last_error);
     }
 
-    public function test_it_renders_the_unconfigured_card_with_the_env_keys_to_provide(): void
+    public function test_the_unconfigured_card_says_who_to_ask_without_naming_a_variable(): void
     {
         $this->actingAs($this->admin, 'admin');
 
         $this->get(route('analytics.admin.integrations'))
             ->assertSuccessful()
             ->assertSeeText(__('Intégrations'))
-            ->assertSeeText('ANALYTICS_GSC_CLIENT_ID');
+            ->assertSeeText(__('La connexion à Search Console n\'est pas configurée. Signalez-le à la personne qui maintient le site.'))
+            ->assertDontSeeText('ANALYTICS_GSC_CLIENT_ID')
+            ->assertDontSeeText('.env');
     }
 
     /** The disconnection is asked in a dialog the keyboard enters, named by its title. */

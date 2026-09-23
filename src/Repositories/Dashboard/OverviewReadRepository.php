@@ -89,8 +89,8 @@ final readonly class OverviewReadRepository
     /**
      * Top acquisition channels with their previous-period counts. Every session
      * matching a defined marketing campaign is counted as paid (deduplicated with
-     * the generic paid signals), and the residual 'campaign' source folds into
-     * referral, so the channel mix reconciles with the marketing module.
+     * the generic paid signals), so the channel mix reconciles with the
+     * marketing module · a campaign link that matches none stays its own channel.
      *
      * @return list<array{label: string, total: int, previous: int}>
      */
@@ -106,8 +106,8 @@ final readonly class OverviewReadRepository
     }
 
     /**
-     * Session counts per acquisition channel: the raw source, with 'campaign'
-     * folded into referral and every campaign-matched session reclassified as paid.
+     * Session counts per acquisition channel: the raw source, with every
+     * campaign-matched session reclassified as paid.
      *
      * @param  list<Campaign>  $campaigns
      * @return Collection<string, int>
@@ -125,8 +125,7 @@ final readonly class OverviewReadRepository
             ->pluck('total', 'label');
 
         foreach ($raw as $source => $total) {
-            $channel = $source === 'campaign' ? 'referral' : (string) $source;
-            $counts[$channel] = ($counts[$channel] ?? 0) + (int) $total;
+            $counts[(string) $source] = (int) $total;
         }
 
         if ($campaigns === []) {
@@ -134,14 +133,13 @@ final readonly class OverviewReadRepository
         }
 
         foreach ($this->marketing->matchedSessionSources($period, $subjectType, $campaigns) as $source) {
-            $channel = $source === 'campaign' ? 'referral' : $source;
-            if ($channel === 'paid') {
+            if ($source === 'paid') {
                 continue;
             }
 
-            $counts[$channel] = max(0, ($counts[$channel] ?? 0) - 1);
-            if ($counts[$channel] === 0) {
-                unset($counts[$channel]);
+            $counts[$source] = max(0, ($counts[$source] ?? 0) - 1);
+            if ($counts[$source] === 0) {
+                unset($counts[$source]);
             }
             $counts['paid'] = ($counts['paid'] ?? 0) + 1;
         }

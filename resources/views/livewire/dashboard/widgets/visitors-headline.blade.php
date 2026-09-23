@@ -13,7 +13,7 @@
         :metric="$metrics->returning->delta">
         <div wire:key="spark-v-returning-{{ $period }}-{{ $subject }}" class="an:mt-3"><x-analytics::sparkline :values="$metrics->returning->sparkline" /></div>
     </x-analytics::kpi-card>
-    <x-analytics::kpi-card :label="__('Sessions / visiteur')" :value="NumberLabel::for($metrics->sessionsPerVisitor->delta->current, 1)" icon="cursor-arrow-rays"
+    <x-analytics::kpi-card :label="__('Sessions par visiteur')" :value="NumberLabel::for($metrics->sessionsPerVisitor->delta->current, 1)" icon="cursor-arrow-rays"
         :metric="$metrics->sessionsPerVisitor->delta">
         <div wire:key="spark-v-spv-{{ $period }}-{{ $subject }}" class="an:mt-3"><x-analytics::sparkline :values="$metrics->sessionsPerVisitor->sparkline" /></div>
     </x-analytics::kpi-card>

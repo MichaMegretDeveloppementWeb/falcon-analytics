@@ -35,7 +35,7 @@
     x-on:an-realtime-mode.window="setMode($event.detail)"
     x-on:resize.window.debounce.250ms="apply()"
 >
-    <svg x-ref="svg" viewBox="0 0 1000 516" preserveAspectRatio="xMidYMid meet" class="an:w-full" role="img" aria-label="{{ __('Carte des connexions') }}">
+    <svg x-ref="svg" viewBox="0 0 1000 516" preserveAspectRatio="xMidYMid meet" class="an:w-full" role="img" aria-label="{{ __('Carte des sessions') }}">
         <g class="an:fill-map-land an:stroke-map-border" stroke-width="1">
             <use href="{{ \Falcon\Ui\Assets::url('analytics', 'world-map.svg') }}#world"></use>
         </g>

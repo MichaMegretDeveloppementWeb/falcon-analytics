@@ -242,7 +242,7 @@ final class DashboardPagesTest extends TestCase
 
         Livewire::test(VisitorsHeadline::class, ['period' => 30])->call('$refresh')
             ->assertSeeText(__('Nouveaux'))
-            ->assertSeeText(__('Sessions / visiteur'));
+            ->assertSeeText(__('Sessions par visiteur'));
     }
 
     public function test_it_renders_a_session_detail_with_its_information_and_event_timeline(): void

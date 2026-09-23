@@ -12,7 +12,7 @@ final readonly class SessionsController
     public function __invoke(): View
     {
         return view('analytics::admin.dashboard.sessions', [
-            'analyticsTitle' => __('Sessions').' · '.__('Analytics'),
+            'analyticsTitle' => __('Sessions').' · '.__('Audience'),
         ]);
     }
 }

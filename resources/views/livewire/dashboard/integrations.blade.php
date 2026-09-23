@@ -2,16 +2,15 @@
     use Falcon\Analytics\Models\SearchConsoleConnection;
 
     $connectUrl = route('analytics.admin.integrations.search-console.connect');
-    $callbackUrl = route('analytics.admin.integrations.search-console.callback');
 @endphp
 
 <x-analytics::root area="admin" class="an:space-y-8">
-    <x-ui::page-header :title="__('Intégrations')" :description="__('Sources de données externes du tableau de bord')" />
+    <x-ui::page-header :title="__('Intégrations')" :description="__('Les services qui complètent les écrans d\'audience')" />
 
     <div class="an:max-w-4xl">
         <x-ui::section-header
             :title="__('Google Search Console')"
-            :description="__('Les vrais termes de recherche Google qui mènent au site : clics, impressions, position')"
+            :description="__('Les recherches Google qui mènent au site : clics, impressions, position')"
             class="an:mb-4" />
 
         <x-ui::card>
@@ -23,7 +22,7 @@
                     </span>
                     <div>
                         <p class="an:text-[13px] an:font-semibold an:text-primary">{{ __('Google Search Console') }}</p>
-                        <p class="an:text-[12px] an:text-secondary">{{ __('Recherche organique · accès en lecture seule') }}</p>
+                        <p class="an:text-[12px] an:text-secondary">{{ __('Recherche naturelle · accès en lecture seule') }}</p>
                     </div>
                 </div>
 
@@ -41,19 +40,10 @@
             </div>
 
             @if (! $configured)
-                {{-- The host has not provided OAuth credentials: explain instead of offering a dead button. --}}
-                <div class="an:space-y-3 an:pt-4">
-                    <p class="an:text-[12px] an:text-secondary">
-                        {{ __('Renseignez un client OAuth Google (type « Application Web », API Search Console activée) dans le fichier .env, puis rechargez cette page :') }}
-                    </p>
-                    <div class="an:rounded-lg an:bg-elevated an:px-4 an:py-3 an:font-mono an:text-[12px] an:leading-6 an:text-primary">
-                        ANALYTICS_GSC_CLIENT_ID<br>ANALYTICS_GSC_CLIENT_SECRET
-                    </div>
-                    <p class="an:text-[12px] an:text-muted">
-                        {{ __('URI de redirection à enregistrer sur le client OAuth :') }}
-                        <span class="an:font-mono an:break-all an:text-secondary">{{ $callbackUrl }}</span>
-                    </p>
-                </div>
+                {{-- The host has not provided OAuth credentials: say who to ask instead of offering a dead button. --}}
+                <p class="an:pt-4 an:text-[12px] an:text-secondary">
+                    {{ __('La connexion à Search Console n\'est pas configurée. Signalez-le à la personne qui maintient le site.') }}
+                </p>
             @elseif ($connection === null)
                 <div class="an:flex an:flex-col an:gap-4 an:pt-4 an:sm:flex-row an:sm:items-center an:sm:justify-between">
                     <p class="an:max-w-md an:text-[12px] an:text-secondary">
@@ -65,7 +55,7 @@
                 </div>
             @elseif ($connection->status === SearchConsoleConnection::STATUS_PENDING_PROPERTY)
                 <div class="an:space-y-4 an:pt-4">
-                    <p class="an:text-[12px] an:text-secondary">{{ __('Compte Google connecté. Choisissez la propriété Search Console à rattacher au tableau de bord :') }}</p>
+                    <p class="an:text-[12px] an:text-secondary">{{ __('Compte Google connecté. Choisissez la propriété Search Console à rattacher à l\'audience :') }}</p>
 
                     @if ($propertiesFailed)
                         <div class="an:flex an:items-center an:justify-between an:gap-4 an:rounded-lg an:bg-elevated an:px-4 an:py-3">
@@ -96,7 +86,7 @@
                     @endif
 
                     <div class="an:flex an:justify-end">
-                        <x-ui::button variant="ghost" size="compact" x-on:click="$dispatch('ui-open-modal', 'an-search-console-disconnect')">{{ __('Annuler la connexion') }}</x-ui::button>
+                        <x-ui::button variant="ghost" size="compact" x-on:click="$dispatch('ui-open-modal', 'an-search-console-disconnect')">{{ __('Déconnecter') }}</x-ui::button>
                     </div>
                 </div>
             @else
@@ -116,7 +106,7 @@
                         </div>
                     @else
                         <p class="an:text-[12px] an:text-muted">
-                            {{ __('Les mots-clés sont synchronisés chaque nuit et affichés sur la vue d\'ensemble (« Clics par recherches Google »).') }}
+                            {{ __('Les recherches sont synchronisées chaque nuit et affichées sur la vue d\'ensemble de l\'audience (« Clics par recherches Google »).') }}
                         </p>
                     @endif
 
@@ -141,7 +131,7 @@
 
     {{-- Disconnection --}}
     <x-ui::modal name="an-search-console-disconnect" variant="confirm" :title="__('Déconnecter Search Console ?')">
-        {{ __('L\'autorisation Google sera révoquée. Les mots-clés déjà synchronisés restent affichés, mais ne seront plus mis à jour.') }}
+        {{ __('L\'autorisation Google sera révoquée. Les recherches déjà synchronisées restent affichées, mais ne seront plus mises à jour.') }}
 
         <x-slot:actions>
             <x-ui::button type="button" variant="ghost" x-on:click="$dispatch('ui-close-modal', 'an-search-console-disconnect')">{{ __('Annuler') }}</x-ui::button>

@@ -86,7 +86,7 @@ final class CampaignDetailPage extends DashboardComponent
         $name = Ad::query()->where('campaign_id', $this->campaignId)->whereKey($id)->value('name');
 
         if (! is_string($name)) {
-            $this->dispatch('ui-toast', type: 'danger', title: __('Cette pub est introuvable. Actualisez la page.'));
+            $this->dispatch('ui-toast', type: 'danger', title: __('Cette publicité est introuvable. Actualisez la page.'));
 
             return false;
         }
@@ -111,7 +111,7 @@ final class CampaignDetailPage extends DashboardComponent
                 'ad_id' => $this->deleteAdId,
                 'exception' => $e,
             ]);
-            $this->dispatch('ui-toast', type: 'danger', title: __('La suppression de la pub a échoué. Réessayez.'));
+            $this->dispatch('ui-toast', type: 'danger', title: __('La suppression de la publicité a échoué. Réessayez.'));
 
             return false;
         }

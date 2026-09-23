@@ -25,12 +25,12 @@
             <x-ui::empty-state
                 icon="magnifying-glass"
                 :title="__('Aucune donnée sur la période')"
-                :description="__('Les données Google paraissent avec quelques jours de décalage.')" />
+                :description="__('Les données Google apparaissent avec quelques jours de décalage.')" />
         @else
             <div class="an:flex an:items-baseline an:gap-2 an:border-b an:border-subtle an:pb-4">
                 <span class="an:text-2xl an:font-semibold an:tracking-tight an:text-primary">{{ NumberLabel::for($totals['current']) }}</span>
                 @include('analytics::livewire.dashboard.partials.delta', ['current' => $totals['current'], 'previous' => $totals['previous']])
-                <span class="an:text-[12px] an:text-muted">{{ __('clics sur la période') }}</span>
+                <span class="an:text-[12px] an:text-muted">{{ $totals['current'] > 1 ? __('clics sur la période') : __('clic sur la période') }}</span>
             </div>
 
             <div class="an:grid an:grid-cols-1 an:gap-x-10 an:pt-2 an:lg:grid-cols-2">
@@ -39,8 +39,8 @@
                         <div class="an:min-w-0">
                             <p class="an:truncate an:text-[13px] an:font-medium an:text-primary" data-an-tooltip="{{ $item['query'] }}">{{ $item['query'] }}</p>
                             <p class="an:text-[11px] an:text-muted">
-                                {{ __('Position moy. : :position', ['position' => $item['position'] !== null ? NumberLabel::for($item['position'], 1) : '–']) }}
-                                · {{ NumberLabel::for($item['impressions']) }} {{ __('impressions') }}
+                                {{ __('Position moy. : :position', ['position' => $item['position'] !== null ? NumberLabel::for($item['position'], 1) : '·']) }}
+                                · {{ NumberLabel::for($item['impressions']) }} {{ $item['impressions'] > 1 ? __('impressions') : __('impression') }}
                             </p>
                         </div>
                         <div class="an:flex an:shrink-0 an:items-center an:gap-2">

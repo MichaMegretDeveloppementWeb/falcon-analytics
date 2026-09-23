@@ -19,7 +19,7 @@ final readonly class VisitorDetailController
     {
         return view('analytics::admin.dashboard.visitor-detail', [
             'visitor' => $visitor,
-            'analyticsTitle' => __('Visiteur').' · '.__('Analytics'),
+            'analyticsTitle' => __('Visiteur').' · '.__('Audience'),
         ]);
     }
 }

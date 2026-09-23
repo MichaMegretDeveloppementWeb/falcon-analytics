@@ -14,7 +14,7 @@ final readonly class SessionDetailController
     {
         return view('analytics::admin.dashboard.session-detail', [
             'session' => $session,
-            'analyticsTitle' => __('Session').' · '.__('Analytics'),
+            'analyticsTitle' => __('Session').' · '.__('Audience'),
         ]);
     }
 }

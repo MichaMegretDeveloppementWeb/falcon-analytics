@@ -107,7 +107,9 @@ final class IntegrationsPage extends Component
             return;
         }
 
-        $this->dispatch('ui-toast', type: 'success', title: __(':count lignes synchronisées depuis Search Console.', ['count' => NumberLabel::for($count)]));
+        $this->dispatch('ui-toast', type: 'success', title: $count < 2
+            ? __(':count ligne synchronisée depuis Search Console.', ['count' => NumberLabel::for($count)])
+            : __(':count lignes synchronisées depuis Search Console.', ['count' => NumberLabel::for($count)]));
     }
 
     /** Whether Search Console was disconnected · the confirmation closes on a yes. */
