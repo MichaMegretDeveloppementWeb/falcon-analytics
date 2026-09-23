@@ -44,7 +44,7 @@ une colonne, un écran qui la lit doit la trouver. Entre les deux commandes, le
 pire qui arrive est une feuille d'hier ; dans l'autre ordre, c'est une requête
 sur une colonne absente.
 
-`analytics:check` remplace le tour de l'application à la main · dix-sept contrôles,
+`analytics:check` remplace le tour de l'application à la main · dix-neuf contrôles,
 tous sur des défauts qui échouent en silence.
 
 > **La configuration publiée n'est jamais écrasée.** Une clé ajoutée par une
@@ -63,6 +63,7 @@ tous sur des défauts qui échouent en silence.
 | **une migration** | `migrate`, puis republier |
 | **la valeur d'un jeton de style** | republier · **aucun build de votre côté**, la valeur est résolue par le navigateur |
 | une clé de configuration ajoutée | rien · elle prend son défaut |
+| une capacité ajoutée | rien · elle répond comme celle du dessus tant que vous ne l'écrivez pas |
 | une rupture du contrat public | lire le journal · une version majeure le dit |
 
 **Votre `npm run build` n'entre jamais là-dedans** · le paquet compile ses
@@ -84,9 +85,14 @@ incompatible impose une version majeure ·
 - **les huit noms de tables** `falcon_analytics_*` et leurs colonnes · un nom de
   table est public, qu'on l'ait voulu ou non · un hôte finit par écrire une
   requête dessus, un rapport, un export, un nettoyage ;
-- **les seize classes publiques** · la façade `Analytics` et le gestionnaire
+- **les dix-sept classes publiques** · la façade `Analytics` et le gestionnaire
   derrière elle, le fournisseur de services, les huit modèles, les deux
-  énumérations lues sur un modèle, `TrackedEvent`, `Funnel` et `FunnelBranch` ;
+  énumérations lues sur un modèle, l'énumération des capacités `Ability`,
+  `TrackedEvent`, `Funnel` et `FunnelBranch` ;
+- **le nom de chaque capacité**, et celle qu'elle suit tant que vous ne
+  l'écrivez pas · voir [autorisation.md](autorisation.md). Renommer une
+  capacité, ou la déplacer dans l'arbre, changerait ce que vos règles gardent
+  sans que rien ne lève ;
 - **les noms de routes** · ils ne bougent jamais, seules les adresses se
   règlent, et `TheRouteNamesDoNotMoveTest` refuse qu'on en change un ;
 - **le nom d'une clé de configuration**, ou son défaut si l'effet change ;
@@ -96,14 +102,14 @@ incompatible impose une version majeure ·
 - **le point de collecte** et la forme de ce qu'il accepte.
 
 **Restent dans une version mineure** · un écran ajouté, une clé ajoutée avec un
-défaut, un jeton ajouté, une colonne ajoutée, une correction qui ne change
-aucune de ces signatures.
+défaut, un jeton ajouté, une colonne ajoutée, une capacité ajoutée sous une
+autre, une correction qui ne change aucune de ces signatures.
 
 Ce qui n'est pas dans cette liste et pas décrit dans
 [configuration.md](configuration.md) **n'est pas public**, et peut changer sans
 préavis. Concrètement · les écrans, ce qui les alimente, ce qui lit et écrit, ce
-que font les commandes — **146 classes sur 162**, et chacune le dit dans son
-propre code.
+que font les commandes — **toutes les autres classes du paquet**, et chacune le
+dit dans son propre code, par `@internal`.
 
 > **Les écrans méritent un mot.** Le fournisseur les annonce à Laravel sous
 > `analytics::…`, ce qui vous permettrait techniquement d'en poser un dans une

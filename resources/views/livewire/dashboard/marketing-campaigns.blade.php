@@ -3,7 +3,9 @@
     <x-ui::page-header
         :title="__('Campagnes')"
         :description="$total <= 1 ? __(':count campagne', ['count' => $total]) : __(':count campagnes', ['count' => \Falcon\Analytics\Support\NumberLabel::for($total)])">
-        <x-ui::button x-on:click="$anOpenWhenDone($wire.$refs.campaignForm.$wire.editCampaign(), 'an-campaign-form')"><x-ui::icon name="plus" class="an:h-4 an:w-4" /> {{ __('Nouvelle campagne') }}</x-ui::button>
+        @if ($mayCreate)
+            <x-ui::button x-on:click="$anOpenWhenDone($wire.$refs.campaignForm.$wire.editCampaign(), 'an-campaign-form')"><x-ui::icon name="plus" class="an:h-4 an:w-4" /> {{ __('Nouvelle campagne') }}</x-ui::button>
+        @endif
     </x-ui::page-header>
 
     <div class="an:w-full an:sm:max-w-xs">
@@ -47,8 +49,12 @@
                         <x-ui::table.cell align="right" class="an:tabular-nums">{{ $campaign->adsCount }}</x-ui::table.cell>
                         <x-ui::table.cell :last="true" align="right">
                             <div class="an-row-link__above an:flex an:items-center an:justify-end an:gap-1">
-                                <x-ui::button variant="ghost" size="compact" x-on:click="$anOpenWhenDone($wire.$refs.campaignForm.$wire.editCampaign({{ $campaign->id }}), 'an-campaign-form')" aria-label="{{ __('Modifier') }}"><x-ui::icon name="pencil-square" class="an:h-3.5 an:w-3.5" /></x-ui::button>
-                                <x-ui::button variant="ghost" size="compact" x-on:click="$anOpenWhenDone($wire.confirmDelete({{ $campaign->id }}), 'an-campaign-delete')" aria-label="{{ __('Supprimer') }}"><x-ui::icon name="trash" class="an:h-3.5 an:w-3.5" /></x-ui::button>
+                                @if ($mayEdit[$campaign->id])
+                                    <x-ui::button variant="ghost" size="compact" x-on:click="$anOpenWhenDone($wire.$refs.campaignForm.$wire.editCampaign({{ $campaign->id }}), 'an-campaign-form')" aria-label="{{ __('Modifier') }}"><x-ui::icon name="pencil-square" class="an:h-3.5 an:w-3.5" /></x-ui::button>
+                                @endif
+                                @if ($mayDelete[$campaign->id])
+                                    <x-ui::button variant="ghost" size="compact" x-on:click="$anOpenWhenDone($wire.confirmDelete({{ $campaign->id }}), 'an-campaign-delete')" aria-label="{{ __('Supprimer') }}"><x-ui::icon name="trash" class="an:h-3.5 an:w-3.5" /></x-ui::button>
+                                @endif
                             </div>
                         </x-ui::table.cell>
                     </x-ui::table.row>

@@ -41,7 +41,9 @@
         <div class="an:lg:col-span-7">
             <div class="an:mb-4 an:flex an:items-center an:justify-between">
                 <x-ui::section-header :title="__('Performance des campagnes')" />
-                <a href="{{ route('analytics.admin.marketing.campaigns') }}" class="an:inline-flex an:cursor-pointer an:items-center an:gap-x-1 an:text-[12px] an:font-medium an:text-secondary an:transition-colors an:hover:text-primary">{{ __('Toutes les campagnes') }} <x-ui::icon name="arrow-right" class="an:h-3.5 an:w-3.5" /></a>
+                @if ($mayOpenCampaigns)
+                    <a href="{{ route('analytics.admin.marketing.campaigns') }}" class="an:inline-flex an:cursor-pointer an:items-center an:gap-x-1 an:text-[12px] an:font-medium an:text-secondary an:transition-colors an:hover:text-primary">{{ __('Toutes les campagnes') }} <x-ui::icon name="arrow-right" class="an:h-3.5 an:w-3.5" /></a>
+                @endif
             </div>
             @if ($campaignRows === [])
                 <x-ui::empty-state icon="megaphone" :title="__('Aucune campagne active sur la période')" :description="__('Les sessions arrivées par un lien qui porte des paramètres seront attribuées ici dès qu\'une campagne leur correspondra.')" />
@@ -56,10 +58,13 @@
                     </x-ui::table.head>
                     <x-ui::table.body>
                         @foreach ($campaignRows as $row)
-                            @php $showUrl = route('analytics.admin.marketing.campaigns.show', $row['id']); @endphp
-                            <x-ui::table.row wire:key="perf-{{ $row['id'] }}" class="an-row-link">
+                            <x-ui::table.row wire:key="perf-{{ $row['id'] }}" :class="$mayOpenCampaigns ? 'an-row-link' : ''">
                                 <x-ui::table.cell :first="true" variant="primary">
-                                    <a href="{{ $showUrl }}" class="an-row-link__target an:cursor-pointer an:text-[13px] an:font-medium an:text-primary an:hover:underline">{{ $row['name'] }}</a>
+                                    @if ($mayOpenCampaigns)
+                                        <a href="{{ route('analytics.admin.marketing.campaigns.show', $row['id']) }}" class="an-row-link__target an:cursor-pointer an:text-[13px] an:font-medium an:text-primary an:hover:underline">{{ $row['name'] }}</a>
+                                    @else
+                                        <span class="an:text-[13px] an:font-medium an:text-primary">{{ $row['name'] }}</span>
+                                    @endif
                                 </x-ui::table.cell>
                                 <x-ui::table.cell align="right" class="an:tabular-nums">{{ NumberLabel::for($row['sessions']) }}</x-ui::table.cell>
                                 <x-ui::table.cell align="right" class="an:tabular-nums">{{ NumberLabel::for($row['visitors']) }}</x-ui::table.cell>
@@ -75,11 +80,14 @@
         <div class="an:lg:col-span-5">
             <div class="an:mb-4 an:flex an:items-center an:justify-between">
                 <x-ui::section-header :title="__('Publicités principales')" />
-                <a href="{{ route('analytics.admin.marketing.ads') }}" class="an:inline-flex an:cursor-pointer an:items-center an:gap-x-1 an:text-[12px] an:font-medium an:text-secondary an:transition-colors an:hover:text-primary">{{ __('Toutes les publicités') }} <x-ui::icon name="arrow-right" class="an:h-3.5 an:w-3.5" /></a>
+                @if ($mayOpenAds)
+                    <a href="{{ route('analytics.admin.marketing.ads') }}" class="an:inline-flex an:cursor-pointer an:items-center an:gap-x-1 an:text-[12px] an:font-medium an:text-secondary an:transition-colors an:hover:text-primary">{{ __('Toutes les publicités') }} <x-ui::icon name="arrow-right" class="an:h-3.5 an:w-3.5" /></a>
+                @endif
             </div>
             <x-ui::card>
                 @forelse ($adRows as $row)
-                    <a href="{{ $row['campaign_id'] ? route('analytics.admin.marketing.campaigns.show', $row['campaign_id']) : '#' }}" class="an:flex an:items-center an:justify-between an:gap-4 an:py-2 {{ $row['campaign_id'] ? 'an:cursor-pointer' : '' }}" wire:key="topad-{{ $row['id'] }}">
+                    @php $leadsToItsCampaign = $mayOpenCampaigns && $row['campaign_id']; @endphp
+                    <a @if ($leadsToItsCampaign) href="{{ route('analytics.admin.marketing.campaigns.show', $row['campaign_id']) }}" @endif @class(['an:flex an:items-center an:justify-between an:gap-4 an:py-2', 'an:cursor-pointer' => $leadsToItsCampaign]) wire:key="topad-{{ $row['id'] }}">
                         <span class="an:flex an:min-w-0 an:items-center an:gap-2.5">
                             <span class="an:w-5 an:shrink-0 an:text-[11px] an:font-medium an:tabular-nums an:text-muted">{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
                             <span class="an:min-w-0">

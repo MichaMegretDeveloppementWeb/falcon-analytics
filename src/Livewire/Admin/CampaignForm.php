@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Livewire\Admin;
 
 use Falcon\Analytics\Actions\SaveCampaignAction;
+use Falcon\Analytics\Enums\Authorization\Ability;
 use Falcon\Analytics\Models\Campaign;
 use Falcon\Analytics\Support\UrlConditions;
 use Illuminate\Contracts\View\View;
@@ -47,6 +48,7 @@ final class CampaignForm extends Component
         $this->reset(self::FORM_FIELDS);
 
         if ($campaignId === null) {
+            $this->authorize(Ability::CampaignsEdit);
             $this->campaignConditions = [UrlConditions::BLANK];
 
             return true;
@@ -63,6 +65,8 @@ final class CampaignForm extends Component
 
             return false;
         }
+
+        $this->authorize(Ability::CampaignsEdit, $campaign);
 
         $this->campaignId = $campaign->id;
         $this->campaignName = $campaign->name;
@@ -90,6 +94,8 @@ final class CampaignForm extends Component
      */
     public function saveCampaign(SaveCampaignAction $action): bool
     {
+        $this->authorize(Ability::CampaignsEdit, $this->campaignId === null ? null : Campaign::query()->find($this->campaignId));
+
         $this->validate();
 
         try {

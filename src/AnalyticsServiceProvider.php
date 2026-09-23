@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics;
 
+use Falcon\Analytics\Console\AbilitiesCommand;
 use Falcon\Analytics\Console\ArchiveCommand;
 use Falcon\Analytics\Console\CheckCommand;
 use Falcon\Analytics\Console\CheckEventsCommand;
@@ -19,6 +20,8 @@ use Falcon\Analytics\Console\SyncSearchConsoleCommand;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Http\Middleware\CatchesUpTheMaintenance;
+use Falcon\Analytics\Support\AbilityDefaults;
+use Falcon\Analytics\Support\BranchMiddleware;
 use Falcon\Analytics\Support\GeoResolver;
 use Falcon\Analytics\Support\PersistentMiddlewareResolver;
 use Falcon\Ui\AssetRegistry;
@@ -26,7 +29,9 @@ use Falcon\Ui\Config\CompletesDefaults;
 use Falcon\Ui\View\Leaves;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
+use Illuminate\Contracts\Foundation\CachesRoutes;
 use Illuminate\Cookie\Middleware\EncryptCookies;
+use Illuminate\Routing\Route as RouteDefinition;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Log;
@@ -48,6 +53,7 @@ final class AnalyticsServiceProvider extends ServiceProvider
         $this->app->make(ConfigRepository::class)->set('analytics.internal', require __DIR__.'/../config/internal.php');
 
         $this->app->singleton(Analytics::class);
+        $this->app->singleton(AbilityDefaults::class);
 
         $this->app->singleton(GeoResolver::class, fn (): GeoResolver => new GeoResolver(
             self::configured('analytics.geoip.database_path'),
@@ -88,6 +94,7 @@ final class AnalyticsServiceProvider extends ServiceProvider
         $this->app->make(AssetRegistry::class)->register('analytics', __DIR__.'/../public');
 
         $this->registerPersistentMiddleware();
+        $this->answerTheAbilitiesTheHostLeftOpen();
         $this->exemptTheConsentCookie();
         $this->registerComponents();
         $this->registerCommands();
@@ -144,6 +151,7 @@ final class AnalyticsServiceProvider extends ServiceProvider
         $this->commands([
             InstallCommand::class,
             CheckCommand::class,
+            AbilitiesCommand::class,
             GeoipDownloadCommand::class,
             GeoipCheckCommand::class,
             ArchiveCommand::class,
@@ -246,8 +254,34 @@ final class AnalyticsServiceProvider extends ServiceProvider
             'Analytics marketing screens mounted with an empty middleware list: they are publicly reachable.',
         );
 
+        $this->layTheBranchMiddleware();
+
         // The collector's endpoint: its file carries its own stack, origin check and rate limit.
         $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+    }
+
+    /**
+     * The middleware a host lays on a branch of the ability tree, added after
+     * the ability of every screen in that branch. Routes read from the cache
+     * already carry it.
+     */
+    private function layTheBranchMiddleware(): void
+    {
+        if ($this->app instanceof CachesRoutes && $this->app->routesAreCached()) {
+            return;
+        }
+
+        $screens = array_filter(
+            Route::getRoutes()->getRoutes(),
+            fn (RouteDefinition $route): bool => str_starts_with((string) $route->getName(), 'analytics.admin.'),
+        );
+
+        $this->branchMiddleware()->layOn($screens);
+    }
+
+    private function branchMiddleware(): BranchMiddleware
+    {
+        return new BranchMiddleware((array) config('analytics.admin.middleware_for', []));
     }
 
     /**
@@ -308,6 +342,19 @@ final class AnalyticsServiceProvider extends ServiceProvider
     }
 
     /**
+     * The abilities the host has not defined, answered like the one above them.
+     *
+     * After every provider has booted, the host's included: a rule it writes in
+     * its own provider is found and kept, whatever the order of the providers.
+     */
+    private function answerTheAbilitiesTheHostLeftOpen(): void
+    {
+        $this->app->booted(function (): void {
+            $this->app->make(AbilityDefaults::class)->fill();
+        });
+    }
+
+    /**
      * The consent cookie, exempted from encryption by the package itself.
      *
      * A consent banner writes that cookie in JavaScript, so in clear. Read back
@@ -332,11 +379,11 @@ final class AnalyticsServiceProvider extends ServiceProvider
 
     /**
      * Replay the host's administration middleware on every Livewire component
-     * update (/livewire/update). Livewire only re-runs middleware registered as
-     * persistent, and compares them by class, so without this a signed
-     * component snapshot from a formerly authorized session could keep
-     * triggering actions (GDPR erasure, campaign CRUD) after the host
-     * middleware would deny the page.
+     * update (/livewire/update), the door and the middleware of every branch.
+     * Livewire only re-runs middleware registered as persistent, and compares
+     * them by class, so without this a signed component snapshot from a
+     * formerly authorized session could keep triggering actions (GDPR erasure,
+     * campaign CRUD) after the host middleware would deny the page.
      */
     private function registerPersistentMiddleware(): void
     {
@@ -344,6 +391,7 @@ final class AnalyticsServiceProvider extends ServiceProvider
             [
                 ...(array) config('analytics.admin.middleware', []),
                 ...(array) config('analytics.admin.marketing.middleware', []),
+                ...$this->branchMiddleware()->all(),
             ],
             fn (mixed $entry): bool => is_string($entry),
         ));

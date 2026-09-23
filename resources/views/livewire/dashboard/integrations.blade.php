@@ -45,50 +45,54 @@
                     {{ __('La connexion à Search Console n\'est pas configurée. Signalez-le à la personne qui maintient le site.') }}
                 </p>
             @elseif ($connection === null)
-                <div class="an:flex an:flex-col an:gap-4 an:pt-4 an:sm:flex-row an:sm:items-center an:sm:justify-between">
-                    <p class="an:max-w-md an:text-[12px] an:text-secondary">
-                        {{ __('Connectez le compte Google propriétaire du site (vérifié dans Search Console). L\'autorisation est en lecture seule et révocable à tout moment.') }}
-                    </p>
-                    <x-ui::button class="an:shrink-0 an:whitespace-nowrap" :href="$connectUrl">
-                        {{ __('Connecter Google Search Console') }}
-                    </x-ui::button>
-                </div>
-            @elseif ($connection->status === SearchConsoleConnection::STATUS_PENDING_PROPERTY)
-                <div class="an:space-y-4 an:pt-4">
-                    <p class="an:text-[12px] an:text-secondary">{{ __('Compte Google connecté. Choisissez la propriété Search Console à rattacher à l\'audience :') }}</p>
-
-                    @if ($propertiesFailed)
-                        <div class="an:flex an:items-center an:justify-between an:gap-4 an:rounded-lg an:bg-elevated an:px-4 an:py-3">
-                            <p class="an:text-[12px] an:text-secondary">{{ __('La liste des propriétés n\'a pas pu être chargée.') }}</p>
-                            <x-ui::button variant="secondary" size="compact" class="an:shrink-0 an:whitespace-nowrap" wire:click="reloadProperties">{{ __('Réessayer') }}</x-ui::button>
-                        </div>
-                    @elseif ($properties === [])
-                        <div class="an:rounded-lg an:bg-elevated an:px-4 an:py-3">
-                            <p class="an:text-[12px] an:text-secondary">{{ __('Aucune propriété vérifiée sur ce compte Google. Vérifiez le site dans Search Console puis réessayez.') }}</p>
-                        </div>
-                    @else
-                        <ul class="an:divide-y an:divide-subtle an:rounded-lg an:border an:border-default">
-                            @foreach ($properties as $property)
-                                <li class="an:flex an:items-center an:justify-between an:gap-4 an:px-4 an:py-3" wire:key="prop-{{ md5($property['site_url']) }}">
-                                    <div class="an:flex an:min-w-0 an:items-center an:gap-3">
-                                        <x-ui::icon name="globe-alt" class="an:h-4 an:w-4 an:shrink-0 an:text-muted" />
-                                        <div class="an:min-w-0">
-                                            <p class="an:truncate an:text-[13px] an:font-medium an:text-primary">{{ $property['site_url'] }}</p>
-                                            <p class="an:text-[11px] an:text-muted">{{ $property['permission'] }}</p>
-                                        </div>
-                                    </div>
-                                    <x-ui::button variant="secondary" size="compact" class="an:shrink-0 an:whitespace-nowrap" wire:click="selectProperty('{{ $property['site_url'] }}')">
-                                        {{ __('Rattacher') }}
-                                    </x-ui::button>
-                                </li>
-                            @endforeach
-                        </ul>
-                    @endif
-
-                    <div class="an:flex an:justify-end">
-                        <x-ui::button variant="ghost" size="compact" x-on:click="$dispatch('ui-open-modal', 'an-search-console-disconnect')">{{ __('Déconnecter') }}</x-ui::button>
+                @if ($mayManage)
+                    <div class="an:flex an:flex-col an:gap-4 an:pt-4 an:sm:flex-row an:sm:items-center an:sm:justify-between">
+                        <p class="an:max-w-md an:text-[12px] an:text-secondary">
+                            {{ __('Connectez le compte Google propriétaire du site (vérifié dans Search Console). L\'autorisation est en lecture seule et révocable à tout moment.') }}
+                        </p>
+                        <x-ui::button class="an:shrink-0 an:whitespace-nowrap" :href="$connectUrl">
+                            {{ __('Connecter Google Search Console') }}
+                        </x-ui::button>
                     </div>
-                </div>
+                @endif
+            @elseif ($connection->status === SearchConsoleConnection::STATUS_PENDING_PROPERTY)
+                @if ($mayManage)
+                    <div class="an:space-y-4 an:pt-4">
+                        <p class="an:text-[12px] an:text-secondary">{{ __('Compte Google connecté. Choisissez la propriété Search Console à rattacher à l\'audience :') }}</p>
+
+                        @if ($propertiesFailed)
+                            <div class="an:flex an:items-center an:justify-between an:gap-4 an:rounded-lg an:bg-elevated an:px-4 an:py-3">
+                                <p class="an:text-[12px] an:text-secondary">{{ __('La liste des propriétés n\'a pas pu être chargée.') }}</p>
+                                <x-ui::button variant="secondary" size="compact" class="an:shrink-0 an:whitespace-nowrap" wire:click="reloadProperties">{{ __('Réessayer') }}</x-ui::button>
+                            </div>
+                        @elseif ($properties === [])
+                            <div class="an:rounded-lg an:bg-elevated an:px-4 an:py-3">
+                                <p class="an:text-[12px] an:text-secondary">{{ __('Aucune propriété vérifiée sur ce compte Google. Vérifiez le site dans Search Console puis réessayez.') }}</p>
+                            </div>
+                        @else
+                            <ul class="an:divide-y an:divide-subtle an:rounded-lg an:border an:border-default">
+                                @foreach ($properties as $property)
+                                    <li class="an:flex an:items-center an:justify-between an:gap-4 an:px-4 an:py-3" wire:key="prop-{{ md5($property['site_url']) }}">
+                                        <div class="an:flex an:min-w-0 an:items-center an:gap-3">
+                                            <x-ui::icon name="globe-alt" class="an:h-4 an:w-4 an:shrink-0 an:text-muted" />
+                                            <div class="an:min-w-0">
+                                                <p class="an:truncate an:text-[13px] an:font-medium an:text-primary">{{ $property['site_url'] }}</p>
+                                                <p class="an:text-[11px] an:text-muted">{{ $property['permission'] }}</p>
+                                            </div>
+                                        </div>
+                                        <x-ui::button variant="secondary" size="compact" class="an:shrink-0 an:whitespace-nowrap" wire:click="selectProperty('{{ $property['site_url'] }}')">
+                                            {{ __('Rattacher') }}
+                                        </x-ui::button>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @endif
+
+                        <div class="an:flex an:justify-end">
+                            <x-ui::button variant="ghost" size="compact" x-on:click="$dispatch('ui-open-modal', 'an-search-console-disconnect')">{{ __('Déconnecter') }}</x-ui::button>
+                        </div>
+                    </div>
+                @endif
             @else
                 <div class="an:space-y-4 an:pt-4">
                     <x-ui::description-list>
@@ -110,32 +114,36 @@
                         </p>
                     @endif
 
-                    <div class="an:flex an:flex-wrap an:items-center an:justify-end an:gap-2 an:border-t an:border-subtle an:pt-4">
-                        @if ($connection->status === SearchConsoleConnection::STATUS_ERROR)
-                            <x-ui::button variant="secondary" class="an:whitespace-nowrap" :href="$connectUrl">
-                                {{ __('Reconnecter') }}
-                            </x-ui::button>
-                        @else
-                            {{-- Same code path as the nightly command; the initial
-                                 backfill (~16 months) can take a little while. --}}
-                            <x-ui::button variant="secondary" class="an:whitespace-nowrap" :loading="true" target="syncNow" wire:click="syncNow">
-                                {{ __('Synchroniser maintenant') }}
-                            </x-ui::button>
-                        @endif
-                        <x-ui::button variant="danger" class="an:whitespace-nowrap" x-on:click="$dispatch('ui-open-modal', 'an-search-console-disconnect')">{{ __('Déconnecter') }}</x-ui::button>
-                    </div>
+                    @if ($mayManage)
+                        <div class="an:flex an:flex-wrap an:items-center an:justify-end an:gap-2 an:border-t an:border-subtle an:pt-4">
+                            @if ($connection->status === SearchConsoleConnection::STATUS_ERROR)
+                                <x-ui::button variant="secondary" class="an:whitespace-nowrap" :href="$connectUrl">
+                                    {{ __('Reconnecter') }}
+                                </x-ui::button>
+                            @else
+                                {{-- Same code path as the nightly command; the initial
+                                     backfill (~16 months) can take a little while. --}}
+                                <x-ui::button variant="secondary" class="an:whitespace-nowrap" :loading="true" target="syncNow" wire:click="syncNow">
+                                    {{ __('Synchroniser maintenant') }}
+                                </x-ui::button>
+                            @endif
+                            <x-ui::button variant="danger" class="an:whitespace-nowrap" x-on:click="$dispatch('ui-open-modal', 'an-search-console-disconnect')">{{ __('Déconnecter') }}</x-ui::button>
+                        </div>
+                    @endif
                 </div>
             @endif
         </x-ui::card>
     </div>
 
     {{-- Disconnection --}}
-    <x-ui::modal name="an-search-console-disconnect" variant="confirm" :title="__('Déconnecter Search Console ?')">
-        {{ __('L\'autorisation Google sera révoquée. Les recherches déjà synchronisées restent affichées, mais ne seront plus mises à jour.') }}
+    @if ($mayManage)
+        <x-ui::modal name="an-search-console-disconnect" variant="confirm" :title="__('Déconnecter Search Console ?')">
+            {{ __('L\'autorisation Google sera révoquée. Les recherches déjà synchronisées restent affichées, mais ne seront plus mises à jour.') }}
 
-        <x-slot:actions>
-            <x-ui::button type="button" variant="ghost" x-on:click="$dispatch('ui-close-modal', 'an-search-console-disconnect')">{{ __('Annuler') }}</x-ui::button>
-            <x-ui::button type="button" variant="danger" x-on:click="$anCloseWhenDone($wire.disconnectConfirmed(), 'an-search-console-disconnect')" :loading="true" target="disconnectConfirmed">{{ __('Déconnecter') }}</x-ui::button>
-        </x-slot:actions>
-    </x-ui::modal>
+            <x-slot:actions>
+                <x-ui::button type="button" variant="ghost" x-on:click="$dispatch('ui-close-modal', 'an-search-console-disconnect')">{{ __('Annuler') }}</x-ui::button>
+                <x-ui::button type="button" variant="danger" x-on:click="$anCloseWhenDone($wire.disconnectConfirmed(), 'an-search-console-disconnect')" :loading="true" target="disconnectConfirmed">{{ __('Déconnecter') }}</x-ui::button>
+            </x-slot:actions>
+        </x-ui::modal>
+    @endif
 </x-analytics::root>

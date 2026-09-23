@@ -6,6 +6,7 @@ namespace Falcon\Analytics\Livewire\Admin\Widgets;
 
 use Falcon\Analytics\DTOs\Dashboard\MetricDelta;
 use Falcon\Analytics\DTOs\Dashboard\Period;
+use Falcon\Analytics\Enums\Authorization\Ability;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Livewire\Admin\Concerns\GuardsWidgetRead;
 use Falcon\Analytics\Models\Ad;
@@ -13,6 +14,7 @@ use Falcon\Analytics\Models\Campaign;
 use Falcon\Analytics\Services\Dashboard\MarketingMetricsCalculator;
 use Falcon\Analytics\Services\Dashboard\MarketingReportBuilder;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Lazy;
 use Livewire\Component;
 
@@ -54,6 +56,8 @@ final class MarketingDashboardContent extends Component
                 'campaignRows' => $this->campaignRows($performance['campaigns'], $conversions['campaigns'], $metrics),
                 'adRows' => array_slice($this->adRows($performance['ads'], $conversions['ads']), 0, self::TOP_ADS),
                 'truncatedAt' => $marketing->truncatedAt($period, $subjectType) ?? $marketing->truncatedAt($period->previous(), $subjectType),
+                'mayOpenCampaigns' => Gate::allows(Ability::Campaigns),
+                'mayOpenAds' => Gate::allows(Ability::Ads),
             ];
         }, fn (array $data): View => view('analytics::livewire.dashboard.widgets.marketing-dashboard-content', $data));
     }

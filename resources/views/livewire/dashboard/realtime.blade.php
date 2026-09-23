@@ -202,7 +202,7 @@
                     <ul class="an:max-h-[24rem] an:divide-y an:divide-[color:var(--color-gray-100)] an:overflow-y-auto an:dark:divide-gray-800">
                         @foreach ($recentVisitors as $visitor)
                             <li wire:key="rt-session-{{ $visitor->sessionId }}">
-                                <a href="{{ route('analytics.admin.sessions.show', $visitor->sessionId) }}" class="an:flex an:cursor-pointer an:items-center an:gap-3 an:px-5 an:py-3 an:transition-colors an:hover:bg-elevated/50">
+                                <a @if ($mayOpenSessions) href="{{ route('analytics.admin.sessions.show', $visitor->sessionId) }}" @endif @class(['an:flex an:items-center an:gap-3 an:px-5 an:py-3', 'an:cursor-pointer an:transition-colors an:hover:bg-elevated/50' => $mayOpenSessions])>
                                     <x-ui::icon :name="$visitor->deviceIcon" class="an:h-5 an:w-5 an:shrink-0 {{ $inkSoft }}" />
                                     <span class="an:min-w-0 an:flex-1">
                                         <span class="an:flex an:items-center an:gap-x-1.5">
@@ -215,9 +215,11 @@
                                             {{ $visitor->lastSeen }}@if ($visitor->city !== null) · {{ $visitor->city }}@endif
                                         </span>
                                     </span>
-                                    <span class="an:flex an:h-8 an:w-8 an:shrink-0 an:items-center an:justify-center an:rounded-full an:border an:border-accent/30 an:text-accent">
-                                        <x-ui::icon name="chevron-right" class="an:h-4 an:w-4" />
-                                    </span>
+                                    @if ($mayOpenSessions)
+                                        <span class="an:flex an:h-8 an:w-8 an:shrink-0 an:items-center an:justify-center an:rounded-full an:border an:border-accent/30 an:text-accent">
+                                            <x-ui::icon name="chevron-right" class="an:h-4 an:w-4" />
+                                        </span>
+                                    @endif
                                 </a>
                             </li>
                         @endforeach
@@ -239,8 +241,8 @@
                     <ul class="an:max-h-[24rem] an:divide-y an:divide-[color:var(--color-gray-100)] an:overflow-y-auto an:dark:divide-gray-800">
                         @foreach ($feed as $entry)
                             <li wire:key="rt-feed-{{ $entry->id }}">
-                                <a href="{{ route('analytics.admin.sessions.show', $entry->sessionId) }}"
-                                   class="an:flex an:cursor-pointer an:items-start an:gap-3 an:px-5 an:py-3 an:transition-colors an:hover:bg-elevated/50">
+                                <a @if ($mayOpenSessions) href="{{ route('analytics.admin.sessions.show', $entry->sessionId) }}" @endif
+                                   @class(['an:flex an:items-start an:gap-3 an:px-5 an:py-3', 'an:cursor-pointer an:transition-colors an:hover:bg-elevated/50' => $mayOpenSessions])>
                                     <span class="an:mt-0.5 an:flex an:h-7 an:w-7 an:shrink-0 an:items-center an:justify-center an:rounded-lg {{ $entry->isConversion ? 'an:bg-online/15' : 'an:bg-elevated' }}">
                                         <x-ui::icon :name="$entry->icon" class="an:h-3.5 an:w-3.5 {{ $entry->isConversion ? 'an:text-online-strong' : $inkSoft }}" />
                                     </span>

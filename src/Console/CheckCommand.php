@@ -4,20 +4,26 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Console;
 
+use Falcon\Analytics\Enums\Authorization\Ability;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Services\DailyCountArchiver;
 use Falcon\Analytics\Services\SubjectResolver;
+use Falcon\Analytics\Support\BranchMiddleware;
 use Falcon\Analytics\Support\DatabaseEngine;
 use Falcon\Analytics\Support\NumberLabel;
+use Falcon\Analytics\Support\PersistentMiddlewareResolver;
 use Falcon\Ui\Assets;
 use Falcon\Ui\Exceptions\UiException;
+use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Database\Migrations\Migrator;
+use Illuminate\Routing\Router;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
@@ -89,6 +95,8 @@ final class CheckCommand extends Command
             $this->checkEndpoint($config),
             $this->checkCollectorSession(),
             $this->checkModuleMiddleware($config),
+            $this->checkAbilityNames(),
+            $this->checkBranchMiddleware($config),
             $this->checkAreaLayout($config),
             $this->checkPublishedAssets(),
             $this->checkIdentity($config),
@@ -522,29 +530,134 @@ final class CheckCommand extends Command
     /**
      * The two screen groups and what guards them. An explicitly empty list
      * mounts them with neither session nor authentication; the log says so at
-     * boot, where nobody reads it.
+     * boot, where nobody reads it. A list without authentication lets nobody
+     * be recognised, unless the host's rule on the root opens the screens to
+     * people who are not signed in.
      *
      * @return array{0: string, 1: string, 2: string}
      */
     private function checkModuleMiddleware(Config $config): array
     {
         $exposed = [];
+        $unauthenticated = [];
 
         foreach (self::screenGroups() as $key => $label) {
-            if ($config->get($key.'.middleware') === []) {
+            $door = $config->get($key.'.middleware', ['web', 'auth']);
+
+            if ($door === []) {
                 $exposed[] = $label.' ('.$key.'.middleware)';
+            } elseif (! $this->authenticates((array) $door)) {
+                $unauthenticated[] = $label.' ('.$key.'.middleware)';
             }
         }
 
-        if ($exposed === []) {
-            return ['Protection', 'OK', 'Les deux groupes d’écrans sont montés derrière un middleware.'];
+        if ($exposed !== []) {
+            return ['Protection', 'KO', 'Monté sans aucune protection, donc publiquement joignable · '.implode(' · ', $exposed)];
+        }
+
+        if ($unauthenticated === []) {
+            return ['Protection', 'OK', 'Les deux groupes d’écrans sont montés derrière une authentification.'];
+        }
+
+        if (Gate::forUser(null)->allows(Ability::Analytics)) {
+            return ['Protection', 'À voir', 'Sans authentification, et ouvert aux personnes non connectées par votre règle sur analytics · '.implode(' · ', $unauthenticated)];
         }
 
         return [
             'Protection',
             'KO',
-            'Monté sans aucune protection, donc publiquement joignable · '.implode(' · ', $exposed),
+            'Aucune authentification sur la porte, donc personne n’y est reconnu et chaque écran répond 403 · '
+            .implode(' · ', $unauthenticated).'. Ajoutez auth, ou auth:{garde}.',
         ];
+    }
+
+    /**
+     * A rule written under a name no ability carries: the restriction it was
+     * meant for never applies, and nothing else says so.
+     *
+     * @return array{0: string, 1: string, 2: string}
+     */
+    private function checkAbilityNames(): array
+    {
+        $unknown = array_values(array_filter(
+            array_keys(Gate::abilities()),
+            fn (string $name): bool => ($name === 'analytics' || str_starts_with($name, 'analytics.')) && Ability::tryFrom($name) === null,
+        ));
+
+        if ($unknown === []) {
+            return ['Règles de droits', 'OK', 'Chaque règle écrite sous un nom d’analytics désigne une capacité du paquet.'];
+        }
+
+        return ['Règles de droits', 'KO', 'Ces noms ne désignent aucune capacité, leur règle ne s’applique donc jamais · '.implode(', ', $unknown)];
+    }
+
+    /**
+     * The middleware a host lays on a branch of the ability tree. A key must
+     * name an ability some screen asks or sits under, a gesture having no
+     * address, and every middleware must be known to the router.
+     *
+     * @return array{0: string, 1: string, 2: string}
+     */
+    private function checkBranchMiddleware(Config $config): array
+    {
+        $problems = [];
+        $asked = $this->abilitiesTheScreensAsk();
+
+        foreach ((array) $config->get('analytics.admin.middleware_for', []) as $key => $listed) {
+            $branch = Ability::tryFrom((string) $key);
+
+            if ($branch === null) {
+                $problems[] = $key.' ne désigne aucune capacité';
+            } elseif (array_filter($asked, fn (Ability $ability): bool => $ability->isWithin($branch)) === []) {
+                $problems[] = $key.' ne couvre aucun écran, un geste n’ayant pas d’adresse';
+            }
+
+            foreach (array_filter((array) $listed, fn (mixed $middleware): bool => ! $this->routerKnows($middleware)) as $unknown) {
+                $problems[] = (is_string($unknown) ? $unknown : gettype($unknown)).', sous '.$key.', est inconnu du routeur';
+            }
+        }
+
+        if ($problems === []) {
+            return ['Étapes par branche', 'OK', 'Chaque étape de analytics.admin.middleware_for couvre des écrans et existe.'];
+        }
+
+        return ['Étapes par branche', 'KO', implode(' · ', $problems)];
+    }
+
+    /** @param  array<array-key, mixed>  $door */
+    private function authenticates(array $door): bool
+    {
+        $router = app(Router::class);
+        $resolved = (new PersistentMiddlewareResolver(aliases: $router->getMiddleware(), groups: $router->getMiddlewareGroups()))
+            ->resolve(array_values(array_filter($door, is_string(...))));
+
+        return array_filter($resolved, fn (string $class): bool => is_a($class, Authenticate::class, true)) !== [];
+    }
+
+    /** @return list<Ability> */
+    private function abilitiesTheScreensAsk(): array
+    {
+        $asked = [];
+
+        foreach (Route::getRoutes()->getRoutes() as $route) {
+            if (str_starts_with((string) $route->getName(), 'analytics.admin.') && ($ability = BranchMiddleware::abilityAskedBy($route)) !== null) {
+                $asked[] = $ability;
+            }
+        }
+
+        return $asked;
+    }
+
+    private function routerKnows(mixed $middleware): bool
+    {
+        if (! is_string($middleware) || $middleware === '') {
+            return false;
+        }
+
+        $name = Str::before($middleware, ':');
+        $router = app(Router::class);
+
+        return isset($router->getMiddleware()[$name]) || isset($router->getMiddlewareGroups()[$name]) || class_exists($name);
     }
 
     /**

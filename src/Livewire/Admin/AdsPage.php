@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Livewire\Admin;
 
 use Falcon\Analytics\DTOs\Dashboard\Marketing\AdRow;
+use Falcon\Analytics\Enums\Authorization\Ability;
+use Falcon\Analytics\Livewire\Admin\Concerns\AsksTheScreenAbility;
 use Falcon\Analytics\Livewire\Admin\Concerns\RecoversFromReadFailure;
 use Falcon\Analytics\Models\Ad;
 use Falcon\Analytics\Services\Dashboard\ObjectiveLabels;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -21,6 +24,7 @@ use Livewire\WithPagination;
  */
 final class AdsPage extends Component
 {
+    use AsksTheScreenAbility;
     use RecoversFromReadFailure;
     use WithPagination;
 
@@ -52,9 +56,15 @@ final class AdsPage extends Component
                 return [
                     'ads' => $ads->through(fn (Ad $ad): AdRow => AdRow::of($ad, $ad->campaign->name, $objectives->tagsOf($ad->objectives))),
                     'total' => Ad::query()->count(),
+                    'mayOpenCampaigns' => Gate::allows(Ability::Campaigns),
                 ];
             },
             fn (array $data): View => view('analytics::livewire.dashboard.marketing-ads', $data),
         );
+    }
+
+    protected function screenAbility(): Ability
+    {
+        return Ability::Ads;
     }
 }

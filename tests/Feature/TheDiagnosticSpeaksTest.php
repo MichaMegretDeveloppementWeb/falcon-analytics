@@ -4,17 +4,20 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Tests\Feature;
 
+use Falcon\Analytics\Enums\Authorization\Ability;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Tests\TestCase;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Gate;
 use Orchestra\Testbench\Attributes\DefineEnvironment;
 
 /**
@@ -197,6 +200,62 @@ final class TheDiagnosticSpeaksTest extends TestCase
 
         $this->artisan('analytics:check')
             ->expectsOutputToContain('Tableau de bord')
+            ->assertFailed();
+    }
+
+    public function test_it_says_when_a_screen_group_authenticates_nobody(): void
+    {
+        config(['analytics.admin.middleware' => ['web']]);
+
+        $this->artisan('analytics:check')
+            ->expectsOutputToContain('Aucune authentification sur la porte')
+            ->assertFailed();
+    }
+
+    /** A host that opens the screens to people who are not signed in has said so in a rule: shown, never blocking. */
+    public function test_it_only_points_at_a_door_opened_on_purpose(): void
+    {
+        config(['analytics.admin.middleware' => ['web']]);
+        Gate::define(Ability::Analytics, fn (?Authenticatable $account = null): bool => true);
+
+        $this->artisan('analytics:check')
+            ->expectsOutputToContain('ouvert aux personnes non connectées')
+            ->assertSuccessful();
+    }
+
+    public function test_it_names_a_rule_written_under_a_name_no_ability_carries(): void
+    {
+        Gate::define('analytics.visiteurs', fn (): bool => false);
+
+        $this->artisan('analytics:check')
+            ->expectsOutputToContain('analytics.visiteurs')
+            ->assertFailed();
+    }
+
+    public function test_it_names_a_branch_that_is_no_ability(): void
+    {
+        config(['analytics.admin.middleware_for' => ['analytics.inconnue' => ['auth']]]);
+
+        $this->artisan('analytics:check')
+            ->expectsOutputToContain('analytics.inconnue ne désigne aucune capacité')
+            ->assertFailed();
+    }
+
+    public function test_it_names_a_branch_that_covers_no_screen(): void
+    {
+        config(['analytics.admin.middleware_for' => ['analytics.visitors.delete' => ['auth']]]);
+
+        $this->artisan('analytics:check')
+            ->expectsOutputToContain('analytics.visitors.delete ne couvre aucun écran')
+            ->assertFailed();
+    }
+
+    public function test_it_names_a_step_the_router_does_not_know(): void
+    {
+        config(['analytics.admin.middleware_for' => ['analytics.marketing' => ['etape.inconnue']]]);
+
+        $this->artisan('analytics:check')
+            ->expectsOutputToContain('etape.inconnue')
             ->assertFailed();
     }
 

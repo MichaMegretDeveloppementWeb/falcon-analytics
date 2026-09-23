@@ -8,10 +8,14 @@ use Falcon\Analytics\Actions\DeleteAdAction;
 use Falcon\Analytics\Actions\DeleteCampaignAction;
 use Falcon\Analytics\DTOs\Dashboard\Marketing\AdRow;
 use Falcon\Analytics\DTOs\Dashboard\Marketing\CampaignDetail;
+use Falcon\Analytics\Enums\Authorization\Ability;
+use Falcon\Analytics\Livewire\Admin\Concerns\AsksTheScreenAbility;
+use Falcon\Analytics\Livewire\Admin\Concerns\SaysWhatTheAccountMayDo;
 use Falcon\Analytics\Models\Ad;
 use Falcon\Analytics\Models\Campaign;
 use Falcon\Analytics\Services\Dashboard\ObjectiveLabels;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
@@ -27,6 +31,9 @@ use Throwable;
  */
 final class CampaignDetailPage extends DashboardComponent
 {
+    use AsksTheScreenAbility;
+    use SaysWhatTheAccountMayDo;
+
     #[Locked]
     public int $campaignId;
 
@@ -63,6 +70,8 @@ final class CampaignDetailPage extends DashboardComponent
     /** Whether the campaign was deleted · on a yes the page leads back to the list. */
     public function deleteCampaignConfirmed(DeleteCampaignAction $action): bool
     {
+        $this->authorize(Ability::CampaignsDelete, $this->campaign());
+
         try {
             $action->execute($this->campaignId);
         } catch (Throwable $e) {
@@ -83,16 +92,16 @@ final class CampaignDetailPage extends DashboardComponent
     /** Whether there is an ad of this campaign to ask about · the confirmation opens on a yes. */
     public function confirmDeleteAd(int $id): bool
     {
-        $name = Ad::query()->where('campaign_id', $this->campaignId)->whereKey($id)->value('name');
+        $ad = $this->adToDelete($id);
 
-        if (! is_string($name)) {
-            $this->dispatch('ui-toast', type: 'danger', title: __('Cette publicité est introuvable. Actualisez la page.'));
-
+        if ($ad === null) {
             return false;
         }
 
-        $this->deleteAdId = $id;
-        $this->deleteAdLabel = $name;
+        $this->authorize(Ability::AdsDelete, $ad);
+
+        $this->deleteAdId = $ad->id;
+        $this->deleteAdLabel = $ad->name;
 
         return true;
     }
@@ -100,9 +109,13 @@ final class CampaignDetailPage extends DashboardComponent
     /** Whether the ad was deleted · the confirmation closes on a yes. */
     public function deleteAdConfirmed(DeleteAdAction $action): bool
     {
-        if ($this->deleteAdId === null) {
+        $ad = $this->deleteAdId === null ? null : $this->adToDelete($this->deleteAdId);
+
+        if ($ad === null) {
             return false;
         }
+
+        $this->authorize(Ability::AdsDelete, $ad);
 
         try {
             $action->execute($this->deleteAdId, $this->campaignId);
@@ -134,18 +147,45 @@ final class CampaignDetailPage extends DashboardComponent
     {
         return $this->guardedRender(
             function () use ($objectives): array {
-                $campaign = $this->read ??= Campaign::query()->findOrFail($this->campaignId);
+                $campaign = $this->campaign();
+                $ads = $campaign->ads()->with('objectives:id,ad_id,type,reference')->orderBy('name')->get();
 
                 return [
                     'detail' => CampaignDetail::of($campaign),
                     'range' => $this->currentPeriod(),
-                    'ads' => $campaign->ads()->with('objectives:id,ad_id,type,reference')->orderBy('name')->get()
-                        ->map(fn (Ad $ad): AdRow => AdRow::of($ad, $campaign->name, $objectives->tagsOf($ad->objectives)))
-                        ->all(),
+                    'ads' => $ads->map(fn (Ad $ad): AdRow => AdRow::of($ad, $campaign->name, $objectives->tagsOf($ad->objectives)))->all(),
+                    'mayEditCampaign' => Gate::allows(Ability::CampaignsEdit, $campaign),
+                    'mayDeleteCampaign' => Gate::allows(Ability::CampaignsDelete, $campaign),
+                    'mayOpenAds' => Gate::allows(Ability::Ads),
+                    'mayCreateAd' => Gate::allows(Ability::AdsEdit),
+                    'mayEditAd' => $this->allowedOn(Ability::AdsEdit, $ads),
+                    'mayDeleteAd' => $this->allowedOn(Ability::AdsDelete, $ads),
                     ...$this->filterData(),
                 ];
             },
             fn (array $data): View => view('analytics::livewire.dashboard.marketing-campaign-detail', $data),
         );
+    }
+
+    protected function screenAbility(): Ability
+    {
+        return Ability::Campaigns;
+    }
+
+    private function campaign(): Campaign
+    {
+        return $this->read ??= Campaign::query()->findOrFail($this->campaignId);
+    }
+
+    /** The ad of this campaign a deletion names, or null once told it no longer exists. */
+    private function adToDelete(int $id): ?Ad
+    {
+        $ad = Ad::query()->where('campaign_id', $this->campaignId)->find($id);
+
+        if ($ad === null) {
+            $this->dispatch('ui-toast', type: 'danger', title: __('Cette publicité est introuvable. Actualisez la page.'));
+        }
+
+        return $ad;
     }
 }

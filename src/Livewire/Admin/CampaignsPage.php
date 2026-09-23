@@ -6,9 +6,13 @@ namespace Falcon\Analytics\Livewire\Admin;
 
 use Falcon\Analytics\Actions\DeleteCampaignAction;
 use Falcon\Analytics\DTOs\Dashboard\Marketing\CampaignRow;
+use Falcon\Analytics\Enums\Authorization\Ability;
+use Falcon\Analytics\Livewire\Admin\Concerns\AsksTheScreenAbility;
 use Falcon\Analytics\Livewire\Admin\Concerns\RecoversFromReadFailure;
+use Falcon\Analytics\Livewire\Admin\Concerns\SaysWhatTheAccountMayDo;
 use Falcon\Analytics\Models\Campaign;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -25,7 +29,9 @@ use Throwable;
  */
 final class CampaignsPage extends Component
 {
+    use AsksTheScreenAbility;
     use RecoversFromReadFailure;
+    use SaysWhatTheAccountMayDo;
     use WithPagination;
 
     private const PER_PAGE = 20;
@@ -48,16 +54,16 @@ final class CampaignsPage extends Component
     /** Whether there is a campaign to ask about · the confirmation opens on a yes. */
     public function confirmDelete(int $id): bool
     {
-        $name = Campaign::query()->whereKey($id)->value('name');
+        $campaign = $this->campaignToDelete($id);
 
-        if (! is_string($name)) {
-            $this->dispatch('ui-toast', type: 'danger', title: __('Cette campagne est introuvable. Actualisez la page.'));
-
+        if ($campaign === null) {
             return false;
         }
 
-        $this->deleteId = $id;
-        $this->deleteLabel = $name;
+        $this->authorize(Ability::CampaignsDelete, $campaign);
+
+        $this->deleteId = $campaign->id;
+        $this->deleteLabel = $campaign->name;
 
         return true;
     }
@@ -65,9 +71,13 @@ final class CampaignsPage extends Component
     /** Whether the campaign was deleted · the confirmation closes on a yes. */
     public function deleteConfirmed(DeleteCampaignAction $action): bool
     {
-        if ($this->deleteId === null) {
+        $campaign = $this->deleteId === null ? null : $this->campaignToDelete($this->deleteId);
+
+        if ($campaign === null) {
             return false;
         }
+
+        $this->authorize(Ability::CampaignsDelete, $campaign);
 
         try {
             $action->execute($this->deleteId);
@@ -97,11 +107,31 @@ final class CampaignsPage extends Component
                     ->paginate(self::PER_PAGE);
 
                 return [
+                    'mayCreate' => Gate::allows(Ability::CampaignsEdit),
+                    'mayEdit' => $this->allowedOn(Ability::CampaignsEdit, $campaigns->items()),
+                    'mayDelete' => $this->allowedOn(Ability::CampaignsDelete, $campaigns->items()),
                     'campaigns' => $campaigns->through(CampaignRow::of(...)),
                     'total' => Campaign::query()->count(),
                 ];
             },
             fn (array $data): View => view('analytics::livewire.dashboard.marketing-campaigns', $data),
         );
+    }
+
+    protected function screenAbility(): Ability
+    {
+        return Ability::Campaigns;
+    }
+
+    /** The campaign a deletion names, or null once told it no longer exists. */
+    private function campaignToDelete(int $id): ?Campaign
+    {
+        $campaign = Campaign::query()->find($id);
+
+        if ($campaign === null) {
+            $this->dispatch('ui-toast', type: 'danger', title: __('Cette campagne est introuvable. Actualisez la page.'));
+        }
+
+        return $campaign;
     }
 }

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Livewire\Admin;
 
+use Falcon\Analytics\Enums\Authorization\Ability;
+use Falcon\Analytics\Livewire\Admin\Concerns\AsksTheScreenAbility;
 use Illuminate\Contracts\View\View;
 
 /**
@@ -15,6 +17,8 @@ use Illuminate\Contracts\View\View;
  */
 final class MarketingDashboardPage extends DashboardComponent
 {
+    use AsksTheScreenAbility;
+
     public function render(): View
     {
         return $this->guardedRender(
@@ -24,5 +28,10 @@ final class MarketingDashboardPage extends DashboardComponent
             ],
             fn (array $data): View => view('analytics::livewire.dashboard.marketing-dashboard', $data),
         );
+    }
+
+    protected function screenAbility(): Ability
+    {
+        return Ability::MarketingDashboard;
     }
 }

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Falcon\Analytics\Enums\Authorization\Ability;
 use Falcon\Analytics\Http\Controllers\Marketing\AdDetailController;
 use Falcon\Analytics\Http\Controllers\Marketing\AdsController;
 use Falcon\Analytics\Http\Controllers\Marketing\CampaignDetailController;
@@ -22,8 +23,8 @@ use Illuminate\Support\Facades\Route;
  * ACCUMULATES the middleware, so the screens would demand both guards at once.
  */
 
-Route::get('/', MarketingDashboardController::class)->name('dashboard');
-Route::get('/campaigns', CampaignsController::class)->name('campaigns');
-Route::get('/campaigns/{campaign}', CampaignDetailController::class)->name('campaigns.show');
-Route::get('/ads', AdsController::class)->name('ads');
-Route::get('/ads/{ad}', AdDetailController::class)->name('ads.show');
+Route::get('/', MarketingDashboardController::class)->name('dashboard')->can(Ability::MarketingDashboard);
+Route::get('/campaigns', CampaignsController::class)->name('campaigns')->can(Ability::Campaigns);
+Route::get('/campaigns/{campaign}', CampaignDetailController::class)->name('campaigns.show')->can(Ability::Campaigns);
+Route::get('/ads', AdsController::class)->name('ads')->can(Ability::Ads);
+Route::get('/ads/{ad}', AdDetailController::class)->name('ads.show')->can(Ability::Ads);

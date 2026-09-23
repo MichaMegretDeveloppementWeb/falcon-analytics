@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Livewire\Admin;
 
 use Falcon\Analytics\DTOs\Dashboard\Marketing\AdDetail;
+use Falcon\Analytics\Enums\Authorization\Ability;
+use Falcon\Analytics\Livewire\Admin\Concerns\AsksTheScreenAbility;
 use Falcon\Analytics\Models\Ad;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
 
@@ -20,6 +23,8 @@ use Livewire\Attributes\On;
  */
 final class AdDetailPage extends DashboardComponent
 {
+    use AsksTheScreenAbility;
+
     /** What the screen shows of the ad's campaign. */
     private const CAMPAIGN = 'campaign:id,name,platform';
 
@@ -42,12 +47,23 @@ final class AdDetailPage extends DashboardComponent
     public function render(): View
     {
         return $this->guardedRender(
-            fn (): array => [
-                'detail' => AdDetail::of($this->read ??= Ad::query()->with(self::CAMPAIGN)->findOrFail($this->adId)),
-                'range' => $this->currentPeriod(),
-                ...$this->filterData(),
-            ],
+            function (): array {
+                $ad = $this->read ??= Ad::query()->with(self::CAMPAIGN)->findOrFail($this->adId);
+
+                return [
+                    'detail' => AdDetail::of($ad),
+                    'range' => $this->currentPeriod(),
+                    'mayEdit' => Gate::allows(Ability::AdsEdit, $ad),
+                    'mayOpenCampaigns' => Gate::allows(Ability::Campaigns),
+                    ...$this->filterData(),
+                ];
+            },
             fn (array $data): View => view('analytics::livewire.dashboard.marketing-ad-detail', $data),
         );
+    }
+
+    protected function screenAbility(): Ability
+    {
+        return Ability::Ads;
     }
 }
