@@ -38,11 +38,7 @@ final class MarketingPagesTest extends TestCase
 
     private function campaign(string $name = 'Été', ?string $platform = null, string $value = 'meta'): Campaign
     {
-        return Campaign::create([
-            'name' => $name,
-            'platform' => $platform,
-            'match_conditions' => [['param' => 'src', 'value' => $value]],
-        ]);
+        return Campaign::factory()->matching('src', $value)->create(['name' => $name, 'platform' => $platform]);
     }
 
     public function test_it_mounts_the_marketing_screens_at_their_own_prefix_under_fixed_route_names(): void
@@ -86,8 +82,8 @@ final class MarketingPagesTest extends TestCase
     {
         $campaign = $this->campaign();
         foreach (['Cabriolet', 'Berline'] as $name) {
-            $ad = Ad::create(['campaign_id' => $campaign->id, 'name' => $name, 'match_conditions' => [['param' => 'creative', 'value' => strtolower($name)]]]);
-            AdObjective::create(['ad_id' => $ad->id, 'type' => 'event', 'reference' => 'Lead']);
+            $ad = Ad::factory()->for($campaign)->matching('creative', strtolower($name))->create(['name' => $name]);
+            AdObjective::factory()->for($ad)->event('Lead')->create();
         }
 
         $this->actingAs($this->admin, 'admin');
@@ -113,7 +109,7 @@ final class MarketingPagesTest extends TestCase
     public function test_it_renders_the_four_marketing_screens_for_an_admin(): void
     {
         $campaign = $this->campaign('Été 2026', 'Meta', 'meta_ete');
-        Ad::create(['campaign_id' => $campaign->id, 'name' => 'Cabriolet', 'match_conditions' => [['param' => 'creative', 'value' => 'cabrio']]]);
+        Ad::factory()->for($campaign)->matching('creative', 'cabrio')->create(['name' => 'Cabriolet']);
 
         $this->actingAs($this->admin, 'admin');
 
@@ -134,7 +130,7 @@ final class MarketingPagesTest extends TestCase
     public function test_each_marketing_screen_carries_its_windows_as_the_kits_dialogs(): void
     {
         $campaign = $this->campaign('Été 2026');
-        $ad = Ad::create(['campaign_id' => $campaign->id, 'name' => 'Cabriolet', 'match_conditions' => [['param' => 'creative', 'value' => 'cabrio']]]);
+        $ad = Ad::factory()->for($campaign)->matching('creative', 'cabrio')->create(['name' => 'Cabriolet']);
 
         $this->actingAs($this->admin, 'admin');
 
@@ -161,7 +157,7 @@ final class MarketingPagesTest extends TestCase
     public function test_each_confirming_button_waits_for_its_own_call(): void
     {
         $campaign = $this->campaign('Été 2026');
-        $ad = Ad::create(['campaign_id' => $campaign->id, 'name' => 'Cabriolet', 'match_conditions' => [['param' => 'creative', 'value' => 'cabrio']]]);
+        $ad = Ad::factory()->for($campaign)->matching('creative', 'cabrio')->create(['name' => 'Cabriolet']);
 
         $this->actingAs($this->admin, 'admin');
 
@@ -191,7 +187,7 @@ final class MarketingPagesTest extends TestCase
     public function test_each_form_window_is_a_form_its_button_submits(): void
     {
         $campaign = $this->campaign('Été 2026');
-        $ad = Ad::create(['campaign_id' => $campaign->id, 'name' => 'Cabriolet', 'match_conditions' => [['param' => 'creative', 'value' => 'cabrio']]]);
+        $ad = Ad::factory()->for($campaign)->matching('creative', 'cabrio')->create(['name' => 'Cabriolet']);
 
         $this->actingAs($this->admin, 'admin');
 
@@ -251,7 +247,7 @@ final class MarketingPagesTest extends TestCase
     public function test_the_objective_lists_close_on_escape_and_say_whether_they_are_open(): void
     {
         $campaign = $this->campaign();
-        $ad = Ad::create(['campaign_id' => $campaign->id, 'name' => 'Cabriolet', 'match_conditions' => [['param' => 'creative', 'value' => 'cabrio']]]);
+        $ad = Ad::factory()->for($campaign)->matching('creative', 'cabrio')->create(['name' => 'Cabriolet']);
 
         $this->actingAs($this->admin, 'admin');
 
@@ -342,7 +338,7 @@ final class MarketingPagesTest extends TestCase
     public function test_it_edits_an_ad_and_its_objectives_through_its_form(): void
     {
         $campaign = $this->campaign('Été', null, 'meta_ete');
-        $ad = Ad::create(['campaign_id' => $campaign->id, 'name' => 'Cabrio', 'match_conditions' => [['param' => 'creative', 'value' => 'cabrio']]]);
+        $ad = Ad::factory()->for($campaign)->matching('creative', 'cabrio')->create(['name' => 'Cabrio']);
         $this->actingAs($this->admin, 'admin');
 
         Livewire::test(AdForm::class, ['campaignId' => $campaign->id])
@@ -394,8 +390,8 @@ final class MarketingPagesTest extends TestCase
     public function test_it_deletes_a_campaign_and_cascades_to_its_ads_and_objectives(): void
     {
         $campaign = $this->campaign('Été', null, 'meta_ete');
-        $ad = Ad::create(['campaign_id' => $campaign->id, 'name' => 'Cabrio', 'match_conditions' => [['param' => 'creative', 'value' => 'cabrio']]]);
-        AdObjective::create(['ad_id' => $ad->id, 'type' => 'event', 'reference' => 'Lead']);
+        $ad = Ad::factory()->for($campaign)->matching('creative', 'cabrio')->create(['name' => 'Cabrio']);
+        AdObjective::factory()->for($ad)->event('Lead')->create();
 
         $other = $this->campaign('Hiver', null, 'meta_hiver');
 
@@ -417,7 +413,7 @@ final class MarketingPagesTest extends TestCase
     public function test_it_deletes_an_ad_from_its_campaign_after_the_confirmation(): void
     {
         $campaign = $this->campaign('Été', null, 'meta_ete');
-        $ad = Ad::create(['campaign_id' => $campaign->id, 'name' => 'Cabrio', 'match_conditions' => [['param' => 'creative', 'value' => 'cabrio']]]);
+        $ad = Ad::factory()->for($campaign)->matching('creative', 'cabrio')->create(['name' => 'Cabrio']);
         $this->actingAs($this->admin, 'admin');
 
         Livewire::test(CampaignDetailPage::class, ['campaign' => $campaign])
@@ -508,7 +504,7 @@ final class MarketingPagesTest extends TestCase
     {
         $campaign = $this->campaign('Été', null, 'meta_ete');
         $other = $this->campaign('Hiver', null, 'meta_hiver');
-        $theirs = Ad::create(['campaign_id' => $other->id, 'name' => 'Luge', 'match_conditions' => [['param' => 'creative', 'value' => 'luge']]]);
+        $theirs = Ad::factory()->for($other)->matching('creative', 'luge')->create(['name' => 'Luge']);
         $this->actingAs($this->admin, 'admin');
 
         Livewire::test(AdForm::class, ['campaignId' => $campaign->id])
@@ -553,7 +549,7 @@ final class MarketingPagesTest extends TestCase
     public function test_the_screens_read_themselves_again_when_a_form_writes(): void
     {
         $campaign = $this->campaign('Été', null, 'meta_ete');
-        $ad = Ad::create(['campaign_id' => $campaign->id, 'name' => 'Cabrio', 'match_conditions' => [['param' => 'creative', 'value' => 'cabrio']]]);
+        $ad = Ad::factory()->for($campaign)->matching('creative', 'cabrio')->create(['name' => 'Cabrio']);
         $this->actingAs($this->admin, 'admin');
 
         $list = Livewire::test(CampaignsPage::class)->assertDontSeeText('Automne');
@@ -566,7 +562,7 @@ final class MarketingPagesTest extends TestCase
 
         $this->campaign('Automne');
         $campaign->update(['name' => 'Été 2027']);
-        Ad::create(['campaign_id' => $campaign->id, 'name' => 'Berline', 'match_conditions' => [['param' => 'creative', 'value' => 'berline']]]);
+        Ad::factory()->for($campaign)->matching('creative', 'berline')->create(['name' => 'Berline']);
         $ad->update(['name' => 'Cabriolet']);
 
         $list->dispatch('an-campaigns-changed')->assertSeeText('Automne');

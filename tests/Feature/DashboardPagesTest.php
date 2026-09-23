@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Tests\Feature;
 
 use Carbon\CarbonImmutable;
-use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Livewire\Admin\SessionsPage;
 use Falcon\Analytics\Livewire\Admin\VisitorDetailPage;
 use Falcon\Analytics\Livewire\Admin\Widgets\EventsContent;
@@ -26,7 +25,6 @@ use Falcon\Analytics\Support\SourceLabel;
 use Falcon\Analytics\Tests\Fixtures\Models\TestAdmin;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Str;
 use Livewire\Livewire;
 use PHPUnit\Framework\Attributes\DataProvider;
 
@@ -45,23 +43,13 @@ final class DashboardPagesTest extends TestCase
     }
 
     /**
+     * A visit of one page.
+     *
      * @param  array<string, mixed>  $attributes
      */
     private function seedSession(array $attributes = []): Session
     {
-        $visitor = Visitor::create([
-            'uuid' => (string) Str::uuid(),
-            'first_seen_at' => now(),
-            'last_seen_at' => now(),
-        ]);
-
-        return Session::create(array_merge([
-            'visitor_id' => $visitor->id,
-            'started_at' => now(),
-            'last_activity_at' => now(),
-            'is_bot' => false,
-            'pageview_count' => 1,
-        ], $attributes));
+        return Session::factory()->create(['pageview_count' => 1, ...$attributes]);
     }
 
     public function test_it_mounts_the_screens_at_the_configured_prefix_under_fixed_route_names(): void
@@ -77,15 +65,7 @@ final class DashboardPagesTest extends TestCase
 
     public function test_it_renders_the_events_screen_with_the_per_event_breakdown(): void
     {
-        $session = $this->seedSession();
-
-        Event::create([
-            'session_id' => $session->id,
-            'visitor_id' => $session->visitor_id,
-            'type' => EventType::Click,
-            'name' => 'cta.contact',
-            'occurred_at' => now(),
-        ]);
+        Event::factory()->for($this->seedSession())->click('cta.contact')->create();
 
         $this->actingAs($this->admin, 'admin');
 
@@ -101,10 +81,7 @@ final class DashboardPagesTest extends TestCase
         // The deferred widget reads the breakdown (current and previous) and
         // the daily series; the page's shell emits no query at all.
         $budget = $this->assertCostIsFlat(
-            function (): void {
-                $session = $this->seedSession();
-                Event::create(['session_id' => $session->id, 'visitor_id' => $session->visitor_id, 'type' => EventType::Click, 'name' => 'cta.contact', 'occurred_at' => now()]);
-            },
+            fn () => Event::factory()->for($this->seedSession())->click('cta.contact')->create(),
             fn () => Livewire::test(EventsContent::class, ['period' => 30])->call('$refresh'),
         );
 
@@ -113,7 +90,7 @@ final class DashboardPagesTest extends TestCase
 
     public function test_it_renders_the_marketing_dashboard_content_within_its_query_budget(): void
     {
-        Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta']]]);
+        Campaign::factory()->matching('src', 'meta')->create(['name' => 'Été']);
 
         $this->actingAs($this->admin, 'admin');
 
@@ -151,8 +128,7 @@ final class DashboardPagesTest extends TestCase
 
     public function test_it_renders_the_overview_digest_for_an_authenticated_admin(): void
     {
-        $session = $this->seedSession(['source' => 'google']);
-        Event::create(['session_id' => $session->id, 'visitor_id' => $session->visitor_id, 'occurred_at' => now()->subMinute(), 'type' => EventType::Pageview, 'route' => 'accueil', 'url' => 'https://boutique.test/accueil']);
+        Event::factory()->for($this->seedSession(['source' => 'google']))->create(['occurred_at' => now()->subMinute(), 'route' => 'accueil', 'url' => 'https://boutique.test/accueil']);
 
         $this->actingAs($this->admin, 'admin');
 
@@ -168,8 +144,8 @@ final class DashboardPagesTest extends TestCase
     public function test_it_renders_the_deferred_overview_section_widgets_with_their_data(): void
     {
         $session = $this->seedSession(['source' => 'google', 'country' => 'FR', 'city' => 'Paris', 'device_type' => 'desktop']);
-        Event::create(['session_id' => $session->id, 'visitor_id' => $session->visitor_id, 'type' => EventType::Pageview, 'route' => 'catalog', 'url' => 'https://x.test/catalog', 'occurred_at' => now()]);
-        Event::create(['session_id' => $session->id, 'visitor_id' => $session->visitor_id, 'type' => EventType::Click, 'name' => 'cta.contact', 'target_text' => 'Contact', 'occurred_at' => now()]);
+        Event::factory()->for($session)->create(['route' => 'catalog', 'url' => 'https://x.test/catalog']);
+        Event::factory()->for($session)->click('cta.contact', 'Contact')->create();
 
         $this->actingAs($this->admin, 'admin');
 
@@ -261,24 +237,9 @@ final class DashboardPagesTest extends TestCase
 
     public function test_it_renders_the_visitors_list_for_an_authenticated_admin(): void
     {
-        $visitor = Visitor::create([
-            'uuid' => (string) Str::uuid(),
-            'first_seen_at' => now(),
-            'last_seen_at' => now(),
-            'subject_type' => 'client',
-            'subject_id' => 1,
-        ]);
-
-        Session::create([
-            'visitor_id' => $visitor->id,
-            'started_at' => now(),
-            'last_activity_at' => now(),
-            'is_bot' => false,
-            'pageview_count' => 1,
-            'city' => 'Genève',
-            'country' => 'CH',
-            'source' => 'google',
-        ]);
+        Session::factory()
+            ->for(Visitor::factory()->forSubject('client', 1))
+            ->create(['pageview_count' => 1, 'city' => 'Genève', 'country' => 'CH', 'source' => 'google']);
 
         $this->actingAs($this->admin, 'admin');
 
@@ -295,8 +256,8 @@ final class DashboardPagesTest extends TestCase
     public function test_it_renders_a_session_detail_with_its_information_and_event_timeline(): void
     {
         $session = $this->seedSession(['city' => 'Paris', 'subject_type' => 'client', 'subject_id' => 3, 'device_type' => 'desktop', 'browser' => 'Chrome']);
-        Event::create(['session_id' => $session->id, 'visitor_id' => $session->visitor_id, 'occurred_at' => now()->subMinutes(2), 'type' => EventType::Pageview, 'route' => 'catalog']);
-        Event::create(['session_id' => $session->id, 'visitor_id' => $session->visitor_id, 'occurred_at' => now()->subMinute(), 'type' => EventType::Click, 'name' => 'cta.contact', 'target_text' => 'Nous contacter', 'route' => 'catalog']);
+        Event::factory()->for($session)->create(['occurred_at' => now()->subMinutes(2), 'route' => 'catalog']);
+        Event::factory()->for($session)->click('cta.contact', 'Nous contacter')->create(['occurred_at' => now()->subMinute(), 'route' => 'catalog']);
 
         $this->actingAs($this->admin, 'admin')
             ->get(route('analytics.admin.sessions.show', $session))
@@ -312,18 +273,10 @@ final class DashboardPagesTest extends TestCase
 
     public function test_it_renders_a_visitor_detail_with_its_sessions_engagement_and_breakdowns(): void
     {
-        $visitor = Visitor::create([
-            'uuid' => (string) Str::uuid(),
-            'first_seen_at' => now(),
-            'last_seen_at' => now(),
-            'session_count' => 2,
-        ]);
+        $visitor = Visitor::factory()->create(['session_count' => 2]);
 
-        $session = Session::create([
-            'visitor_id' => $visitor->id,
-            'started_at' => now(),
+        $session = Session::factory()->for($visitor)->create([
             'last_activity_at' => now()->addMinute(),
-            'is_bot' => false,
             'pageview_count' => 3,
             'device_type' => 'mobile',
             'city' => 'Genève',
@@ -343,9 +296,8 @@ final class DashboardPagesTest extends TestCase
     public function test_it_erases_only_the_target_visitor_leaving_other_visitors_untouched(): void
     {
         $make = function (): Visitor {
-            $visitor = Visitor::create(['uuid' => (string) Str::uuid(), 'first_seen_at' => now(), 'last_seen_at' => now(), 'session_count' => 1]);
-            $session = Session::create(['visitor_id' => $visitor->id, 'started_at' => now(), 'last_activity_at' => now(), 'is_bot' => false, 'pageview_count' => 1]);
-            Event::create(['session_id' => $session->id, 'visitor_id' => $visitor->id, 'occurred_at' => now(), 'type' => EventType::Pageview]);
+            $visitor = Visitor::factory()->create(['session_count' => 1]);
+            Event::factory()->for(Session::factory()->for($visitor)->state(['pageview_count' => 1]))->create();
 
             return $visitor;
         };
@@ -377,20 +329,10 @@ final class DashboardPagesTest extends TestCase
     {
         config(['analytics.funnels_path' => __DIR__.'/../Fixtures/analytics-funnels.php']);
 
-        $visitor = Visitor::create([
-            'uuid' => (string) Str::uuid(),
-            'first_seen_at' => now(),
-            'last_seen_at' => now(),
-        ]);
+        $session = Session::factory()->create();
 
-        $session = Session::create([
-            'visitor_id' => $visitor->id,
-            'started_at' => now(),
-            'last_activity_at' => now(),
-        ]);
-
-        Event::create(['session_id' => $session->id, 'visitor_id' => $visitor->id, 'occurred_at' => now()->subMinutes(2), 'type' => EventType::Pageview, 'route' => 'home']);
-        Event::create(['session_id' => $session->id, 'visitor_id' => $visitor->id, 'occurred_at' => now()->subMinute(), 'type' => EventType::Custom, 'name' => 'sample.action']);
+        Event::factory()->for($session)->create(['occurred_at' => now()->subMinutes(2), 'route' => 'home']);
+        Event::factory()->for($session)->custom('sample.action')->create(['occurred_at' => now()->subMinute()]);
 
         $this->actingAs($this->admin, 'admin');
 

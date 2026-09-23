@@ -17,7 +17,6 @@ use Falcon\Analytics\Tests\Fixtures\Models\TestAdmin;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Response;
-use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Livewire\Livewire;
 
@@ -60,17 +59,7 @@ final class AnOldSessionSaysWhatItStillKnowsTest extends TestCase
      */
     private function aSessionOn(CarbonImmutable $day, bool $withEvents = true): Session
     {
-        $visitor = Visitor::create([
-            'uuid' => (string) Str::uuid(),
-            'first_seen_at' => $day,
-            'last_seen_at' => $day,
-        ]);
-
-        $session = Session::create([
-            'visitor_id' => $visitor->id,
-            'started_at' => $day->setTime(9, 0),
-            'last_activity_at' => $day->setTime(9, 30),
-            'is_bot' => false,
+        $session = $this->aVisitOn($day, [
             // What the ingestion keeps as it happens; these rows are laid down
             // directly rather than through the endpoint.
             'pageview_count' => $withEvents ? 2 : 0,
@@ -82,16 +71,28 @@ final class AnOldSessionSaysWhatItStillKnowsTest extends TestCase
             return $session;
         }
 
-        Event::create(['session_id' => $session->id, 'visitor_id' => $visitor->id, 'type' => EventType::Pageview, 'url' => 'https://exemple.test/', 'occurred_at' => $day->setTime(9, 0)]);
-        Event::create(['session_id' => $session->id, 'visitor_id' => $visitor->id, 'type' => EventType::Pageview, 'url' => 'https://exemple.test/tarifs', 'occurred_at' => $day->setTime(9, 5)]);
+        Event::factory()->for($session)->create(['url' => 'https://exemple.test/', 'occurred_at' => $day->setTime(9, 0)]);
+        Event::factory()->for($session)->create(['url' => 'https://exemple.test/tarifs', 'occurred_at' => $day->setTime(9, 5)]);
 
         foreach ([10, 11, 12] as $minute) {
-            Event::create(['session_id' => $session->id, 'visitor_id' => $visitor->id, 'type' => EventType::Click, 'target_text' => 'Demander un devis', 'occurred_at' => $day->setTime(9, $minute)]);
+            Event::factory()->for($session)->click(text: 'Demander un devis')->create(['occurred_at' => $day->setTime(9, $minute)]);
         }
 
-        Event::create(['session_id' => $session->id, 'visitor_id' => $visitor->id, 'type' => EventType::Custom, 'name' => 'commande.payee', 'occurred_at' => $day->setTime(9, 20)]);
+        Event::factory()->for($session)->custom('commande.payee')->create(['occurred_at' => $day->setTime(9, 20)]);
 
         return $session;
+    }
+
+    /**
+     * A visit from 9:00 to 9:30 that day, by a visitor first seen then.
+     *
+     * @param  array<string, int>  $counters
+     */
+    private function aVisitOn(CarbonImmutable $day, array $counters): Session
+    {
+        return Session::factory()
+            ->for(Visitor::factory()->state(['first_seen_at' => $day, 'last_seen_at' => $day]))
+            ->create(['started_at' => $day->setTime(9, 0), 'last_activity_at' => $day->setTime(9, 30), ...$counters]);
     }
 
     private function archiveThenPrune(): void
@@ -243,27 +244,10 @@ final class AnOldSessionSaysWhatItStillKnowsTest extends TestCase
         // The neighbour again, so that the day really does get emptied.
         $this->aSessionOn($day);
 
-        $visitor = Visitor::create(['uuid' => (string) Str::uuid(), 'first_seen_at' => $day, 'last_seen_at' => $day]);
-
-        $named = Session::create([
-            'visitor_id' => $visitor->id,
-            'started_at' => $day->setTime(9, 0),
-            'last_activity_at' => $day->setTime(9, 30),
-            'is_bot' => false,
-            'pageview_count' => 0,
-            'click_count' => 2,
-            'event_count' => 2,
-        ]);
+        $named = $this->aVisitOn($day, ['pageview_count' => 0, 'click_count' => 2, 'event_count' => 2]);
 
         foreach ([10, 12] as $minute) {
-            Event::create([
-                'session_id' => $named->id,
-                'visitor_id' => $visitor->id,
-                'type' => EventType::Click,
-                'name' => 'devis.demande',
-                'target_text' => 'Demander un devis',
-                'occurred_at' => $day->setTime(9, $minute),
-            ]);
+            Event::factory()->for($named)->click('devis.demande', 'Demander un devis')->create(['occurred_at' => $day->setTime(9, $minute)]);
         }
 
         $this->archiveThenPrune();
@@ -291,23 +275,10 @@ final class AnOldSessionSaysWhatItStillKnowsTest extends TestCase
         // The neighbour, so the day is emptied at all.
         $this->aSessionOn($day);
 
-        $visitor = Visitor::create(['uuid' => (string) Str::uuid(), 'first_seen_at' => $day, 'last_seen_at' => $day]);
-
-        $protected = Session::create([
-            'visitor_id' => $visitor->id,
-            'started_at' => $day->setTime(9, 0),
-            'last_activity_at' => $day->setTime(9, 30),
-            'is_bot' => false,
-            'pageview_count' => 2,
-            'click_count' => 0,
-            'event_count' => 2,
-        ]);
+        $protected = $this->aVisitOn($day, ['pageview_count' => 2, 'click_count' => 0, 'event_count' => 2]);
 
         foreach ([0, 5] as $minute) {
-            Event::create([
-                'session_id' => $protected->id,
-                'visitor_id' => $visitor->id,
-                'type' => EventType::Pageview,
+            Event::factory()->for($protected)->create([
                 'url' => 'https://exemple.test/panier',
                 'route' => 'home',
                 'occurred_at' => $day->setTime(9, $minute),
