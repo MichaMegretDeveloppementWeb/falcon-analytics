@@ -9,7 +9,6 @@ use Falcon\Analytics\DTOs\Dashboard\Marketing\AdDetail;
 use Falcon\Analytics\DTOs\Dashboard\Marketing\CampaignDetail;
 use Falcon\Analytics\DTOs\Dashboard\Session\SessionDetail;
 use Falcon\Analytics\DTOs\Dashboard\Visitor\VisitorDetail;
-use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Livewire\Admin\AdDetailPage;
 use Falcon\Analytics\Livewire\Admin\AdsPage;
 use Falcon\Analytics\Livewire\Admin\CampaignDetailPage;
@@ -31,7 +30,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\View;
-use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
 use Livewire\Features\SupportTesting\Testable;
@@ -192,21 +190,20 @@ final class TheScreensHandOverValuesTest extends TestCase
 
     private function aSession(): Session
     {
-        $visitor = Visitor::create(['uuid' => (string) Str::uuid(), 'first_seen_at' => now(), 'last_seen_at' => now(), 'session_count' => 1]);
-        $session = Session::create([
-            'visitor_id' => $visitor->id, 'browser_key' => $visitor->uuid, 'started_at' => now()->subMinutes(5), 'last_activity_at' => now(),
-            'is_bot' => false, 'pageview_count' => 1, 'click_count' => 0, 'source' => 'direct', 'device_type' => 'desktop',
-        ]);
-        Event::create(['session_id' => $session->id, 'visitor_id' => $visitor->id, 'occurred_at' => now()->subMinutes(5), 'type' => EventType::Pageview, 'url' => 'https://exemple.test/']);
+        $session = Session::factory()
+            ->for(Visitor::factory()->state(['session_count' => 1]))
+            ->create(['started_at' => now()->subMinutes(5), 'pageview_count' => 1, 'source' => 'direct', 'device_type' => 'desktop']);
+        Event::factory()->for($session)->create(['occurred_at' => now()->subMinutes(5), 'url' => 'https://exemple.test/']);
 
         return $session;
     }
 
     private function anAd(): Ad
     {
-        $campaign = Campaign::create(['name' => 'Campagne '.Str::random(4), 'platform' => 'Meta', 'match_conditions' => [['param' => 'src', 'value' => 'meta']]]);
-
-        return Ad::create(['campaign_id' => $campaign->id, 'name' => 'Annonce', 'match_conditions' => [['param' => 'creative', 'value' => 'v']]]);
+        return Ad::factory()
+            ->for(Campaign::factory()->matching('src', 'meta')->state(['platform' => 'Meta']))
+            ->matching('creative', 'v')
+            ->create(['name' => 'Annonce']);
     }
 
     /**

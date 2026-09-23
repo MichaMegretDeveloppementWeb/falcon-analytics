@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Tests\Feature;
 
 use Carbon\CarbonImmutable;
-use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Livewire\Admin\AdForm;
 use Falcon\Analytics\Livewire\Admin\AdsPage;
 use Falcon\Analytics\Livewire\Admin\CampaignForm;
@@ -22,7 +21,6 @@ use Falcon\Analytics\Tests\Fixtures\Models\TestAdmin;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event as Events;
-use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\Livewire;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -77,21 +75,15 @@ final class TheListsDrawOnlyWhatChangesTest extends TestCase
      */
     private function aSession(int $rank): Session
     {
-        $visitor = Visitor::create([
-            'uuid' => (string) Str::uuid(),
+        $visitor = Visitor::factory()->create([
             'first_seen_at' => now()->subHour(),
-            'last_seen_at' => now(),
             'session_count' => 1,
             'subject_type' => $rank % 2 === 0 ? 'client' : null,
             'subject_id' => $rank % 2 === 0 ? $rank : null,
         ]);
 
-        $session = Session::create([
-            'visitor_id' => $visitor->id,
-            'browser_key' => $visitor->uuid,
+        $session = Session::factory()->for($visitor)->create([
             'started_at' => now()->subMinutes(2),
-            'last_activity_at' => now(),
-            'is_bot' => false,
             'pageview_count' => 2,
             'source' => ['google', 'social', 'direct'][$rank % 3],
             'landing_url' => 'https://exemple.test/page-'.$rank,
@@ -100,13 +92,7 @@ final class TheListsDrawOnlyWhatChangesTest extends TestCase
             'device_type' => 'desktop',
         ]);
 
-        Event::create([
-            'session_id' => $session->id,
-            'visitor_id' => $visitor->id,
-            'occurred_at' => now()->subMinute(),
-            'type' => EventType::Pageview,
-            'url' => 'https://exemple.test/page-'.$rank,
-        ]);
+        Event::factory()->for($session)->create(['occurred_at' => now()->subMinute(), 'url' => 'https://exemple.test/page-'.$rank]);
 
         return $session;
     }
@@ -140,16 +126,12 @@ final class TheListsDrawOnlyWhatChangesTest extends TestCase
     public function test_a_page_of_campaigns_and_ads_draws_the_views_one_draws(): void
     {
         $aCampaign = static function (int $rank): void {
-            $campaign = Campaign::create([
+            $campaign = Campaign::factory()->create([
                 'name' => 'Campagne '.$rank,
                 'match_conditions' => [['param' => 'src', 'value' => 'meta-'.$rank], ['param' => 'utm_campaign', 'value' => 'ete']],
             ]);
 
-            Ad::create([
-                'campaign_id' => $campaign->id,
-                'name' => 'Annonce '.$rank,
-                'match_conditions' => [['param' => 'creative', 'value' => 'visuel-'.$rank]],
-            ]);
+            Ad::factory()->for($campaign)->matching('creative', 'visuel-'.$rank)->create(['name' => 'Annonce '.$rank]);
         };
 
         $aCampaign(0);
@@ -168,8 +150,8 @@ final class TheListsDrawOnlyWhatChangesTest extends TestCase
     /** A form is a component of its own · opening it draws the form, and nothing of the screen it sits on. */
     public function test_opening_a_form_draws_nothing_of_its_screen(): void
     {
-        $campaign = Campaign::create(['name' => 'Été', 'match_conditions' => [['param' => 'src', 'value' => 'meta']]]);
-        $ad = Ad::create(['campaign_id' => $campaign->id, 'name' => 'Cabriolet', 'match_conditions' => [['param' => 'creative', 'value' => 'cabrio']]]);
+        $campaign = Campaign::factory()->matching('src', 'meta')->create(['name' => 'Été']);
+        $ad = Ad::factory()->for($campaign)->matching('creative', 'cabrio')->create(['name' => 'Cabriolet']);
         $screens = '/^analytics::livewire\.dashboard\.marketing-(campaigns|campaign-detail|ad-detail)$/';
 
         $this->assertNotSame([], preg_grep($screens, array_keys($this->viewsOf(CampaignsPage::class))), 'The pattern names none of the screen views: the sweep below would pass on anything.');

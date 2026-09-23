@@ -12,7 +12,6 @@ use Falcon\Analytics\Models\DailyArchive;
 use Falcon\Analytics\Models\DailyCount;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
-use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Repositories\Dashboard\OverviewReadRepository;
 use Falcon\Analytics\Services\DailyCountArchiver;
 use Falcon\Analytics\Services\Dashboard\MarketingReportBuilder;
@@ -20,7 +19,6 @@ use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use RuntimeException;
 
 /**
@@ -57,16 +55,7 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
 
     private function newSession(bool $isBot = false, ?string $subjectType = null): Session
     {
-        $visitor = Visitor::create([
-            'uuid' => (string) Str::uuid(),
-            'first_seen_at' => now(),
-            'last_seen_at' => now(),
-        ]);
-
-        return Session::create([
-            'visitor_id' => $visitor->id,
-            'started_at' => now(),
-            'last_activity_at' => now(),
+        return Session::factory()->create([
             'is_bot' => $isBot,
             'subject_type' => $subjectType,
             'subject_id' => $subjectType !== null ? 1 : null,
@@ -75,26 +64,12 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
 
     private function pageview(Session $session, string $url, CarbonImmutable $at): void
     {
-        Event::create([
-            'session_id' => $session->id,
-            'visitor_id' => $session->visitor_id,
-            'type' => EventType::Pageview,
-            'url' => $url,
-            'occurred_at' => $at,
-        ]);
+        Event::factory()->for($session)->create(['url' => $url, 'occurred_at' => $at]);
     }
 
     private function click(Session $session, ?string $text, ?string $name, ?string $route, CarbonImmutable $at): void
     {
-        Event::create([
-            'session_id' => $session->id,
-            'visitor_id' => $session->visitor_id,
-            'type' => EventType::Click,
-            'target_text' => $text,
-            'name' => $name,
-            'route' => $route,
-            'occurred_at' => $at,
-        ]);
+        Event::factory()->for($session)->click($name, $text)->create(['route' => $route, 'occurred_at' => $at]);
     }
 
     /**
