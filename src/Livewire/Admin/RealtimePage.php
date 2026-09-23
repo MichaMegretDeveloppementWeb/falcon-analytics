@@ -59,7 +59,7 @@ final class RealtimePage extends Component
         $windowMinutes = self::setting('window_minutes', 30);
         $since = $now->subMinutes($windowMinutes);
         $onlineSince = $now->subSeconds(self::setting('online_seconds', 60));
-        $declared = self::declaredEvents($events);
+        $conversionNames = self::conversionNames($events);
 
         $charts = $this->charts($repository, $since, $onlineSince, $now);
         $this->sendToTheCharts($charts);
@@ -67,15 +67,14 @@ final class RealtimePage extends Component
         return [
             'onlineCount' => $repository->onlineCount($onlineSince, null),
             'window' => $repository->windowCounts($since, null),
-            'conversionsCount' => $repository->conversionsCount($since, null, $declared['conversions']),
+            'conversionsCount' => $repository->conversionsCount($since, null, $conversionNames),
             ...$charts,
             'countries' => $this->countriesFrom($charts['map']['points']),
             ...$rows->build(
                 $this->recentSessions($repository, $now),
                 $repository->activityFeed($since, null, self::setting('feed_limit', 25)),
                 $onlineSince,
-                $declared['conversions'],
-                $declared['labels'],
+                $conversionNames,
             ),
             'topPages' => $repository->topPages($since, null),
             'windowMinutes' => $windowMinutes,
@@ -133,23 +132,21 @@ final class RealtimePage extends Component
     }
 
     /**
-     * The declared events' labels by name, and the names that count as a conversion.
+     * The names of the declared events that count as a conversion.
      *
-     * @return array{conversions: list<string>, labels: array<string, string>}
+     * @return list<string>
      */
-    private static function declaredEvents(EventRegistry $events): array
+    private static function conversionNames(EventRegistry $events): array
     {
-        $declared = ['conversions' => [], 'labels' => []];
+        $names = [];
 
         foreach ($events->all() as $event) {
-            $declared['labels'][$event->name] = $event->label;
-
             if ($event->isConversion()) {
-                $declared['conversions'][] = $event->name;
+                $names[] = $event->name;
             }
         }
 
-        return $declared;
+        return $names;
     }
 
     /** A realtime setting, one at the least. */

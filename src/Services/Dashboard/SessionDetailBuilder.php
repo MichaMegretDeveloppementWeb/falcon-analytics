@@ -45,6 +45,7 @@ final readonly class SessionDetailBuilder
         private SessionJourneyBuilder $journeys,
         private SessionSubjectAttributor $attributor,
         private SubjectResolver $subjects,
+        private EventNames $names,
     ) {}
 
     /**
@@ -138,12 +139,12 @@ final readonly class SessionDetailBuilder
             isConversion: $event->type === EventType::Custom,
             route: $event->route,
             url: $event->url,
-            label: self::labelOf($event),
+            label: $this->names->of($event),
             occurredAt: $event->occurred_at,
             duration: DurationLabel::for($step['seconds']),
             barPercent: $isPageview ? max(3, (int) round($step['seconds'] / $longest * 100)) : 0,
             children: array_map(
-                fn (Event $child): JourneyEvent => new JourneyEvent($child->type === EventType::Custom, self::labelOf($child), $child->occurred_at),
+                fn (Event $child): JourneyEvent => new JourneyEvent($child->type === EventType::Custom, $this->names->of($child), $child->occurred_at),
                 $step['children'],
             ),
         );
@@ -241,13 +242,6 @@ final readonly class SessionDetailBuilder
             ->count();
 
         return $session->pageview_count + $session->click_count > $kept;
-    }
-
-    private static function labelOf(Event $event): string
-    {
-        return self::filled($event->target_text)
-            ?? self::filled($event->name)
-            ?? ($event->type === EventType::Click ? __('Clic') : __('Évènement'));
     }
 
     /** A name and its version on one line · null when both are missing. */

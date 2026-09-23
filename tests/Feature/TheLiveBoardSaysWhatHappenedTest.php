@@ -8,6 +8,7 @@ use Carbon\CarbonImmutable;
 use Falcon\Analytics\DTOs\Dashboard\Realtime\FeedEntry;
 use Falcon\Analytics\DTOs\Dashboard\Realtime\RecentVisitorRow;
 use Falcon\Analytics\Enums\EventType;
+use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
@@ -29,6 +30,8 @@ final class TheLiveBoardSaysWhatHappenedTest extends TestCase
     {
         parent::setUp();
 
+        config(['analytics.events_path' => __DIR__.'/../Fixtures/analytics-events.php']);
+        $this->app->forgetInstance(EventRegistry::class);
         $this->travelTo(CarbonImmutable::parse('2026-07-10 12:00:00'));
     }
 
@@ -36,16 +39,18 @@ final class TheLiveBoardSaysWhatHappenedTest extends TestCase
     {
         $session = $this->aSession();
         $page = $this->anEvent($session, EventType::Pageview, ['url' => 'https://exemple.test/tarifs']);
-        $declared = $this->anEvent($session, EventType::Custom, ['name' => 'cta.call']);
+        $declared = $this->anEvent($session, EventType::Click, ['name' => 'sample.other', 'target_text' => 'Appeler']);
         $undeclared = $this->anEvent($session, EventType::Custom, ['name' => 'newsletter']);
+        $undeclaredWithText = $this->anEvent($session, EventType::Click, ['name' => 'cta.missing', 'target_text' => 'Voir plus']);
         $clicked = $this->anEvent($session, EventType::Click, ['target_text' => 'Contact']);
         $bare = $this->anEvent($session, EventType::Click);
 
         $feed = $this->feed();
 
         $this->assertSame([__('Page vue'), 'document-text', 'https://exemple.test/tarifs'], $this->said($feed[$page->id]));
-        $this->assertSame(['Appel', 'bolt', null], $this->said($feed[$declared->id]));
+        $this->assertSame(['Sample other', 'cursor-arrow-rays', null], $this->said($feed[$declared->id]));
         $this->assertSame(['newsletter', 'bolt', null], $this->said($feed[$undeclared->id]));
+        $this->assertSame(['Voir plus', 'cursor-arrow-rays', null], $this->said($feed[$undeclaredWithText->id]));
         $this->assertSame(['Contact', 'cursor-arrow-rays', null], $this->said($feed[$clicked->id]));
         $this->assertSame([__('Clic'), 'cursor-arrow-rays', null], $this->said($feed[$bare->id]));
     }
@@ -53,13 +58,13 @@ final class TheLiveBoardSaysWhatHappenedTest extends TestCase
     public function test_a_conversion_is_marked_and_carries_the_check(): void
     {
         $session = $this->aSession();
-        $lead = $this->anEvent($session, EventType::Custom, ['name' => 'lead.sent']);
-        $other = $this->anEvent($session, EventType::Custom, ['name' => 'cta.call']);
+        $lead = $this->anEvent($session, EventType::Custom, ['name' => 'sample.action']);
+        $other = $this->anEvent($session, EventType::Custom, ['name' => 'sample.other']);
 
         $feed = $this->feed();
 
         $this->assertTrue($feed[$lead->id]->isConversion);
-        $this->assertSame(['Demande envoyée', 'check-circle', null], $this->said($feed[$lead->id]));
+        $this->assertSame(['Sample action', 'check-circle', null], $this->said($feed[$lead->id]));
         $this->assertFalse($feed[$other->id]->isConversion);
     }
 
@@ -114,8 +119,7 @@ final class TheLiveBoardSaysWhatHappenedTest extends TestCase
             Session::query()->with('visitor')->orderByDesc('last_activity_at')->get(),
             Event::query()->with('session.visitor')->orderByDesc('occurred_at')->orderByDesc('id')->get(),
             CarbonImmutable::now()->subSeconds(60),
-            ['lead.sent'],
-            ['lead.sent' => 'Demande envoyée', 'cta.call' => 'Appel'],
+            ['sample.action'],
         );
     }
 
