@@ -150,6 +150,7 @@ final class DemoTrafficSeeder extends Seeder
     {
         $seen = [];
         $lastLeft = [];
+        $browsers = [];
         $returnable = 0;
 
         foreach ($moments as $moment) {
@@ -165,8 +166,10 @@ final class DemoTrafficSeeder extends Seeder
             $gaps = array_map(static fn (): int => $random->getInt(15, 120), $steps);
             $start = $moment->min($now->subSeconds(array_sum($gaps) + 1));
 
+            $browsers[$uuid] ??= $this->snapshot($random);
+
             CarbonImmutable::setTestNow($start);
-            $this->ingest->execute($uuid, null, $this->snapshot($random), new IncomingBatch($this->timed($steps, $gaps, $start), $this->referrer($random, $channel)));
+            $this->ingest->execute($uuid, null, $browsers[$uuid], new IncomingBatch($this->timed($steps, $gaps, $start), $this->referrer($random, $channel)));
 
             $seen[] = [$uuid, $start];
             $lastLeft[$uuid] = $start->addSeconds(array_sum($gaps));
@@ -185,13 +188,13 @@ final class DemoTrafficSeeder extends Seeder
         $landing = $pages[$random->getInt(0, count($pages) - 1)];
         $steps = [$this->pageview($landing['route'], $landing['url'].$this->campaignLink($random, $channel))];
 
+        if ($random->getInt(1, 10) <= 4) {
+            $steps[] = ['type' => EventType::Click, 'name' => null, 'route' => $landing['route'], 'url' => $landing['url'], 'text' => self::TEXTS[$random->getInt(0, count(self::TEXTS) - 1)]];
+        }
+
         for ($more = $random->getInt(0, 3); $more > 0; $more--) {
             $page = $pages[$random->getInt(0, count($pages) - 1)];
             $steps[] = $this->pageview($page['route'], $page['url']);
-        }
-
-        if ($random->getInt(1, 10) <= 4) {
-            $steps[] = ['type' => EventType::Click, 'name' => null, 'route' => $landing['route'], 'url' => $landing['url'], 'text' => self::TEXTS[$random->getInt(0, count(self::TEXTS) - 1)]];
         }
 
         foreach ($this->events->all() as $event) {
@@ -381,7 +384,8 @@ final class DemoTrafficSeeder extends Seeder
 
     /**
      * A place for every new visit the host's geolocation could not place, one
-     * statement per place.
+     * statement per place · by visitor, so one who comes back comes from the
+     * same town.
      */
     private function placeWhatHasNoPlace(int $before): void
     {
@@ -389,7 +393,7 @@ final class DemoTrafficSeeder extends Seeder
             Session::query()
                 ->where('id', '>', $before)
                 ->whereNull('country')
-                ->whereRaw('id % ? = ?', [count(self::PLACES), $rank])
+                ->whereRaw('visitor_id % ? = ?', [count(self::PLACES), $rank])
                 ->update(['country' => $country, 'region' => $region, 'city' => $city, 'latitude' => $latitude, 'longitude' => $longitude]);
         }
     }

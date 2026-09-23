@@ -115,6 +115,40 @@ final class SeedCommandTest extends TestCase
         $this->assertNotSame([], $conversions['campaigns'], 'a campaign credited with a conversion');
     }
 
+    /** A visitor is known by their browser's cookie · coming back, they bring that browser, from the same town. */
+    public function test_a_visitor_who_comes_back_keeps_their_browser_and_their_town(): void
+    {
+        $this->artisan('analytics:seed', ['--visits' => 80, '--days' => 10])->assertSuccessful();
+
+        $drifting = Session::query()
+            ->select('visitor_id')
+            ->groupBy('visitor_id')
+            ->havingRaw('COUNT(DISTINCT device_type) > 1 OR COUNT(DISTINCT browser) > 1 OR COUNT(DISTINCT city) > 1')
+            ->get();
+
+        $this->assertGreaterThan(0, Visitor::query()->where('session_count', '>', 1)->count(), 'visitors who come back');
+        $this->assertSame([], $drifting->pluck('visitor_id')->all());
+    }
+
+    public function test_a_click_lands_on_the_page_the_visitor_is_on(): void
+    {
+        $this->artisan('analytics:seed', ['--visits' => 80, '--days' => 10])->assertSuccessful();
+
+        $onScreen = [];
+        $elsewhere = 0;
+
+        foreach (Event::query()->orderBy('session_id')->orderBy('occurred_at')->orderBy('id')->get(['session_id', 'type', 'route']) as $event) {
+            if ($event->type === EventType::Pageview) {
+                $onScreen[$event->session_id] = $event->route;
+            } elseif ($event->type === EventType::Click && $event->route !== ($onScreen[$event->session_id] ?? null)) {
+                $elsewhere++;
+            }
+        }
+
+        $this->assertTrue(Event::query()->where('type', EventType::Click)->exists(), 'clicks');
+        $this->assertSame(0, $elsewhere);
+    }
+
     public function test_it_refuses_more_days_than_the_retention_keeps(): void
     {
         config(['analytics.retention_days' => 3]);
