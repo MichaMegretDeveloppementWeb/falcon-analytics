@@ -7,6 +7,7 @@ namespace Falcon\Analytics\Http\Middleware;
 use Closure;
 use Falcon\Analytics\Actions\ArchiveClosedDaysAction;
 use Falcon\Analytics\Services\Maintenance;
+use Falcon\Analytics\Support\AfterTheResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -53,6 +54,10 @@ final class CatchesUpTheMaintenance
 
     public function handle(Request $request, Closure $next): Response
     {
+        if ($this->catchesUp()) {
+            AfterTheResponse::keepRunning();
+        }
+
         return $next($request);
     }
 
@@ -65,7 +70,7 @@ final class CatchesUpTheMaintenance
      */
     public function terminate(Request $request, Response $response): void
     {
-        if (config('analytics.internal.maintenance.on_screen_load') !== true) {
+        if (! $this->catchesUp()) {
             return;
         }
 
@@ -75,6 +80,11 @@ final class CatchesUpTheMaintenance
             Log::channel(config('analytics.log_channel'))
                 ->warning('Analytics maintenance on screen load failed.', ['exception' => $e]);
         }
+    }
+
+    private function catchesUp(): bool
+    {
+        return config('analytics.internal.maintenance.on_screen_load') === true;
     }
 
     private function catchUp(): void
