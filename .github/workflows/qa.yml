@@ -90,11 +90,18 @@ jobs:
       # protocol and their startup output never reaches here. Run
       # `vendor/bin/phpunit` on that resolution to see the two lines, so a clean
       # log is never taken for a clean floor.
+      #
+      # **The `lowest` line passes `--no-blocking`.** Composer otherwise skips
+      # every version a security advisory names and installs the first one
+      # without: the announced floor would be tested by nobody, and a call the
+      # floor does not have would pass unseen. The floor is what the code
+      # needs · keeping a host's framework patched is the host's business, and
+      # its own Composer already refuses a version an advisory names.
       matrix:
         include:
           - php: '8.5'
             resolution: lowest
-            flags: '--prefer-lowest --prefer-stable'
+            flags: '--prefer-lowest --prefer-stable --no-blocking'
           - php: '8.5'
             resolution: highest
             flags: ''
@@ -170,6 +177,14 @@ jobs:
       # shows the repository order held.
       - name: Which kit was resolved
         run: composer show falcon/ui-kit | grep -E '^(name|versions|source|dist)'
+
+      # What the lowest line installed is the floor the manifest announces,
+      # requirement by requirement · a floor an advisory or a dependency lifted
+      # is refused here, by name. The kit is left out: it comes from the
+      # directory checked out beside.
+      - name: The floor announced is the floor installed
+        if: matrix.resolution == 'lowest'
+        run: php scripts/check-floor.php
 
       - name: The qa chain
         run: composer qa
