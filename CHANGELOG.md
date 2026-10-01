@@ -90,6 +90,9 @@ architecture qui n'existe plus.
   enregistre comme le bouton. Son bouton reste désactivé pendant l'appel, donc un double clic
   n'enregistre qu'une fois. Les deux listes d'objectifs d'une publicité se ferment à l'échappement de
   même, et disent si elles sont ouvertes. **Rien à faire pour cela** ;
+- **des filtres qui disent ce qu'ils filtrent** · chaque liste de filtre porte
+  un nom qu'un lecteur d'écran lit avant sa valeur · « Période », « Visiteurs »,
+  « Appareil », « Source ». Rien ne change à l'écran ;
 - **une protection rejouée à chaque clic** · le middleware que vous nommez pour
   les écrans, qu'il soit une classe, un alias ou un groupe, protège chaque
   action d'un écran et pas seulement son ouverture. La pile de session n'est

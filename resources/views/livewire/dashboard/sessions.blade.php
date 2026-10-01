@@ -28,10 +28,10 @@
         </div>
         <div class="an:flex an:items-center an:gap-2">
             @if (count($deviceOptions) > 1)
-                <div class="an:w-40"><x-ui::select wire:model.live="device" :options="$deviceOptions" /></div>
+                <div class="an:w-40"><x-ui::select wire:model.live="device" :options="$deviceOptions" :aria-label="__('Appareil')" /></div>
             @endif
             @if (count($sourceOptions) > 1)
-                <div class="an:w-40"><x-ui::select wire:model.live="source" :options="$sourceOptions" /></div>
+                <div class="an:w-40"><x-ui::select wire:model.live="source" :options="$sourceOptions" :aria-label="__('Source')" /></div>
             @endif
         </div>
     </div>

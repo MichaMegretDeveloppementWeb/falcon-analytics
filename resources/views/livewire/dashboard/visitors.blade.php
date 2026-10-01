@@ -17,7 +17,7 @@
     <x-ui::page-header :title="__('Visiteurs')" :description="$visitorsCount">
         @if (count($subjectOptions) > 1)
             <div class="an:w-40">
-                <x-ui::select wire:model.live="subject" :options="$subjectOptions" />
+                <x-ui::select wire:model.live="subject" :options="$subjectOptions" :aria-label="__('Visiteurs')" />
             </div>
         @endif
     </x-ui::page-header>
@@ -35,7 +35,7 @@
                     'to' => $range->to->isoFormat('D MMM YYYY'),
                 ])" />
             <div class="an:w-44">
-                <x-ui::select wire:model.live="period" :options="$periodOptions" />
+                <x-ui::select wire:model.live="period" :options="$periodOptions" :aria-label="__('Période')" />
             </div>
         </div>
 
