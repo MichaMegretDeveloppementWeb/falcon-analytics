@@ -14,6 +14,7 @@ use Falcon\Analytics\Models\Ad;
 use Falcon\Analytics\Services\Dashboard\ObjectiveLabels;
 use Falcon\Analytics\Support\UrlConditions;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Locked;
@@ -73,12 +74,16 @@ final class AdForm extends Component
 
         try {
             $ad = Ad::with('objectives')->where('campaign_id', $this->campaignId)->findOrFail($adId);
+        } catch (ModelNotFoundException) {
+            $this->dispatch('ui-toast', type: 'danger', title: __('Cette publicité est introuvable. Actualisez la page.'));
+
+            return false;
         } catch (Throwable $e) {
             Log::channel(config('analytics.log_channel'))->error('Ad.edit_load_failed', [
                 'ad_id' => $adId,
                 'exception' => $e,
             ]);
-            $this->dispatch('ui-toast', type: 'danger', title: __('Cette publicité est introuvable. Actualisez la page.'));
+            $this->dispatch('ui-toast', type: 'danger', title: __('Impossible de charger cette publicité. Réessayez.'));
 
             return false;
         }

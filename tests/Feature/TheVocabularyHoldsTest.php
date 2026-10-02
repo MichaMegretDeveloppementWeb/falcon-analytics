@@ -26,6 +26,7 @@ final class TheVocabularyHoldsTest extends TestCase
         '/\.\.\./u' => '« … »',
         '/—/u' => '« · », « : » ou une virgule',
         '/\bpts\b/u' => 'NumberLabel::points()',
+        '/Données indisponibles/u' => '« Impossible de charger … », et ce qui manque',
     ];
 
     public function test_no_visible_string_uses_a_retired_word(): void

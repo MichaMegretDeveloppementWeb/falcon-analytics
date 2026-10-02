@@ -47,4 +47,9 @@ final class OverviewAudience extends Component
             ];
         }, fn (array $data): View => view('analytics::livewire.dashboard.widgets.overview-audience', $data));
     }
+
+    protected function unreadableTitle(): string
+    {
+        return __('Impossible de charger les visiteurs nouveaux et récurrents');
+    }
 }

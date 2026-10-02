@@ -400,7 +400,7 @@ final class SearchConsoleConnectionTest extends TestCase
 
         // The lookup fails at mount as well as in the guarded render.
         $this->withoutTable('falcon_analytics_search_console', function (): void {
-            Livewire::test(IntegrationsPage::class)->assertSee(__('Données indisponibles'));
+            Livewire::test(IntegrationsPage::class)->assertSee(__('Impossible de charger les intégrations'));
         });
     }
 

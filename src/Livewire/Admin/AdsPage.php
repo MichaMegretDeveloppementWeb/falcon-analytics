@@ -67,4 +67,9 @@ final class AdsPage extends Component
     {
         return Ability::Ads;
     }
+
+    protected function unreadableTitle(): string
+    {
+        return __('Impossible de charger les publicités');
+    }
 }

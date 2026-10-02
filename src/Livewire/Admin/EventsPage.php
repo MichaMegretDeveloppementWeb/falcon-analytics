@@ -35,4 +35,9 @@ final class EventsPage extends DashboardComponent
     {
         return Ability::Events;
     }
+
+    protected function unreadableTitle(): string
+    {
+        return __('Impossible de charger les événements');
+    }
 }

@@ -36,9 +36,12 @@ trait RecoversFromReadFailure
                 'exception' => $e,
             ]);
 
-            return view('analytics::livewire.dashboard.partials.read-error');
+            return view('analytics::livewire.dashboard.partials.read-error', ['title' => $this->unreadableTitle()]);
         }
 
         return $view($assembled);
     }
+
+    /** What the screen could not read, as its error says it: « Impossible de charger … ». */
+    abstract protected function unreadableTitle(): string;
 }

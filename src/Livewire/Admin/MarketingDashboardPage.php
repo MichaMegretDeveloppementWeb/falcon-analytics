@@ -34,4 +34,9 @@ final class MarketingDashboardPage extends DashboardComponent
     {
         return Ability::MarketingDashboard;
     }
+
+    protected function unreadableTitle(): string
+    {
+        return __('Impossible de charger la vue d\'ensemble du marketing');
+    }
 }

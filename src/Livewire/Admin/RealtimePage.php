@@ -236,4 +236,9 @@ final class RealtimePage extends Component
     {
         return Ability::Realtime;
     }
+
+    protected function unreadableTitle(): string
+    {
+        return __('Impossible de charger le temps réel');
+    }
 }

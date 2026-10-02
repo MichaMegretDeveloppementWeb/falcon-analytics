@@ -159,7 +159,7 @@ final class DashboardPagesTest extends TestCase
 
         // The shell still renders, so only the guarded list degrades.
         $this->withoutTable('falcon_analytics_sessions', function (): void {
-            Livewire::test(SessionsPage::class)->assertSee(__('Données indisponibles'));
+            Livewire::test(SessionsPage::class)->assertSee(__('Impossible de charger les sessions'));
         });
     }
 
@@ -169,7 +169,7 @@ final class DashboardPagesTest extends TestCase
 
         // The heavy reads live in the deferred widgets, so each carries its own guard.
         $this->withoutTable('falcon_analytics_sessions', function (): void {
-            Livewire::test(OverviewHeadline::class, ['period' => 30])->call('$refresh')->assertSee(__('Données indisponibles'));
+            Livewire::test(OverviewHeadline::class, ['period' => 30])->call('$refresh')->assertSee(__('Impossible de charger les chiffres de la période'));
         });
     }
 

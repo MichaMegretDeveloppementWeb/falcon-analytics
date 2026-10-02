@@ -102,4 +102,9 @@ final class VisitorDetailPage extends Component
     {
         return $this->read ??= Visitor::query()->findOrFail($this->visitorId);
     }
+
+    protected function unreadableTitle(): string
+    {
+        return __('Impossible de charger ce visiteur');
+    }
 }

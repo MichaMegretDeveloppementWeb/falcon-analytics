@@ -116,4 +116,9 @@ final class SessionsPage extends DashboardComponent
     {
         return Ability::Sessions;
     }
+
+    protected function unreadableTitle(): string
+    {
+        return __('Impossible de charger les sessions');
+    }
 }

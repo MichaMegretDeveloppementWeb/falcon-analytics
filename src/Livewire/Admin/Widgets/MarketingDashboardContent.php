@@ -153,4 +153,9 @@ final class MarketingDashboardContent extends Component
             ->values()
             ->all();
     }
+
+    protected function unreadableTitle(): string
+    {
+        return __('Impossible de charger la vue d\'ensemble du marketing');
+    }
 }

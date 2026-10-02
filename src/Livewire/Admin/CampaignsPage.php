@@ -134,4 +134,9 @@ final class CampaignsPage extends Component
 
         return $campaign;
     }
+
+    protected function unreadableTitle(): string
+    {
+        return __('Impossible de charger les campagnes');
+    }
 }

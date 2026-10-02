@@ -90,6 +90,14 @@ architecture qui n'existe plus.
   enregistre comme le bouton. Son bouton reste désactivé pendant l'appel, donc un double clic
   n'enregistre qu'une fois. Les deux listes d'objectifs d'une publicité se ferment à l'échappement de
   même, et disent si elles sont ouvertes. **Rien à faire pour cela** ;
+- **un écran qui n'a pas pu lire dit ce qui manque** · une page ou un bloc dont
+  la lecture échoue montre, à sa place, « Impossible de charger les sessions »,
+  « … les sources de trafic », une phrase qui dit quoi faire, et « Réessayer »,
+  qui relit la page ou le bloc seul, sans recharger · le dessin est celui du
+  kit, `<x-ui::load-failure>`. Une campagne ou une publicité qui n'existe plus
+  reste « introuvable » à l'ouverture · celle que la base n'a pas rendue dit
+  « Impossible de charger cette campagne. Réessayez. ». **Rien à faire pour
+  cela** ;
 - **des filtres qui disent ce qu'ils filtrent** · chaque liste de filtre porte
   un nom qu'un lecteur d'écran lit avant sa valeur · « Période », « Visiteurs »,
   « Appareil », « Source ». Rien ne change à l'écran ;

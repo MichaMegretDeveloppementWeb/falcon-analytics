@@ -47,4 +47,9 @@ final class OverviewContent extends Component
             ];
         }, fn (array $data): View => view('analytics::livewire.dashboard.widgets.overview-content', $data));
     }
+
+    protected function unreadableTitle(): string
+    {
+        return __('Impossible de charger les pages et les clics');
+    }
 }

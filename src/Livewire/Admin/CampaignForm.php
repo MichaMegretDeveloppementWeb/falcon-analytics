@@ -9,6 +9,7 @@ use Falcon\Analytics\Enums\Authorization\Ability;
 use Falcon\Analytics\Models\Campaign;
 use Falcon\Analytics\Support\UrlConditions;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
@@ -56,12 +57,16 @@ final class CampaignForm extends Component
 
         try {
             $campaign = Campaign::query()->findOrFail($campaignId);
+        } catch (ModelNotFoundException) {
+            $this->dispatch('ui-toast', type: 'danger', title: __('Cette campagne est introuvable. Actualisez la page.'));
+
+            return false;
         } catch (Throwable $e) {
             Log::channel(config('analytics.log_channel'))->error('Campaign.edit_load_failed', [
                 'campaign_id' => $campaignId,
                 'exception' => $e,
             ]);
-            $this->dispatch('ui-toast', type: 'danger', title: __('Cette campagne est introuvable. Actualisez la page.'));
+            $this->dispatch('ui-toast', type: 'danger', title: __('Impossible de charger cette campagne. Réessayez.'));
 
             return false;
         }

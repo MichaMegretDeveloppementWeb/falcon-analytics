@@ -50,4 +50,9 @@ final class OverviewEvents extends Component
             ];
         }, fn (array $data): View => view('analytics::livewire.dashboard.widgets.overview-events', $data));
     }
+
+    protected function unreadableTitle(): string
+    {
+        return __('Impossible de charger les événements et les conversions');
+    }
 }
