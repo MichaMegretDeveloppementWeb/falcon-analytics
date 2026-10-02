@@ -49,4 +49,9 @@ final class VisitorsHeadline extends Component
             ];
         }, fn (array $data): View => view('analytics::livewire.dashboard.widgets.visitors-headline', $data));
     }
+
+    protected function unreadableTitle(): string
+    {
+        return __('Impossible de charger les chiffres des visiteurs');
+    }
 }

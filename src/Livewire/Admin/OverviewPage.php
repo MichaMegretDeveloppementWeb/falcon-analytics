@@ -35,4 +35,9 @@ final class OverviewPage extends DashboardComponent
     {
         return Ability::Overview;
     }
+
+    protected function unreadableTitle(): string
+    {
+        return __('Impossible de charger la vue d\'ensemble');
+    }
 }

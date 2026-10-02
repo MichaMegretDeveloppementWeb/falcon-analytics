@@ -71,4 +71,9 @@ final class EventsContent extends Component
             ];
         }, fn (array $data): View => view('analytics::livewire.dashboard.widgets.events-content', $data));
     }
+
+    protected function unreadableTitle(): string
+    {
+        return __('Impossible de charger les événements');
+    }
 }

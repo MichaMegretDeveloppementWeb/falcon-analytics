@@ -34,4 +34,9 @@ final class FunnelsPage extends DashboardComponent
     {
         return Ability::Funnels;
     }
+
+    protected function unreadableTitle(): string
+    {
+        return __('Impossible de charger les tunnels');
+    }
 }

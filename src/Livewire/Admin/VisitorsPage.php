@@ -59,4 +59,9 @@ final class VisitorsPage extends DashboardComponent
     {
         return Ability::Visitors;
     }
+
+    protected function unreadableTitle(): string
+    {
+        return __('Impossible de charger les visiteurs');
+    }
 }

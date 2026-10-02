@@ -44,4 +44,9 @@ final class OverviewAcquisition extends Component
             ];
         }, fn (array $data): View => view('analytics::livewire.dashboard.widgets.overview-acquisition', $data));
     }
+
+    protected function unreadableTitle(): string
+    {
+        return __('Impossible de charger les sources de trafic');
+    }
 }

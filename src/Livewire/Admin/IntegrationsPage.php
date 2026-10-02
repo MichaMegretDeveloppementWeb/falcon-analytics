@@ -199,4 +199,9 @@ final class IntegrationsPage extends Component
             $this->propertiesFailed = true;
         }
     }
+
+    protected function unreadableTitle(): string
+    {
+        return __('Impossible de charger les intégrations');
+    }
 }

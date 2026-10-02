@@ -67,4 +67,9 @@ final class SessionDetailPage extends Component
     {
         return Ability::Sessions;
     }
+
+    protected function unreadableTitle(): string
+    {
+        return __('Impossible de charger cette session');
+    }
 }

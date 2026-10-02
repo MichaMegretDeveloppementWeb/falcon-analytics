@@ -135,6 +135,8 @@ le vôtre · celui-ci ne décrit que ce que le paquet affiche.
 | couper Search Console | **déconnecter** | annuler la connexion |
 | un classement | « les plus vues », « principaux » | Top |
 | ce que rapportent les conversions ou un tunnel | **score**, compté en **points** · **1 pt**, **12 pts** | montant, valeur · 1 pts |
+| un écran ou un bloc qui n'a pas pu lire ses données | **Impossible de charger** suivi de ce qui manque · « … les sessions », « … les sources de trafic », « … cette campagne » · puis « Réessayez dans un instant, et si cela continue, prévenez la personne qui s’occupe de votre site. » et le bouton **Réessayer** | Données indisponibles |
+| une campagne ou une publicité qui n'existe plus, à l'ouverture | « Cette campagne est introuvable. Actualisez la page. » · et si la base ne l'a pas rendue · « Impossible de charger cette campagne. Réessayez. » | introuvable, quand elle existe |
 
 **Les types d'appareil** · Ordinateur, Mobile, Téléphone simple, Phablette,
 Tablette, Télévision, Écran connecté, Appareil photo, Enceinte connectée,

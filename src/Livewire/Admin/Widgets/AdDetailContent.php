@@ -75,4 +75,9 @@ final class AdDetailContent extends Component
             ];
         }, fn (array $data): View => view('analytics::livewire.dashboard.widgets.ad-detail-content', $data));
     }
+
+    protected function unreadableTitle(): string
+    {
+        return __('Impossible de charger les résultats de cette publicité');
+    }
 }

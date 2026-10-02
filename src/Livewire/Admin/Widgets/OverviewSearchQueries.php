@@ -57,4 +57,9 @@ final class OverviewSearchQueries extends Component
             ];
         }, fn (array $data): View => view('analytics::livewire.dashboard.widgets.overview-search-queries', $data));
     }
+
+    protected function unreadableTitle(): string
+    {
+        return __('Impossible de charger les recherches Google');
+    }
 }

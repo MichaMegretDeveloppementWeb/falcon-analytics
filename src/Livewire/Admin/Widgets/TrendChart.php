@@ -57,4 +57,9 @@ final class TrendChart extends Component
             ];
         }, fn (array $data): View => view('analytics::livewire.dashboard.widgets.trend-chart', $data));
     }
+
+    protected function unreadableTitle(): string
+    {
+        return __('Impossible de charger la courbe du trafic');
+    }
 }

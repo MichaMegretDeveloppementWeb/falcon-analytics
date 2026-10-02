@@ -66,4 +66,9 @@ final class AdDetailPage extends DashboardComponent
     {
         return Ability::Ads;
     }
+
+    protected function unreadableTitle(): string
+    {
+        return __('Impossible de charger cette publicité');
+    }
 }

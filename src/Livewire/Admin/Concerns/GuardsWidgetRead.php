@@ -34,9 +34,12 @@ trait GuardsWidgetRead
                 'exception' => $e,
             ]);
 
-            return view('analytics::livewire.dashboard.partials.widget-error');
+            return view('analytics::livewire.dashboard.partials.widget-error', ['title' => $this->unreadableTitle()]);
         }
 
         return $view($assembled);
     }
+
+    /** What the block could not read, as its error says it: « Impossible de charger … ». */
+    abstract protected function unreadableTitle(): string;
 }

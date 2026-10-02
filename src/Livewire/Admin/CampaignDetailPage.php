@@ -188,4 +188,9 @@ final class CampaignDetailPage extends DashboardComponent
 
         return $ad;
     }
+
+    protected function unreadableTitle(): string
+    {
+        return __('Impossible de charger cette campagne');
+    }
 }

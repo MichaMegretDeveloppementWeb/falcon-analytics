@@ -78,7 +78,7 @@ final class ScreenMountingTest extends TestCase
             $this->actingAs($admin, 'admin')
                 ->get(route('analytics.admin.sessions'))
                 ->assertOk()
-                ->assertSee(__('Données indisponibles'))
+                ->assertSee(__('Impossible de charger les sessions'))
                 ->assertSee('chrome fourni par le gabarit');
         });
     }

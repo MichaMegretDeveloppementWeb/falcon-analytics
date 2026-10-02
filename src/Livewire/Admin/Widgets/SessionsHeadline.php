@@ -48,4 +48,9 @@ final class SessionsHeadline extends Component
             ];
         }, fn (array $data): View => view('analytics::livewire.dashboard.widgets.sessions-headline', $data));
     }
+
+    protected function unreadableTitle(): string
+    {
+        return __('Impossible de charger les chiffres des sessions');
+    }
 }
