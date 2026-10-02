@@ -38,14 +38,15 @@ final class SessionDetailPage extends Component
     public function mount(Session $session): void
     {
         $this->sessionId = $session->id;
-        $this->read = $session->load(self::VISITOR);
+        $this->read = $session;
     }
 
     public function render(SessionDetailBuilder $details, EventRegistry $eventRegistry): View
     {
         return $this->guardedRender(
             function () use ($details, $eventRegistry): array {
-                $session = $this->read ??= Session::query()->with(self::VISITOR)->findOrFail($this->sessionId);
+                // Its visitor is read here and not at mount, so that a failure is the error state and not a raw error.
+                $session = ($this->read ??= Session::query()->findOrFail($this->sessionId))->load(self::VISITOR);
 
                 $conversionNames = [];
                 foreach ($eventRegistry->all() as $declared) {

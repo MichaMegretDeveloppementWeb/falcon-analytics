@@ -37,7 +37,7 @@ final class AdDetailPage extends DashboardComponent
     public function mount(Ad $ad): void
     {
         $this->adId = $ad->id;
-        $this->read = $ad->load(self::CAMPAIGN);
+        $this->read = $ad;
     }
 
     /** Draws the page again once its form has written · the render reads the ad afresh. */
@@ -48,7 +48,8 @@ final class AdDetailPage extends DashboardComponent
     {
         return $this->guardedRender(
             function (): array {
-                $ad = $this->read ??= Ad::query()->with(self::CAMPAIGN)->findOrFail($this->adId);
+                // Its campaign is read here and not at mount, so that a failure is the error state and not a raw error.
+                $ad = ($this->read ??= Ad::query()->findOrFail($this->adId))->load(self::CAMPAIGN);
 
                 return [
                     'detail' => AdDetail::of($ad),

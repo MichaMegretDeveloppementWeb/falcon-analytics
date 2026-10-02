@@ -35,6 +35,7 @@ use Falcon\Analytics\Livewire\Admin\Widgets\OverviewSearchQueries;
 use Falcon\Analytics\Livewire\Admin\Widgets\SessionsHeadline;
 use Falcon\Analytics\Livewire\Admin\Widgets\TrendChart;
 use Falcon\Analytics\Livewire\Admin\Widgets\VisitorsHeadline;
+use Falcon\Analytics\Models\Ad;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Tests\Fixtures\Models\TestAdmin;
 use Falcon\Analytics\Tests\TestCase;
@@ -195,6 +196,31 @@ final class AnUnreadableScreenSaysWhatTest extends TestCase
         $block->call('$refresh')
             ->assertDontSee('Impossible de charger les chiffres de la période')
             ->assertDontSeeHtml('ui-load-failure');
+    }
+
+    /** What a detail page reads beside its own row is read under the guard, from the first render. */
+    public function test_a_session_whose_visitor_cannot_be_read_says_so(): void
+    {
+        $this->actingAs($this->admin, 'admin');
+        $session = Session::factory()->create(['pageview_count' => 1]);
+
+        $this->withoutTable('falcon_analytics_visitors', function () use ($session): void {
+            Livewire::test(SessionDetailPage::class, ['session' => $session])
+                ->assertSeeHtml('ui-load-failure')
+                ->assertSee('Impossible de charger cette session');
+        });
+    }
+
+    public function test_an_ad_whose_campaign_cannot_be_read_says_so(): void
+    {
+        $this->actingAs($this->admin, 'admin');
+        $ad = Ad::factory()->create();
+
+        $this->withoutTable('falcon_analytics_campaigns', function () use ($ad): void {
+            Livewire::test(AdDetailPage::class, ['ad' => $ad])
+                ->assertSeeHtml('ui-load-failure')
+                ->assertSee('Impossible de charger cette publicité');
+        });
     }
 
     /** @param class-string $class */
