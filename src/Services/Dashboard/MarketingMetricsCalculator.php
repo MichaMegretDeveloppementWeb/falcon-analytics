@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Services\Dashboard;
 
 use Falcon\Analytics\DTOs\Dashboard\Period;
+use Falcon\Analytics\Support\DateLabel;
 use Falcon\Analytics\Support\NumberLabel;
 
 /**
@@ -49,7 +50,7 @@ final class MarketingMetricsCalculator
             $daySessions = $dailySessions[$key] ?? 0;
             $dayConversions = $dailyConversions[$key] ?? 0;
 
-            $labels[] = $day->isoFormat('D MMM');
+            $labels[] = DateLabel::for($day, 'j M');
             $sessions[] = $daySessions;
             $conversions[] = $dayConversions;
             $rates[] = $daySessions > 0 ? round($dayConversions / $daySessions * 100, 1) : 0.0;

@@ -12,6 +12,7 @@ use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Services\SubjectResolver;
+use Falcon\Analytics\Support\DateLabel;
 use Falcon\Analytics\Support\DeviceLabel;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -110,6 +111,6 @@ final readonly class RealtimeRowBuilder
     /** The time, and its day when it is not today. */
     private static function timeOf(CarbonImmutable $moment): string
     {
-        return $moment->isToday() ? $moment->format('H:i') : $moment->translatedFormat('j M, H:i');
+        return $moment->isToday() ? $moment->format('H:i') : DateLabel::for($moment, 'j M, H:i');
     }
 }

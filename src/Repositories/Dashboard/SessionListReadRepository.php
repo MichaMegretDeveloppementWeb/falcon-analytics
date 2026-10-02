@@ -8,6 +8,7 @@ use Falcon\Analytics\DTOs\Dashboard\Period;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Repositories\Concerns\ScopesSessionQueries;
 use Falcon\Analytics\Services\SubjectResolver;
+use Falcon\Analytics\Support\CountryLabel;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Log;
@@ -176,14 +177,13 @@ final readonly class SessionListReadRepository
             return [];
         }
 
-        $locale = app()->getLocale();
         $matches = [];
 
         foreach ($codes as $code) {
             $code = (string) $code;
-            $name = \Locale::getDisplayRegion('-'.$code, $locale);
+            $name = CountryLabel::for($code);
 
-            if (is_string($name) && $name !== '' && mb_stripos($name, $search) !== false) {
+            if ($name !== null && mb_stripos($name, $search) !== false) {
                 $matches[] = $code;
             }
         }

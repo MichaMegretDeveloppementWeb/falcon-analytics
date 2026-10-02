@@ -31,8 +31,8 @@
             <x-ui::section-header
                 :title="__('Activité')"
                 :description="__('du :from au :to', [
-                    'from' => $range->from->isoFormat('D MMM YYYY'),
-                    'to' => $range->to->isoFormat('D MMM YYYY'),
+                    'from' => \Falcon\Analytics\Support\DateLabel::for($range->from, 'j M Y'),
+                    'to' => \Falcon\Analytics\Support\DateLabel::for($range->to, 'j M Y'),
                 ])" />
             <div class="an:w-44">
                 <x-ui::select wire:model.live="period" :options="$periodOptions" :aria-label="__('Période')" />
@@ -80,7 +80,7 @@
                             @endif
                         </x-ui::table.cell>
                         <x-ui::table.cell class="an:tabular-nums">{{ NumberLabel::for($visitor->sessionCount) }}</x-ui::table.cell>
-                        <x-ui::table.cell class="an:whitespace-nowrap">{{ $visitor->firstSeenAt->translatedFormat('d M Y') }}</x-ui::table.cell>
+                        <x-ui::table.cell class="an:whitespace-nowrap">{{ \Falcon\Analytics\Support\DateLabel::for($visitor->firstSeenAt, 'd M Y') }}</x-ui::table.cell>
                         <x-ui::table.cell class="an:whitespace-nowrap an:text-secondary">{{ $visitor->lastSeenAt->diffForHumans() }}</x-ui::table.cell>
                         <x-ui::table.cell>
                             {{-- Bounded: truncates with the full text on hover, so the

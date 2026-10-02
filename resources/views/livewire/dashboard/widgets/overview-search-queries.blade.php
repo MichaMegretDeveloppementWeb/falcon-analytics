@@ -4,7 +4,7 @@
     <div class="an:mb-4 an:flex an:items-end an:justify-between an:gap-4">
         <x-ui::section-header :title="__('Clics par recherches Google')" />
         @if ($connected && $freshestDate !== null)
-            <span class="an:shrink-0 an:whitespace-nowrap an:text-[11px] an:text-muted">{{ __('Dernières données Google : :date', ['date' => $freshestDate->isoFormat('D MMM')]) }}</span>
+            <span class="an:shrink-0 an:whitespace-nowrap an:text-[11px] an:text-muted">{{ __('Dernières données Google : :date', ['date' => \Falcon\Analytics\Support\DateLabel::for($freshestDate, 'j M')]) }}</span>
         @endif
     </div>
 

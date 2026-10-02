@@ -9,6 +9,7 @@ use Falcon\Analytics\DTOs\Dashboard\Period;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Livewire\Admin\Concerns\GuardsWidgetRead;
 use Falcon\Analytics\Repositories\Dashboard\EventReadRepository;
+use Falcon\Analytics\Support\DateLabel;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Lazy;
 use Livewire\Component;
@@ -51,7 +52,7 @@ final class EventsContent extends Component
             $conversionsData = [];
             foreach ($range->eachDay() as $day) {
                 $key = $day->toDateString();
-                $labels[] = $day->isoFormat('D MMM');
+                $labels[] = DateLabel::for($day, 'j M');
                 $eventsData[] = $daily['events'][$key] ?? 0;
                 $conversionsData[] = $daily['conversions'][$key] ?? 0;
             }

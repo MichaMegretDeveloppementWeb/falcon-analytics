@@ -22,7 +22,7 @@
             <span class="an:text-muted">·</span>
             <x-analytics::visitor-id :uuid="$detail->uuid" />
             <span class="an:text-muted">·</span>
-            <span>{{ __('Première session le :date', ['date' => $detail->firstSeenAt->translatedFormat('d M Y')]) }}</span>
+            <span>{{ __('Première session le :date', ['date' => \Falcon\Analytics\Support\DateLabel::for($detail->firstSeenAt, 'd M Y')]) }}</span>
         </div>
     </div>
 
@@ -106,9 +106,9 @@
                             <x-ui::table.cell :first="true" variant="primary" class="an:whitespace-nowrap">
                                 <span class="an:inline-flex an:items-center an:gap-x-2">
                                     @if ($mayOpenSessions)
-                                        <a href="{{ route('analytics.admin.sessions.show', $session->id) }}" class="an-row-link__target an:cursor-pointer an:hover:underline">{{ $session->startedAt->translatedFormat('d M Y, H:i') }}</a>
+                                        <a href="{{ route('analytics.admin.sessions.show', $session->id) }}" class="an-row-link__target an:cursor-pointer an:hover:underline">{{ \Falcon\Analytics\Support\DateLabel::for($session->startedAt, 'd M Y, H:i') }}</a>
                                     @else
-                                        {{ $session->startedAt->translatedFormat('d M Y, H:i') }}
+                                        {{ \Falcon\Analytics\Support\DateLabel::for($session->startedAt, 'd M Y, H:i') }}
                                     @endif
                                     @if ($detail->isIdentified && $session->signedIn)
                                         <x-ui::badge color="blue">{{ __('Connecté') }}</x-ui::badge>

@@ -4,16 +4,7 @@
 ])
 
 @php
-    $countryCode = $code ? strtoupper((string) $code) : null;
-
-    $name = $countryCode;
-    if ($countryCode !== null && strlen($countryCode) === 2 && ctype_alpha($countryCode) && class_exists(\Locale::class)) {
-        $resolved = \Locale::getDisplayRegion('-'.$countryCode, app()->getLocale());
-        if (is_string($resolved) && $resolved !== '' && strtoupper($resolved) !== $countryCode) {
-            $name = $resolved;
-        }
-    }
-    $name = $name ?? __('Inconnu');
+    $name = \Falcon\Analytics\Support\CountryLabel::for($code === null ? null : (string) $code) ?? __('Inconnu');
     $countryTitle = $name.($city ? ' ('.$city.')' : '');
 @endphp
 

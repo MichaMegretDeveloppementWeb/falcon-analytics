@@ -12,7 +12,7 @@
     {{-- Header --}}
     <div class="an:min-w-0">
         <h1 class="an:text-2xl an:font-semibold an:tracking-tight an:text-primary">
-            {{ __('Session') }} #{{ $detail->id }} <span class="an:text-muted">·</span> {{ $detail->startedAt->translatedFormat('d F Y à H:i') }}
+            {{ __('Session') }} #{{ $detail->id }} <span class="an:text-muted">·</span> {{ \Falcon\Analytics\Support\DateLabel::for($detail->startedAt, 'd F Y à H:i') }}
         </h1>
         <div class="an:mt-1.5 an:flex an:flex-wrap an:items-center an:gap-x-2.5 an:gap-y-1 an:text-sm an:text-secondary">
             @if ($mayOpenVisitors)
@@ -110,7 +110,7 @@
                                                 <x-ui::badge color="gray">{{ __('Sortie') }}</x-ui::badge>
                                             @endif
                                         </p>
-                                        <span class="an:shrink-0 an:text-[11px] an:tabular-nums an:text-muted">{{ $step->occurredAt->translatedFormat('H:i:s') }}</span>
+                                        <span class="an:shrink-0 an:text-[11px] an:tabular-nums an:text-muted">{{ \Falcon\Analytics\Support\DateLabel::for($step->occurredAt, 'H:i:s') }}</span>
                                     </div>
 
                                     @if ($step->isPageview)
@@ -128,7 +128,7 @@
                                                 <div class="an:flex an:items-center an:gap-2">
                                                     <x-ui::icon :name="$child->isConversion ? 'bolt' : 'cursor-arrow-rays'" @class(['an:h-3.5 an:w-3.5 an:shrink-0', 'an:text-emerald-500' => $child->isConversion, 'an:text-series-1' => ! $child->isConversion]) />
                                                     <span @class(['an:min-w-0 an:truncate an:text-[12px]', 'an:font-medium an:text-emerald-600 an:dark:text-emerald-400' => $child->isConversion, 'an:text-secondary' => ! $child->isConversion]) data-an-tooltip="{{ $child->label }}">{{ $child->label }}</span>
-                                                    <span class="an:ml-auto an:shrink-0 an:text-[11px] an:tabular-nums an:text-muted">{{ $child->occurredAt->translatedFormat('H:i:s') }}</span>
+                                                    <span class="an:ml-auto an:shrink-0 an:text-[11px] an:tabular-nums an:text-muted">{{ \Falcon\Analytics\Support\DateLabel::for($child->occurredAt, 'H:i:s') }}</span>
                                                 </div>
                                             @endforeach
                                         </div>

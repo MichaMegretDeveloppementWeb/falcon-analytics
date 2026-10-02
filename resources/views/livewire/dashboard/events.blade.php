@@ -3,8 +3,8 @@
     <x-ui::page-header
         :title="__('Événements')"
         :description="__('du :from au :to', [
-            'from' => $range->from->isoFormat('D MMM YYYY'),
-            'to' => $range->to->isoFormat('D MMM YYYY'),
+            'from' => \Falcon\Analytics\Support\DateLabel::for($range->from, 'j M Y'),
+            'to' => \Falcon\Analytics\Support\DateLabel::for($range->to, 'j M Y'),
         ])">
         @include('analytics::livewire.dashboard.partials.filters')
     </x-ui::page-header>
