@@ -66,7 +66,7 @@
                                 <span class="an:text-[11px] an:text-muted">@if ($session->label !== null){{ $session->label }} · @endif<x-analytics::row-uuid :uuid="$session->visitorUuid" />@if ($session->notConnected) · {{ __('Non connecté') }}@endif</span>
                             </div>
                         </x-ui::table.cell>
-                        <x-ui::table.cell class="an:whitespace-nowrap">{{ $session->startedAt->translatedFormat('d M, H:i') }}</x-ui::table.cell>
+                        <x-ui::table.cell class="an:whitespace-nowrap">{{ \Falcon\Analytics\Support\DateLabel::for($session->startedAt, 'd M, H:i') }}</x-ui::table.cell>
                         <x-ui::table.cell class="an:whitespace-nowrap">{{ $session->duration }}</x-ui::table.cell>
                         <x-ui::table.cell class="an:tabular-nums">{{ $session->pageviewCount }}</x-ui::table.cell>
                         <x-ui::table.cell class="an:tabular-nums an:text-secondary">{{ $session->eventsCount }}</x-ui::table.cell>

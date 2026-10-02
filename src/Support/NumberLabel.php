@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Support;
 
-use Illuminate\Support\Facades\App;
 use LogicException;
 use NumberFormatter;
 
 /**
- * Every number the package shows, written once · in the site's language,
- * through intl, rounded half up, one formatter kept per language, style and
- * precision.
+ * Every number the package shows, written once · in the package's language,
+ * whatever the host speaks, through intl, rounded half up, one formatter kept
+ * per style and precision.
  *
  * @internal
  */
@@ -39,9 +38,7 @@ final class NumberLabel
 
     private static function formatter(int $style, int $decimals): NumberFormatter
     {
-        $locale = App::getLocale();
-
-        return self::$formatters["{$locale}:{$style}:{$decimals}"] ??= self::made($locale, $style, $decimals);
+        return self::$formatters["{$style}:{$decimals}"] ??= self::made(Language::CODE, $style, $decimals);
     }
 
     private static function made(string $locale, int $style, int $decimals): NumberFormatter

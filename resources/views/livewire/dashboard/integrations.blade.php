@@ -98,7 +98,7 @@
                     <x-ui::description-list>
                         <x-ui::description-list.item :label="__('Propriété')">{{ $connection->property }}</x-ui::description-list.item>
                         <x-ui::description-list.item :label="__('Dernière synchronisation')">
-                            {{ $connection->last_synced_at?->translatedFormat('j M Y, H:i') ?? __('Jamais') }}
+                            {{ ($connection->last_synced_at ? \Falcon\Analytics\Support\DateLabel::for($connection->last_synced_at, 'j M Y, H:i') : __('Jamais')) }}
                         </x-ui::description-list.item>
                     </x-ui::description-list>
 

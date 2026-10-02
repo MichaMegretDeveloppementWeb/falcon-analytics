@@ -10,6 +10,7 @@ use Falcon\Analytics\Livewire\Admin\Concerns\GuardsWidgetRead;
 use Falcon\Analytics\Repositories\Dashboard\EventReadRepository;
 use Falcon\Analytics\Repositories\Dashboard\OverviewReadRepository;
 use Falcon\Analytics\Services\Dashboard\TrendSeriesCalculator;
+use Falcon\Analytics\Support\DateLabel;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Lazy;
 use Livewire\Component;
@@ -51,7 +52,7 @@ final class TrendChart extends Component
             $conversionsDaily = $eventRepository->daily($range, $subjectType, $events)['conversions'];
 
             return [
-                'labels' => array_map(fn ($point) => $point->date->isoFormat('D MMM'), $trend),
+                'labels' => array_map(fn ($point) => DateLabel::for($point->date, 'j M'), $trend),
                 'points' => array_map(fn ($point) => $point->sessions, $trend),
                 'conversions' => array_map(fn ($point) => $conversionsDaily[$point->date->toDateString()] ?? 0, $trend),
             ];

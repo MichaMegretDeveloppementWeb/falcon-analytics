@@ -34,7 +34,7 @@
     {{-- Performance (deferred content) --}}
     <div>
         <div class="an:mb-4 an:flex an:flex-wrap an:items-center an:justify-between an:gap-3">
-            <x-ui::section-header :title="__('Performance')" :description="__('du :from au :to', ['from' => $range->from->isoFormat('D MMM'), 'to' => $range->to->isoFormat('D MMM YYYY')])" />
+            <x-ui::section-header :title="__('Performance')" :description="__('du :from au :to', ['from' => \Falcon\Analytics\Support\DateLabel::for($range->from, 'j M'), 'to' => \Falcon\Analytics\Support\DateLabel::for($range->to, 'j M Y')])" />
             @include('analytics::livewire.dashboard.partials.filters')
         </div>
         <livewire:analytics::admin.widgets.ad-detail-content :period="$period" :subject="$subject" :ref-id="$detail->id" :key="'ad-content-'.$detail->id.'-'.$period.'-'.$subject" />

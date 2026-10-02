@@ -13,8 +13,8 @@
 
     <x-ui::page-header
         :title="__('Vue d\'ensemble')"
-        :description="__('du :from au :to', ['from' => $range->from->isoFormat('D MMM YYYY'), 'to' => $range->to->isoFormat('D MMM YYYY')])
-            .' · '.__('comparé à :from - :to', ['from' => $previous->from->isoFormat('D MMM'), 'to' => $previous->to->isoFormat('D MMM')])">
+        :description="__('du :from au :to', ['from' => \Falcon\Analytics\Support\DateLabel::for($range->from, 'j M Y'), 'to' => \Falcon\Analytics\Support\DateLabel::for($range->to, 'j M Y')])
+            .' · '.__('comparé à :from - :to', ['from' => \Falcon\Analytics\Support\DateLabel::for($previous->from, 'j M'), 'to' => \Falcon\Analytics\Support\DateLabel::for($previous->to, 'j M')])">
         @include('analytics::livewire.dashboard.partials.filters')
     </x-ui::page-header>
 

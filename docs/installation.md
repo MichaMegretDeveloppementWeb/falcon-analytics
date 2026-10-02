@@ -8,7 +8,7 @@ Une commande, puis trois choses à écrire vous-même. Comptez un quart d'heure.
 
 | | |
 |---|---|
-| **PHP** | 8.5 ou plus, avec l'extension **intl** · les écrans écrivent leurs nombres dans la langue du site. Composer refuse d'installer sans elle, et `analytics:check` la relit |
+| **PHP** | 8.5 ou plus, avec l'extension **intl** · les écrans écrivent leurs nombres et les noms de pays en français, quelle que soit la langue de votre site. Composer refuse d'installer sans elle, et `analytics:check` la relit |
 | **Laravel** | 13 |
 | **Livewire** | 4.2 ou plus · dépendance partagée, jamais embarquée |
 | **Une base** | **MySQL ou MariaDB**, et rien d'autre · le paquet crée dix tables préfixées `falcon_analytics_`, dont huit portent vos mesures |

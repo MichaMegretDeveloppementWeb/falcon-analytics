@@ -21,12 +21,12 @@ final class NumberLabelTest extends TestCase
             'a half rounded up, as before' => ['fr', 2.25, 1, '2,3'],
             'another half rounded up' => ['fr', 12.45, 1, '12,5'],
             'a negative' => ['fr', -3, 0, '-3'],
-            'in English' => ['en', 12345.6, 1, '12,345.6'],
+            'for a host in English' => ['en', 12345.6, 1, "12\u{202F}345,6"],
         ];
     }
 
     #[DataProvider('numbers')]
-    public function test_a_number_reads_in_the_site_language(string $locale, int|float $number, int $decimals, string $expected): void
+    public function test_a_number_reads_in_french_whatever_the_host_speaks(string $locale, int|float $number, int $decimals, string $expected): void
     {
         app()->setLocale($locale);
 
@@ -41,7 +41,7 @@ final class NumberLabelTest extends TestCase
             'a whole share' => ['fr', 45, 0, "45\u{00A0}%"],
             'a rate to the tenth' => ['fr', 45.3, 1, "45,3\u{00A0}%"],
             'a half rounded up' => ['fr', 2.25, 1, "2,3\u{00A0}%"],
-            'in English' => ['en', 45.3, 1, '45.3%'],
+            'for a host in English' => ['en', 45.3, 1, "45,3\u{00A0}%"],
         ];
     }
 
@@ -73,12 +73,12 @@ final class NumberLabelTest extends TestCase
         $this->assertSame($expected, NumberLabel::points($points));
     }
 
-    public function test_changing_language_mid_request_changes_the_writing(): void
+    public function test_the_host_changing_language_mid_request_changes_nothing(): void
     {
         app()->setLocale('fr');
         $this->assertSame("1\u{202F}234", NumberLabel::for(1234));
 
         app()->setLocale('en');
-        $this->assertSame('1,234', NumberLabel::for(1234));
+        $this->assertSame("1\u{202F}234", NumberLabel::for(1234));
     }
 }

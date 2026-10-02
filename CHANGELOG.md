@@ -54,6 +54,9 @@ architecture qui n'existe plus.
   dans [fonctionnalites.md](docs/fonctionnalites.md#le-vocabulaire), pour écrire
   votre menu ou traduire. Aucun écran ne nomme un fichier, une commande ou une
   variable · il dit ce qui manque et à qui le signaler ;
+- **le français, quelle que soit la langue de l'hôte** · les dates, les nombres
+  et les noms de pays s'écrivent en français, comme les libellés, même chez un
+  hôte réglé dans une autre langue · une page ne mélange jamais deux langues ;
 - **une conservation qui ne fausse aucun chiffre** · le pas à pas d'une session
   s'efface au bout de 90 jours, et c'est tout ce qui s'efface · les pages et
   clics les plus vus sont comptés d'avance chaque nuit, et **tout ce qui porte un
