@@ -20,8 +20,10 @@ return new class extends Migration
         Schema::create('falcon_analytics_visitors', function (Blueprint $table): void {
             $table->id();
 
-            // The fa_vid cookie with consent, a per-session UUID without it.
-            $table->uuid('uuid')->unique();
+            // The fa_vid cookie with consent, a per-session UUID without it. A char(36)
+            // and not `uuid()`, which MariaDB turns into a type of its own: the column
+            // reads and compares alike on both engines.
+            $table->char('uuid', 36)->unique();
 
             // Not TIMESTAMP, in every package table: the engine converts it against the session time zone.
             $table->dateTime('first_seen_at');

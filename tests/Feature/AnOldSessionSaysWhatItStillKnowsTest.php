@@ -114,7 +114,7 @@ final class AnOldSessionSaysWhatItStillKnowsTest extends TestCase
         // Asked of the component: a bare figure occurs many times in the page's HTML.
         $this->actingAs($this->anAdmin(), 'admin');
 
-        $detail = Livewire::test(SessionDetailPage::class, ['session' => $old])->viewData('detail');
+        $detail = Livewire::test(SessionDetailPage::class, ['sessionId' => $old->id])->viewData('detail');
 
         $this->assertInstanceOf(SessionDetail::class, $detail);
         $this->assertSame(3, $detail->clicksCount);

@@ -22,6 +22,7 @@ use Illuminate\Database\Migrations\Migrator;
 use Illuminate\Routing\Router;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
@@ -274,13 +275,14 @@ final class CheckCommand extends Command
      */
     private function checkDatabaseEngine(): array
     {
-        $driver = DatabaseEngine::current();
+        $engine = DatabaseEngine::of(DB::connection());
+        $refusal = $engine->refusal();
 
-        if (! DatabaseEngine::isSupported($driver)) {
-            return ['Base de données', 'KO', DatabaseEngine::refusal($driver)];
+        if ($refusal !== null) {
+            return ['Base de données', 'KO', $refusal];
         }
 
-        return ['Base de données', 'OK', "La connexion est en « {$driver} », que le paquet prend en charge."];
+        return ['Base de données', 'OK', "La base est {$engine->inWords()}, que le paquet prend en charge."];
     }
 
     /**

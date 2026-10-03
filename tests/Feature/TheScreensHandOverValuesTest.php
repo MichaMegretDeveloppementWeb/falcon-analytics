@@ -169,21 +169,21 @@ final class TheScreensHandOverValuesTest extends TestCase
 
         $this->expectException(CannotUpdateLockedPropertyException::class);
 
-        Livewire::test($component, $parameters)->set($screen.'Id', array_values($other)[0]->getKey());
+        Livewire::test($component, $parameters)->set($screen.'Id', array_values($other)[0]);
     }
 
     /**
      * The component, its mount parameters, its view, and the fiche it hands over.
      *
-     * @return array{class-string, array<string, Model>, string, class-string}
+     * @return array{class-string, array<string, int>, string, class-string}
      */
     private function screen(string $screen): array
     {
         return match ($screen) {
-            'session' => [SessionDetailPage::class, ['session' => $this->aSession()], 'analytics::livewire.dashboard.session-detail', SessionDetail::class],
-            'visitor' => [VisitorDetailPage::class, ['visitor' => $this->aSession()->visitor()->firstOrFail()], 'analytics::livewire.dashboard.visitor-detail', VisitorDetail::class],
-            'campaign' => [CampaignDetailPage::class, ['campaign' => $this->anAd()->campaign()->firstOrFail()], 'analytics::livewire.dashboard.marketing-campaign-detail', CampaignDetail::class],
-            'ad' => [AdDetailPage::class, ['ad' => $this->anAd()], 'analytics::livewire.dashboard.marketing-ad-detail', AdDetail::class],
+            'session' => [SessionDetailPage::class, ['sessionId' => $this->aSession()->id], 'analytics::livewire.dashboard.session-detail', SessionDetail::class],
+            'visitor' => [VisitorDetailPage::class, ['visitorId' => $this->aSession()->visitor_id], 'analytics::livewire.dashboard.visitor-detail', VisitorDetail::class],
+            'campaign' => [CampaignDetailPage::class, ['campaignId' => $this->anAd()->campaign_id], 'analytics::livewire.dashboard.marketing-campaign-detail', CampaignDetail::class],
+            'ad' => [AdDetailPage::class, ['adId' => $this->anAd()->id], 'analytics::livewire.dashboard.marketing-ad-detail', AdDetail::class],
             default => $this->fail("No screen named {$screen}."),
         };
     }

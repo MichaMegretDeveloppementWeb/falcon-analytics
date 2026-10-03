@@ -27,6 +27,7 @@ final class TheVocabularyHoldsTest extends TestCase
         '/—/u' => '« · », « : » ou une virgule',
         '/\bpts\b/u' => 'NumberLabel::points()',
         '/Données indisponibles/u' => '« Impossible de charger … », et ce qui manque',
+        '/non trouvée|erreur 404/iu' => '« Cette page n’existe pas ou plus. »',
     ];
 
     public function test_no_visible_string_uses_a_retired_word(): void

@@ -205,7 +205,7 @@ final class AnUnreadableScreenSaysWhatTest extends TestCase
         $session = Session::factory()->create(['pageview_count' => 1]);
 
         $this->withoutTable('falcon_analytics_visitors', function () use ($session): void {
-            Livewire::test(SessionDetailPage::class, ['session' => $session])
+            Livewire::test(SessionDetailPage::class, ['sessionId' => $session->id])
                 ->assertSeeHtml('ui-load-failure')
                 ->assertSee('Impossible de charger cette session');
         });
@@ -217,7 +217,7 @@ final class AnUnreadableScreenSaysWhatTest extends TestCase
         $ad = Ad::factory()->create();
 
         $this->withoutTable('falcon_analytics_campaigns', function () use ($ad): void {
-            Livewire::test(AdDetailPage::class, ['ad' => $ad])
+            Livewire::test(AdDetailPage::class, ['adId' => $ad->id])
                 ->assertSeeHtml('ui-load-failure')
                 ->assertSee('Impossible de charger cette publicité');
         });

@@ -20,6 +20,10 @@ use Illuminate\Support\Facades\Route;
  * The analytics screens of the administration area · the list, and nothing but
  * the list.
  *
+ * A fiche takes a bounded number and no model: its row is read by its
+ * controller once the ability has answered, so an account that may not open the
+ * screen learns nothing of which rows exist.
+ *
  * Their address, their middleware and their name prefix come from the group the
  * provider opens around this file. One file tells every address and every guard
  * of the package, and it is that one.
@@ -34,11 +38,11 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', OverviewController::class)->name('overview')->can(Ability::Overview);
 Route::get('/realtime', RealtimeController::class)->name('realtime')->can(Ability::Realtime);
 Route::get('/visitors', VisitorsController::class)->name('visitors')->can(Ability::Visitors);
-Route::get('/visitors/{visitor}', VisitorDetailController::class)->name('visitors.show')->can(Ability::Visitors);
+Route::get('/visitors/{visitor}', VisitorDetailController::class)->name('visitors.show')->can(Ability::Visitors)->where('visitor', '[0-9]{1,18}');
 Route::get('/events', EventsController::class)->name('events')->can(Ability::Events);
 Route::get('/funnels', FunnelsController::class)->name('funnels')->can(Ability::Funnels);
 Route::get('/sessions', SessionsController::class)->name('sessions')->can(Ability::Sessions);
-Route::get('/sessions/{session}', SessionDetailController::class)->name('sessions.show')->can(Ability::Sessions);
+Route::get('/sessions/{session}', SessionDetailController::class)->name('sessions.show')->can(Ability::Sessions)->where('session', '[0-9]{1,18}');
 
 // Integrations (Google Search Console): the page plus the two OAuth legs, all
 // behind the same middleware as the screens.

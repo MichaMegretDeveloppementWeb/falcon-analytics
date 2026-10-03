@@ -101,6 +101,28 @@ architecture qui n'existe plus.
   reste « introuvable » à l'ouverture · celle que la base n'a pas rendue dit
   « Impossible de charger cette campagne. Réessayez. ». **Rien à faire pour
   cela** ;
+- **une adresse qui ne mène nulle part a sa page** · sous les préfixes du
+  paquet, une adresse inconnue ou une fiche dont la ligne n'existe pas répond
+  « Cette page n’existe pas ou plus. », en 404, dans votre gabarit, avec un lien
+  vers la vue d'ensemble. Votre page 404 garde tout le reste, JSON, Livewire et
+  le point de collecte compris, et une règle posée dans `withExceptions()` passe
+  avant. **Une mauvaise méthode sur une adresse connue du paquet répond 404 et
+  non 405.** Rien à faire pour cela ;
+- **une fiche lit sa ligne une fois la capacité vérifiée** · un compte qui ne
+  peut pas ouvrir l'écran reçoit 403, que l'identifiant existe ou non, et
+  n'apprend donc pas lesquels existent. L'identifiant est un nombre ; une adresse
+  qui n'en porte pas tombe sur la page introuvable. Une fiche dont la base n'a
+  pas rendu la ligne s'ouvre avec son bandeau, l'onglet disant « Campagne » ou
+  « Publicité » faute du nom · une ligne supprimée pendant que la fiche était
+  ouverte renvoie à son adresse · supprimer un visiteur ou une campagne qui
+  n'existe plus dit « introuvable » sans quitter la page. **Rien à faire pour
+  cela** ;
+- **les moteurs sont dits, et éprouvés** · MySQL 8.0.16 ou plus, MariaDB 10.11
+  ou plus, lus au serveur et non au seul nom de la connexion. La chaîne
+  d'intégration tourne sur MySQL 8.0 et 8.4, MariaDB 10.11 et 11.4 · une version
+  plus basse est refusée par `analytics:install` avant qu'il n'écrive, et
+  `analytics:check` la signale. L'identifiant d'un visiteur est un `char(36)` sur
+  les deux moteurs · MariaDB en aurait fait un type à lui ;
 - **des filtres qui disent ce qu'ils filtrent** · chaque liste de filtre porte
   un nom qu'un lecteur d'écran lit avant sa valeur · « Période », « Visiteurs »,
   « Appareil », « Source ». Rien ne change à l'écran ;
@@ -169,7 +191,7 @@ redescendre · voir [mise-a-jour.md](docs/mise-a-jour.md#le-schéma-qui-est-la-v
 ### Ce qu'il exige
 
 PHP 8.5 avec l'extension **intl**, Laravel 13, Livewire 4.2, et une base
-**MySQL ou MariaDB**.
+**MySQL 8.0.16 ou plus, ou MariaDB 10.11 ou plus**.
 `falcon/ui-kit` vient avec le paquet.
 
 Les visites sont mesurées sur **tout navigateur sorti depuis 2018** · Chrome 39,

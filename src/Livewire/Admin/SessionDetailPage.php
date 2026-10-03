@@ -11,6 +11,8 @@ use Falcon\Analytics\Livewire\Admin\Concerns\RecoversFromReadFailure;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Services\Dashboard\SessionDetailBuilder;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
@@ -35,17 +37,16 @@ final class SessionDetailPage extends Component
     /** The session as this request read it · kept for the request, never between two. */
     private ?Session $read = null;
 
-    public function mount(Session $session): void
+    public function mount(int $sessionId): void
     {
-        $this->sessionId = $session->id;
-        $this->read = $session;
+        $this->sessionId = $sessionId;
     }
 
     public function render(SessionDetailBuilder $details, EventRegistry $eventRegistry): View
     {
         return $this->guardedRender(
             function () use ($details, $eventRegistry): array {
-                // Its visitor is read here and not at mount, so that a failure is the error state and not a raw error.
+                // Read here and not at mount, so that a failure is the error state and not a raw error.
                 $session = ($this->read ??= Session::query()->findOrFail($this->sessionId))->load(self::VISITOR);
 
                 $conversionNames = [];
@@ -67,6 +68,12 @@ final class SessionDetailPage extends Component
     protected function screenAbility(): Ability
     {
         return Ability::Sessions;
+    }
+
+    /** @param ModelNotFoundException<Model> $gone */
+    protected function addressOnceGone(ModelNotFoundException $gone): ?string
+    {
+        return $gone->getModel() === Session::class ? route('analytics.admin.sessions.show', $this->sessionId) : null;
     }
 
     protected function unreadableTitle(): string

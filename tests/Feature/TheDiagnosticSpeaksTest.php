@@ -9,6 +9,7 @@ use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
+use Falcon\Analytics\Support\DatabaseEngine;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -16,6 +17,7 @@ use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Gate;
 use Orchestra\Testbench\Attributes\DefineEnvironment;
@@ -81,12 +83,23 @@ final class TheDiagnosticSpeaksTest extends TestCase
     /**
      * The engine is checked before the migrations, since it decides whether they
      * mean anything, and on every run, since a host can move its database.
+     *
+     * Named as its server names itself, whichever of the two the bench runs on.
      */
     public function test_it_names_the_database_engine_it_found(): void
     {
-        $this->artisan('analytics:check')
-            ->expectsOutputToContain('mysql')
-            ->assertSuccessful();
+        $this->assertSame(0, Artisan::call('analytics:check'));
+
+        $this->assertMatchesRegularExpression('/La base est (MySQL|MariaDB) \d+\.\d+/', Artisan::output());
+    }
+
+    /** The engine is read from the server the bench runs on, at or above its floor. */
+    public function test_the_engine_is_read_from_its_server(): void
+    {
+        $engine = DatabaseEngine::of(DB::connection());
+
+        $this->assertTrue($engine->isSupported());
+        $this->assertMatchesRegularExpression('/^(MySQL|MariaDB) \d+\.\d+/', $engine->inWords());
     }
 
     /**

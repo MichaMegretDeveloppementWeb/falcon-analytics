@@ -12,11 +12,14 @@ use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Repositories\Dashboard\VisitorProfileReadRepository;
 use Falcon\Analytics\Services\Dashboard\VisitorDetailBuilder;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Throwable;
 
 /**
  * A single visitor in detail: their identity, headline figures and the list of
@@ -39,15 +42,9 @@ final class VisitorDetailPage extends Component
     /** The visitor as this request read it · kept for the request, never between two. */
     private ?Visitor $read = null;
 
-    public function mount(Visitor $visitor): void
+    public function mount(int $visitorId): void
     {
-        $this->visitorId = $visitor->id;
-        $this->read = $visitor;
-
-        // A folded profile holds no data of its own: a link to it lands on the canonical profile.
-        if ($visitor->merged_into_id !== null) {
-            $this->redirect(route('analytics.admin.visitors.show', $visitor->merged_into_id));
-        }
+        $this->visitorId = $visitorId;
     }
 
     /**
@@ -57,11 +54,17 @@ final class VisitorDetailPage extends Component
      */
     public function forget(ForgetVisitorAction $action): void
     {
-        $this->authorize(Ability::VisitorsDelete, $this->visitor());
+        $visitor = $this->visitorForAGesture();
+
+        if ($visitor === null) {
+            return;
+        }
+
+        $this->authorize(Ability::VisitorsDelete, $visitor);
 
         try {
-            $action->execute($this->visitor());
-        } catch (\Throwable $e) {
+            $action->execute($visitor);
+        } catch (Throwable $e) {
             Log::channel(config('analytics.log_channel'))->error('Analytics visitor erasure failed.', [
                 'visitor_id' => $this->visitorId,
                 'exception' => $e,
@@ -77,6 +80,7 @@ final class VisitorDetailPage extends Component
             'actor_user_id' => auth()->id(),
         ]);
 
+        $this->skipRender();
         $this->redirect(route('analytics.admin.visitors'));
     }
 
@@ -98,9 +102,35 @@ final class VisitorDetailPage extends Component
         return Ability::Visitors;
     }
 
+    /** @param ModelNotFoundException<Model> $gone */
+    protected function addressOnceGone(ModelNotFoundException $gone): ?string
+    {
+        return $gone->getModel() === Visitor::class ? route('analytics.admin.visitors.show', $this->visitorId) : null;
+    }
+
     private function visitor(): Visitor
     {
         return $this->read ??= Visitor::query()->findOrFail($this->visitorId);
+    }
+
+    /** The visitor a gesture acts on, or null once told it could not be had · the page stays as it is. */
+    private function visitorForAGesture(): ?Visitor
+    {
+        try {
+            return $this->visitor();
+        } catch (ModelNotFoundException) {
+            $this->dispatch('ui-toast', type: 'danger', title: __('Ce visiteur est introuvable. Actualisez la page.'));
+        } catch (Throwable $e) {
+            Log::channel(config('analytics.log_channel'))->error('Visitor.gesture_load_failed', [
+                'visitor_id' => $this->visitorId,
+                'exception' => $e,
+            ]);
+            $this->dispatch('ui-toast', type: 'danger', title: __('Impossible de charger ce visiteur. Réessayez.'));
+        }
+
+        $this->skipRender();
+
+        return null;
     }
 
     protected function unreadableTitle(): string

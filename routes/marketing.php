@@ -25,6 +25,6 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', MarketingDashboardController::class)->name('dashboard')->can(Ability::MarketingDashboard);
 Route::get('/campaigns', CampaignsController::class)->name('campaigns')->can(Ability::Campaigns);
-Route::get('/campaigns/{campaign}', CampaignDetailController::class)->name('campaigns.show')->can(Ability::Campaigns);
+Route::get('/campaigns/{campaign}', CampaignDetailController::class)->name('campaigns.show')->can(Ability::Campaigns)->where('campaign', '[0-9]{1,18}');
 Route::get('/ads', AdsController::class)->name('ads')->can(Ability::Ads);
-Route::get('/ads/{ad}', AdDetailController::class)->name('ads.show')->can(Ability::Ads);
+Route::get('/ads/{ad}', AdDetailController::class)->name('ads.show')->can(Ability::Ads)->where('ad', '[0-9]{1,18}');

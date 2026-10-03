@@ -15,6 +15,8 @@ use Falcon\Analytics\Models\Ad;
 use Falcon\Analytics\Models\Campaign;
 use Falcon\Analytics\Services\Dashboard\ObjectiveLabels;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Locked;
@@ -56,10 +58,9 @@ final class CampaignDetailPage extends DashboardComponent
     /** The campaign as this request read it · kept for the request, never between two. */
     private ?Campaign $read = null;
 
-    public function mount(Campaign $campaign): void
+    public function mount(int $campaignId): void
     {
-        $this->campaignId = $campaign->id;
-        $this->read = $campaign;
+        $this->campaignId = $campaignId;
     }
 
     /** Draws the page again once one of its forms has written · the render reads it afresh. */
@@ -70,7 +71,13 @@ final class CampaignDetailPage extends DashboardComponent
     /** Whether the campaign was deleted · on a yes the page leads back to the list. */
     public function deleteCampaignConfirmed(DeleteCampaignAction $action): bool
     {
-        $this->authorize(Ability::CampaignsDelete, $this->campaign());
+        $campaign = $this->campaignForAGesture();
+
+        if ($campaign === null) {
+            return false;
+        }
+
+        $this->authorize(Ability::CampaignsDelete, $campaign);
 
         try {
             $action->execute($this->campaignId);
@@ -84,6 +91,7 @@ final class CampaignDetailPage extends DashboardComponent
             return false;
         }
 
+        $this->skipRender();
         $this->redirect(route('analytics.admin.marketing.campaigns'));
 
         return true;
@@ -172,9 +180,35 @@ final class CampaignDetailPage extends DashboardComponent
         return Ability::Campaigns;
     }
 
+    /** @param ModelNotFoundException<Model> $gone */
+    protected function addressOnceGone(ModelNotFoundException $gone): ?string
+    {
+        return $gone->getModel() === Campaign::class ? route('analytics.admin.marketing.campaigns.show', $this->campaignId) : null;
+    }
+
     private function campaign(): Campaign
     {
         return $this->read ??= Campaign::query()->findOrFail($this->campaignId);
+    }
+
+    /** The campaign a gesture acts on, or null once told it could not be had · the page stays as it is. */
+    private function campaignForAGesture(): ?Campaign
+    {
+        try {
+            return $this->campaign();
+        } catch (ModelNotFoundException) {
+            $this->dispatch('ui-toast', type: 'danger', title: __('Cette campagne est introuvable. Actualisez la page.'));
+        } catch (Throwable $e) {
+            Log::channel(config('analytics.log_channel'))->error('Campaign.gesture_load_failed', [
+                'campaign_id' => $this->campaignId,
+                'exception' => $e,
+            ]);
+            $this->dispatch('ui-toast', type: 'danger', title: __('Impossible de charger cette campagne. Réessayez.'));
+        }
+
+        $this->skipRender();
+
+        return null;
     }
 
     /** The ad of this campaign a deletion names, or null once told it no longer exists. */

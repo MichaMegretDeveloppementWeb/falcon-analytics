@@ -12,6 +12,7 @@ use Falcon\Analytics\Tests\Fixtures\Models\TestClient;
 use Falcon\Analytics\Tests\Fixtures\Models\TestLessor;
 use Falcon\Ui\UiServiceProvider;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\MySqlConnection;
 use Illuminate\Database\Query\JoinClause;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Collection;
@@ -300,7 +301,8 @@ abstract class TestCase extends Orchestra
     protected static function connectionForTests(): array
     {
         return [
-            'driver' => 'mysql',
+            // `mariadb` against a MariaDB server, as a host running it sets it.
+            'driver' => self::fromEnvironment('ANALYTICS_TEST_DB_DRIVER', 'mysql'),
             'host' => self::fromEnvironment('ANALYTICS_TEST_MYSQL_HOST', '127.0.0.1'),
             'port' => self::fromEnvironment('ANALYTICS_TEST_MYSQL_PORT', '3306'),
             'database' => self::databaseForTests(),
@@ -321,7 +323,7 @@ abstract class TestCase extends Orchestra
         $app->usePublicPath(self::publishedDirectoryFor(self::parallelToken()));
 
         tap($app['config'], function ($config): void {
-            // MySQL only: the screens aggregate with GROUP BY, date functions and composite indexes.
+            // MySQL or MariaDB: the screens aggregate with GROUP BY, date functions and composite indexes.
             $config->set('database.connections.mysql_testing', self::connectionForTests());
             $config->set('database.default', 'mysql_testing');
 
@@ -349,6 +351,9 @@ abstract class TestCase extends Orchestra
      * index, per foreign key and per check constraint, sorted so two readings
      * compare.
      *
+     * Read in MySQL's words on MariaDB, so one fixture describes both engines ·
+     * see {@see inMysqlsWords()}.
+     *
      * Scoped to the connection's own database — `information_schema` holds
      * every database of the server, and an unscoped listing would read the
      * tables of every other project on it.
@@ -361,8 +366,6 @@ abstract class TestCase extends Orchestra
             ->selectRaw("CONCAT('COL ', TABLE_NAME, '.', COLUMN_NAME, ' ', COLUMN_TYPE, ' null=', IS_NULLABLE, ' def=', IFNULL(COLUMN_DEFAULT, '-'), ' extra=', EXTRA) AS line")
             ->whereRaw('TABLE_SCHEMA = DATABASE()')
             ->where('TABLE_NAME', 'like', 'falcon\_analytics\_%')
-            ->orderBy('TABLE_NAME')
-            ->orderBy('COLUMN_NAME')
             ->pluck('line');
 
         $indexes = DB::table('information_schema.STATISTICS')
@@ -370,8 +373,6 @@ abstract class TestCase extends Orchestra
             ->whereRaw('TABLE_SCHEMA = DATABASE()')
             ->where('TABLE_NAME', 'like', 'falcon\_analytics\_%')
             ->groupBy('TABLE_NAME', 'INDEX_NAME', 'NON_UNIQUE')
-            ->orderBy('TABLE_NAME')
-            ->orderBy('INDEX_NAME')
             ->pluck('line');
 
         // Foreign keys with their delete rule: no column or index reveals a lost cascade.
@@ -384,8 +385,6 @@ abstract class TestCase extends Orchestra
             ->whereRaw('kcu.TABLE_SCHEMA = DATABASE()')
             ->where('kcu.TABLE_NAME', 'like', 'falcon\_analytics\_%')
             ->whereNotNull('kcu.REFERENCED_TABLE_NAME')
-            ->orderBy('kcu.TABLE_NAME')
-            ->orderBy('kcu.CONSTRAINT_NAME')
             ->pluck('line');
 
         // Check constraints by name: losing one changes no column and no index.
@@ -394,13 +393,85 @@ abstract class TestCase extends Orchestra
             ->whereRaw('TABLE_SCHEMA = DATABASE()')
             ->where('TABLE_NAME', 'like', 'falcon\_analytics\_%')
             ->where('CONSTRAINT_TYPE', 'CHECK')
-            ->orderBy('TABLE_NAME')
-            ->orderBy('CONSTRAINT_NAME')
             ->pluck('line');
 
-        return array_values($columns->merge($indexes)->merge($keys)->merge($checks)
-            ->map(fn (mixed $line): string => (string) $line)
+        $connection = DB::connection();
+        $jsonColumns = $connection instanceof MySqlConnection && $connection->isMaria() ? self::jsonColumnsOfMariadb() : null;
+
+        $schema = [];
+
+        foreach ([$columns, $indexes, $keys, $checks] as $group) {
+            $lines = array_map(
+                static fn (mixed $line): string => $jsonColumns === null ? (string) $line : self::inMysqlsWords((string) $line, $jsonColumns),
+                $group->all(),
+            );
+
+            // MariaDB's own `json_valid()` checks, which MySQL does not add.
+            $lines = array_values(array_filter(
+                $lines,
+                static fn (string $line): bool => ! (str_starts_with($line, 'CHK ') && in_array(substr($line, 4), $jsonColumns ?? [], true)),
+            ));
+
+            // In PHP and not by the engine: their collations order `_` and capitals differently.
+            sort($lines, SORT_STRING | SORT_FLAG_CASE);
+
+            $schema = [...$schema, ...$lines];
+        }
+
+        return $schema;
+    }
+
+    /**
+     * The json columns of the package on MariaDB, as « table.column » · each
+     * carries a check named after it, `json_valid(column)`, that MariaDB adds by
+     * itself.
+     *
+     * @return list<string>
+     */
+    private static function jsonColumnsOfMariadb(): array
+    {
+        return array_values(DB::table('information_schema.CHECK_CONSTRAINTS')
+            ->selectRaw("CONCAT(TABLE_NAME, '.', CONSTRAINT_NAME) AS name")
+            ->whereRaw('CONSTRAINT_SCHEMA = DATABASE()')
+            ->where('TABLE_NAME', 'like', 'falcon\_analytics\_%')
+            ->whereRaw("CHECK_CLAUSE = CONCAT('json_valid(`', CONSTRAINT_NAME, '`)')")
+            ->pluck('name')
+            ->map(static fn (mixed $name): string => (string) $name)
             ->all());
+    }
+
+    /**
+     * A line MariaDB wrote, in the words MySQL uses for the same column · no
+     * display width but `tinyint(1)`, a missing default written as missing, a
+     * text default without its quotes, `json` for what MariaDB stores as
+     * `longtext`, and NO ACTION for a key that names no rule.
+     *
+     * @param  list<string>  $jsonColumns
+     */
+    private static function inMysqlsWords(string $line, array $jsonColumns): string
+    {
+        // A key that names no rule: MariaDB calls it RESTRICT, MySQL NO ACTION, and InnoDB treats both alike.
+        if (str_starts_with($line, 'FK ')) {
+            return str_replace(['del=RESTRICT', 'upd=RESTRICT'], ['del=NO ACTION', 'upd=NO ACTION'], $line);
+        }
+
+        if (! str_starts_with($line, 'COL ')) {
+            return $line;
+        }
+
+        $line = (string) preg_replace_callback(
+            '/ (tinyint|smallint|mediumint|int|bigint)\((\d+)\)/',
+            static fn (array $type): string => $type[1] === 'tinyint' && $type[2] === '1' ? $type[0] : ' '.$type[1],
+            $line,
+        );
+        $line = str_replace(' def=NULL ', ' def=- ', $line);
+        $line = (string) preg_replace("/ def='(.*)' extra=/", ' def=$1 extra=', $line);
+
+        if (in_array(explode(' ', $line)[1], $jsonColumns, true)) {
+            $line = str_replace(' longtext ', ' json ', $line);
+        }
+
+        return $line;
     }
 
     /**

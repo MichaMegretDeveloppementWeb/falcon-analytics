@@ -97,13 +97,14 @@ final class MarketingPagesTest extends TestCase
         $campaign = $this->campaign();
         $this->actingAs($this->admin, 'admin');
 
-        // Fixed plan: the ads, then their objectives in one read = 2.
+        // Fixed plan: the campaign, the ads, then their objectives in one read = 3. The campaign
+        // itself is read by the screen now that no route binding hands it over.
         $budget = $this->assertCostIsFlat(
             fn () => AdObjective::factory()->for(Ad::factory()->for($campaign))->event('Lead')->create(),
-            fn () => Livewire::test(CampaignDetailPage::class, ['campaign' => $campaign]),
+            fn () => Livewire::test(CampaignDetailPage::class, ['campaignId' => $campaign->id]),
         );
 
-        $this->assertLessThanOrEqual(2, $budget['count']);
+        $this->assertLessThanOrEqual(3, $budget['count']);
     }
 
     public function test_a_campaign_performance_costs_the_same_whatever_its_traffic(): void
@@ -126,13 +127,14 @@ final class MarketingPagesTest extends TestCase
         $ad = Ad::factory()->for($this->campaign())->create();
         $this->actingAs($this->admin, 'admin');
 
-        // Fixed plan: its campaign = 1.
+        // Fixed plan: the ad, then its campaign = 2. The ad itself is read by the screen now that
+        // no route binding hands it over.
         $budget = $this->assertCostIsFlat(
             fn () => AdObjective::factory()->for($ad)->create(),
-            fn () => Livewire::test(AdDetailPage::class, ['ad' => $ad]),
+            fn () => Livewire::test(AdDetailPage::class, ['adId' => $ad->id]),
         );
 
-        $this->assertLessThanOrEqual(1, $budget['count']);
+        $this->assertLessThanOrEqual(2, $budget['count']);
     }
 
     public function test_an_ad_performance_costs_the_same_whatever_its_traffic(): void
@@ -156,7 +158,7 @@ final class MarketingPagesTest extends TestCase
 
         $this->actingAs($this->admin, 'admin');
 
-        Livewire::test(CampaignDetailPage::class, ['campaign' => $campaign])
+        Livewire::test(CampaignDetailPage::class, ['campaignId' => $campaign->id])
             ->assertSet('adMetrics', [])
             ->call('fillAdMetrics', [7 => ['sessions' => 12, 'visitors' => 9]], [7 => 4])
             ->assertSet('adMetrics', [7 => ['sessions' => 12, 'visitors' => 9]])
@@ -469,7 +471,7 @@ final class MarketingPagesTest extends TestCase
         $ad = Ad::factory()->for($campaign)->matching('creative', 'cabrio')->create(['name' => 'Cabrio']);
         $this->actingAs($this->admin, 'admin');
 
-        Livewire::test(CampaignDetailPage::class, ['campaign' => $campaign])
+        Livewire::test(CampaignDetailPage::class, ['campaignId' => $campaign->id])
             ->call('confirmDeleteAd', $ad->id)
             ->assertReturned(true)
             ->assertSet('deleteAdLabel', 'Cabrio')
@@ -545,7 +547,7 @@ final class MarketingPagesTest extends TestCase
             ->assertDispatched('ui-toast', type: 'danger')
             ->assertReturned(fn (mixed $answer): bool => $answer === false);
 
-        Livewire::test(CampaignDetailPage::class, ['campaign' => $campaign])
+        Livewire::test(CampaignDetailPage::class, ['campaignId' => $campaign->id])
             ->call('confirmDeleteAd', 999_999)
             ->assertDispatched('ui-toast', type: 'danger')
             ->assertReturned(fn (mixed $answer): bool => $answer === false);
@@ -604,8 +606,8 @@ final class MarketingPagesTest extends TestCase
         $this->actingAs($this->admin, 'admin');
 
         $list = Livewire::test(CampaignsPage::class)->assertDontSeeText('Automne');
-        $detail = Livewire::test(CampaignDetailPage::class, ['campaign' => $campaign])->assertDontSeeText('Été 2027');
-        $adPage = Livewire::test(AdDetailPage::class, ['ad' => $ad])->assertDontSeeText('Cabriolet');
+        $detail = Livewire::test(CampaignDetailPage::class, ['campaignId' => $campaign->id])->assertDontSeeText('Été 2027');
+        $adPage = Livewire::test(AdDetailPage::class, ['adId' => $ad->id])->assertDontSeeText('Cabriolet');
 
         $this->assertSame(['an-campaigns-changed'], $this->listenersOf($list->html()));
         $this->assertEqualsCanonicalizing(['an-campaign-metrics-loaded', 'an-campaigns-changed', 'an-ads-changed'], $this->listenersOf($detail->html()));

@@ -80,7 +80,7 @@ final class EveryGestureAsksItsAbilityTest extends TestCase
         $campaign = Campaign::factory()->create();
         $this->refuse(Ability::CampaignsDelete);
 
-        Livewire::test(CampaignDetailPage::class, ['campaign' => $campaign])->call('deleteCampaignConfirmed')->assertForbidden();
+        Livewire::test(CampaignDetailPage::class, ['campaignId' => $campaign->id])->call('deleteCampaignConfirmed')->assertForbidden();
 
         $this->assertTrue(Campaign::query()->whereKey($campaign->id)->exists());
     }
@@ -120,9 +120,9 @@ final class EveryGestureAsksItsAbilityTest extends TestCase
         $ad = Ad::factory()->create();
         $this->refuse(Ability::AdsDelete);
 
-        $page = Livewire::test(CampaignDetailPage::class, ['campaign' => $ad->campaign]);
+        $page = Livewire::test(CampaignDetailPage::class, ['campaignId' => $ad->campaign_id]);
         $page->call('confirmDeleteAd', $ad->id)->assertForbidden();
-        Livewire::test(CampaignDetailPage::class, ['campaign' => $ad->campaign])->set('deleteAdId', $ad->id)->call('deleteAdConfirmed')->assertForbidden();
+        Livewire::test(CampaignDetailPage::class, ['campaignId' => $ad->campaign_id])->set('deleteAdId', $ad->id)->call('deleteAdConfirmed')->assertForbidden();
 
         $this->assertTrue(Ad::query()->whereKey($ad->id)->exists());
     }
@@ -132,7 +132,7 @@ final class EveryGestureAsksItsAbilityTest extends TestCase
         $visitor = Visitor::factory()->create();
         $this->refuse(Ability::VisitorsDelete);
 
-        Livewire::test(VisitorDetailPage::class, ['visitor' => $visitor])->call('forget')->assertForbidden();
+        Livewire::test(VisitorDetailPage::class, ['visitorId' => $visitor->id])->call('forget')->assertForbidden();
 
         $this->assertTrue(Visitor::query()->whereKey($visitor->id)->exists());
     }

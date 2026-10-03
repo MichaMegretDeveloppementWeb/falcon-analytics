@@ -53,7 +53,7 @@ final class AnEventReadsTheSameEverywhereTest extends TestCase
 
     public function test_the_journey_of_a_session_names_each_event_by_the_rule(): void
     {
-        $detail = Livewire::test(SessionDetailPage::class, ['session' => $this->session])->viewData('detail');
+        $detail = Livewire::test(SessionDetailPage::class, ['sessionId' => $this->session->id])->viewData('detail');
 
         $shown = array_merge(...array_map(
             static fn (JourneyStep $step): array => array_map(static fn (JourneyEvent $child): string => $child->label, $step->children),
