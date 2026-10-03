@@ -90,7 +90,7 @@ ne s'applique jamais.
 
 | Cas de `Ability` | Nom | Ce qu'elle couvre | Sans règle, elle suit |
 |---|---|---|---|
-| `Analytics` | `analytics` | tout le paquet | · (oui à tout compte connecté) |
+| `Analytics` | `analytics` | tout le paquet · et la page d'une adresse qui ne mène nulle part sous ses préfixes | · (oui à tout compte connecté) |
 | `Audience` | `analytics.audience` | l'espace Audience, d'un coup | `Analytics` |
 | `Overview` | `analytics.overview` | la vue d'ensemble | `Audience` |
 | `Realtime` | `analytics.realtime` | le temps réel | `Audience` |

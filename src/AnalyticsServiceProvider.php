@@ -17,20 +17,26 @@ use Falcon\Analytics\Console\ScanEventsCommand;
 use Falcon\Analytics\Console\SeedCommand;
 use Falcon\Analytics\Console\SweepCommand;
 use Falcon\Analytics\Console\SyncSearchConsoleCommand;
+use Falcon\Analytics\Enums\Authorization\Ability;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
+use Falcon\Analytics\Http\Controllers\MissingPageController;
 use Falcon\Analytics\Http\Middleware\CatchesUpTheMaintenance;
 use Falcon\Analytics\Support\AbilityDefaults;
 use Falcon\Analytics\Support\BranchMiddleware;
 use Falcon\Analytics\Support\GeoResolver;
+use Falcon\Analytics\Support\MissingPage;
 use Falcon\Analytics\Support\PersistentMiddlewareResolver;
 use Falcon\Ui\AssetRegistry;
 use Falcon\Ui\Config\CompletesDefaults;
 use Falcon\Ui\View\Leaves;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
+use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Contracts\Foundation\CachesRoutes;
 use Illuminate\Cookie\Middleware\EncryptCookies;
+use Illuminate\Foundation\Exceptions\Handler;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Route as RouteDefinition;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
@@ -39,6 +45,8 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class AnalyticsServiceProvider extends ServiceProvider
 {
@@ -89,6 +97,7 @@ final class AnalyticsServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'analytics');
 
         $this->mountTheScreens();
+        $this->answerMissingPages();
 
         // The kit builds asset URLs from this path, and raises on a stale published copy.
         $this->app->make(AssetRegistry::class)->register('analytics', __DIR__.'/../public');
@@ -305,7 +314,55 @@ final class AnalyticsServiceProvider extends ServiceProvider
         Route::prefix((string) ($area['route_prefix'] ?? $prefix))
             ->middleware([...((array) ($area['middleware'] ?? ['web', 'auth'])), CatchesUpTheMaintenance::class])
             ->name($name)
-            ->group(fn () => $this->loadRoutesFrom($file));
+            ->group(function () use ($file): void {
+                $this->loadRoutesFrom($file);
+                $this->answerWhatIsNotHere();
+            });
+    }
+
+    /**
+     * An address under the group just mounted that leads nowhere answers with
+     * the package's page.
+     *
+     * A fallback route never hides another one, the host's included, and it
+     * runs the group's middleware · the account is signed in, a guest is sent
+     * to sign in, and the page renders in the host's layout like any screen. It
+     * asks the package's root ability, so an account barred from the package
+     * learns nothing of what is there. A group mounted at the root of the site
+     * does not own the address space, and takes nothing.
+     */
+    private function answerWhatIsNotHere(): void
+    {
+        if ($this->app instanceof CachesRoutes && $this->app->routesAreCached()) {
+            return;
+        }
+
+        if (trim(Route::getLastGroupPrefix(), '/') === '') {
+            return;
+        }
+
+        Route::any('{path}', MissingPageController::class)
+            ->where('path', '.*')
+            ->fallback()
+            ->name('missing')
+            ->can(Ability::Analytics);
+    }
+
+    /**
+     * A 404 raised under the package's screens · a missing row, an address that
+     * leads nowhere · answers with the package's page.
+     *
+     * Added after the host's own handlers, which therefore keep the last word.
+     */
+    private function answerMissingPages(): void
+    {
+        $this->callAfterResolving(ExceptionHandler::class, function (ExceptionHandler $handler): void {
+            if (! $handler instanceof Handler) {
+                return;
+            }
+
+            $handler->renderable(fn (NotFoundHttpException $missing, Request $request): ?Response => $this->app->make(MissingPage::class)->respond($request));
+        });
     }
 
     /**

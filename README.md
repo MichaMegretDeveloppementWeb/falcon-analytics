@@ -27,8 +27,9 @@ worker · ça tourne là où Laravel tourne, hébergement mutualisé compris.
 ## Ce qu'il vous faut
 
 PHP 8.5 avec l'extension **intl**, Laravel 13.12 ou plus, Livewire 4.2, et une
-base **MySQL ou MariaDB** · les tableaux de bord posent du SQL propre à ce
-moteur, et l'installation refuse de commencer sur un autre.
+base **MySQL 8.0.16 ou plus, ou MariaDB 10.11 ou plus** · les tableaux de bord
+posent du SQL propre à ce moteur, et l'installation refuse de commencer sur un
+autre.
 
 Ces versions sont ce dont le code a besoin, pas ce qui est sûr · tenir Laravel
 à jour, et lire `composer audit`, reste l'affaire de votre application.

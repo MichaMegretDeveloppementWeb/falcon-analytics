@@ -52,7 +52,7 @@ final class TheErasureKeepsWhatItCannotDeleteTest extends TestCase
 
         // The events table is the first the action empties, so the deletion fails there.
         $this->withoutTable('falcon_analytics_events', function () use ($visitor): void {
-            Livewire::test(VisitorDetailPage::class, ['visitor' => $visitor])
+            Livewire::test(VisitorDetailPage::class, ['visitorId' => $visitor->id])
                 ->call('forget')
                 ->assertHasErrors('visitor-erasure-failed')
                 ->assertSee('La suppression a échoué.')

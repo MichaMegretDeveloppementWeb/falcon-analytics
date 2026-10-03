@@ -41,7 +41,7 @@ final class EveryScreenAsksItsAbilityTest extends TestCase
     /**
      * Every named route of the administration, and the ability its address asks.
      *
-     * @return array<string, array{0: string, 1: Ability, 2: Closure(): array<string, int>}>
+     * @return array<string, array{0: string, 1: Ability, 2: Closure(): array<string, int|string>}>
      */
     public static function screens(): array
     {
@@ -64,6 +64,8 @@ final class EveryScreenAsksItsAbilityTest extends TestCase
             'campaign' => ['analytics.admin.marketing.campaigns.show', Ability::Campaigns, static fn (): array => ['campaign' => Campaign::factory()->create()->id]],
             'ads' => ['analytics.admin.marketing.ads', Ability::Ads, $none],
             'ad' => ['analytics.admin.marketing.ads.show', Ability::Ads, static fn (): array => ['ad' => Ad::factory()->create()->id]],
+            'nowhere' => ['analytics.admin.missing', Ability::Analytics, static fn (): array => ['path' => 'nulle-part']],
+            'nowhere in marketing' => ['analytics.admin.marketing.missing', Ability::Analytics, static fn (): array => ['path' => 'nulle-part']],
         ];
     }
 
@@ -91,7 +93,7 @@ final class EveryScreenAsksItsAbilityTest extends TestCase
         $this->assertSame($listed, $mounted, 'A screen without its ability opens for anyone who passes the door.');
     }
 
-    /** @param Closure(): array<string, int> $parameters */
+    /** @param Closure(): array<string, int|string> $parameters */
     #[DataProvider('screens')]
     public function test_the_screen_answers_forbidden_once_its_ability_is_closed(string $name, Ability $ability, Closure $parameters): void
     {
@@ -102,7 +104,7 @@ final class EveryScreenAsksItsAbilityTest extends TestCase
         $this->get(route($name, $parameters()))->assertForbidden();
     }
 
-    /** @param Closure(): array<string, int> $parameters */
+    /** @param Closure(): array<string, int|string> $parameters */
     #[DataProvider('screens')]
     public function test_the_screen_opens_while_its_ability_is_open(string $name, Ability $ability, Closure $parameters): void
     {
@@ -130,17 +132,17 @@ final class EveryScreenAsksItsAbilityTest extends TestCase
             'overview' => [OverviewPage::class, Ability::Overview, $none],
             'realtime' => [RealtimePage::class, Ability::Realtime, $none],
             'visitors' => [VisitorsPage::class, Ability::Visitors, $none],
-            'visitor' => [VisitorDetailPage::class, Ability::Visitors, static fn (): array => ['visitor' => Visitor::factory()->create()]],
+            'visitor' => [VisitorDetailPage::class, Ability::Visitors, static fn (): array => ['visitorId' => Visitor::factory()->create()->id]],
             'events' => [EventsPage::class, Ability::Events, $none],
             'funnels' => [FunnelsPage::class, Ability::Funnels, $none],
             'sessions' => [SessionsPage::class, Ability::Sessions, $none],
-            'session' => [SessionDetailPage::class, Ability::Sessions, static fn (): array => ['session' => Session::factory()->create()]],
+            'session' => [SessionDetailPage::class, Ability::Sessions, static fn (): array => ['sessionId' => Session::factory()->create()->id]],
             'integrations' => [IntegrationsPage::class, Ability::Integrations, $none],
             'marketing' => [MarketingDashboardPage::class, Ability::MarketingDashboard, $none],
             'campaigns' => [CampaignsPage::class, Ability::Campaigns, $none],
-            'campaign' => [CampaignDetailPage::class, Ability::Campaigns, static fn (): array => ['campaign' => Campaign::factory()->create()]],
+            'campaign' => [CampaignDetailPage::class, Ability::Campaigns, static fn (): array => ['campaignId' => Campaign::factory()->create()->id]],
             'ads' => [AdsPage::class, Ability::Ads, $none],
-            'ad' => [AdDetailPage::class, Ability::Ads, static fn (): array => ['ad' => Ad::factory()->create()]],
+            'ad' => [AdDetailPage::class, Ability::Ads, static fn (): array => ['adId' => Ad::factory()->create()->id]],
         ];
     }
 

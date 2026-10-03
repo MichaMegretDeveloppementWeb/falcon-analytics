@@ -9,6 +9,8 @@ use Falcon\Analytics\Enums\Authorization\Ability;
 use Falcon\Analytics\Livewire\Admin\Concerns\AsksTheScreenAbility;
 use Falcon\Analytics\Models\Ad;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
@@ -34,10 +36,9 @@ final class AdDetailPage extends DashboardComponent
     /** The ad as this request read it · kept for the request, never between two. */
     private ?Ad $read = null;
 
-    public function mount(Ad $ad): void
+    public function mount(int $adId): void
     {
-        $this->adId = $ad->id;
-        $this->read = $ad;
+        $this->adId = $adId;
     }
 
     /** Draws the page again once its form has written · the render reads the ad afresh. */
@@ -48,7 +49,7 @@ final class AdDetailPage extends DashboardComponent
     {
         return $this->guardedRender(
             function (): array {
-                // Its campaign is read here and not at mount, so that a failure is the error state and not a raw error.
+                // Read here and not at mount, so that a failure is the error state and not a raw error.
                 $ad = ($this->read ??= Ad::query()->findOrFail($this->adId))->load(self::CAMPAIGN);
 
                 return [
@@ -66,6 +67,12 @@ final class AdDetailPage extends DashboardComponent
     protected function screenAbility(): Ability
     {
         return Ability::Ads;
+    }
+
+    /** @param ModelNotFoundException<Model> $gone */
+    protected function addressOnceGone(ModelNotFoundException $gone): ?string
+    {
+        return $gone->getModel() === Ad::class ? route('analytics.admin.marketing.ads.show', $this->adId) : null;
     }
 
     protected function unreadableTitle(): string

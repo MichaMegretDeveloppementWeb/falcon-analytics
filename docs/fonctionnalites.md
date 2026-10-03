@@ -88,7 +88,7 @@ On ne le répète donc pas, et chaque exception est dite dans sa fiche ·
 | **layout** | ce que `layouts.admin` nomme · la coquille du paquet au défaut |
 | **mode d'usage** | une page, dans votre layout ou dans notre coquille. **Jamais un composant à poser dans une de vos pages** · un écran attend une page entière autour de lui |
 | **lecture seule** | sauf **trois** écrans marketing et l'effacement RGPD, tous signalés dans leur fiche |
-| **paramètres** | **ceux de l'adresse**, quand l'écran en porte un · les filtres, eux, sont dans la section ci-dessus et ne sont pas répétés fiche par fiche |
+| **paramètres** | **ceux de l'adresse**, quand l'écran en porte un · un identifiant est un nombre, lu **après** la capacité · les filtres, eux, sont dans la section ci-dessus et ne sont pas répétés fiche par fiche |
 
 Les écrans marketing prennent `admin.marketing.middleware`, qui peut désigner un
 autre garde.
@@ -108,6 +108,37 @@ debout, et il n'y a pas d'erreur 500.
 > **Ce n'est pas la panne qui est cachée, c'est la page qui est sauvée.** La
 > cause part dans le canal de journal du paquet, `log_channel` · c'est là qu'on
 > regarde, et c'est la raison de lui donner un canal à lui.
+
+**Une fiche dont la base n'a pas rendu la ligne** s'ouvre quand même, dans votre
+habillage, avec ce bandeau · l'onglet dit alors « Campagne » ou « Publicité » à
+la place du nom. **Une ligne supprimée pendant que la fiche était ouverte**
+renvoie à son adresse, qui répond « introuvable » · un « Réessayer » sur une
+ligne qui n'existe plus ne pourrait jamais aboutir.
+
+---
+
+## Une adresse qui ne mène nulle part
+
+Sous les deux préfixes du paquet, une adresse inconnue **ou une fiche dont la
+ligne n'existe pas** répond « Cette page n’existe pas ou plus. », en **404**,
+dans votre gabarit d'administration, avec un lien vers la vue d'ensemble pour le
+compte qui peut l'ouvrir.
+
+| | |
+|---|---|
+| **routes** | `analytics.admin.missing` · `analytics.admin.marketing.missing` |
+| **adresses** | tout ce qui suit `{admin.route_prefix}/` ou `{admin.marketing.route_prefix}/` et que rien d'autre ne sert · toutes méthodes |
+| **capacité** | `analytics`, la racine · un compte qui n'a pas le paquet reçoit 403 et n'apprend rien de ce qui existe |
+
+- **Elle ne cache jamais une route**, les vôtres comprises · une adresse que vous
+  ajoutez sous un de ces préfixes répond comme avant ;
+- **votre page 404 garde tout le reste** · le reste du site, une requête qui
+  attend du JSON, un appel Livewire et le point de collecte ;
+- **une règle posée dans `withExceptions()` passe avant** · c'est ainsi qu'on
+  garde sa propre page aussi sous les préfixes du paquet ;
+- **un espace monté à la racine du site n'en a pas** · il ne possède pas les
+  adresses qui le suivent ;
+- **une mauvaise méthode sur une adresse du paquet répond 404**, et non 405.
 
 ---
 
@@ -136,7 +167,9 @@ le vôtre · celui-ci ne décrit que ce que le paquet affiche.
 | un classement | « les plus vues », « principaux » | Top |
 | ce que rapportent les conversions ou un tunnel | **score**, compté en **points** · **1 pt**, **12 pts** | montant, valeur · 1 pts |
 | un écran ou un bloc qui n'a pas pu lire ses données | **Impossible de charger** suivi de ce qui manque · « … les sessions », « … les sources de trafic », « … cette campagne » · puis « Réessayez dans un instant, et si cela continue, prévenez la personne qui s’occupe de votre site. » et le bouton **Réessayer** | Données indisponibles |
-| une campagne ou une publicité qui n'existe plus, à l'ouverture | « Cette campagne est introuvable. Actualisez la page. » · et si la base ne l'a pas rendue · « Impossible de charger cette campagne. Réessayez. » | introuvable, quand elle existe |
+| une campagne ou une publicité qui n'existe plus, à l'ouverture d'une fenêtre ou au moment d'un geste · un visiteur aussi | « Cette campagne est introuvable. Actualisez la page. » · « Ce visiteur est introuvable. Actualisez la page. » · et si la base ne l'a pas rendue · « Impossible de charger cette campagne. Réessayez. », « Impossible de charger ce visiteur. Réessayez. » | introuvable, quand elle existe |
+| une adresse qui ne mène nulle part, ou une fiche dont la ligne n'existe pas | « Cette page n’existe pas ou plus. » · le bouton **Revenir à la vue d'ensemble** · l'onglet « Page introuvable · Audience » ou « Page introuvable · Marketing » | page non trouvée, erreur 404 |
+| l'onglet d'une campagne ou d'une publicité dont la base n'a pas rendu le nom | « Campagne · Marketing », « Publicité · Marketing » | un onglet vide |
 
 **Les types d'appareil** · Ordinateur, Mobile, Téléphone simple, Phablette,
 Tablette, Télévision, Écran connecté, Appareil photo, Enceinte connectée,
@@ -250,7 +283,7 @@ annuaire.
 | **route** | `analytics.admin.visitors.show` |
 | **adresse** | `{admin.route_prefix}/visitors/{visitor}` |
 | **capacité** | `analytics.visitors` · supprimer ses données · `analytics.visitors.delete` |
-| **paramètres** | `visitor` · l'identifiant du profil |
+| **paramètres** | `visitor` · l'identifiant du profil, un nombre · un profil fondu dans un autre mène à celui-ci |
 
 Son identité, ses chiffres, et la liste de ses sessions menant chacune à son
 détail. **Lecture seule, sauf l'effacement RGPD** · voir
@@ -275,7 +308,7 @@ Les statistiques d'engagement de la période, et la liste paginée et filtrable 
 | **route** | `analytics.admin.sessions.show` |
 | **adresse** | `{admin.route_prefix}/sessions/{session}` |
 | **capacité** | `analytics.sessions` |
-| **paramètres** | `session` · l'identifiant de la session |
+| **paramètres** | `session` · l'identifiant de la session, un nombre |
 
 Ses informations principales et **son parcours chronologique** · les pages
 visitées, les clics rangés sous la page où ils ont eu lieu, et le temps passé.
@@ -374,7 +407,7 @@ nombre de publicités. **Les campagnes se créent et se modifient ici.**
 | **route** | `analytics.admin.marketing.campaigns.show` |
 | **adresse** | `{admin.marketing.route_prefix}/campaigns/{campaign}` |
 | **capacité** | `analytics.campaigns` · la campagne · `analytics.campaigns.edit`, `analytics.campaigns.delete` · ses publicités · `analytics.ads.edit`, `analytics.ads.delete` |
-| **paramètres** | `campaign` |
+| **paramètres** | `campaign` · l'identifiant de la campagne, un nombre |
 
 Son trafic sur la période, son identité, ses conditions d'URL, et la table de ses
 publicités avec leur trafic et leurs objectifs de conversion. **Les publicités et
@@ -399,7 +432,7 @@ modification se fait sur la campagne parente.**
 | **route** | `analytics.admin.marketing.ads.show` |
 | **adresse** | `{admin.marketing.route_prefix}/ads/{ad}` |
 | **capacité** | `analytics.ads` · la modifier · `analytics.ads.edit` |
-| **paramètres** | `ad` |
+| **paramètres** | `ad` · l'identifiant de la publicité, un nombre |
 
 Sa campagne parente, ses conditions d'URL et son éditeur paraissent tout de
 suite ; son trafic, sa tendance et le détail de ses conversions suivent.

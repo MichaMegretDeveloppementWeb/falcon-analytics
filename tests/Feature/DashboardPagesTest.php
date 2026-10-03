@@ -299,7 +299,7 @@ final class DashboardPagesTest extends TestCase
 
         $this->actingAs($this->admin, 'admin');
 
-        Livewire::test(VisitorDetailPage::class, ['visitor' => $target])
+        Livewire::test(VisitorDetailPage::class, ['visitorId' => $target->id])
             ->call('forget')
             ->assertRedirect(route('analytics.admin.visitors'));
 
@@ -367,13 +367,14 @@ final class DashboardPagesTest extends TestCase
         $this->actingAs($this->admin, 'admin');
         $session = $this->seedSession();
 
-        // Fixed plan: the visitor, then the whole journey in one read = 2.
+        // Fixed plan: the session, the visitor, then the whole journey in one read = 3. The session
+        // itself is read by the screen now that no route binding hands it over.
         $budget = $this->assertCostIsFlat(
             fn () => Event::factory()->for($session)->create(),
-            fn () => Livewire::test(SessionDetailPage::class, ['session' => $session]),
+            fn () => Livewire::test(SessionDetailPage::class, ['sessionId' => $session->id]),
         );
 
-        $this->assertLessThanOrEqual(2, $budget['count']);
+        $this->assertLessThanOrEqual(3, $budget['count']);
     }
 
     public function test_a_visitor_detail_costs_the_same_whatever_its_sessions(): void
@@ -381,13 +382,15 @@ final class DashboardPagesTest extends TestCase
         $this->actingAs($this->admin, 'admin');
         $visitor = Visitor::factory()->create();
 
-        // Fixed plan: engagement, devices, sources, then one page of sessions (count + rows) = 5.
+        // Fixed plan: the visitor, engagement, devices, sources, then one page of sessions
+        // (count + rows) = 6. The visitor itself is read by the screen now that no route binding
+        // hands it over.
         $budget = $this->assertCostIsFlat(
             fn () => Session::factory()->for($visitor)->create(),
-            fn () => Livewire::test(VisitorDetailPage::class, ['visitor' => $visitor]),
+            fn () => Livewire::test(VisitorDetailPage::class, ['visitorId' => $visitor->id]),
         );
 
-        $this->assertLessThanOrEqual(5, $budget['count']);
+        $this->assertLessThanOrEqual(6, $budget['count']);
     }
 
     public function test_it_recomputes_the_overview_metrics_when_the_period_changes(): void

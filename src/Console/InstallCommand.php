@@ -7,6 +7,7 @@ namespace Falcon\Analytics\Console;
 use Falcon\Analytics\Support\DatabaseEngine;
 use Falcon\Analytics\Support\EnvScaffolder;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Installs the package: publishes its settings, scaffolds the environment
@@ -75,8 +76,10 @@ final class InstallCommand extends Command
     public function handle(): int
     {
         // Before anything is written: a later refusal would leave an installation that looks done and is not.
-        if (! DatabaseEngine::isSupported()) {
-            $this->components->error(DatabaseEngine::refusal());
+        $refusal = DatabaseEngine::of(DB::connection())->refusal();
+
+        if ($refusal !== null) {
+            $this->components->error($refusal);
 
             return self::FAILURE;
         }

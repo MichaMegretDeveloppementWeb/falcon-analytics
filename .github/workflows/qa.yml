@@ -55,7 +55,7 @@ env:
 
 jobs:
   qa:
-    name: PHP ${{ matrix.php }} · ${{ matrix.resolution }} resolution
+    name: PHP ${{ matrix.php }} · ${{ matrix.resolution }} resolution · ${{ matrix.database }}
     runs-on: ubuntu-latest
 
     defaults:
@@ -73,7 +73,13 @@ jobs:
       # chain would exercise the same thing twice and the announced floor would
       # never be verified by anyone.
       #
-      # **The floor is 8.5**, so both lines carry it: the kit and every package
+      # **And two engines on each.** The package is promised on MySQL from 8.0.16
+      # and on MariaDB from 10.11: the lowest resolution runs on the oldest
+      # release of each line, MySQL 8.0 and MariaDB 10.11, the highest on the
+      # long-term ones a host installs today, MySQL 8.4 and MariaDB 11.4. An
+      # engine no line runs on is not promised.
+      #
+      # **The floor is 8.5**, so every line carries it: the kit and every package
       # of the suite require it, and a suite whose members announce different
       # floors keeps no coherent promise. What is verified here is the two
       # resolutions, not two versions of PHP.
@@ -102,17 +108,31 @@ jobs:
           - php: '8.5'
             resolution: lowest
             flags: '--prefer-lowest --prefer-stable --no-blocking'
+            database: mysql:8.0
+            driver: mysql
+          - php: '8.5'
+            resolution: lowest
+            flags: '--prefer-lowest --prefer-stable --no-blocking'
+            database: mariadb:10.11
+            driver: mariadb
           - php: '8.5'
             resolution: highest
             flags: ''
+            database: mysql:8.4
+            driver: mysql
+          - php: '8.5'
+            resolution: highest
+            flags: ''
+            database: mariadb:11.4
+            driver: mariadb
 
-    # MySQL, and nothing else. The suite refuses to start without it and falls
-    # back on no other engine: the screens are aggregations, so GROUP BY, date
-    # functions and composite indexes are exactly what has to be exercised.
-    # 8.4 is the long-term release, the one a host runs.
+    # The line's engine, and nothing else. The suite refuses to start without
+    # one and falls back on no other: the screens are aggregations, so GROUP BY,
+    # date functions and composite indexes are exactly what has to be
+    # exercised. Both images read the same `MYSQL_*` variables.
     services:
-      mysql:
-        image: mysql:8.4
+      database:
+        image: ${{ matrix.database }}
         env:
           MYSQL_ROOT_PASSWORD: root
           MYSQL_DATABASE: falcon_analytics_test
@@ -120,19 +140,16 @@ jobs:
           # Quoted, because an unquoted `3306:3306` is a sexagesimal integer in
           # YAML 1.1 and not every parser reads it as a port mapping.
           - '3306:3306'
-        options: >-
-          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=10
 
     # Read by `tests/TestCase.php` through `getenv()`. No `.env.test` is written:
     # that file exists for a workstation, carries a password, and stays out of
     # the repository — what is already in the environment wins over it.
     #
     # Paratest runs four workers, and each creates its own
-    # `falcon_analytics_test_1` … `_4` from this account.
+    # `falcon_analytics_test_1` … `_4` from this account. The driver is the one
+    # a host running that engine sets.
     env:
+      ANALYTICS_TEST_DB_DRIVER: ${{ matrix.driver }}
       ANALYTICS_TEST_MYSQL_DATABASE: falcon_analytics_test
       ANALYTICS_TEST_MYSQL_HOST: 127.0.0.1
       ANALYTICS_TEST_MYSQL_PORT: '3306'
@@ -185,6 +202,19 @@ jobs:
       - name: The floor announced is the floor installed
         if: matrix.resolution == 'lowest'
         run: php scripts/check-floor.php
+
+      # The service is not waited for before the job starts: it boots while PHP
+      # and the dependencies install, and is only waited for here. The runner's
+      # client asks, which answers both engines alike: MariaDB 11 no longer
+      # ships `mysqladmin` inside its image.
+      - name: Wait for the database
+        run: |
+          for attempt in $(seq 1 60); do
+            mysqladmin ping --host=127.0.0.1 --user=root --password=root --silent && exit 0
+            sleep 1
+          done
+          echo "${{ matrix.database }} did not answer within a minute." >&2
+          exit 1
 
       - name: The qa chain
         run: composer qa
