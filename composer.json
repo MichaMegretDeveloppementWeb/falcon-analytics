@@ -77,7 +77,8 @@
             "@php vendor/bin/paratest --processes=4"
         ],
         "qa:lowest": [
-            "@composer update --prefer-lowest --prefer-stable --no-interaction",
+            "@composer update --prefer-lowest --prefer-stable --no-blocking --no-interaction",
+            "@php scripts/check-floor.php",
             "@php vendor/bin/pint --test",
             "@php vendor/bin/phpstan analyse --no-progress --memory-limit=2G",
             "@php vendor/bin/phpunit"

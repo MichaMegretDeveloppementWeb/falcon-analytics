@@ -122,7 +122,12 @@ architecture qui n'existe plus.
   d'intégration tourne sur MySQL 8.0 et 8.4, MariaDB 10.11 et 11.4 · une version
   plus basse est refusée par `analytics:install` avant qu'il n'écrive, et
   `analytics:check` la signale. L'identifiant d'un visiteur est un `char(36)` sur
-  les deux moteurs · MariaDB en aurait fait un type à lui ;
+  les deux moteurs · MariaDB en aurait fait un type à lui. **Chaque table est
+  créée en InnoDB**, quel que soit le moteur par défaut du serveur · sur MyISAM,
+  ni les clés étrangères ni les transactions ne tiendraient. `analytics:check`
+  nomme une table qui ne l'est pas, avec la commande pour la convertir ;
+- **les commandes parlent comme les écrans** · « session » et « publicité »
+  dans ce qu'elles écrivent au terminal. Rien à faire pour cela ;
 - **des filtres qui disent ce qu'ils filtrent** · chaque liste de filtre porte
   un nom qu'un lecteur d'écran lit avant sa valeur · « Période », « Visiteurs »,
   « Appareil », « Source ». Rien ne change à l'écran ;
@@ -161,8 +166,8 @@ du collecteur dans votre bundle en donnerait deux.
 
 ### Les migrations
 
-Le paquet crée **dix tables** préfixées `falcon_analytics_`, chargées
-automatiquement · un `php artisan migrate` suffit, et `analytics:install` le
+Le paquet crée **dix tables** préfixées `falcon_analytics_`, toutes en InnoDB,
+chargées automatiquement · un `php artisan migrate` suffit, et `analytics:install` le
 lance pour vous. Huit portent vos mesures ; les deux autres sont la mécanique de
 la conservation, et ne sont pas une interface.
 

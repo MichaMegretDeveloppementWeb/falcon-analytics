@@ -144,7 +144,8 @@ compte qui peut l'ouvrir.
 
 ## Le vocabulaire
 
-**Un mot par notion, sur tous les écrans.** C'est ce que vous écrivez dans votre
+**Un mot par notion, sur tous les écrans**, et dans ce que les commandes
+écrivent au terminal. C'est ce que vous écrivez dans votre
 menu pour que vos libellés et les nôtres se répondent, et ce que vous traduisez
 si votre site ne parle pas français. Le vocabulaire de votre propre site reste
 le vôtre · celui-ci ne décrit que ce que le paquet affiche.
@@ -500,7 +501,7 @@ php artisan analytics:seed --visits=2000 --days=90
 
 | Option | Défaut | Ce qu'elle règle |
 |---|---|---|
-| `--visits` | 600 | combien de visites ajouter |
+| `--visits` | 600 | combien de sessions ajouter |
 | `--days` | 30 | sur combien de jours passés les répartir · jamais plus que la conservation, `retention_days` |
 | `--force` | — | exécuter hors développement |
 

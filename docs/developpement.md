@@ -13,7 +13,7 @@ mysql -u root -p -e "CREATE DATABASE falcon_analytics_test"
 ```
 
 PHP 8.5 ou plus · c'est le plancher de toute la suite. Node 22, sa version exacte
-dans `.nvmrc`. Et **MySQL**, qui n'est pas négociable · voir plus bas.
+dans `.nvmrc`. Et **MySQL ou MariaDB**, qui ne se négocient pas · voir plus bas.
 
 `.env.test` **n'est pas facultatif** · sans lui la suite ne démarre pas du tout,
 et c'est voulu · elle ne se rabat jamais en silence sur un autre moteur.
@@ -48,8 +48,18 @@ npm run check-assets   # la compilation rend-elle deux fois le même fichier ?
 ```
 
 **Et `composer qa:lowest`**, qui résout les versions les plus basses que le
-paquet annonce, puis relance les essais. Une contrainte annoncée qu'on n'a jamais
-installée est une promesse invérifiée.
+paquet annonce, puis relance toute la chaîne. Une contrainte annoncée qu'on n'a
+jamais installée est une promesse invérifiée.
+
+**C'est la ligne basse de la CI, jouée sur votre poste.** `--no-blocking` lui
+fait prendre le vrai plancher, même quand un avis de sécurité vise l'une de ces
+versions · sans lui, Composer installerait la première version sans avis, plus
+haute que celle qu'annonce le manifeste. Puis `scripts/check-floor.php` compare,
+dépendance par dépendance, ce qui a été installé à ce qui est annoncé, et
+s'arrête en nommant tout écart. **Elle déplace le verrou** · remettez-le tel
+qu'il est commité, par `git checkout composer.lock` puis `composer install`,
+sans quoi un commit emporterait la résolution basse. Un `composer update` ne
+suffit pas · il ramènerait des versions plus récentes que le verrou.
 
 > **Rien ne s'abaisse pour faire passer la chaîne.** L'analyse est au niveau 8,
 > avec les règles strictes, et **il n'y a pas de ligne de base**. Les trois
@@ -76,8 +86,10 @@ pour qu'on ne prenne pas l'absence pour un choix.
 
 ## La base d'essai
 
-**MySQL, et seulement MySQL.** Pas de SQLite, même en mémoire, même « juste pour
-aller plus vite » · c'est une décision, pas une négligence.
+**MySQL ou MariaDB, et rien d'autre.** Pas de SQLite, même en mémoire, même
+« juste pour aller plus vite » · c'est une décision, pas une négligence. La
+chaîne tourne sur MySQL 8.0 et 8.4, MariaDB 10.11 et 11.4 · sur votre poste,
+une base MariaDB s'éprouve avec `ANALYTICS_TEST_DB_DRIVER=mariadb`.
 
 La raison tient au paquet · **ses écrans sont des agrégations**. `GROUP BY`,
 fonctions de date, index composites — c'est exactement là que les deux moteurs

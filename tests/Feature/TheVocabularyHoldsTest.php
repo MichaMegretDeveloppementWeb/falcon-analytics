@@ -9,11 +9,19 @@ use Symfony\Component\Finder\Finder;
 
 /**
  * One word per notion, as `docs/fonctionnalites.md` writes it under « Le
- * vocabulaire ». Reads the strings handed to `__()`, never the comments, and
- * refuses every word that section retires.
+ * vocabulaire ». Reads the strings handed to `__()`, and every string of what
+ * the package prints in a terminal, never the comments, and refuses every word
+ * that section retires.
  */
 final class TheVocabularyHoldsTest extends TestCase
 {
+    /**
+     * Where every string is read: the commands, the summaries of the seeders,
+     * and the names the test data lays on screens. They do not go through
+     * `__()`, and an integrator reads them all the same.
+     */
+    private const PRINTED = ['src/Console', 'database/seeders', 'database/factories'];
+
     /** Retired word => the word to write instead. */
     private const RETIRED = [
         '/\bpubs?\b/iu' => 'publicité',
@@ -61,6 +69,25 @@ final class TheVocabularyHoldsTest extends TestCase
 
                 if ($string !== 'pt' && $string !== 'pts') {
                     $strings[] = [$file->getRelativePathname(), $string];
+                }
+            }
+        }
+
+        $printed = Finder::create()->files()->name('*.php')->in(array_map(
+            static fn (string $directory): string => $root.'/'.$directory,
+            self::PRINTED,
+        ));
+
+        foreach ($printed as $file) {
+            $where = str_replace('\\', '/', substr($file->getPathname(), strlen($root) + 1));
+
+            foreach (token_get_all($file->getContents()) as $token) {
+                if (is_array($token) && $token[0] === T_CONSTANT_ENCAPSED_STRING) {
+                    $strings[] = [$where, stripslashes(substr($token[1], 1, -1))];
+                }
+
+                if (is_array($token) && $token[0] === T_ENCAPSED_AND_WHITESPACE) {
+                    $strings[] = [$where, $token[1]];
                 }
             }
         }

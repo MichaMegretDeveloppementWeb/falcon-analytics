@@ -105,7 +105,7 @@ final class DemoTrafficSeeder extends Seeder
 
         $summarised = $this->archive->executeFrom($this->firstDayWritten($before, $now));
 
-        return ['visite|visites' => $visits, 'journée résumée|journées résumées' => count($summarised)];
+        return ['session|sessions' => $visits, 'journée résumée|journées résumées' => count($summarised)];
     }
 
     /** The day the earliest visit of this pass started, where summarising again begins. */

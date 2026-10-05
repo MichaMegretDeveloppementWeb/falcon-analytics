@@ -15,6 +15,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('falcon_analytics_events', function (Blueprint $table): void {
+            $table->engine('InnoDB');
+
             $table->id();
             $table->foreignId('session_id')
                 ->constrained('falcon_analytics_sessions')

@@ -24,6 +24,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('falcon_analytics_daily_archives', function (Blueprint $table): void {
+            $table->engine('InnoDB');
+
             $table->id();
             $table->date('day')->unique('fa_daily_archives_day_unique');
             $table->dateTime('archived_at');

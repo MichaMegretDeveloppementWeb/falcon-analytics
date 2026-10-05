@@ -17,6 +17,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('falcon_analytics_campaigns', function (Blueprint $table): void {
+            $table->engine('InnoDB');
+
             $table->id();
             $table->string('name', 150);
             $table->json('match_conditions')->nullable();

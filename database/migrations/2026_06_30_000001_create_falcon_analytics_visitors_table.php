@@ -18,6 +18,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('falcon_analytics_visitors', function (Blueprint $table): void {
+            $table->engine('InnoDB');
+
             $table->id();
 
             // The fa_vid cookie with consent, a per-session UUID without it. A char(36)
