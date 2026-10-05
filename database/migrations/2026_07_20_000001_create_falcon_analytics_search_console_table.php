@@ -16,6 +16,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('falcon_analytics_search_console', function (Blueprint $table): void {
+            $table->engine('InnoDB');
+
             $table->id();
             $table->string('property', 255)->nullable();
             $table->text('refresh_token');

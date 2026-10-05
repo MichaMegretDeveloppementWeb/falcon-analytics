@@ -48,7 +48,7 @@ final class DemoMarketingSeeder extends Seeder
      */
     public function run(): array
     {
-        $laid = ['campagne|campagnes' => 0, 'pub|pubs' => 0];
+        $laid = ['campagne|campagnes' => 0, 'publicité|publicités' => 0];
         $objectives = $this->objectives();
 
         foreach (self::CAMPAIGNS as $campaignLink => $campaign) {
@@ -61,7 +61,7 @@ final class DemoMarketingSeeder extends Seeder
 
             foreach ($campaign['ads'] as $adLink => $name) {
                 $this->ads->execute(null, $saved->id, $name, [['param' => 'utm_content', 'value' => $adLink]], $objectives);
-                $laid['pub|pubs']++;
+                $laid['publicité|publicités']++;
             }
         }
 

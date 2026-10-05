@@ -17,6 +17,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('falcon_analytics_search_queries', function (Blueprint $table): void {
+            $table->engine('InnoDB');
+
             $table->id();
             $table->date('date');
             $table->string('query', 255);

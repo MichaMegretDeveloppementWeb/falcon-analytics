@@ -271,6 +271,9 @@ final class CheckCommand extends Command
      * points a second environment somewhere else — so this is checked at every
      * deployment rather than only once.
      *
+     * The engine of each table is read too: a table restored or copied onto
+     * MyISAM keeps neither its foreign keys nor its transactions, silently.
+     *
      * @return array{0: string, 1: string, 2: string}
      */
     private function checkDatabaseEngine(): array
@@ -282,7 +285,37 @@ final class CheckCommand extends Command
             return ['Base de données', 'KO', $refusal];
         }
 
-        return ['Base de données', 'OK', "La base est {$engine->inWords()}, que le paquet prend en charge."];
+        $elsewhere = $this->tablesOutsideInnoDb();
+
+        if ($elsewhere !== []) {
+            return [
+                'Base de données',
+                'KO',
+                'Ces tables du paquet ne sont pas en InnoDB · '.implode(', ', $elsewhere).'. Sans InnoDB, ni les clés '
+                .'étrangères ni les transactions ne tiennent, et une écriture interrompue laisse des lignes à moitié '
+                .'faites. Après une sauvegarde, passez-les en InnoDB · ALTER TABLE … ENGINE = InnoDB.',
+            ];
+        }
+
+        return ['Base de données', 'OK', "La base est {$engine->inWords()}, que le paquet prend en charge, et ses tables sont en InnoDB."];
+    }
+
+    /**
+     * The package's tables on another engine than InnoDB, by name.
+     *
+     * @return list<string>
+     */
+    private function tablesOutsideInnoDb(): array
+    {
+        return array_values(DB::table('information_schema.TABLES')
+            ->where('TABLE_SCHEMA', DB::connection()->getDatabaseName())
+            ->where('TABLE_NAME', 'like', 'falcon\_analytics\_%')
+            ->where('TABLE_TYPE', 'BASE TABLE')
+            ->where('ENGINE', '<>', 'InnoDB')
+            ->orderBy('TABLE_NAME')
+            ->pluck('TABLE_NAME')
+            ->map(static fn (mixed $name): string => (string) $name)
+            ->all());
     }
 
     /**
@@ -400,7 +433,7 @@ final class CheckCommand extends Command
         return [
             'Collecteur',
             'KO',
-            'Aucune vue ne porte @analyticsCollector : aucune visite n’est mesurée. '
+            'Aucune vue ne porte @analyticsCollector : aucune page n’est mesurée. '
             .'Posez la directive dans le gabarit de votre site public, à l’endroit qui vous arrange : '
             .'le script est différé, donc sa place dans la page ne change rien.',
         ];
@@ -691,7 +724,7 @@ final class CheckCommand extends Command
         try {
             $resolver->componentClass($layout);
         } catch (InvalidArgumentException) {
-            return ['Gabarit', 'KO', 'Aucun composant ne répond au nom '.$layout.' : les écrans tomberaient à la première visite.'];
+            return ['Gabarit', 'KO', 'Aucun composant ne répond au nom '.$layout.' : les écrans tomberaient dès leur première ouverture.'];
         }
 
         return ['Gabarit', 'OK', 'Le composant '.$layout.' existe.'];
@@ -872,7 +905,7 @@ final class CheckCommand extends Command
         return [
             'Proxy',
             'À voir',
-            'Aucun proxy de confiance déclaré. Derrière un reverse proxy, toutes les visites porteront '
+            'Aucun proxy de confiance déclaré. Derrière un reverse proxy, toutes les sessions porteront '
             .'son adresse · un seul pays, une seule ville, exclude_ips qui exclut tout le monde ou '
             .'personne, et surtout une limite de débit partagée par tout le site, qui refuse les envois '
             .'au-delà du seuil sans que rien ne le signale. Sans proxy, il n’y a rien à faire.',
@@ -904,7 +937,7 @@ final class CheckCommand extends Command
         return [
             'Géolocalisation',
             'KO',
-            'Une clé de licence est posée mais la base est absente : les visites n’ont pas de pays. '
+            'Une clé de licence est posée mais la base est absente : les sessions n’ont pas de pays. '
             .'Exécutez php artisan analytics:geoip:download.',
         ];
     }

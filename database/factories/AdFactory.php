@@ -23,7 +23,7 @@ final class AdFactory extends Factory
     {
         return [
             'campaign_id' => Campaign::factory(),
-            'name' => 'Pub '.Str::lower(Str::random(6)),
+            'name' => 'Publicité '.Str::lower(Str::random(6)),
             'match_conditions' => null,
             'is_active' => true,
         ];

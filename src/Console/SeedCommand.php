@@ -17,11 +17,11 @@ use Throwable;
 final class SeedCommand extends Command
 {
     protected $signature = 'analytics:seed
-                            {--days=30 : Sur combien de jours passés répartir les visites}
-                            {--visits=600 : Combien de visites ajouter}
+                            {--days=30 : Sur combien de jours passés répartir les sessions}
+                            {--visits=600 : Combien de sessions ajouter}
                             {--force : Exécuter hors développement}';
 
-    protected $description = 'Peuple la base de visites inventées, de quoi éprouver les écrans. Jamais en production sans --force.';
+    protected $description = 'Peuple la base de sessions inventées, de quoi éprouver les écrans. Jamais en production sans --force.';
 
     public function handle(DatabaseSeeder $chain): int
     {
@@ -57,7 +57,7 @@ final class SeedCommand extends Command
         }
 
         $this->components->error(sprintf(
-            'L’environnement est « %s ». Cette commande crée de fausses visites et de fausses campagnes. '
+            'L’environnement est « %s ». Cette commande crée de fausses sessions et de fausses campagnes. '
             .'Relancez avec --force si c’est vraiment ce que vous voulez.',
             $this->laravel->environment(),
         ));
@@ -88,7 +88,7 @@ final class SeedCommand extends Command
 
         if (is_int($retention) && $retention >= 1 && $days > $retention) {
             $this->components->error(
-                "--days dépasse la conservation réglée ({$retention} jours, analytics.retention_days) · des visites "
+                "--days dépasse la conservation réglée ({$retention} jours, analytics.retention_days) · des sessions "
                 .'plus anciennes seraient effacées à la purge suivante, sans avoir compté dans les classements.'
             );
 

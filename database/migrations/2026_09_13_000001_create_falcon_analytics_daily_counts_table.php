@@ -31,6 +31,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('falcon_analytics_daily_counts', function (Blueprint $table): void {
+            $table->engine('InnoDB');
+
             $table->id();
             $table->date('day');
 

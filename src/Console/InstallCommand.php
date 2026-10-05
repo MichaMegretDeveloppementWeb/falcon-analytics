@@ -130,7 +130,7 @@ final class InstallCommand extends Command
             'Poser @analyticsCollector dans le gabarit public que vous voulez mesurer',
             'Renseigner vos guards et votre cookie de consentement dans le bloc identity de config/analytics.php',
             'Derrière un proxy, régler TrustProxies pour que la vraie IP du client soit utilisée',
-            'En développement · php artisan analytics:seed remplit les écrans de visites inventées',
+            'En développement · php artisan analytics:seed remplit les écrans de sessions inventées',
         ]);
 
         $this->components->warn('Sans @analyticsCollector, aucune page n’est mesurée : le collecteur n’est même pas chargé.');

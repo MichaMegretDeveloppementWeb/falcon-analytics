@@ -20,6 +20,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('falcon_analytics_ad_objectives', function (Blueprint $table): void {
+            $table->engine('InnoDB');
+
             $table->id();
             $table->foreignId('ad_id')
                 ->constrained('falcon_analytics_ads')
