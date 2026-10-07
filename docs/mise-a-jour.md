@@ -53,6 +53,11 @@ tous sur des défauts qui échouent en silence.
 > Vous ne republiez `config/analytics.php` que si vous voulez relire les
 > commentaires à jour, et alors `analytics:install --force` le fait.
 
+> **Changer `APP_KEY` en même temps qu'une montée ?** Déclarez l'ancienne dans
+> `APP_PREVIOUS_KEYS`. Sans elle, les pages déjà ouvertes par vos utilisateurs
+> connectés portent un contexte que la nouvelle clé ne lit plus · leurs envois
+> sont jetés jusqu'à ce que la page soit rechargée.
+
 ---
 
 ## Ce qu'une montée demande, selon ce qui change

@@ -184,6 +184,12 @@ return [
     | is still yours to set, under `throttle`; it is the origin check that has
     | no setting at all.
     |
+    | StartSession is swapped by the package for a reading of the session that
+    | does not prolong it: a send writes the session back only when it changed
+    | something in it, so an open tab no longer keeps your users signed in. The
+    | `web` group, or a session middleware of your own, escapes the swap, and
+    | analytics:check says so.
+    |
     */
 
     'web' => [

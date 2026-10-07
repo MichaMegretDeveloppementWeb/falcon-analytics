@@ -55,4 +55,25 @@ return [
         'days_per_run' => 7,
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | What a page still sends once its user has signed out
+    |--------------------------------------------------------------------------
+    |
+    | A click sent on the way out arrives after the host's sign-out has emptied
+    | the session. The page's sealed context still names who it was drawn for,
+    | and the batch joins that person's session, but only this long after the
+    | host's session last vouched for them, on the server's clock. Past it, the
+    | batch is dropped, so a page left open does not keep a signed-out person's
+    | session alive.
+    |
+    | Never shorter than one heartbeat plus one flush: a host that slows the
+    | collector down would otherwise lose the sends of every sign-out.
+    |
+    */
+
+    'collector' => [
+        'context_grace_seconds' => 60,
+    ],
+
 ];

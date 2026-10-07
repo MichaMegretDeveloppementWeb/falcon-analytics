@@ -470,6 +470,20 @@ limite de débit tiennent sa place, et ils sont posés **après** votre pile · 
 page publique très fréquentée veut la monter. Le contrôle d'origine, lui, n'a
 aucun réglage.
 
+**La session de l'hôte n'y est pas prolongée.** `StartSession`, écrit dans
+`web.middleware`, y est remplacé par une lecture qui n'écrit la session, et ne
+renvoie son cookie, que si un envoi y a changé quelque chose.
+
+**Ce qu'une page envoie après la déconnexion de son utilisateur** · la page d'un
+utilisateur connecté porte un contexte chiffré, qui le nomme avec son
+navigateur, et que le collecteur joint à chaque lot. Tant que votre session le
+reconnaît, le lot suit le chemin ordinaire. Quand elle ne le reconnaît plus — il
+s'est déconnecté, sa session a expiré, un autre s'est connecté — le lot rejoint
+la session de mesure de celui que la page nomme, **pendant la minute qui suit le
+dernier envoi que votre session a confirmé**, ou un battement et un envoi s'ils
+sont plus longs. Au-delà, il est jeté. Un contexte illisible fait jeter le lot.
+**Dans aucun de ces cas un visiteur ou une session n'est créé.**
+
 ### Les treize commandes
 
 | Commande | Ce qu'elle fait | Quand |
@@ -886,7 +900,9 @@ faire.
   est réglable.
 - **L'identifiant persistant d'un visiteur** n'existe que si
   `identity.consent_cookie` désigne un cookie et que ce cookie vaut `"1"`. Sinon
-  tout reste à la portée de la session. Son cookie, `fa_vid`, dure **treize
+  tout reste à la portée de la session · une page encore ouverte quand elle se
+  ferme en garde une copie chiffrée, qui ne sert qu'une minute, et seulement à
+  rattacher ses derniers envois à la session de mesure en cours. Son cookie, `fa_vid`, dure **treize
   mois au plus**, le plafond que la CNIL fixe pour un cookie de mesure, et une
   visite suivante ne le prolonge pas.
 - **Le nom d'un sujet n'est jamais stocké** · il est lu sur votre modèle au

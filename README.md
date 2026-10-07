@@ -20,7 +20,7 @@ worker · ça tourne là où Laravel tourne, hébergement mutualisé compris.
 | **Vos visiteurs sont des vôtres** | le paquet sait que ce visiteur est *ce client-là*, parce qu'il lit vos gardes d'authentification. Aucun outil externe ne peut faire ça |
 | **Rien à compiler** | le paquet livre ses écrans déjà compilés · pas de Node chez vous, pas de vues à lire, pas de build à refaire |
 | **Rien à faire tourner** | pas de file d'attente, pas de websocket, pas de démon · le temps réel se rafraîchit par une interrogation Livewire ordinaire |
-| **Discret par défaut** | sans consentement, aucun identifiant ne survit à la session · et c'est le comportement par défaut, pas une option |
+| **Discret par défaut** | sans consentement, aucun identifiant n'est déposé sur l'appareil · il vit dans la session de Laravel · et c'est le comportement par défaut, pas une option |
 
 ---
 
@@ -160,6 +160,31 @@ marquer comme conversions et de les enchaîner en tunnels. Le détail est dans
   visites portent la même adresse, donc un seul pays — et surtout **une seule
   limite de débit pour tout le site**, qui finit par refuser les envois sans que
   rien ne le dise.
+- **Ce qu'une page envoie après une déconnexion rejoint la session de son
+  utilisateur, une minute au plus.** Le clic envoyé en quittant la page, le
+  battement d'un onglet resté ouvert · la page d'un utilisateur connecté porte
+  un contexte chiffré qui le nomme, et l'envoi rejoint sa session pendant la
+  minute qui suit le dernier envoi que votre session a confirmé — plus longtemps
+  si vous avez ralenti le battement. Au-delà, il est jeté, et rien n'est créé,
+  ni visiteur ni session. **Trois cas sont jetés aussi** · l'envoi d'une page
+  dont la toute première mesure n'est pas encore arrivée · sur un appareil
+  partagé, celui d'un utilisateur qui n'a pas de profil à lui · et, jusqu'à son
+  rechargement, celui d'une page dont le navigateur garde un collecteur
+  antérieur à cette version, qui suit l'ancien chemin.
+- **Le collecteur ne prolonge pas la session de vos utilisateurs.** Il la lit, et
+  ne l'écrit que pour y ranger l'identifiant d'un visiteur nouveau · un onglet
+  resté ouvert n'empêche plus une déconnexion par expiration, et un envoi ne
+  consomme plus le message flash d'une redirection. Laissez `StartSession` dans
+  `analytics.web.middleware` · le paquet le remplace par cette lecture. Le
+  groupe `web` ou un middleware de session à vous prolongent la session à
+  chaque envoi, et `analytics:check` le dit.
+- **`@analyticsCollector` se pose dans le gabarit**, jamais dans un composant
+  réactif, **et la page d'un utilisateur connecté ne se met jamais en cache
+  partagé** · son contexte le nomme, et le servir à un autre permettrait d'écrire
+  dans ses sessions, la minute qui suit son dernier envoi.
+- **Une rotation de `APP_KEY` sans `APP_PREVIOUS_KEYS`** fait jeter les envois des
+  pages déjà ouvertes par des utilisateurs connectés, jusqu'à leur rechargement ·
+  leur contexte ne se lit plus.
 
 ---
 

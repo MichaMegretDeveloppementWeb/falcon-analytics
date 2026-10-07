@@ -139,7 +139,7 @@ sujet suivi, les exclusions et le consentement, sans une ligne de code.
 |---|---|---|---|
 | `identity.subject_guards` | liste de gardes | `['web']` | Les gardes dont l'utilisateur connecté devient le sujet suivi. **Chacun se nomme** dans `identity.subjects.{garde}.label`, sinon les écrans affichent son nom technique. Un site sans espace membre écrit `[]`, et le filtre des visiteurs disparaît. |
 | `identity.exclude_guards` | liste de gardes | `[]` | Les gardes dont l'utilisateur connecté est **entièrement** exclu du suivi. Vide veut dire « personne ». |
-| `identity.consent_cookie` | nom de cookie ou `null` | `null` | Le cookie dont la valeur `"1"` autorise l'identifiant de visiteur persistant. **Sans valeur**, aucun identifiant ne survit à la session. Le nommer ici suffit · le paquet le sort du chiffrement de Laravel lui-même, sinon il serait relu à `null` et le consentement ne serait jamais vu. |
+| `identity.consent_cookie` | nom de cookie ou `null` | `null` | Le cookie dont la valeur `"1"` autorise l'identifiant de visiteur persistant. **Sans valeur**, aucun identifiant n'est déposé sur l'appareil · celui du visiteur vit dans la session. Le nommer ici suffit · le paquet le sort du chiffrement de Laravel lui-même, sinon il serait relu à `null` et le consentement ne serait jamais vu. |
 | `identity.subjects` | dictionnaire | `[]` | Comment afficher un sujet · un libellé, et les colonnes à concaténer pour son nom. **Vide**, l'écran affiche le nom du garde mis en forme — `client` devient `Client` — et l'identifiant, faute de savoir quelles colonnes lire. |
 
 Le nom d'un sujet est **lu au moment de l'affichage et jamais stocké**.
@@ -196,7 +196,7 @@ Le nom d'un sujet est **lu au moment de l'affichage et jamais stocké**.
 
 | Clé | Type | Défaut | Ce qu'elle fait |
 |---|---|---|---|
-| `web.middleware` | liste | `EncryptCookies`, `AddQueuedCookiesToResponse`, `StartSession` | La pile posée devant le point de collecte. **Elle doit être complète** · la route du paquet est déclarée hors de vos groupes, donc elle n'hérite de rien. |
+| `web.middleware` | liste | `EncryptCookies`, `AddQueuedCookiesToResponse`, `StartSession` | La pile posée devant le point de collecte. **Elle doit être complète** · la route du paquet est déclarée hors de vos groupes, donc elle n'hérite de rien. Le paquet y remplace `StartSession` par une lecture qui ne prolonge pas la session. |
 
 > **Ne retirez pas la session de cette liste.** Sans consentement — le cas par
 > défaut — l'identifiant du visiteur vit dans la session, donc sans
@@ -206,6 +206,17 @@ Le nom d'un sujet est **lu au moment de l'affichage et jamais stocké**.
 >
 > Le contrôle d'origine et la limite de débit, eux, sont ajoutés **après** cette
 > liste · la vider vous prive de la session, pas d'eux.
+
+> **Écrivez `StartSession`, et le paquet le remplace.** Sur cette route, il lit
+> la session et ne l'écrit, ni ne renvoie son cookie, que si un envoi y a changé
+> quelque chose · l'identifiant d'un visiteur nouveau. Un onglet resté ouvert ne
+> garde donc plus vos utilisateurs connectés au-delà de `SESSION_LIFETIME`, et
+> un envoi glissé entre une redirection et sa page ne consomme plus le message
+> flash.
+>
+> **Le groupe `web`, ou un middleware de session à vous**, échappent au
+> remplacement · chaque envoi prolonge alors la session de vos utilisateurs, et
+> `analytics:check` le signale.
 
 **Elle doit être complète.** Les routes du paquet sont enregistrées hors de vos
 groupes de routes · elles n'héritent de rien.

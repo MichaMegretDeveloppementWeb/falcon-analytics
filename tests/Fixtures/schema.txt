@@ -88,6 +88,7 @@ COL falcon_analytics_sessions.referrer varchar(2048) null=YES def=- extra=
 COL falcon_analytics_sessions.region varchar(100) null=YES def=- extra=
 COL falcon_analytics_sessions.source varchar(60) null=YES def=- extra=
 COL falcon_analytics_sessions.started_at datetime null=NO def=- extra=
+COL falcon_analytics_sessions.subject_confirmed_at datetime null=YES def=- extra=
 COL falcon_analytics_sessions.subject_id bigint unsigned null=YES def=- extra=
 COL falcon_analytics_sessions.subject_type varchar(32) null=YES def=- extra=
 COL falcon_analytics_sessions.utm_campaign varchar(150) null=YES def=- extra=

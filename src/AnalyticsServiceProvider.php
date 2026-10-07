@@ -22,6 +22,7 @@ use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Http\Controllers\MissingPageController;
 use Falcon\Analytics\Http\Middleware\CatchesUpTheMaintenance;
+use Falcon\Analytics\Http\Middleware\ReadsTheSessionWithoutProlongingIt;
 use Falcon\Analytics\Support\AbilityDefaults;
 use Falcon\Analytics\Support\BranchMiddleware;
 use Falcon\Analytics\Support\GeoResolver;
@@ -31,6 +32,7 @@ use Falcon\Ui\AssetRegistry;
 use Falcon\Ui\Config\CompletesDefaults;
 use Falcon\Ui\View\Leaves;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Contracts\Cache\Factory as CacheFactory;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Contracts\Foundation\CachesRoutes;
@@ -39,6 +41,7 @@ use Illuminate\Foundation\Exceptions\Handler;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route as RouteDefinition;
 use Illuminate\Routing\Router;
+use Illuminate\Session\SessionManager;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
@@ -62,6 +65,13 @@ final class AnalyticsServiceProvider extends ServiceProvider
 
         $this->app->singleton(Analytics::class);
         $this->app->singleton(AbilityDefaults::class);
+
+        // Built as Laravel builds StartSession: autowired, it would get no cache
+        // factory, and a session set to block would throw on every send.
+        $this->app->singleton(ReadsTheSessionWithoutProlongingIt::class, fn ($app): ReadsTheSessionWithoutProlongingIt => new ReadsTheSessionWithoutProlongingIt(
+            $app->make(SessionManager::class),
+            fn () => $app->make(CacheFactory::class),
+        ));
 
         $this->app->singleton(GeoResolver::class, fn (): GeoResolver => new GeoResolver(
             self::configured('analytics.geoip.database_path'),

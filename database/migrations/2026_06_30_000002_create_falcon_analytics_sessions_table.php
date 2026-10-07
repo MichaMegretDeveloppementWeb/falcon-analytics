@@ -92,6 +92,11 @@ return new class extends Migration
         $table->string('subject_type', 32)->nullable();
         $table->unsignedBigInteger('subject_id')->nullable();
 
+        // When the host's session last vouched for the subject, on the server's
+        // clock: what a page still open after sign-out may attach to, and for
+        // how long.
+        $table->dateTime('subject_confirmed_at')->nullable();
+
         $table->unsignedInteger('pageview_count')->default(0);
         // Counted on arrival, named or not, so the total outlives the purge of anonymous clicks.
         $table->unsignedInteger('click_count')->default(0);

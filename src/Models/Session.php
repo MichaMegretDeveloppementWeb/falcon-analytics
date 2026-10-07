@@ -46,6 +46,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property array<string, string>|null $mkt_params
  * @property string|null $subject_type
  * @property int|null $subject_id
+ * @property CarbonImmutable|null $subject_confirmed_at
  * @property int $pageview_count
  * @property int $click_count
  * @property int $event_count
@@ -102,6 +103,7 @@ final class Session extends Model
             'started_at' => 'immutable_datetime',
             'last_activity_at' => 'immutable_datetime',
             'ended_at' => 'immutable_datetime',
+            'subject_confirmed_at' => 'immutable_datetime',
             'latitude' => 'float',
             'longitude' => 'float',
             'is_bot' => 'boolean',

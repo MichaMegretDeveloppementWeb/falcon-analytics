@@ -84,4 +84,21 @@ final class IngestBatchRequest extends FormRequest
             referrer: $redactor->redact($this->validated('referrer')),
         );
     }
+
+    /**
+     * The sealed page context the batch carries, or null when it carries none.
+     *
+     * Not a validation rule: a context that is not a string is unreadable, and
+     * an unreadable context drops the batch silently rather than refusing it.
+     */
+    public function pageContext(): ?string
+    {
+        $context = $this->input('context');
+
+        return match (true) {
+            $context === null => null,
+            is_string($context) => $context,
+            default => '',
+        };
+    }
 }

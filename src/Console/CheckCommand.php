@@ -7,6 +7,7 @@ namespace Falcon\Analytics\Console;
 use Falcon\Analytics\Enums\Authorization\Ability;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
+use Falcon\Analytics\Http\Middleware\ReadsTheSessionWithoutProlongingIt;
 use Falcon\Analytics\Services\DailyCountArchiver;
 use Falcon\Analytics\Services\SubjectResolver;
 use Falcon\Analytics\Support\BranchMiddleware;
@@ -536,6 +537,10 @@ final class CheckCommand extends Command
      * to say why. The router is asked what the route really runs, so a group
      * or an alias counts for what it carries.
      *
+     * The package swaps StartSession for its own reading of the session, which
+     * a send does not prolong. A group or a session middleware of the host's
+     * escapes the swap, and each heartbeat then keeps its users signed in.
+     *
      * @return array{0: string, 1: string, 2: string}
      */
     private function checkCollectorSession(): array
@@ -549,8 +554,19 @@ final class CheckCommand extends Command
         foreach (Route::gatherRouteMiddleware($route) as $middleware) {
             $class = is_string($middleware) ? Str::before($middleware, ':') : null;
 
+            if ($class !== null && is_a($class, ReadsTheSessionWithoutProlongingIt::class, true)) {
+                return ['Session du collecteur', 'OK', 'La route du collecteur lit la session, et ne l’écrit que si un envoi y change quelque chose.'];
+            }
+
             if ($class !== null && is_a($class, StartSession::class, true)) {
-                return ['Session du collecteur', 'OK', 'La route du collecteur ouvre une session.'];
+                return [
+                    'Session du collecteur',
+                    'À voir',
+                    'La route du collecteur ouvre la session sans que StartSession soit écrit dans analytics.web.middleware '
+                    .'(le groupe web, ou un middleware à vous) : chaque envoi la prolonge, et une page restée ouverte garde '
+                    .'vos utilisateurs connectés. Écrivez StartSession dans la liste, le paquet le remplace par une lecture '
+                    .'qui ne la prolonge pas.',
+                ];
             }
         }
 
@@ -558,7 +574,7 @@ final class CheckCommand extends Command
             'Session du collecteur',
             'KO',
             'La route du collecteur n’ouvre aucune session : sans consentement, l’identifiant du visiteur y vit, '
-            .'et chaque envoi répond en erreur. Remettez StartSession, ou le groupe web, dans analytics.web.middleware.',
+            .'et chaque envoi répond en erreur. Remettez StartSession dans analytics.web.middleware.',
         ];
     }
 

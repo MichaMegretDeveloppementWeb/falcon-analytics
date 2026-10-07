@@ -24,7 +24,10 @@ architecture qui n'existe plus.
   écrans marketing dont trois en écriture ;
 - **un collecteur** qui capture seul les pages vues et les clics — et seulement
   sur ce qui est réellement interactif — posé par **une directive**,
-  `@analyticsCollector` ;
+  `@analyticsCollector` · ce qu'une page envoie encore après la déconnexion de
+  son utilisateur rejoint sa session, et ne fabrique jamais un visiteur de
+  plus · **et il ne prolonge pas la session de vos utilisateurs**, un onglet
+  resté ouvert ne les garde plus connectés au-delà de `SESSION_LIFETIME` ;
 - **des événements nommés**, déclarés dans un fichier de l'hôte, marquables
   comme conversions ;
 - **des tunnels**, y compris à branches parallèles, évalués sur ces événements ;
@@ -193,6 +196,11 @@ redescendre · voir [mise-a-jour.md](docs/mise-a-jour.md#le-schéma-qui-est-la-v
 > décalée, et refusait l'heure que la pendule locale saute au passage à l'heure
 > d'été.
 
+> **Un projet qui suit la branche de développement** · la table des sessions a
+> gagné une colonne, `subject_confirmed_at`, posée dans sa migration d'origine.
+> Une base locale se rafraîchit par `php artisan analytics:refresh`, et ce
+> qu'elle avait mesuré est perdu.
+
 ### Ce qu'il exige
 
 PHP 8.5 avec l'extension **intl**, Laravel 13, Livewire 4.2, et une base
@@ -209,9 +217,12 @@ compilé pour eux, et un essai le relit.
 
 ### La vie privée
 
-**Sans consentement, aucun identifiant ne survit à la session** — et c'est le
-comportement par défaut, pas une option à activer. Les données restent dans
-votre base ; aucun tiers, aucun service externe, aucun démon.
+**Sans consentement, aucun identifiant n'est déposé sur l'appareil** — celui du
+visiteur vit dans la session de Laravel, et c'est le comportement par défaut,
+pas une option à activer. Une page encore ouverte quand cette session se ferme
+en garde une copie chiffrée, qui sert une minute au plus, et seulement à
+rattacher ses derniers envois à la session de mesure déjà en cours. Les données
+restent dans votre base ; aucun tiers, aucun service externe, aucun démon.
 
 **L'adresse IP est tronquée par défaut**, et le cookie d'un visiteur qui a
 consenti dure **treize mois au plus**, le plafond que la CNIL fixe · sans que
