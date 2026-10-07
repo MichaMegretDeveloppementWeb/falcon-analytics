@@ -50,9 +50,9 @@ final class CollectorDirectiveTest extends TestCase
     }
 
     /**
-     * The kit builds the script's versioned address and lays it before the body
-     * closes, although the layout renders no stack directive. None of the kit's
-     * own files may reach the page, or they would redraw the host's site.
+     * The kit builds the script's versioned address and lays it in the head,
+     * although the layout writes none of its marks. None of the kit's own files
+     * may reach the page, or they would redraw the host's site.
      */
     public function test_a_public_page_receives_the_collector_and_nothing_else(): void
     {
@@ -78,6 +78,28 @@ final class CollectorDirectiveTest extends TestCase
                 "A public page must receive nothing from the kit: {$ofTheKit} is there.",
             );
         }
+    }
+
+    /**
+     * A layout that places the suite itself carries the collector written below
+     * its head mark · once.
+     *
+     * The head mark has passed when the directive declares its file, and the
+     * body's mark is the one that lays it. The kit's final pass is turned off,
+     * so that the marks are the only ones that could.
+     */
+    public function test_a_layout_that_places_the_suite_carries_the_collector_written_below_its_head(): void
+    {
+        config(['analytics.enabled' => true, 'analytics.endpoint' => '__analytics', 'ui.inject' => false]);
+
+        Route::get('/un-gabarit-qui-place', fn (): string => Blade::render(
+            '<!DOCTYPE html><html><head><title>t</title>@falconStyles</head>'
+            .'<body><p>du contenu</p>@analyticsCollector @falconScripts</body></html>'
+        ));
+
+        $html = (string) $this->get('/un-gabarit-qui-place')->assertSuccessful()->getContent();
+
+        $this->assertSame(1, preg_match_all('#analytics/analytics\.js\?v=#', $html), 'The collector has to arrive, and once.');
     }
 
     public function test_it_renders_nothing_when_disabled(): void
