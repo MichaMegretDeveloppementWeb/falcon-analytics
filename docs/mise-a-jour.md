@@ -21,12 +21,17 @@ procédure ordinaire ci-dessous suffit, et suffira toujours.
 ## La procédure
 
 ```bash
-composer update falcon/analytics
+composer update falcon/ui-kit falcon/analytics
 php artisan migrate
 php artisan vendor:publish --tag=laravel-assets --force
 php artisan view:cache
 php artisan analytics:check
 ```
+
+**Le kit monte avec le paquet.** Une correction d'analytics peut s'appuyer sur
+une correction du kit · la directive posée après `@falconStyles`, par exemple,
+n'est servie que par un kit à jour. `composer update falcon/analytics` seul
+laisse le kit où il est.
 
 **La republication n'est pas optionnelle.** Le kit compare la copie que vous
 servez au fichier que le paquet livre, et **refuse de servir une copie

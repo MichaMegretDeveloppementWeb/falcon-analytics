@@ -133,9 +133,46 @@ final class TheDiagnosticSpeaksTest extends TestCase
     {
         File::put(resource_path('views/layouts/web.blade.php'), '<body></body>');
 
-        $this->artisan('analytics:check')
-            ->expectsOutputToContain('@analyticsCollector')
-            ->assertFailed();
+        $this->assertSame(1, Artisan::call('analytics:check'));
+
+        $row = $this->rowOf('Collecteur');
+
+        $this->assertStringContainsString('KO', $row);
+        $this->assertStringContainsString('@analyticsCollector', $row);
+        $this->assertStringContainsString('même après @falconStyles', $row, 'The message says where the directive may sit.');
+    }
+
+    /**
+     * Below `@falconStyles`, with the kit's final pass turned off and no
+     * `@falconScripts` written, the collector's file has nowhere to land.
+     */
+    public function test_it_points_at_a_collector_below_the_head_that_nothing_would_lay(): void
+    {
+        config()->set('ui.inject', false);
+        File::put(resource_path('views/layouts/web.blade.php'), '<head>@falconStyles</head><body>@analyticsCollector</body>');
+
+        $this->assertSame(0, Artisan::call('analytics:check'));
+
+        $row = $this->rowOf('Collecteur');
+
+        $this->assertStringContainsString('À voir', $row);
+        $this->assertStringContainsString('layouts/web.blade.php', $row);
+    }
+
+    /** Something lays it · the body's mark, or the kit's final pass. */
+    public function test_a_collector_below_the_head_is_sound_once_something_lays_it(): void
+    {
+        config()->set('ui.inject', false);
+        File::put(resource_path('views/layouts/web.blade.php'), '<head>@falconStyles</head><body>@analyticsCollector @falconScripts</body>');
+
+        Artisan::call('analytics:check');
+        $this->assertStringContainsString('OK', $this->rowOf('Collecteur'));
+
+        config()->set('ui.inject', true);
+        File::put(resource_path('views/layouts/web.blade.php'), '<head>@falconStyles</head><body>@analyticsCollector</body>');
+
+        Artisan::call('analytics:check');
+        $this->assertStringContainsString('OK', $this->rowOf('Collecteur'));
     }
 
     /**
@@ -536,5 +573,17 @@ final class TheDiagnosticSpeaksTest extends TestCase
         $this->artisan('analytics:check')
             ->expectsOutputToContain('geoip:download')
             ->assertFailed();
+    }
+
+    /**
+     * One point's row in the last output, its state included.
+     *
+     * `expectsOutputToContain()` finds a phrase anywhere in the output, and
+     * never which state sits beside it.
+     */
+    private function rowOf(string $point): string
+    {
+        return (string) collect(explode("\n", Artisan::output()))
+            ->first(fn (string $line): bool => str_contains($line, '| '.$point.' '));
     }
 }

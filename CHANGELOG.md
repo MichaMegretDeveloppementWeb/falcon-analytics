@@ -146,8 +146,9 @@ architecture qui n'existe plus.
 
 1. déclarer les deux dépôts — le paquet **et** `falcon/ui-kit` —, installer,
    lancer `php artisan analytics:install` ;
-2. poser `@analyticsCollector` dans le gabarit public à mesurer · **sans elle,
-   aucune page n'est mesurée**, et le collecteur n'est même pas téléchargé ;
+2. poser `@analyticsCollector` dans le gabarit public à mesurer, à l'endroit
+   qui vous arrange, après `@falconStyles` compris · **sans elle, aucune page
+   n'est mesurée**, et le collecteur n'est même pas téléchargé ;
 3. renseigner ses gardes dans le bloc `identity` de `config/analytics.php` ;
 4. derrière un proxy, déclarer ses proxies de confiance · sinon toutes les
    visites portent la même adresse ;

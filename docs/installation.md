@@ -134,6 +134,13 @@ Compilées d'avance, elles ne se croisent plus.
 Dans le gabarit public que vous voulez suivre, n'importe où. **Sans elle, aucune
 page n'est mesurée** · le collecteur n'est même pas téléchargé.
 
+**N'importe où, y compris après `@falconStyles`.** Le fichier du collecteur est
+déclaré au kit, qui le pose · en tête de page si votre gabarit n'écrit aucune
+marque, par `@falconScripts` si la directive vient après `@falconStyles`. Une
+seule réserve · si vous avez mis `ui.inject` à `false`, écrivez aussi
+`@falconScripts` avant `</body>`, sans quoi le fichier n'a aucun endroit où
+paraître. `analytics:check` le signale.
+
 Elle ne rend **rien du tout** quand le suivi est coupé ou que le contexte est
 exclu — pas même le chargement du fichier. C'est la meilleure façon de ne pas
 mesurer.

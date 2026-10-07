@@ -411,11 +411,21 @@ final class CheckCommand extends Command
      * a test bench the host's views live under `vendor/`, and the general rule
      * would skip them silently.
      *
+     * The kit lays the collector's file wherever the directive sits, after
+     * `@falconStyles` included · by `@falconScripts`, or by its final pass over
+     * the page. With that pass turned off and no `@falconScripts` written, a
+     * directive below `@falconStyles` has nowhere left to land.
+     *
      * @return array{0: string, 1: string, 2: string}
      */
     private function checkCollector(): array
     {
-        ['found' => $found, 'stale' => $staleDirective] = $this->collectorDirectivesIn($this->hostViewPaths());
+        [
+            'found' => $found,
+            'stale' => $staleDirective,
+            'belowTheHead' => $belowTheHead,
+            'bodyMark' => $bodyMark,
+        ] = $this->collectorDirectivesIn($this->hostViewPaths());
 
         if ($staleDirective !== null) {
             return [
@@ -424,6 +434,16 @@ final class CheckCommand extends Command
                 "La vue {$staleDirective} porte encore @analyticsConfig, qui n’existe plus. "
                 .'Blade recopie une directive inconnue telle quelle : ce texte s’affiche sur les '
                 .'pages concernées, et elles ne sont pas mesurées. Renommez-la en @analyticsCollector.',
+            ];
+        }
+
+        if ($found && $belowTheHead !== null && ! $bodyMark && config('ui.inject', true) !== true) {
+            return [
+                'Collecteur',
+                'À voir',
+                "La vue {$belowTheHead} pose @analyticsCollector après @falconStyles, ui.inject est à false et "
+                .'aucune vue ne porte @falconScripts : le fichier du collecteur n’a aucun endroit où paraître, et '
+                .'rien n’est mesuré. Posez @falconScripts avant </body>, ou la directive avant @falconStyles.',
             ];
         }
 
@@ -436,7 +456,7 @@ final class CheckCommand extends Command
             'KO',
             'Aucune vue ne porte @analyticsCollector : aucune page n’est mesurée. '
             .'Posez la directive dans le gabarit de votre site public, à l’endroit qui vous arrange : '
-            .'le script est différé, donc sa place dans la page ne change rien.',
+            .'le kit pose son fichier où qu’elle soit, même après @falconStyles.',
         ];
     }
 
@@ -464,8 +484,10 @@ final class CheckCommand extends Command
     }
 
     /**
-     * Whether a view carries the directive, and the first one that carries the
-     * former name `@analyticsConfig`, as a relative path with forward slashes.
+     * Whether a view carries the directive, the first one that carries the
+     * former name `@analyticsConfig`, the first one that writes it below
+     * `@falconStyles`, and whether a view writes `@falconScripts` · each view
+     * as a relative path with forward slashes.
      *
      * A host may still write the former directive name, and Blade copies an
      * unknown directive to the output as it stands, so that view prints it to
@@ -473,12 +495,14 @@ final class CheckCommand extends Command
      * layouts can each carry one of the names.
      *
      * @param  list<string>  $paths
-     * @return array{found: bool, stale: ?string}
+     * @return array{found: bool, stale: ?string, belowTheHead: ?string, bodyMark: bool}
      */
     private function collectorDirectivesIn(array $paths): array
     {
         $found = false;
         $stale = null;
+        $belowTheHead = null;
+        $bodyMark = false;
 
         foreach ($paths as $path) {
             if (! File::isDirectory($path)) {
@@ -493,10 +517,16 @@ final class CheckCommand extends Command
                 if ($stale === null && str_contains($contents, '@analyticsConfig')) {
                     $stale = str_replace('\\', '/', $file->getRelativePathname());
                 }
+
+                if ($belowTheHead === null && preg_match('/@falconStyles\b.*@analyticsCollector\b/s', $contents) === 1) {
+                    $belowTheHead = str_replace('\\', '/', $file->getRelativePathname());
+                }
+
+                $bodyMark = $bodyMark || str_contains($contents, '@falconScripts');
             }
         }
 
-        return ['found' => $found, 'stale' => $stale];
+        return ['found' => $found, 'stale' => $stale, 'belowTheHead' => $belowTheHead, 'bodyMark' => $bodyMark];
     }
 
     /**
