@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use Falcon\Analytics\Http\Controllers\IngestController;
 use Falcon\Analytics\Http\Middleware\EnsureAnalyticsAccepts;
+use Falcon\Analytics\Http\Middleware\ReadsTheSessionWithoutProlongingIt;
+use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -19,10 +21,21 @@ use Illuminate\Support\Facades\Route;
  * **Not removable is not the same as not adjustable**: the rate limit reads
  * `analytics.throttle` on the line below, and a host with a busy public page
  * can raise it. The origin check has no setting at all.
+ *
+ * StartSession, wherever the host's list names it, is swapped for a reading of
+ * the session that does not prolong it · a heartbeat would otherwise keep a
+ * signed-in user's session alive for as long as a tab stays open.
  */
+$stack = array_map(
+    static fn (mixed $entry): mixed => is_string($entry) && ltrim($entry, '\\') === StartSession::class
+        ? ReadsTheSessionWithoutProlongingIt::class
+        : $entry,
+    (array) config('analytics.web.middleware', []),
+);
+
 Route::post('/'.ltrim((string) config('analytics.endpoint'), '/'), IngestController::class)
     ->middleware([
-        ...(array) config('analytics.web.middleware', []),
+        ...$stack,
         EnsureAnalyticsAccepts::class,
         'throttle:'.config('analytics.throttle'),
     ])

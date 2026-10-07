@@ -72,15 +72,13 @@ suffit pas · il ramènerait des versions plus récentes que le verrou.
 > `reportUnmatchedIgnoredErrors` reste actif · le jour où l'une cesse de
 > s'apparier, l'analyse le dit plutôt que de la garder par inertie.
 
-### Ce qui manque, et qui est dit plutôt que caché
+### Le script a ses essais
 
-**Il n'y a pas d'essais du script.** Le collecteur fait 308 lignes qui tournent
-sur chaque page de chaque visiteur de chaque hôte — le fichier le plus exécuté
-que la suite livre — et rien ne l'éprouve. Le linter, arrivé le 2026-09-13, est
-tout ce qui le lit mécaniquement.
-
-Le kit a le sien, sous jsdom, et la même chose est faisable ici · c'est écrit
-pour qu'on ne prenne pas l'absence pour un choix.
+**Le collecteur s'éprouve sous jsdom**, par `npm test` · ce qu'il envoie et
+quand, ce qu'un clic porte, le contexte de page qu'il joint à chaque lot, qu'il
+ne démarre qu'une fois, et qu'il reste lisible par les navigateurs que la suite
+promet (`tests/js/collector-floor.test.js`). Il tourne sur chaque page de chaque
+visiteur de chaque hôte · un changement s'y éprouve avant d'être livré.
 
 ---
 

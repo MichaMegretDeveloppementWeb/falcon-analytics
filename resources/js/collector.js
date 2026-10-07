@@ -3,7 +3,8 @@
  * Reads its configuration from window.__falconAnalytics (injected by the
  * @analyticsCollector Blade directive), auto-captures page views and clicks,
  * keeps the session alive with a visibility-gated heartbeat, and flushes
- * batches with navigator.sendBeacon.
+ * batches with navigator.sendBeacon · each carrying the page's sealed context
+ * when the page was drawn for a signed-in user.
  */
 (function () {
   'use strict';
@@ -47,6 +48,13 @@
     return { type: type, ts: now(), route: cfg.route || null, url: cap(location.href, MAX_URL) };
   }
 
+  // Read at each send, never kept: a page swapped without a reload brings its own.
+  function pageContext() {
+    const current = window.__falconAnalytics;
+
+    return current && typeof current.context === 'string' ? current.context : null;
+  }
+
   function queue(event) {
     if (buffer.length >= MAX_BUFFER) {
       buffer.shift();
@@ -67,10 +75,16 @@
     }
 
     const referrer = cap(document.referrer, MAX_URL) || null;
+    const context = pageContext();
 
     while (buffer.length) {
-      const chunk = buffer.splice(0, MAX_BATCH);
-      send(JSON.stringify({ sent_at: now(), referrer: referrer, events: chunk }));
+      const batch = { sent_at: now(), referrer: referrer, events: buffer.splice(0, MAX_BATCH) };
+
+      if (context) {
+        batch.context = context;
+      }
+
+      send(JSON.stringify(batch));
     }
   }
 

@@ -7,6 +7,7 @@ namespace Falcon\Analytics\Actions;
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\DTOs\IncomingBatch;
 use Falcon\Analytics\DTOs\IncomingEvent;
+use Falcon\Analytics\DTOs\PageContext;
 use Falcon\Analytics\DTOs\RequestSnapshot;
 use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Models\Session;
@@ -49,8 +50,73 @@ final readonly class IngestEventsAction
 
             $session = $this->openSession($locked, $visitorUuid, $subject, $snapshot, $batch, $now);
 
-            $this->record($session, $locked, $subject, $batch);
-        });
+            $this->record($session, $locked, $subject, $batch, $this->belongsTo($locked, $subject) ? $now : null);
+        }, attempts: 3);
+    }
+
+    /**
+     * A batch a page sent after its subject signed out, attached by the page's
+     * sealed context to the session that subject has open on that browser.
+     *
+     * Writes no visitor and starts no session · dropped when the subject has no
+     * profile, when the profile moved meanwhile, when no session of theirs on
+     * this browser was vouched for within the grace, and when it holds nothing
+     * but heartbeats, which would only stretch the session.
+     */
+    public function executeLeftover(PageContext $context, IncomingBatch $batch): void
+    {
+        if (! $batch->storesSomething()) {
+            return;
+        }
+
+        $profile = $this->visitors->canonicalFor($context->subjectType, $context->subjectId);
+
+        if ($profile === null) {
+            return;
+        }
+
+        $now = CarbonImmutable::now();
+
+        DB::transaction(function () use ($profile, $context, $batch, $now): void {
+            $locked = $profile->newQuery()->whereKey($profile->getKey())->lockForUpdate()->first();
+
+            if ($locked === null || $locked->merged_into_id !== null || ! $this->belongsTo($locked, $context->subject())) {
+                return;
+            }
+
+            $session = $this->sessionReads->findConfirmedOpenForVisitor(
+                $locked->id,
+                $context->browserKey,
+                $now->subMinutes((int) config('analytics.session.timeout_minutes')),
+                $now->subSeconds($this->graceSeconds()),
+            );
+
+            if ($session !== null) {
+                $this->record($session, $locked, $context->subject(), $batch, null);
+            }
+        }, attempts: 3);
+    }
+
+    /**
+     * Whether a profile is the subject's own · a shared device routes a batch to
+     * someone else's profile, which this subject must never vouch for.
+     *
+     * @param  array{type: string, id: int}|null  $subject
+     */
+    private function belongsTo(Visitor $profile, ?array $subject): bool
+    {
+        return $subject !== null
+            && $profile->subject_type === $subject['type']
+            && $profile->subject_id === $subject['id'];
+    }
+
+    /** How long after the last vouched-for send a leftover is still attached: never less than one heartbeat and one flush. */
+    private function graceSeconds(): int
+    {
+        return max(
+            (int) config('analytics.internal.collector.context_grace_seconds'),
+            (int) config('analytics.session.heartbeat_seconds') + (int) config('analytics.session.flush_seconds'),
+        );
     }
 
     /**
@@ -100,11 +166,12 @@ final readonly class IngestEventsAction
     }
 
     /**
-     * Write the batch's stored events and the activity they add to the session.
+     * Write the batch's stored events and the activity they add to the session,
+     * and the moment the host's session vouched for its subject, when it did.
      *
      * @param  array{type: string, id: int}|null  $subject
      */
-    private function record(Session $session, Visitor $visitor, ?array $subject, IncomingBatch $batch): void
+    private function record(Session $session, Visitor $visitor, ?array $subject, IncomingBatch $batch, ?CarbonImmutable $confirmedAt): void
     {
         $stored = array_values(array_filter(
             $batch->events,
@@ -122,6 +189,7 @@ final readonly class IngestEventsAction
             $kept['clicks'],
             count($kept['events']),
             $kept['lastPageviewUrl'],
+            $confirmedAt,
         );
     }
 

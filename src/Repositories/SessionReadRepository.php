@@ -26,4 +26,20 @@ final readonly class SessionReadRepository
             ->latest('last_activity_at')
             ->first();
     }
+
+    /**
+     * The same open session, provided the host's session vouched for its
+     * subject since a given moment · what a page's leftover may still join.
+     */
+    public function findConfirmedOpenForVisitor(int $visitorId, string $browserKey, CarbonImmutable $activeSince, CarbonImmutable $confirmedSince): ?Session
+    {
+        return Session::query()
+            ->where('visitor_id', $visitorId)
+            ->where('browser_key', $browserKey)
+            ->whereNull('ended_at')
+            ->where('last_activity_at', '>=', $activeSince)
+            ->where('subject_confirmed_at', '>=', $confirmedSince)
+            ->latest('last_activity_at')
+            ->first();
+    }
 }

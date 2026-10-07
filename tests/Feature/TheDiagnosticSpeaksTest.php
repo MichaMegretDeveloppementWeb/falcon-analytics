@@ -319,11 +319,28 @@ final class TheDiagnosticSpeaksTest extends TestCase
             ->assertFailed();
     }
 
-    /** A group that carries the session counts for what it carries. */
+    /**
+     * A group that carries the session counts for what it carries · and it
+     * escapes the swap, so each send prolongs the session, which is said.
+     */
     #[DefineEnvironment('withTheWebGroupOnTheCollector')]
-    public function test_it_accepts_a_collector_stack_named_by_its_group(): void
+    public function test_it_accepts_a_collector_stack_named_by_its_group_and_says_it_prolongs_the_session(): void
     {
-        $this->artisan('analytics:check')->assertSuccessful();
+        $this->assertSame(0, Artisan::call('analytics:check'));
+
+        $row = collect(explode('
+', Artisan::output()))->first(fn (string $line): bool => str_contains($line, 'Session du collecteur'));
+
+        $this->assertStringContainsString('À voir', (string) $row);
+        $this->assertStringContainsString('prolonge', (string) $row);
+    }
+
+    /** StartSession written in the list is swapped, so nothing is said about it. */
+    public function test_the_stack_the_package_ships_reads_the_session_without_prolonging_it(): void
+    {
+        $this->artisan('analytics:check')
+            ->doesntExpectOutputToContain('prolonge')
+            ->assertSuccessful();
     }
 
     /**

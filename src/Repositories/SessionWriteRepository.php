@@ -72,8 +72,10 @@ final readonly class SessionWriteRepository
         int $clickDelta,
         int $eventDelta,
         ?string $lastPageviewUrl,
+        ?CarbonImmutable $subjectConfirmedAt = null,
     ): void {
         $stamp = $lastActivityAt->toDateTimeString();
+        $confirmed = $subjectConfirmedAt?->toDateTimeString();
 
         DB::update(
             'UPDATE '.Session::TABLE.' SET '
@@ -84,9 +86,13 @@ final readonly class SessionWriteRepository
 
             .'event_count = event_count + ?, '
             .'last_pageview_url = ?, '
-            .'last_activity_at = CASE WHEN last_activity_at < ? THEN ? ELSE last_activity_at END '
+            .'last_activity_at = CASE WHEN last_activity_at < ? THEN ? ELSE last_activity_at END, '
+
+            // Forward only, like the activity: a batch that commits late never moves it back.
+            .'subject_confirmed_at = CASE WHEN ? IS NULL THEN subject_confirmed_at '
+            .'WHEN subject_confirmed_at IS NULL OR subject_confirmed_at < ? THEN ? ELSE subject_confirmed_at END '
             .'WHERE id = ?',
-            [$pageviewDelta, $clickDelta, $eventDelta, $lastPageviewUrl, $stamp, $stamp, $session->getKey()],
+            [$pageviewDelta, $clickDelta, $eventDelta, $lastPageviewUrl, $stamp, $stamp, $confirmed, $confirmed, $confirmed, $session->getKey()],
         );
     }
 
