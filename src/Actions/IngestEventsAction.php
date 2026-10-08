@@ -16,6 +16,7 @@ use Falcon\Analytics\Repositories\EventWriteRepository;
 use Falcon\Analytics\Repositories\SessionReadRepository;
 use Falcon\Analytics\Repositories\SessionWriteRepository;
 use Falcon\Analytics\Repositories\VisitorWriteRepository;
+use Falcon\Analytics\Services\DailyCountArchiver;
 use Falcon\Analytics\Services\SessionContextEnricher;
 use Falcon\Analytics\Services\VisitorProfileResolver;
 use Falcon\Analytics\Support\PropsEncoder;
@@ -33,6 +34,8 @@ final readonly class IngestEventsAction
         private EventWriteRepository $events,
         private SessionContextEnricher $enricher,
         private PropsEncoder $propsEncoder,
+        private DailyCountArchiver $archiver,
+        private ArchiveClosedDaysAction $summarise,
     ) {}
 
     /**
@@ -43,15 +46,33 @@ final readonly class IngestEventsAction
         $now = CarbonImmutable::now();
         $visitor = $this->profileFor($visitorUuid, $now, $subject);
 
-        DB::transaction(function () use ($visitorUuid, $subject, $snapshot, $batch, $visitor, $now): void {
+        $named = DB::transaction(function () use ($visitorUuid, $subject, $snapshot, $batch, $visitor, $now): ?Session {
             // Serialize concurrent beacons for this visitor so two tabs cannot each
             // start a session (which would duplicate sessions and inflate counts).
             $locked = $visitor->newQuery()->whereKey($visitor->getKey())->lockForUpdate()->firstOrFail();
 
             $session = $this->openSession($locked, $visitorUuid, $subject, $snapshot, $batch, $now);
 
-            $this->record($session, $locked, $subject, $batch, $this->belongsTo($locked, $subject) ? $now : null);
+            return $this->record($session, $locked, $subject, $batch, $this->belongsTo($locked, $subject) ? $now : null)
+                ? $session
+                : null;
         }, attempts: 3);
+
+        if ($named !== null) {
+            $this->summariseAgainUnder($named);
+        }
+    }
+
+    /**
+     * A session that takes its subject after its first day was summarised
+     * moves that day's page views and clicks under the subject · the day is
+     * summarised again, after the visitor lock is released.
+     */
+    private function summariseAgainUnder(Session $session): void
+    {
+        if ($this->archiver->isArchived($session->started_at)) {
+            $this->summarise->executeFrom($session->started_at);
+        }
     }
 
     /**
@@ -153,7 +174,7 @@ final readonly class IngestEventsAction
     private function openSession(Visitor $visitor, string $browserKey, ?array $subject, RequestSnapshot $snapshot, IncomingBatch $batch, CarbonImmutable $now): Session
     {
         $timeout = (int) config('analytics.session.timeout_minutes');
-        $session = $this->sessionReads->findOpenForVisitor($visitor->id, $now->subMinutes($timeout), $browserKey);
+        $session = $this->sessionReads->findOpenForVisitor($visitor->id, $now->subMinutes($timeout), $browserKey, $subject);
 
         if ($session !== null) {
             return $session;
@@ -167,11 +188,14 @@ final readonly class IngestEventsAction
 
     /**
      * Write the batch's stored events and the activity they add to the session,
-     * and the moment the host's session vouched for its subject, when it did.
+     * and the moment the host's session vouched for its subject, when it did ·
+     * a session still without one then takes it.
+     *
+     * Answers whether the session took its subject on this send.
      *
      * @param  array{type: string, id: int}|null  $subject
      */
-    private function record(Session $session, Visitor $visitor, ?array $subject, IncomingBatch $batch, ?CarbonImmutable $confirmedAt): void
+    private function record(Session $session, Visitor $visitor, ?array $subject, IncomingBatch $batch, ?CarbonImmutable $confirmedAt): bool
     {
         $stored = array_values(array_filter(
             $batch->events,
@@ -190,7 +214,10 @@ final readonly class IngestEventsAction
             count($kept['events']),
             $kept['lastPageviewUrl'],
             $confirmedAt,
+            $subject,
         );
+
+        return $confirmedAt !== null && $subject !== null && $session->subject_type === null;
     }
 
     /**

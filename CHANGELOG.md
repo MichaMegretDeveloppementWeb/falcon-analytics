@@ -34,7 +34,9 @@ architecture qui n'existe plus.
 - **l'attribution publicitaire** au rapport, sur les paramètres d'URL capturés à
   l'arrivée · une campagne créée après coup retrouve ses sessions ;
 - **l'identité de vos visiteurs** · le paquet lit vos gardes d'authentification,
-  donc un visiteur est *ce client-là*, ce qu'aucun outil externe ne peut faire ;
+  donc un visiteur est *ce client-là*, ce qu'aucun outil externe ne peut faire ·
+  une session ouverte avant la connexion prend le sujet de la personne, et une
+  session ne change jamais de sujet ;
 - **Google Search Console**, pour les vraies requêtes organiques ;
 - **la géolocalisation locale**, par base MaxMind téléchargée chez vous ;
 - **treize commandes** · installation, diagnostic, une qui dessine l'arbre des

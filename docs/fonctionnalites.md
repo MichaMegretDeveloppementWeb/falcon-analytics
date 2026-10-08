@@ -590,7 +590,15 @@ Ce qu'il faut en savoir concrètement ·
 - **l'alias continue de fonctionner** · les envois suivants de ce navigateur
   arrivent sur le profil survivant, sans nouvelle fusion ;
 - **la séparation des appareils survit** · les sessions gardent leur empreinte
-  de navigateur, donc « deux appareils » reste lisible sous un seul profil.
+  de navigateur, donc « deux appareils » reste lisible sous un seul profil ;
+- **une session ouverte avant la connexion prend le sujet** · la page vue en
+  arrivant, puis celles d'après la connexion, font une seule session, au nom de
+  la personne. Le jour de cette session, s'il est déjà résumé, l'est à nouveau ·
+  ses pages et ses clics passent sous ce sujet ;
+- **une session ne change jamais de sujet** · quelqu'un d'autre qui se connecte
+  sur le même navigateur ouvre la sienne, et la session ouverte sur le
+  navigateur de quelqu'un d'autre n'est jamais nommée d'après la personne qui
+  s'y connecte.
 
 > **Rien de tout cela ne concerne les visiteurs anonymes.** Deux navigateurs sans
 > personne derrière restent deux visiteurs · le paquet ne rapproche jamais deux

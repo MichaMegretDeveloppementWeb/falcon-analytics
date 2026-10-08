@@ -6,6 +6,7 @@ namespace Falcon\Analytics\Tests\Feature;
 
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\DTOs\IngestionContext;
+use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Repositories\SessionWriteRepository;
 use Falcon\Analytics\Tests\TestCase;
@@ -91,5 +92,59 @@ final class SessionWriteRepositoryTest extends TestCase
         $this->assertSame(9, $fresh->event_count);
         $this->assertSame('https://x.test/b', $fresh->last_pageview_url);
         $this->assertSame('2026-06-30 09:08:00', $fresh->last_activity_at->toDateTimeString());
+    }
+
+    /** The subject a vouched send carries is taken whole · the type and the id, in one statement. */
+    public function test_a_session_without_a_subject_takes_the_one_vouched_for(): void
+    {
+        $session = $this->anonymousSession();
+
+        $this->record($session, CarbonImmutable::parse('2026-06-30 09:05:00'), ['type' => 'client', 'id' => 7]);
+
+        $this->assertSame(['client', 7], $this->subjectOf($session));
+    }
+
+    /** Without a vouching the send names nobody, whatever subject it carries. */
+    public function test_an_unvouched_send_names_nobody(): void
+    {
+        $session = $this->anonymousSession();
+
+        $this->record($session, null, ['type' => 'client', 'id' => 7]);
+
+        $this->assertSame([null, null], $this->subjectOf($session));
+    }
+
+    /** A session that has a subject never changes it. */
+    public function test_a_session_keeps_the_subject_it_has(): void
+    {
+        $session = $this->anonymousSession();
+
+        $this->record($session, CarbonImmutable::parse('2026-06-30 09:05:00'), ['type' => 'client', 'id' => 7]);
+        $this->record($session, CarbonImmutable::parse('2026-06-30 09:06:00'), ['type' => 'lessor', 'id' => 9]);
+
+        $this->assertSame(['client', 7], $this->subjectOf($session));
+    }
+
+    private function anonymousSession(): Session
+    {
+        $visitor = $this->visitorRow();
+
+        return (new SessionWriteRepository)->start($visitor, new IngestionContext, CarbonImmutable::parse('2026-06-30 09:00:00'), $visitor->uuid);
+    }
+
+    /** @param  array{type: string, id: int}  $subject */
+    private function record(Session $session, ?CarbonImmutable $confirmedAt, array $subject): void
+    {
+        (new SessionWriteRepository)->recordActivity($session, CarbonImmutable::parse('2026-06-30 09:05:00'), 1, 0, 1, null, $confirmedAt, $subject);
+    }
+
+    /** @return array{0: string|null, 1: int|null} */
+    private function subjectOf(Session $session): array
+    {
+        $fresh = $session->fresh();
+
+        $this->assertNotNull($fresh);
+
+        return [$fresh->subject_type, $fresh->subject_id];
     }
 }
