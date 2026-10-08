@@ -73,7 +73,7 @@ dix-neuf contrôles sur des défauts qui échouent tous en silence.
 | | |
 |---|---|
 | **[installation.md](docs/installation.md)** | l'installation, le montage des écrans, le déploiement |
-| **[configuration.md](docs/configuration.md)** | **les 39 réglages**, un tableau par bloc · la seule autorité |
+| **[configuration.md](docs/configuration.md)** | **les 41 réglages**, un tableau par bloc · la seule autorité |
 | **[autorisation.md](docs/autorisation.md)** | qui peut ouvrir quel écran et faire quel geste · l'arbre des capacités, et comment le restreindre |
 | **[fonctionnalites.md](docs/fonctionnalites.md)** | une fiche par écran, les treize commandes, l'instrumentation, les tunnels, le marketing, la vie privée |
 | **[mise-a-jour.md](docs/mise-a-jour.md)** | monter de version, le contrat public, revenir en arrière |
@@ -156,8 +156,12 @@ personne. Le détail est dans
   visiteurs · il n'y a pas de suivi inter-domaines, et il n'y en aura pas.
 - **Le pas à pas d'une session ne se consulte que 90 jours** par défaut. Au-delà,
   les pages vues et les clics anonymes sont effacés — **et aucun chiffre d'aucun
-  écran ne bouge** · ils ont été comptés d'avance, et tout ce qui porte un nom
-  est gardé pour toujours. Vous pouvez demander deux ans sans rien fausser.
+  écran ne bouge** · ils ont été comptés d'avance, et tout le reste est gardé.
+  Vous pouvez demander deux ans sans rien fausser.
+- **Effacer aussi les sessions est un choix, et il a un prix.** Leurs totaux de
+  chaque jour sont gardés, donc tout chiffre qui s'additionne reste exact · mais
+  au-delà, un chiffre qui compte des personnes distinctes, visiteurs ou tunnels,
+  se dit indisponible. Une somme par jour ne sait pas qui revient.
 - **Un tunnel ou un événement déclaré aujourd'hui ne dit rien du passé déjà
   effacé.** La matière n'existe plus ; l'historique de cette mesure commence le
   jour où vous la déclarez. C'est vrai de tous les outils du genre.

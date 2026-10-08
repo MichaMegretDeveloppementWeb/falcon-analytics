@@ -75,16 +75,23 @@ architecture qui n'existe plus.
   et les noms de pays s'écrivent en français, comme les libellés, même chez un
   hôte réglé dans une autre langue · une page ne mélange jamais deux langues ;
 - **une conservation qui ne fausse aucun chiffre** · le pas à pas d'une session
-  s'efface au bout de 90 jours, et c'est tout ce qui s'efface · les pages et
-  clics les plus vus sont comptés d'avance chaque nuit, et **tout ce qui porte un
-  nom est gardé pour toujours**. Aucune période maximale d'affichage ;
+  s'efface au bout de 90 jours, et par défaut c'est tout ce qui s'efface · les
+  pages et clics les plus vus sont comptés d'avance chaque nuit, et **tout ce qui
+  porte un nom est gardé**. Aucune période maximale d'affichage ;
+- **des sessions, des profils et des événements nommés qui s'effacent si vous le
+  réglez** · `session_retention_days` et `event_retention_days`, à `null` par
+  défaut. Chaque jour est d'abord résumé, donc tout chiffre qui s'additionne
+  reste exact au-delà · un chiffre qui compte des personnes distinctes le dit,
+  « Indisponible au-delà de 90 jours de conservation ». La fiche d'un visiteur
+  dit sur combien de jours portent ses chiffres. Deux durées qui se contredisent
+  sont refusées, et rien n'est effacé ;
 - **deux classements rapides quel que soit le trafic** · les pages et clics les
   plus vus lisent chaque journée close dans les compteurs de la nuit, et seule
   la journée en cours se compte visite par visite. Sur un site à 10 000 pages
   vues par jour, le bloc des pages passe ainsi de plusieurs secondes à une
   fraction de seconde. Une journée y reste comptée telle que la nuit l'a
   comptée · un visiteur effacé ensuite y demeure, anonymement ;
-- **trente-neuf réglages**, tous facultatifs · le paquet fonctionne sans qu'on en
+- **quarante et un réglages**, tous facultatifs · le paquet fonctionne sans qu'on en
   touche un seul, et un essai le tient ;
 - **des fichiers déjà compilés** · aucun Node n'est requis chez l'hôte. Le
   script des écrans, `analytics-admin.js`, ne part que vers les écrans
@@ -247,3 +254,6 @@ la localité y perde, puisqu'elle est lue avant la troncature.
 défaut · au-delà, les pages vues et les clics anonymes sont effacés. Ce qui
 porte un nom est gardé, les chiffres des écrans ne bougent pas, et l'écran de
 cette session dit ce qu'il a perdu. Écrivez `null` pour ne jamais rien effacer.
+Les sessions, les profils et les événements nommés s'effacent à leur tour si
+vous le réglez · vingt-cinq mois tiennent la durée que la CNIL fixe pour une
+mesure sans bandeau de consentement.

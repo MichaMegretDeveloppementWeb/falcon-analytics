@@ -207,7 +207,7 @@ n'a pas de Node.
 
 ## L'organisation du domaine
 
-**Seize classes sont publiques** · toutes les autres portent `@internal`, et
+**Dix-sept classes sont publiques** · toutes les autres portent `@internal`, et
 `TheSurfaceIsDeclaredTest` refuse que cette frontière bouge sans qu'on le dise.
 La liste tient dans ce fichier d'essai, qui est l'endroit où la lire.
 
@@ -312,6 +312,46 @@ en partie effacées.
 > qu'il n'est pas vidé, les **nommées** ensuite — que le résumé a comptées
 > aussi. Lire les deux compterait deux fois, d'où une coupure stricte plutôt
 > qu'un recouvrement.
+
+### La ligne de conservation · ce que l'effacement a fait, jamais ce que disent les réglages
+
+Quand `session_retention_days` ou `event_retention_days` est réglé,
+l'effacement vide aussi des sessions et des événements nommés, et **l'écrit au
+registre avant d'effacer** · `sessions_pruned_at`, `events_pruned_at`.
+`RetentionWindow` en déduit la ligne, une fois par requête · le premier jour
+dont les lignes existent encore.
+
+```
+Maintenance                        écrit au registre, puis efface
+        ↓
+RetentionWindow                    la ligne · split() et reaches()
+        ↓                                   ↓
+DailyTotalsReadRepository          …ReadRepository, comme avant
+        les jours avant la ligne            les jours après
+```
+
+- **une lecture qui s'additionne** assemble les deux moitiés · les totaux avant
+  la ligne, les lignes après ;
+- **une lecture qui compte des personnes** rend `null` dès que sa période, ou sa
+  comparaison, touche la ligne, et l'écran le dit ;
+- **sans effacement, il n'y a pas de ligne**, et chaque lecture est celle
+  d'avant.
+
+**Pourquoi la ligne vient du registre** · une durée allongée après un
+effacement ne fait pas revenir les lignes. La déduire du réglage ferait lire des
+jours vidés comme s'ils étaient pleins, et les chiffres tomberaient sans erreur.
+
+**Les profils** · `PruneProfilesLeftEmptyAction` efface ceux que l'effacement a
+laissés sans session et vus avant la borne, par lots, chacun dans sa
+transaction. Il prend leur verrou par `VisitorLocks`, par identifiant croissant,
+et les relit sous lui · un visiteur revenu entre-temps a de nouveau une session,
+et garde son profil. Un alias part avec son profil, jamais seul.
+
+| Essai | Ce qu'il tient |
+|---|---|
+| `TheRetentionLineIsWhatThePurgeRecordedTest` | la ligne suit le registre, pas les réglages |
+| `ErasedSessionsChangeNoFigureThatAddsUpTest` | un effacement, simulé puis réel, ne change aucun chiffre qui s'additionne · écrans, marketing et tunnels |
+| `TheRetentionErasesWhatItSaysTest` | pour chaque sorte de ligne, une vieille effacée, une récente gardée, un jour non résumé gardé |
 
 ### Le reste
 
