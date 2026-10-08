@@ -28,7 +28,10 @@ return new class extends Migration
 
             $table->id();
             $table->date('day')->unique('fa_daily_archives_day_unique');
-            $table->dateTime('archived_at');
+
+            // Each family of summaries moves forward on its own · a day can be summarised for one and wait for the other.
+            $table->dateTime('archived_at')->nullable();
+            $table->dateTime('detail_archived_at')->nullable();
         });
     }
 

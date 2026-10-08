@@ -184,13 +184,13 @@ du collecteur dans votre bundle en donnerait deux.
 
 ### Les migrations
 
-Le paquet crée **dix tables** préfixées `falcon_analytics_`, toutes en InnoDB,
+Le paquet crée **douze tables** préfixées `falcon_analytics_`, toutes en InnoDB,
 chargées automatiquement · un `php artisan migrate` suffit, et `analytics:install` le
-lance pour vous. Huit portent vos mesures ; les deux autres sont la mécanique de
+lance pour vous. Huit portent vos mesures ; les quatre autres sont la mécanique de
 la conservation, et ne sont pas une interface.
 
-Les deux colonnes qui ne prennent qu'une liste fermée — le type d'un événement,
-la sorte d'un résumé — sont gardées **par la base elle-même**, par une
+Les trois colonnes qui ne prennent qu'une liste fermée — le type d'un événement,
+la sorte d'un résumé, la ventilation d'un total de sessions — sont gardées **par la base elle-même**, par une
 contrainte nommée que MySQL (depuis 8.0.16) et MariaDB (depuis 10.2) appliquent.
 
 Elles sont toutes réversibles. Ce qui ne veut pas dire qu'il faille les

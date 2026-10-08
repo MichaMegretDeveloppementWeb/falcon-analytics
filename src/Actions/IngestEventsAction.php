@@ -17,6 +17,7 @@ use Falcon\Analytics\Repositories\SessionReadRepository;
 use Falcon\Analytics\Repositories\SessionWriteRepository;
 use Falcon\Analytics\Repositories\VisitorWriteRepository;
 use Falcon\Analytics\Services\DailyCountArchiver;
+use Falcon\Analytics\Services\DailyDetailArchiver;
 use Falcon\Analytics\Services\SessionContextEnricher;
 use Falcon\Analytics\Services\VisitorLocks;
 use Falcon\Analytics\Services\VisitorProfileResolver;
@@ -36,6 +37,7 @@ final readonly class IngestEventsAction
         private SessionContextEnricher $enricher,
         private PropsEncoder $propsEncoder,
         private DailyCountArchiver $archiver,
+        private DailyDetailArchiver $details,
         private ArchiveClosedDaysAction $summarise,
         private VisitorLocks $locks,
     ) {}
@@ -72,12 +74,13 @@ final readonly class IngestEventsAction
 
     /**
      * A session that takes its subject after its first day was summarised
-     * moves that day's page views and clicks under the subject · the day is
-     * summarised again, after the visitor lock is released.
+     * moves that day's page views, clicks and session totals under the
+     * subject · the day is summarised again, after the visitor lock is
+     * released.
      */
     private function summariseAgainUnder(Session $session): void
     {
-        if ($this->archiver->isArchived($session->started_at)) {
+        if ($this->archiver->isArchived($session->started_at) || $this->details->isArchived($session->started_at)) {
             $this->summarise->executeFrom($session->started_at);
         }
     }

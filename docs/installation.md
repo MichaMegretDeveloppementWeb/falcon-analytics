@@ -11,7 +11,7 @@ Une commande, puis trois choses à écrire vous-même. Comptez un quart d'heure.
 | **PHP** | 8.5 ou plus, avec l'extension **intl** · les écrans écrivent leurs nombres et les noms de pays en français, quelle que soit la langue de votre site. Composer refuse d'installer sans elle, et `analytics:check` la relit |
 | **Laravel** | 13 |
 | **Livewire** | 4.2 ou plus · dépendance partagée, jamais embarquée |
-| **Une base** | **MySQL 8.0.16 ou plus, ou MariaDB 10.11 ou plus**, et rien d'autre · le paquet crée dix tables préfixées `falcon_analytics_`, dont huit portent vos mesures, toutes en InnoDB quel que soit le moteur par défaut du serveur |
+| **Une base** | **MySQL 8.0.16 ou plus, ou MariaDB 10.11 ou plus**, et rien d'autre · le paquet crée douze tables préfixées `falcon_analytics_`, dont huit portent vos mesures, toutes en InnoDB quel que soit le moteur par défaut du serveur |
 | **L'ordonnanceur** | `schedule:run` déclenché chaque minute · sans lui, les sessions ne se ferment pas et les jours clos ne sont plus résumés. **Rien n'est perdu pour autant** · voir plus bas |
 | **Node** | **non** · le paquet livre ses fichiers déjà compilés |
 | **Les navigateurs mesurés** | ceux qui savent envoyer une balise · **Chrome 39, Firefox 31, Safari 11.1, Edge 14 ou plus récents**, soit tout navigateur sorti depuis 2018. Sur un plus ancien, la page s'affiche normalement et la visite n'est pas mesurée |
@@ -430,7 +430,7 @@ rm config/analytics.php
 
 Les variables `ANALYTICS_*` de `.env` et `.env.example` sont à retirer à la main.
 
-**Les dix tables `falcon_analytics_*` restent**, et aucune commande ne les
+**Les douze tables `falcon_analytics_*` restent**, et aucune commande ne les
 supprime · le paquet n'efface pas des données qu'on ne lui a pas demandé
 d'effacer. Elles se retirent quand vous êtes sûr de ne plus vouloir l'historique,
 et une sauvegarde d'ici là ne coûte rien.
