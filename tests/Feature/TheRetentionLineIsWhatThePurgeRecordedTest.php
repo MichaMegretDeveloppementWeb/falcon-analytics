@@ -124,8 +124,9 @@ final class TheRetentionLineIsWhatThePurgeRecordedTest extends TestCase
         $this->assertSame('2026-04-10', $window->eventsLine()?->toDateString());
 
         $this->mark('2026-04-20', sessions: true, events: false);
+        $line = $window->eventsLine();
 
-        $this->assertSame('2026-04-20', $window->eventsLine()?->toDateString(), 'Its sessions gone, a day has no event left either.');
+        $this->assertSame('2026-04-20', $line->toDateString(), 'Its sessions gone, a day has no event left either.');
     }
 
     public function test_a_period_is_split_at_the_end_of_the_line(): void
@@ -133,12 +134,14 @@ final class TheRetentionLineIsWhatThePurgeRecordedTest extends TestCase
         $line = CarbonImmutable::parse('2026-05-31');
         $across = new Period(CarbonImmutable::parse('2026-05-17')->startOfDay(), CarbonImmutable::now(), 30);
 
-        $split = RetentionWindow::split($across, $line);
+        ['totals' => $totals, 'rows' => $rows] = RetentionWindow::split($across, $line);
 
-        $this->assertSame('2026-05-17 00:00:00', $split['totals']?->from->toDateTimeString());
-        $this->assertSame('2026-05-31 23:59:59', $split['totals']?->to->toDateTimeString());
-        $this->assertSame('2026-06-01 00:00:00', $split['rows']?->from->toDateTimeString());
-        $this->assertSame('2026-06-15 12:00:00', $split['rows']?->to->toDateTimeString());
+        $this->assertNotNull($totals);
+        $this->assertNotNull($rows);
+        $this->assertSame('2026-05-17 00:00:00', $totals->from->toDateTimeString());
+        $this->assertSame('2026-05-31 23:59:59', $totals->to->toDateTimeString());
+        $this->assertSame('2026-06-01 00:00:00', $rows->from->toDateTimeString());
+        $this->assertSame('2026-06-15 12:00:00', $rows->to->toDateTimeString());
         $this->assertTrue(RetentionWindow::reaches($across, $line));
 
         $before = new Period(CarbonImmutable::parse('2026-05-01')->startOfDay(), CarbonImmutable::parse('2026-05-31')->endOfDay(), 31);
