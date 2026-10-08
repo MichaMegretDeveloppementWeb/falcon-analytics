@@ -259,8 +259,8 @@ C'est le réglage par défaut, et il a demandé du travail ·
   ces compteurs sont gardés pour toujours · la vue d'ensemble remonte aussi loin
   que vous le demandez. C'est d'eux que ces deux blocs lisent chaque journée
   close, et seule la journée en cours se compte visite par visite · ils restent
-  donc rapides quel que soit votre trafic. Une journée y est comptée telle que
-  la nuit l'a comptée · un visiteur effacé ensuite y reste, anonymement ;
+  donc rapides quel que soit votre trafic. Un visiteur effacé en sort tant que
+  les pages vues de la journée sont gardées, et y reste, anonyme, au-delà ;
 - **les sessions, les visiteurs et leurs chiffres restent** · fréquentation,
   sources, appareils, localités, portée des campagnes ne bougent pas ;
 - **les pages vues que traverse une étape de tunnel déclarée** sont gardées

@@ -304,6 +304,16 @@ au premier passage, jours déjà résumés pour leurs pages compris · ceux-là 
 sont pas résumés à nouveau pour leurs pages, dont les lignes anonymes sont déjà
 en partie effacées.
 
+**Un effacement résume à nouveau les jours qu'il touche** · `ErasedDaysArchiver`,
+dans la transaction de `ForgetSubjectAction` et de `ForgetVisitorAction`. Les
+jours se relèvent sous le verrou, avant de rien supprimer · le début de chaque
+session et le jour de chaque événement qui partent. Chaque table de totaux n'est
+refaite que si ses lignes du jour sont entières · les pages vues à partir de
+`DailyCountArchiver::firstDayKept()`, les sessions tant que le jour n'est pas
+marqué `sessions_pruned_at`, les événements nommés tant qu'il n'est pas marqué
+`events_pruned_at`. Un jour que le registre ne tient pas encore est laissé au
+passage de nuit. `AnErasureLeavesNoFigureToJump` le tient, cas par cas.
+
 > **Ce qu'une famille de totaux ne garde pas** · un chiffre qui compte des
 > personnes distinctes, visiteurs, nouveaux, tunnels, ne s'additionne pas d'un
 > jour à l'autre. Les totaux n'en portent donc aucun.

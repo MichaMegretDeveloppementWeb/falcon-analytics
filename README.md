@@ -144,8 +144,9 @@ Analytics::forgetSubject('web', $user->id);
 
 Ses profils, ses sessions et ses événements sont supprimés, où qu'ils soient.
 Les sessions qu'une autre personne a laissées sur son navigateur rejoignent le
-profil de cette personne. Les totaux journaliers restent, et ne nomment
-personne. Le détail est dans
+profil de cette personne. Les journées encore lues ligne à ligne sont résumées à
+nouveau sans elle · les totaux plus anciens la gardent, sans la nommer. Le
+détail est dans
 [fonctionnalites.md](docs/fonctionnalites.md#la-vie-privée-et-le-rgpd).
 
 ---
