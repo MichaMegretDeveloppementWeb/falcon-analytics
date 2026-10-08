@@ -9,6 +9,7 @@ use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Repositories\Concerns\ScopesSessionQueries;
 use Falcon\Analytics\Services\SubjectResolver;
+use Falcon\Analytics\Support\SubjectFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -73,7 +74,7 @@ final readonly class VisitorListReadRepository
 
         $seenDay = $this->dayExpression('first_seen_at');
         $new = Visitor::query()
-            ->when($subjectType !== null, fn (Builder $q): Builder => $q->where('subject_type', $subjectType))
+            ->tap(fn (Builder $q): Builder => SubjectFilter::apply($q, $subjectType))
             ->whereBetween('first_seen_at', [$period->from, $period->to])
             ->whereHas('sessions', fn (Builder $session): Builder => $session->where('is_bot', false)->whereBetween('started_at', [$period->from, $period->to]))
             ->toBase()
@@ -113,7 +114,7 @@ final readonly class VisitorListReadRepository
         $query = Visitor::query()
             ->select(['falcon_analytics_visitors.id', 'uuid', 'first_seen_at', 'last_seen_at', 'subject_type', 'subject_id', 'session_count'])
             ->whereNull('merged_into_id')
-            ->when($subjectType !== null, fn (Builder $q): Builder => $q->where('subject_type', $subjectType))
+            ->tap(fn (Builder $q): Builder => SubjectFilter::apply($q, $subjectType))
             ->whereHas('sessions', fn (Builder $q): Builder => $q->where('is_bot', false))
             ->addSelect($this->localityAndSource());
 

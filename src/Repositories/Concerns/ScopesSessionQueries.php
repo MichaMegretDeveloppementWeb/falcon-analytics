@@ -7,6 +7,7 @@ namespace Falcon\Analytics\Repositories\Concerns;
 use Falcon\Analytics\DTOs\Dashboard\Period;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Support\DatabaseEngine;
+use Falcon\Analytics\Support\SubjectFilter;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
@@ -33,7 +34,7 @@ trait ScopesSessionQueries
         return Session::query()
             ->where('is_bot', false)
             ->whereBetween('started_at', [$period->from, $period->to])
-            ->when($subjectType !== null, fn (Builder $query): Builder => $query->where('subject_type', $subjectType));
+            ->tap(fn (Builder $query): Builder => SubjectFilter::apply($query, $subjectType));
     }
 
     /**

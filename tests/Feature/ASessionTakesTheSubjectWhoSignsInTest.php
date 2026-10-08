@@ -47,7 +47,7 @@ final class ASessionTakesTheSubjectWhoSignsInTest extends TestCase
             ->get(route('analytics.admin.sessions'))
             ->assertSuccessful()
             ->assertSeeText('Cabinet Rive')
-            ->assertDontSeeText(__('Non connecté'));
+            ->assertDontSeeText('· '.__('Non connecté'));
     }
 
     /** A session that has a subject keeps it: whoever signs in next opens a session of their own. */

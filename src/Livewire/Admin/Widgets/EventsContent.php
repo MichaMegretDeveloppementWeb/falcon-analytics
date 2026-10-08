@@ -10,6 +10,7 @@ use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Livewire\Admin\Concerns\GuardsWidgetRead;
 use Falcon\Analytics\Repositories\Dashboard\EventReadRepository;
 use Falcon\Analytics\Support\DateLabel;
+use Falcon\Analytics\Support\SubjectFilter;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Lazy;
 use Livewire\Component;
@@ -40,7 +41,7 @@ final class EventsContent extends Component
     {
         return $this->guardedWidget(function () use ($repository, $events): array {
             $range = Period::ofDays($this->period);
-            $subjectType = $this->subject !== '' ? $this->subject : null;
+            $subjectType = SubjectFilter::chosen($this->subject);
 
             $breakdown = $repository->eventBreakdown($range, $subjectType, $events);
             $headline = $repository->totals($breakdown);

@@ -37,6 +37,10 @@ architecture qui n'existe plus.
   donc un visiteur est *ce client-là*, ce qu'aucun outil externe ne peut faire ·
   une session ouverte avant la connexion prend le sujet de la personne, et une
   session ne change jamais de sujet ;
+- **un filtre des visiteurs à trois choix** · tous, ceux d'un de vos gardes, et
+  « Non connectés », ceux qu'aucun garde n'a nommés, dont vous réglez le nom
+  par `identity.anonymous_label`. Le choix n'apparaît qu'à côté d'un garde
+  déclaré, et une valeur d'adresse que le filtre ne propose pas vaut tous ;
 - **`Analytics::forgetSubject()`**, pour le droit à l'effacement · votre
   application l'appelle quand elle supprime un compte, et tout ce que le paquet
   tient sur la personne part en une transaction · ses profils, leurs sessions
@@ -80,7 +84,7 @@ architecture qui n'existe plus.
   vues par jour, le bloc des pages passe ainsi de plusieurs secondes à une
   fraction de seconde. Une journée y reste comptée telle que la nuit l'a
   comptée · un visiteur effacé ensuite y demeure, anonymement ;
-- **trente-huit réglages**, tous facultatifs · le paquet fonctionne sans qu'on en
+- **trente-neuf réglages**, tous facultatifs · le paquet fonctionne sans qu'on en
   touche un seul, et un essai le tient ;
 - **des fichiers déjà compilés** · aucun Node n'est requis chez l'hôte. Le
   script des écrans, `analytics-admin.js`, ne part que vers les écrans

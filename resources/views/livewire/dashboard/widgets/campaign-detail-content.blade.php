@@ -9,7 +9,7 @@
             <div wire:key="c-spark-s-{{ $refId }}-{{ $period }}-{{ $subject }}" class="an:mt-3"><x-analytics::sparkline :values="$trendData" /></div>
         </x-analytics::kpi-card>
         <x-analytics::kpi-card :label="__('Visiteurs')" :value="NumberLabel::for($visitors)" icon="users" :metric="$visitorsDelta">
-            <div wire:key="c-spark-v-{{ $refId }}-{{ $period }}-{{ $subject }}" class="an:mt-3"><x-analytics::sparkline :values="$trendData" /></div>
+            <div wire:key="c-spark-v-{{ $refId }}-{{ $period }}-{{ $subject }}" class="an:mt-3"><x-analytics::sparkline :values="$visitorsTrend" /></div>
         </x-analytics::kpi-card>
         <x-analytics::kpi-card :label="__('Conversions')" :value="NumberLabel::for($conversions)" icon="check-circle" :metric="$conversionsDelta">
             <div wire:key="c-spark-conv-{{ $refId }}-{{ $period }}-{{ $subject }}" class="an:mt-3"><x-analytics::sparkline :values="$conversionsTrend" color="--an-conversion" /></div>

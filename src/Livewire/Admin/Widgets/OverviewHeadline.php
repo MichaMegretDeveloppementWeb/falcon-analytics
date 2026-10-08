@@ -8,6 +8,7 @@ use Falcon\Analytics\DTOs\Dashboard\Period;
 use Falcon\Analytics\Livewire\Admin\Concerns\GuardsWidgetRead;
 use Falcon\Analytics\Repositories\Dashboard\EngagementReadRepository;
 use Falcon\Analytics\Services\Dashboard\EngagementMetricsCalculator;
+use Falcon\Analytics\Support\SubjectFilter;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Lazy;
 use Livewire\Component;
@@ -38,7 +39,7 @@ final class OverviewHeadline extends Component
     {
         return $this->guardedWidget(function () use ($engagementRepository, $engagement): array {
             $period = Period::ofDays($this->period);
-            $subjectType = $this->subject !== '' ? $this->subject : null;
+            $subjectType = SubjectFilter::chosen($this->subject);
             $spotlight = $engagementRepository->spotlightCounts($subjectType);
 
             return [

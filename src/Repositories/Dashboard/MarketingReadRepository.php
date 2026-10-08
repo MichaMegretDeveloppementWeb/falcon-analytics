@@ -10,6 +10,7 @@ use Falcon\Analytics\Models\Ad;
 use Falcon\Analytics\Models\Campaign;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
+use Falcon\Analytics\Support\SubjectFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Log;
@@ -33,16 +34,18 @@ final class MarketingReadRepository
 
     /**
      * Ad-tagged sessions for a period, capped at the ceiling so a paid-traffic
-     * spike cannot exhaust memory. Beyond it the figures under-count, and the
-     * result says so for the screens to show. The builder scans these same rows
-     * for every marketing figure, so a superset of the columns each read needs
-     * is fetched in one query.
+     * spike cannot exhaust memory, the latest kept. Beyond it the figures
+     * under-count, and the result says so for the screens to show. The builder
+     * scans these same rows for every marketing figure, so a superset of the
+     * columns each read needs is fetched in one query.
      */
     public function taggedSessionRows(Period $period, ?string $subjectType): TaggedSessions
     {
         $ceiling = $this->ceiling();
 
         $rows = $this->taggedSessions($period, $subjectType)
+            ->orderByDesc('started_at')
+            ->orderByDesc('id')
             ->limit($ceiling + 1)
             ->get(['id', 'visitor_id', 'source', 'mkt_params', 'started_at']);
 
@@ -154,6 +157,6 @@ final class MarketingReadRepository
             ->where('is_bot', false)
             ->whereNotNull('mkt_params')
             ->whereBetween('started_at', [$period->from, $period->to])
-            ->when($subjectType !== null, fn (Builder $query): Builder => $query->where('subject_type', $subjectType));
+            ->tap(fn (Builder $query): Builder => SubjectFilter::apply($query, $subjectType));
     }
 }

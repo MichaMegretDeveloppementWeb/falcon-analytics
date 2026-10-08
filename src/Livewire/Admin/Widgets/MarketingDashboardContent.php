@@ -13,6 +13,7 @@ use Falcon\Analytics\Models\Ad;
 use Falcon\Analytics\Models\Campaign;
 use Falcon\Analytics\Services\Dashboard\MarketingMetricsCalculator;
 use Falcon\Analytics\Services\Dashboard\MarketingReportBuilder;
+use Falcon\Analytics\Support\SubjectFilter;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Lazy;
@@ -46,7 +47,7 @@ final class MarketingDashboardContent extends Component
     {
         return $this->guardedWidget(function () use ($marketing, $funnels, $metrics): array {
             $period = Period::ofDays($this->period);
-            $subjectType = $this->subject !== '' ? $this->subject : null;
+            $subjectType = SubjectFilter::chosen($this->subject);
             $performance = $marketing->performance($period, $subjectType);
             $conversions = $marketing->conversions($period, $subjectType, $funnels);
 
@@ -76,7 +77,8 @@ final class MarketingDashboardContent extends Component
         $conversionsPrevious = $marketing->conversions($previous, $subjectType, $funnels);
         $rate = $metrics->rate((float) $conversions['total'], (float) $headline['visitors']);
         $ratePrevious = $metrics->rate((float) $conversionsPrevious['total'], (float) $headlinePrevious['visitors']);
-        $trend = $metrics->trend($period, $marketing->dailySessions($period, $subjectType), $conversions['daily']);
+        $daily = $marketing->daily($period, $subjectType);
+        $trend = $metrics->trend($period, $daily['sessions'], $conversions['daily'], $daily['visitors']);
 
         return [
             'sessions' => $headline['sessions'],
@@ -91,6 +93,7 @@ final class MarketingDashboardContent extends Component
             'rateTrend' => $trend['rates'],
             'trendLabels' => $trend['labels'],
             'trendData' => $trend['sessions'],
+            'visitorsTrend' => $trend['visitors'],
         ];
     }
 

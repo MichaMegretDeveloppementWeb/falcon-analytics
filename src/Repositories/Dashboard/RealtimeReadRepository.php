@@ -9,6 +9,7 @@ use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Repositories\Concerns\ScopesSessionQueries;
+use Falcon\Analytics\Support\SubjectFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -226,7 +227,7 @@ final class RealtimeReadRepository
         return Session::query()
             ->where('is_bot', false)
             ->where('last_activity_at', '>=', $since)
-            ->when($subjectType !== null, fn (Builder $query): Builder => $query->where('subject_type', $subjectType));
+            ->tap(fn (Builder $query): Builder => SubjectFilter::apply($query, $subjectType));
     }
 
     /**
@@ -242,7 +243,7 @@ final class RealtimeReadRepository
             ->whereHas('session', fn (Builder $session): Builder => $session->where('is_bot', false))
             ->when($subjectType !== null, fn (Builder $query): Builder => $query->whereHas(
                 'visitor',
-                fn (Builder $visitor): Builder => $visitor->where('subject_type', $subjectType),
+                fn (Builder $visitor): Builder => SubjectFilter::apply($visitor, $subjectType),
             ));
     }
 

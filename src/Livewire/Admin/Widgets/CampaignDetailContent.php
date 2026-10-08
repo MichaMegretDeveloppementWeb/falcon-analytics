@@ -13,6 +13,7 @@ use Falcon\Analytics\Livewire\Admin\Concerns\GuardsWidgetRead;
 use Falcon\Analytics\Models\Campaign;
 use Falcon\Analytics\Services\Dashboard\MarketingMetricsCalculator;
 use Falcon\Analytics\Services\Dashboard\MarketingReportBuilder;
+use Falcon\Analytics\Support\SubjectFilter;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Lazy;
@@ -48,7 +49,7 @@ final class CampaignDetailContent extends Component
         return $this->guardedWidget(function () use ($funnels, $events, $marketing, $metrics): array {
             $campaign = Campaign::query()->findOrFail($this->refId);
             $period = Period::ofDays($this->period);
-            $subjectType = $this->subject !== '' ? $this->subject : null;
+            $subjectType = SubjectFilter::chosen($this->subject);
 
             $report = $marketing->campaignReport($period, $subjectType, $campaign);
             $previous = $marketing->campaignReport($period->previous(), $subjectType, $campaign);
@@ -60,7 +61,7 @@ final class CampaignDetailContent extends Component
             $rate = $metrics->rate((float) $campaignConversions, (float) $report['visitors']);
             $ratePrevious = $metrics->rate((float) $campaignConversionsPrevious, (float) $previous['visitors']);
 
-            $trend = $metrics->trend($period, $report['daily'], $conversions['campaignDaily'][$campaign->id] ?? []);
+            $trend = $metrics->trend($period, $report['daily'], $conversions['campaignDaily'][$campaign->id] ?? [], $report['dailyVisitors']);
 
             $activeAds = $marketing->activeAdsOf($campaign);
 
@@ -80,6 +81,7 @@ final class CampaignDetailContent extends Component
                 'conversionElements' => $marketing->conversionElements($period, $subjectType, $funnels, $events, $activeAds),
                 'trendLabels' => $trend['labels'],
                 'trendData' => $trend['sessions'],
+                'visitorsTrend' => $trend['visitors'],
                 'truncatedAt' => $marketing->truncatedAt($period, $subjectType) ?? $marketing->truncatedAt($period->previous(), $subjectType),
                 'mayOpenAds' => Gate::allows(Ability::Ads),
             ];

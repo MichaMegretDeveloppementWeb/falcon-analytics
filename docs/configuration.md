@@ -132,8 +132,9 @@ qui ne les emploient pas.
 
 ## L'identité du visiteur
 
-Ces quatre valeurs suffisent à la plupart des projets · le paquet en tire le
-sujet suivi, les exclusions et le consentement, sans une ligne de code.
+Les trois premières valeurs suffisent à la plupart des projets · le paquet en
+tire le sujet suivi, les exclusions et le consentement, sans une ligne de code.
+Les deux dernières règlent ce que les écrans affichent.
 
 | Clé | Type | Défaut | Ce qu'elle fait |
 |---|---|---|---|
@@ -141,6 +142,7 @@ sujet suivi, les exclusions et le consentement, sans une ligne de code.
 | `identity.exclude_guards` | liste de gardes | `[]` | Les gardes dont l'utilisateur connecté est **entièrement** exclu du suivi. Vide veut dire « personne ». |
 | `identity.consent_cookie` | nom de cookie ou `null` | `null` | Le cookie dont la valeur `"1"` autorise l'identifiant de visiteur persistant. **Sans valeur**, aucun identifiant n'est déposé sur l'appareil · celui du visiteur vit dans la session. Le nommer ici suffit · le paquet le sort du chiffrement de Laravel lui-même, sinon il serait relu à `null` et le consentement ne serait jamais vu. |
 | `identity.subjects` | dictionnaire | `[]` | Comment afficher un sujet · un libellé, et les colonnes à concaténer pour son nom. **Vide**, l'écran affiche le nom du garde mis en forme — `client` devient `Client` — et l'identifiant, faute de savoir quelles colonnes lire. |
+| `identity.anonymous_label` | texte ou `null` | `null` | Le nom que le filtre des visiteurs donne à **ceux qu'aucun garde n'a nommés**, à côté de vos gardes · « Visiteurs du site », par exemple. `null` garde « Non connectés ». Le choix n'apparaît qu'à côté d'au moins un garde déclaré. |
 
 Le nom d'un sujet est **lu au moment de l'affichage et jamais stocké**.
 
@@ -309,7 +311,7 @@ ses liens, suffit.
 
 | Clé | Type | Défaut | Ce qu'elle fait |
 |---|---|---|---|
-| `marketing.max_sessions` | entier, au moins `1` | `20000` | Au-delà de ce nombre sur la période, les suivantes ne sont pas lues · la mémoire reste bornée, **et les écrans disent que leurs chiffres sont en dessous de la réalité**. Relevez-le si votre serveur a la mémoire pour. **Une autre valeur arrête les écrans marketing**, et `analytics:check` dit pourquoi. |
+| `marketing.max_sessions` | entier, au moins `1` | `20000` | Au-delà de ce nombre sur la période, **les plus récentes sont gardées** et les plus anciennes ne sont pas lues · la mémoire reste bornée, **et les écrans disent que leurs chiffres sont en dessous de la réalité**. Relevez-le si votre serveur a la mémoire pour. **Une autre valeur arrête les écrans marketing**, et `analytics:check` dit pourquoi. |
 
 > **Ce qui le dit, et où** · la synthèse marketing, le détail d'une campagne,
 > celui d'une publicité, et la répartition des sources de trafic de la vue

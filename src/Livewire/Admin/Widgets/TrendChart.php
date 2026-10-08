@@ -11,6 +11,7 @@ use Falcon\Analytics\Repositories\Dashboard\EventReadRepository;
 use Falcon\Analytics\Repositories\Dashboard\OverviewReadRepository;
 use Falcon\Analytics\Services\Dashboard\TrendSeriesCalculator;
 use Falcon\Analytics\Support\DateLabel;
+use Falcon\Analytics\Support\SubjectFilter;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Lazy;
 use Livewire\Component;
@@ -46,7 +47,7 @@ final class TrendChart extends Component
     ): View {
         return $this->guardedWidget(function () use ($repository, $eventRepository, $trends, $events): array {
             $range = Period::ofDays($this->period);
-            $subjectType = $this->subject !== '' ? $this->subject : null;
+            $subjectType = SubjectFilter::chosen($this->subject);
 
             $trend = $trends->points($repository->trendRows($range, $subjectType), $range);
             $conversionsDaily = $eventRepository->daily($range, $subjectType, $events)['conversions'];

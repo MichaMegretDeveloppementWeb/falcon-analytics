@@ -42,6 +42,24 @@ final class MarketingReadRepositoryTest extends TestCase
         $this->assertSame(3, $read->ceiling);
     }
 
+    /** Beyond the ceiling the latest sessions are kept, the later id first between two of the same instant. */
+    public function test_the_ceiling_keeps_the_latest_sessions(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-06-15 12:00:00'));
+        $visitor = Visitor::factory()->create();
+        $tagged = fn (string $at): Session => Session::factory()->for($visitor)->at(CarbonImmutable::parse($at))->create(['mkt_params' => ['src' => 'meta_ete']]);
+
+        $latest = $tagged('2026-06-14 10:00:00');
+        $tagged('2026-06-01 10:00:00');
+        $tied = $tagged('2026-06-10 10:00:00');
+        $tiedLater = $tagged('2026-06-10 10:00:00');
+
+        $read = (new MarketingReadRepository(maxTaggedSessions: 2))->taggedSessionRows(Period::ofDays(30), null);
+
+        $this->assertSame([$latest->id, $tiedLater->id], $read->rows->pluck('id')->all());
+        $this->assertNotContains($tied->id, $read->rows->pluck('id')->all());
+    }
+
     public function test_it_returns_every_tagged_session_without_logging_below_the_ceiling(): void
     {
         $this->travelTo(CarbonImmutable::parse('2026-06-15 12:00:00'));

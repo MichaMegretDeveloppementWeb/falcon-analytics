@@ -73,7 +73,7 @@ dix-neuf contrôles sur des défauts qui échouent tous en silence.
 | | |
 |---|---|
 | **[installation.md](docs/installation.md)** | l'installation, le montage des écrans, le déploiement |
-| **[configuration.md](docs/configuration.md)** | **les 38 réglages**, un tableau par bloc · la seule autorité |
+| **[configuration.md](docs/configuration.md)** | **les 39 réglages**, un tableau par bloc · la seule autorité |
 | **[autorisation.md](docs/autorisation.md)** | qui peut ouvrir quel écran et faire quel geste · l'arbre des capacités, et comment le restreindre |
 | **[fonctionnalites.md](docs/fonctionnalites.md)** | une fiche par écran, les treize commandes, l'instrumentation, les tunnels, le marketing, la vie privée |
 | **[mise-a-jour.md](docs/mise-a-jour.md)** | monter de version, le contrat public, revenir en arrière |

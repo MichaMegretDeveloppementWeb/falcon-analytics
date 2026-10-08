@@ -49,7 +49,7 @@ final readonly class SessionListReadRepository
             ->select(['id', 'visitor_id', 'subject_type', 'subject_id', 'started_at', 'last_activity_at', 'pageview_count', 'source', 'landing_route', 'landing_url', 'device_type', 'browser', 'country', 'city'])
             ->with('visitor:id,uuid,subject_type,subject_id')
             ->withCount([
-                'events as events_count' => fn (Builder $q): Builder => $q->whereNotNull('name'),
+                'events as events_count' => fn (Builder $q): Builder => $q->where('name', '<>', ''),
                 'events as conversions_count' => fn (Builder $q): Builder => $q->whereIn('name', $conversionNames),
             ])
             ->when($device !== null && $device !== '', fn (Builder $q): Builder => $q->where('device_type', $device))

@@ -32,16 +32,18 @@ final class MarketingMetricsCalculator
 
     /**
      * The daily trend for the period: one entry per day (zero-filled) for the labels,
-     * sessions, conversions and the per-day conversion rate.
+     * sessions, visitors, conversions and the per-day conversion rate.
      *
      * @param  array<string, int>  $dailySessions  day (Y-m-d) => sessions
      * @param  array<string, int>  $dailyConversions  day (Y-m-d) => conversions
-     * @return array{labels: list<string>, sessions: list<int>, conversions: list<int>, rates: list<float>}
+     * @param  array<string, int>  $dailyVisitors  day (Y-m-d) => distinct visitors
+     * @return array{labels: list<string>, sessions: list<int>, visitors: list<int>, conversions: list<int>, rates: list<float>}
      */
-    public function trend(Period $period, array $dailySessions, array $dailyConversions): array
+    public function trend(Period $period, array $dailySessions, array $dailyConversions, array $dailyVisitors): array
     {
         $labels = [];
         $sessions = [];
+        $visitors = [];
         $conversions = [];
         $rates = [];
 
@@ -52,10 +54,11 @@ final class MarketingMetricsCalculator
 
             $labels[] = DateLabel::for($day, 'j M');
             $sessions[] = $daySessions;
+            $visitors[] = $dailyVisitors[$key] ?? 0;
             $conversions[] = $dayConversions;
             $rates[] = $daySessions > 0 ? round($dayConversions / $daySessions * 100, 1) : 0.0;
         }
 
-        return ['labels' => $labels, 'sessions' => $sessions, 'conversions' => $conversions, 'rates' => $rates];
+        return ['labels' => $labels, 'sessions' => $sessions, 'visitors' => $visitors, 'conversions' => $conversions, 'rates' => $rates];
     }
 }

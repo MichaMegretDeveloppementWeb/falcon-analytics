@@ -9,6 +9,7 @@ use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Events\TrackedEvent;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Repositories\Concerns\ScopesSessionQueries;
+use Falcon\Analytics\Support\SubjectFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
@@ -138,12 +139,12 @@ final class EventReadRepository
     private function namedEvents(Period $period, ?string $subjectType): Builder
     {
         return Event::query()
-            ->whereNotNull('name')
+            ->where('name', '<>', '')
             ->whereBetween('occurred_at', [$period->from, $period->to])
             ->whereHas('session', fn (Builder $session): Builder => $session->where('is_bot', false))
             ->when($subjectType !== null, fn (Builder $query): Builder => $query->whereHas(
                 'visitor',
-                fn (Builder $visitor): Builder => $visitor->where('subject_type', $subjectType),
+                fn (Builder $visitor): Builder => SubjectFilter::apply($visitor, $subjectType),
             ));
     }
 }

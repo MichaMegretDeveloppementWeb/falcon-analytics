@@ -14,6 +14,7 @@ use Falcon\Analytics\DTOs\RequestSnapshot;
 use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Services\VisitorIdentityResolver;
 use Falcon\Analytics\Support\AfterTheResponse;
+use Falcon\Analytics\Support\DeclaredGuards;
 use Falcon\Analytics\Support\UrlRedactor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -181,7 +182,7 @@ final class Analytics
             return ($this->exclusionResolver)();
         }
 
-        foreach ($this->guards('exclude_guards') as $guard) {
+        foreach (DeclaredGuards::of('exclude_guards') as $guard) {
             if (auth()->guard($guard)->check()) {
                 return true;
             }
@@ -195,7 +196,7 @@ final class Analytics
      */
     private function subjectFromGuards(): ?array
     {
-        foreach ($this->guards('subject_guards') as $guard) {
+        foreach (DeclaredGuards::of('subject_guards') as $guard) {
             if (! auth()->guard($guard)->check()) {
                 continue;
             }
@@ -209,22 +210,6 @@ final class Analytics
         }
 
         return null;
-    }
-
-    /**
-     * Configured guard names for a key, keeping only guards that actually exist
-     * so a stray name never triggers a runtime error during ingestion.
-     *
-     * @return list<string>
-     */
-    private function guards(string $key): array
-    {
-        $defined = config('auth.guards', []);
-
-        return array_values(array_filter(
-            (array) config("analytics.identity.{$key}", []),
-            fn ($guard): bool => is_string($guard) && array_key_exists($guard, $defined),
-        ));
     }
 
     /**

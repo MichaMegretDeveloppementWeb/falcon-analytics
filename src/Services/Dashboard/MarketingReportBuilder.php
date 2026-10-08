@@ -183,13 +183,15 @@ final class MarketingReportBuilder
     }
 
     /**
-     * Campaign-matched sessions per day, keyed by Y-m-d.
+     * Campaign-matched sessions, and their distinct visitors, per day, keyed by Y-m-d.
      *
-     * @return array<string, int>
+     * @return array{sessions: array<string, int>, visitors: array<string, int>}
      */
-    public function dailySessions(Period $period, ?string $subjectType): array
+    public function daily(Period $period, ?string $subjectType): array
     {
-        return $this->traffic($this->matchingACampaign($period, $subjectType, $this->activeCampaigns()))['daily'];
+        $traffic = $this->traffic($this->matchingACampaign($period, $subjectType, $this->activeCampaigns()));
+
+        return ['sessions' => $traffic['daily'], 'visitors' => $traffic['dailyVisitors']];
     }
 
     /**
@@ -271,7 +273,7 @@ final class MarketingReportBuilder
      * and its per-ad breakdown, all under most-specific attribution (matching
      * the overview figures).
      *
-     * @return array{sessions: int, visitors: int, daily: array<string, int>, ads: array<int, array{sessions: int, visitors: int}>}
+     * @return array{sessions: int, visitors: int, daily: array<string, int>, dailyVisitors: array<string, int>, ads: array<int, array{sessions: int, visitors: int}>}
      */
     public function campaignReport(Period $period, ?string $subjectType, Campaign $campaign): array
     {
@@ -299,10 +301,10 @@ final class MarketingReportBuilder
     }
 
     /**
-     * One ad's traffic over the period and its daily sessions, under
+     * One ad's traffic over the period, its sessions and visitors per day, under
      * most-specific attribution among all ads.
      *
-     * @return array{sessions: int, visitors: int, daily: array<string, int>}
+     * @return array{sessions: int, visitors: int, daily: array<string, int>, dailyVisitors: array<string, int>}
      */
     public function adReport(Period $period, ?string $subjectType, Ad $ad): array
     {
@@ -315,11 +317,11 @@ final class MarketingReportBuilder
     }
 
     /**
-     * How many sessions, how many distinct visitors, and how many sessions per
+     * How many sessions, how many distinct visitors, and how many of each per
      * day, keyed by Y-m-d.
      *
      * @param  list<Session>  $sessions
-     * @return array{sessions: int, visitors: int, daily: array<string, int>}
+     * @return array{sessions: int, visitors: int, daily: array<string, int>, dailyVisitors: array<string, int>}
      */
     private function traffic(array $sessions): array
     {
@@ -327,13 +329,22 @@ final class MarketingReportBuilder
         $visitors = [];
         /** @var array<string, int> $daily */
         $daily = [];
+        /** @var array<string, array<int, true>> $visitorsByDay */
+        $visitorsByDay = [];
 
         foreach ($sessions as $session) {
+            $day = $session->started_at->toDateString();
             $visitors[$session->visitor_id] = true;
-            $daily[$session->started_at->toDateString()] = ($daily[$session->started_at->toDateString()] ?? 0) + 1;
+            $daily[$day] = ($daily[$day] ?? 0) + 1;
+            $visitorsByDay[$day][$session->visitor_id] = true;
         }
 
-        return ['sessions' => count($sessions), 'visitors' => count($visitors), 'daily' => $daily];
+        return [
+            'sessions' => count($sessions),
+            'visitors' => count($visitors),
+            'daily' => $daily,
+            'dailyVisitors' => array_map(count(...), $visitorsByDay),
+        ];
     }
 
     /**
