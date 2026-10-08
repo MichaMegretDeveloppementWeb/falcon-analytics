@@ -11,6 +11,7 @@ use Falcon\Analytics\Livewire\Admin\Concerns\RecoversFromReadFailure;
 use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Repositories\Dashboard\VisitorProfileReadRepository;
 use Falcon\Analytics\Services\Dashboard\VisitorDetailBuilder;
+use Falcon\Analytics\Support\RetentionSettings;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -90,6 +91,7 @@ final class VisitorDetailPage extends Component
             fn (): array => [
                 'detail' => $details->build($this->visitor(), $repository->engagement($this->visitorId)),
                 'sessions' => $details->sessions($repository->paginateSessions($this->visitorId, self::PER_PAGE)),
+                'keptDays' => RetentionSettings::sessionsErased(),
                 'mayDelete' => Gate::allows(Ability::VisitorsDelete, $this->visitor()),
                 'mayOpenSessions' => Gate::allows(Ability::Sessions),
             ],

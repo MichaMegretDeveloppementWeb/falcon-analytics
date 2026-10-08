@@ -88,7 +88,7 @@
                 @else
                     @if ($detail->detailErased)
                         <x-ui::alert type="info" class="an:mb-5">
-                            {{ __('Une partie du pas à pas a été effacée : la journée de cette session est sortie de la durée de conservation, et les pages vues et les clics qui ne portent pas de nom y sont effacés. Les chiffres ci-dessus, eux, restent ceux de la session entière.') }}
+                            {{ __('Une partie du pas à pas a été effacée : la journée de cette session est sortie de la durée de conservation. Les pages vues et les clics qui ne portent pas de nom s’effacent les premiers, les événements nommés ensuite. Les chiffres ci-dessus, eux, restent ceux de la session entière.') }}
                         </x-ui::alert>
                     @endif
                     <ol class="an:relative">

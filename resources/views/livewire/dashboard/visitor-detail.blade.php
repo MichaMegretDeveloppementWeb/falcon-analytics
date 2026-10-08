@@ -27,6 +27,9 @@
     </div>
 
     {{-- Engagement figures --}}
+    @if ($keptDays !== null)
+        <p class="an:text-[12px] an:text-muted">{{ __('Sur ses sessions des :count derniers jours', ['count' => NumberLabel::for($keptDays)]) }}</p>
+    @endif
     <div class="an:grid an:grid-cols-2 an:gap-3 an:sm:grid-cols-4 an:sm:gap-4">
         <x-ui::stat-card :label="__('Sessions')" :value="(string) $detail->sessionCount" icon="rectangle-stack" />
         <x-ui::stat-card :label="__('Pages vues')" :value="(string) $detail->pageviewCount" icon="document-text" />

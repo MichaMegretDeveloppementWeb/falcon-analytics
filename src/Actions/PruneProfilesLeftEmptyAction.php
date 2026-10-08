@@ -28,7 +28,7 @@ final readonly class PruneProfilesLeftEmptyAction
     /** Answers the number of profiles erased, aliases included. */
     public function execute(int $batchSize = 500): int
     {
-        $days = RetentionSettings::refusal() === null ? RetentionSettings::sessions() : null;
+        $days = RetentionSettings::sessionsErased();
 
         if ($days === null) {
             return 0;

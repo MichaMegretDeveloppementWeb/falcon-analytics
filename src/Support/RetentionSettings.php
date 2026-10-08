@@ -25,6 +25,12 @@ final class RetentionSettings
         return self::days('session_retention_days');
     }
 
+    /** Days the sessions are kept when the purge acts, or null when it keeps them or refuses the settings. */
+    public static function sessionsErased(): ?int
+    {
+        return self::refusal() === null ? self::sessions() : null;
+    }
+
     /** The named events' own duration, or null when they leave with their sessions. */
     public static function namedEvents(): ?int
     {
