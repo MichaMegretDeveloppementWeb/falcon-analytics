@@ -23,6 +23,7 @@ use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Http\Controllers\MissingPageController;
 use Falcon\Analytics\Http\Middleware\CatchesUpTheMaintenance;
 use Falcon\Analytics\Http\Middleware\ReadsTheSessionWithoutProlongingIt;
+use Falcon\Analytics\Services\RetentionWindow;
 use Falcon\Analytics\Support\AbilityDefaults;
 use Falcon\Analytics\Support\BranchMiddleware;
 use Falcon\Analytics\Support\GeoResolver;
@@ -65,6 +66,9 @@ final class AnalyticsServiceProvider extends ServiceProvider
 
         $this->app->singleton(Analytics::class);
         $this->app->singleton(AbilityDefaults::class);
+
+        // One line per request, read once whatever the number of blocks that split on it.
+        $this->app->scoped(RetentionWindow::class);
 
         // Built as Laravel builds StartSession: autowired, it would get no cache
         // factory, and a session set to block would throw on every send.

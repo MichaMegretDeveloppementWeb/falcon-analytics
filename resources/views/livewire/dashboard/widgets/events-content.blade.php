@@ -1,4 +1,8 @@
-@php use Falcon\Analytics\Support\NumberLabel; @endphp
+@php
+    use Falcon\Analytics\Support\NumberLabel;
+    use Falcon\Analytics\Support\RetentionLabel;
+    use Falcon\Analytics\Support\RetentionSettings;
+@endphp
 
 <x-analytics::root area="admin" class="an:space-y-8">
 
@@ -61,7 +65,11 @@
                                 @endif
                             </x-ui::table.cell>
                             <x-ui::table.cell align="right" class="an:font-medium an:tabular-nums an:text-primary">{{ NumberLabel::for($row['count']) }}</x-ui::table.cell>
-                            <x-ui::table.cell align="right" class="an:tabular-nums">{{ NumberLabel::for($row['visitors']) }}</x-ui::table.cell>
+                            @if ($row['visitors'] === null)
+                                <x-ui::table.cell align="right" class="an:text-muted"><span data-an-tooltip="{{ RetentionLabel::unavailable(RetentionSettings::events()) }}">{{ __('Indisponible') }}</span></x-ui::table.cell>
+                            @else
+                                <x-ui::table.cell align="right" class="an:tabular-nums">{{ NumberLabel::for($row['visitors']) }}</x-ui::table.cell>
+                            @endif
                             <x-ui::table.cell align="right" class="an:tabular-nums an:text-secondary">{{ $row['value'] !== null ? NumberLabel::points($row['value']) : '·' }}</x-ui::table.cell>
                             <x-ui::table.cell :last="true" align="right" class="an:tabular-nums">{{ $row['isScored'] ? NumberLabel::points($row['valueTotal']) : '·' }}</x-ui::table.cell>
                         </x-ui::table.row>

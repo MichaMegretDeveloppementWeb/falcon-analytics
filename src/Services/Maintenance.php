@@ -8,15 +8,20 @@ use Carbon\CarbonImmutable;
 use Falcon\Analytics\DTOs\MaintenanceOutcome;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Models\Event;
+use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Repositories\EventWriteRepository;
+use Falcon\Analytics\Repositories\SessionWriteRepository;
+use Falcon\Analytics\Repositories\VisitorWriteRepository;
+use Falcon\Analytics\Support\RetentionSettings;
 
 /**
- * The erasing, in one place, so its two ways in are one way.
+ * The erasing of rows, in one place, so its two ways in are one way.
  *
  * The scheduler is the normal path. Opening a screen is the other, because a
  * scheduler on shared hosting stops without a word. Both land here, right
  * after `ArchiveClosedDaysAction`, and the command is a thin wrapper that only
- * turns this into sentences.
+ * turns this into sentences. The profiles left without a session are
+ * `PruneProfilesLeftEmptyAction`'s, which takes their lock.
  *
  * Neither way goes through the console: booting the console kernel inside a
  * web request's `terminate()` disturbs the session store, whose handler loses
@@ -28,12 +33,16 @@ final readonly class Maintenance
 {
     public function __construct(
         private DailyCountArchiver $archiver,
+        private DailyDetailArchiver $details,
         private EventWriteRepository $events,
+        private SessionWriteRepository $sessions,
+        private VisitorWriteRepository $visitors,
         private FunnelRegistry $funnels,
     ) {}
 
     /**
-     * Erase the anonymous page views and clicks past the retention window.
+     * Erase what each retention allows · the anonymous page views and clicks,
+     * the named events, the sessions · a day only once its summary is written.
      *
      * Everything it needs to decide is read here, and every one of those reads
      * is the caller's to guard · a database that answers none of them is a
@@ -42,17 +51,25 @@ final readonly class Maintenance
      */
     public function prune(): MaintenanceOutcome
     {
-        $days = config('analytics.retention_days');
+        $refusal = RetentionSettings::refusal();
+
+        if ($refusal !== null) {
+            return MaintenanceOutcome::refused($refusal);
+        }
+
+        $pages = $this->prunePages();
+        $rows = array_values(array_filter([$this->pruneNamedEvents(), $this->pruneSessions()]));
+
+        return $rows === [] ? $pages : MaintenanceOutcome::together($pages, ...$rows);
+    }
+
+    /** The anonymous page views and clicks past `retention_days`. */
+    private function prunePages(): MaintenanceOutcome
+    {
+        $days = RetentionSettings::pages();
 
         if ($days === null) {
             return MaintenanceOutcome::nothingToDo('Aucune conservation réglée : rien n’est jamais effacé.');
-        }
-
-        if (! is_int($days) || $days < 1) {
-            return MaintenanceOutcome::refused(
-                'analytics.retention_days doit être un nombre de jours d’au moins 1, ou null pour ne jamais '
-                .'effacer. Valeur lue : '.(is_scalar($days) ? var_export($days, true) : get_debug_type($days)).'.'
-            );
         }
 
         $cutoff = CarbonImmutable::now()->subDays($days)->startOfDay();
@@ -80,6 +97,82 @@ final readonly class Maintenance
             "{$deleted} page(s) vue(s) et clic(s) anonymes de plus de {$days} jours effacé(s). "
             .'Les événements nommés sont gardés.'
         );
+    }
+
+    /** The named events past `event_retention_days`, null when they leave with their sessions. */
+    private function pruneNamedEvents(): ?MaintenanceOutcome
+    {
+        $days = RetentionSettings::namedEvents();
+
+        if ($days === null) {
+            return null;
+        }
+
+        $cutoff = CarbonImmutable::now()->subDays($days)->startOfDay();
+
+        if (! Event::query()->where('occurred_at', '<', $cutoff)->where('name', '<>', '')->exists()) {
+            return MaintenanceOutcome::nothingToDo("Aucun événement nommé de plus de {$days} jours.");
+        }
+
+        $waiting = $this->waitingFor($cutoff, 'aucun événement nommé n’a été effacé');
+
+        if ($waiting !== null) {
+            return $waiting;
+        }
+
+        // Marked first: a screen read while the rows go reads these days from their totals.
+        $this->details->markEventsErasedBefore($cutoff);
+        $deleted = $this->events->pruneNamedOlderThan($cutoff);
+
+        return MaintenanceOutcome::erased($deleted, "{$deleted} événement(s) nommé(s) de plus de {$days} jours effacé(s).");
+    }
+
+    /**
+     * The sessions past `session_retention_days`, their events with them, null
+     * when they are kept · the profiles they were on counted again.
+     */
+    private function pruneSessions(): ?MaintenanceOutcome
+    {
+        $days = RetentionSettings::sessions();
+
+        if ($days === null) {
+            return null;
+        }
+
+        $cutoff = CarbonImmutable::now()->subDays($days)->startOfDay();
+
+        if (! Session::query()->where('last_activity_at', '<', $cutoff)->exists()) {
+            return MaintenanceOutcome::nothingToDo("Aucune session de plus de {$days} jours.");
+        }
+
+        $waiting = $this->waitingFor($cutoff, 'aucune session n’a été effacée');
+
+        if ($waiting !== null) {
+            return $waiting;
+        }
+
+        // Marked first: a screen read while the rows go reads these days from their totals.
+        $this->details->markSessionsErasedBefore($cutoff);
+        ['deleted' => $deleted, 'visitors' => $touched] = $this->sessions->pruneLastActiveBefore($cutoff);
+        $this->visitors->recountSessions($touched);
+
+        return MaintenanceOutcome::erased($deleted, "{$deleted} session(s) de plus de {$days} jours effacée(s), avec leurs événements.");
+    }
+
+    /** Waiting when the newest day at stake is not summarised yet · the summary only moves forward. */
+    private function waitingFor(CarbonImmutable $cutoff, string $nothingErased): ?MaintenanceOutcome
+    {
+        $lastAtStake = $cutoff->subDay();
+
+        if ($this->details->isArchived($lastAtStake)) {
+            return null;
+        }
+
+        return MaintenanceOutcome::waiting(sprintf(
+            'Le %s n’est pas encore résumé : %s. Lancez analytics:archive d’abord.',
+            $lastAtStake->toDateString(),
+            $nothingErased,
+        ));
     }
 
     /**

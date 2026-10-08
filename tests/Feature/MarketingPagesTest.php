@@ -113,13 +113,14 @@ final class MarketingPagesTest extends TestCase
         AdObjective::factory()->for(Ad::factory()->for($campaign)->matching('src', 'meta'))->event('Lead')->create();
         $this->actingAs($this->admin, 'admin');
 
-        // Fixed plan: campaign, active campaigns, ads + objectives (2), tagged sessions now and before (2), conversions (2) = 8.
+        // Fixed plan: campaign, active campaigns, ads + objectives (2), the retention line, tagged sessions now and before (2),
+        // conversions (2) = 9.
         $budget = $this->assertCostIsFlat(
             fn () => Event::factory()->for(Session::factory()->state(['mkt_params' => ['src' => 'meta']]))->custom('Lead')->create(),
             fn () => Livewire::test(CampaignDetailContent::class, ['refId' => $campaign->id, 'period' => 30])->call('$refresh'),
         );
 
-        $this->assertLessThanOrEqual(8, $budget['count']);
+        $this->assertLessThanOrEqual(9, $budget['count']);
     }
 
     public function test_an_ad_page_costs_the_same_whatever_its_objectives(): void
@@ -143,13 +144,13 @@ final class MarketingPagesTest extends TestCase
         AdObjective::factory()->for($ad)->event('Lead')->create();
         $this->actingAs($this->admin, 'admin');
 
-        // Fixed plan: active ads + objectives (2), tagged sessions now and before (2), conversions (2) = 6.
+        // Fixed plan: active ads + objectives (2), the retention line, tagged sessions now and before (2), conversions (2) = 7.
         $budget = $this->assertCostIsFlat(
             fn () => Event::factory()->for(Session::factory()->state(['mkt_params' => ['src' => 'meta']]))->custom('Lead')->create(),
             fn () => Livewire::test(AdDetailContent::class, ['refId' => $ad->id, 'period' => 30])->call('$refresh'),
         );
 
-        $this->assertLessThanOrEqual(6, $budget['count']);
+        $this->assertLessThanOrEqual(7, $budget['count']);
     }
 
     public function test_it_fills_its_inline_ads_table_metrics_from_the_dispatched_event(): void

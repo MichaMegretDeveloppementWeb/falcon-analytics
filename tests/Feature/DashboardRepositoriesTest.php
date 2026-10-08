@@ -571,6 +571,7 @@ final class DashboardRepositoriesTest extends TestCase
 
         $counts = $this->visitors->visitorCounts($this->period, null);
 
+        $this->assertNotNull($counts);
         $this->assertSame(2, $counts['visitors']);
         $this->assertSame(1, $counts['new']);
         $this->assertSame(3, $counts['sessions']);
@@ -588,24 +589,27 @@ final class DashboardRepositoriesTest extends TestCase
 
         $rows = $this->visitors->visitorDailyRows($this->period, null);
 
+        $this->assertNotNull($rows);
         $this->assertSame(['sessions' => 1, 'visitors' => 1], $rows['active']['2026-06-10']);
         $this->assertSame(1, $rows['new']['2026-06-10'], 'the bot visitor is kept out of the new ones');
     }
 
     public function test_it_fetches_the_visitors_screen_data_within_its_query_budget(): void
     {
-        // Fixed plan: pagination (count + rows) + counters twice (totals + new) + daily (active + new) = 8.
+        // Fixed plan: the retention line, read once for the request + pagination (count + rows)
+        // + counters twice (totals + new) + daily (active + new) = 9.
         $budget = $this->assertCostIsFlat(
             fn () => $this->makeSession(['city' => 'Paris']),
             function (): void {
-                $this->visitors->paginateVisitors(null, null, new SubjectResolver);
-                $this->visitors->visitorCounts($this->period, null);
-                $this->visitors->visitorCounts($this->period->previous(), null);
-                $this->visitors->visitorDailyRows($this->period, null);
+                $visitors = new VisitorListReadRepository;
+                $visitors->paginateVisitors(null, null, new SubjectResolver);
+                $visitors->visitorCounts($this->period, null);
+                $visitors->visitorCounts($this->period->previous(), null);
+                $visitors->visitorDailyRows($this->period, null);
             },
         );
 
-        $this->assertSame(8, $budget['count']);
+        $this->assertSame(9, $budget['count']);
     }
 
     public function test_it_aggregates_a_visitor_engagement_over_all_their_sessions_and_scopes_to_them(): void

@@ -209,25 +209,34 @@ return [
     | Data lifecycle
     |--------------------------------------------------------------------------
     |
-    | How long the step-by-step detail is kept. Past it, analytics:prune erases
-    | the ANONYMOUS page views and clicks — and only those. They have already
-    | been counted into the daily summaries, so no screen loses a figure.
+    | How long the detail is kept, in three settings. Past each, analytics:prune
+    | erases what it covers, a day only once it is counted into the daily
+    | totals, so no figure that adds up is lost.
     |
-    | What carries a name is never erased: the events screen, the funnels and
-    | the marketing conversions read those rows, and no summary could stand in
-    | for them exactly. Page views on routes a declared funnel steps through
-    | stay too. Sessions and visitor profiles are never touched.
+    | retention_days: the ANONYMOUS page views and clicks. Page views on routes
+    | a declared funnel steps through stay. It decides how far back a single
+    | session's page-by-page journey can still be opened.
     |
-    | So this setting decides one thing only: how far back a single session's
-    | page-by-page journey can still be opened.
+    | session_retention_days: the sessions, and the visitor profiles left with
+    | none. Past it, the figures that add up come from the daily totals, and
+    | those that count distinct people (visitors, new and returning, funnels,
+    | the marketing's visitors and conversions) say they are unavailable. Never
+    | shorter than retention_days, erasing a session erasing its page views.
     |
-    | A number of days, or null to never erase anything. Zero and negatives are
-    | refused rather than read as "keep everything", which is the opposite of
-    | what one writes them for.
+    | event_retention_days: the named events. Never longer than
+    | session_retention_days, an event leaving with its session.
+    |
+    | A number of days, or null to never erase. Zero and negatives are refused
+    | rather than read as "keep everything", which is the opposite of what one
+    | writes them for, and so are durations that contradict each other.
     |
     */
 
     'retention_days' => 90,
+
+    'session_retention_days' => null,
+
+    'event_retention_days' => null,
 
     'session' => [
         // A session is considered ended after this much inactivity. The stored

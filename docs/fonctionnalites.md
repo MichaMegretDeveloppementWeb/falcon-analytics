@@ -67,6 +67,12 @@ visiteurs, synthèse marketing, détail d'une campagne, détail d'une publicité
 > s'arrêterait en milieu de journée ne pourrait pas se lire dans les compteurs
 > quotidiens une fois son détail effacé.
 
+> **Au-delà de la conservation des sessions, quand vous la réglez**, une période
+> ou sa comparaison qui la dépasse lit ces jours dans leurs totaux · les chiffres
+> qui s'additionnent restent exacts, ceux qui comptent des personnes distinctes
+> se disent indisponibles. Voir
+> [la durée de vie des données](configuration.md#la-durée-de-vie-des-données).
+
 **Les six qui n'en ont pas** · temps réel, qui lit sa propre fenêtre récente ;
 intégrations ; campagnes et publicités, qui listent des définitions et non du
 trafic ; et les deux détails, visiteur et session, qui montrent tout ce qu'ils
@@ -165,6 +171,8 @@ le vôtre · celui-ci ne décrit que ce que le paquet affiche.
 | le fichier où le site déclare ses événements ou ses tunnels | **le fichier qui déclare les événements du site**, **… les tunnels du site** | son chemin, qu'un écran ne nomme jamais |
 | retirer à la main | **supprimer** · « effacer » ne désigne que la purge automatique | l'effacement d'un visiteur |
 | le choix du filtre des visiteurs pour ceux qu'aucun garde n'a nommés | **Non connectés**, ou le nom que l'hôte lui donne | sans sujet |
+| ce que couvrent les chiffres de la fiche d'un visiteur, quand les sessions s'effacent | « Sur ses sessions des 90 derniers jours » | sur ses visites |
+| un chiffre qui compte des personnes distinctes, sur des jours dont les sessions ou les événements nommés sont effacés | « Indisponible au-delà de 90 jours de conservation » · dans une colonne, « Indisponible », la phrase entière au survol · sa comparaison seule, « Comparaison indisponible » | un 0, un chiffre calculé sur ce qui reste, Non disponible |
 | couper Search Console | **déconnecter** | annuler la connexion |
 | un classement | « les plus vues », « principaux » | Top |
 | ce que rapportent les conversions ou un tunnel | **score**, compté en **points** · **1 pt**, **12 pts** | montant, valeur · 1 pts |
@@ -304,6 +312,10 @@ Son identité, ses chiffres, et la liste de ses sessions menant chacune à son
 détail. **Lecture seule, sauf l'effacement RGPD** · voir
 [la vie privée](#la-vie-privée-et-le-rgpd).
 
+**Quand les sessions s'effacent**, ses chiffres portent sur celles qui restent,
+et la fiche le dit · « Sur ses sessions des 90 derniers jours ». « Récurrent »
+suit les sessions qui lui restent.
+
 ### Sessions
 
 | | |
@@ -330,9 +342,9 @@ visitées, les clics rangés sous la page où ils ont eu lieu, et le temps pass�
 
 > **Au-delà de la conservation, le pas à pas n'est plus là, et l'écran le dit.**
 > Il affiche alors ce que la session sait encore · ses pages vues, ses clics,
-> ses conversions, et la liste de ses événements nommés, qui ne sont jamais
-> effacés. **C'est le seul écran que la conservation change** · voir
-> [`retention_days`](configuration.md#la-durée-de-vie-des-données).
+> ses conversions, et la liste de ses événements nommés tant qu'ils sont gardés.
+> Quand ce sont eux qui sont partis, l'écran dit « Détail effacé ». Voir
+> [la durée de vie des données](configuration.md#la-durée-de-vie-des-données).
 
 ### Événements
 
@@ -509,7 +521,7 @@ sont plus longs. Au-delà, il est jeté. Un contexte illisible fait jeter le lot
 | `analytics:check` | dit si le paquet est correctement installé et opérationnel | après l'installation, et quand quelque chose cloche |
 | `analytics:sweep` | clôt les sessions inactives au-delà du délai | **planifiée, toutes les 5 minutes** |
 | `analytics:archive` | résume les jours clos, pour que l'effacement ne coûte aucun chiffre · `--days` borne un passage | **planifiée, chaque jour à 03:00** |
-| `analytics:prune` | efface les pages vues et clics **anonymes** au-delà de la conservation · refuse un jour non résumé | **planifiée, chaque jour à 03:30** |
+| `analytics:prune` | efface les pages vues et clics **anonymes** au-delà de la conservation, et, si vous les réglez, les sessions, les profils qu'elles laissent vides et les événements nommés · refuse un jour non résumé | **planifiée, chaque jour à 03:30** |
 | `analytics:geoip:download` | télécharge la base MaxMind GeoLite2 City | **planifiée, le 1er de chaque mois à 04:00** · inerte sans clé |
 | `analytics:geoip:check` | dit si la base est utilisable, et pourquoi une adresse résout ou non · accepte une adresse en argument | au besoin |
 | `analytics:search-console:sync` | tire les requêtes organiques dans le cache local | **planifiée, chaque jour à 05:00** · inerte sans connexion |
@@ -973,4 +985,11 @@ faire.
 - **Les totaux journaliers restent, et ne nomment personne.** Les deux
   classements de la vue d'ensemble — pages et clics les plus vus — gardent les
   visites des journées déjà résumées, en simples comptes anonymes · ils lisent
-  ces journées dans les compteurs de la nuit.
+  ces journées dans les compteurs de la nuit. Les totaux des sessions et des
+  événements nommés de même · ils ne portent l'identifiant d'aucun visiteur ni
+  d'aucune personne.
+- **La durée de conservation est la vôtre.** Pour une mesure d'audience sans
+  bandeau de consentement, la CNIL demande de ne pas garder les données plus de
+  vingt-cinq mois · `session_retention_days` et `event_retention_days` à 760
+  jours le tiennent, les profils de visiteurs partant avec leurs sessions. Voir
+  [la durée de vie des données](configuration.md#la-durée-de-vie-des-données).

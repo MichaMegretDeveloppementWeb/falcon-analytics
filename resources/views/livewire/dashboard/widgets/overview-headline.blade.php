@@ -2,17 +2,20 @@
     use Falcon\Analytics\Support\DurationLabel;
     use Falcon\Analytics\Support\NumberLabel;
 
-    $spotlightLine = fn (string $key, callable $format): string => __(':today aujourd\'hui · :yesterday hier', [
-        'today' => $format($spotlight[$key]['today']),
-        'yesterday' => $format($spotlight[$key]['yesterday']),
-    ]);
+    // None when one of the two days reads from its totals, which hold no visitors.
+    $spotlightLine = fn (string $key, callable $format): ?string => $spotlight[$key]['today'] === null || $spotlight[$key]['yesterday'] === null
+        ? null
+        : __(':today aujourd\'hui · :yesterday hier', [
+            'today' => $format($spotlight[$key]['today']),
+            'yesterday' => $format($spotlight[$key]['yesterday']),
+        ]);
 @endphp
 
 <x-analytics::root area="admin" class="an:space-y-8">
 
     {{-- Headline KPIs : reach, volume and two engagement-quality signals --}}
     <div class="an:grid an:grid-cols-2 an:gap-4 an:lg:grid-cols-4">
-        <x-analytics::kpi-card :label="__('Visiteurs')" :value="NumberLabel::for($headline['visitors']->current)" icon="users"
+        <x-analytics::kpi-card :label="__('Visiteurs')" :value="NumberLabel::for($headline['visitors']->current ?? 0)" icon="users"
             :metric="$headline['visitors']" :description="$spotlightLine('visitors', NumberLabel::for(...))">
             <div wire:key="spark-visitors-{{ $period }}-{{ $subject }}" class="an:mt-3">
                 <x-analytics::sparkline :values="$sparklines['visitors']" />

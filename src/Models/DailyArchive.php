@@ -11,7 +11,8 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * A day that has been summarised, family by family · its page views and clicks
- * (`archived_at`), its sessions and named events (`detail_archived_at`).
+ * (`archived_at`), its sessions and named events (`detail_archived_at`) · and
+ * whether the purge has begun erasing its sessions or its named events.
  *
  * The purge reads this and refuses to erase a day it does not find, which is
  * what makes a dead scheduler harmless: no archiving, no erasing.
@@ -22,6 +23,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property CarbonImmutable $day
  * @property CarbonImmutable|null $archived_at
  * @property CarbonImmutable|null $detail_archived_at
+ * @property CarbonImmutable|null $sessions_pruned_at
+ * @property CarbonImmutable|null $events_pruned_at
  */
 final class DailyArchive extends Model
 {
@@ -32,7 +35,7 @@ final class DailyArchive extends Model
     public $timestamps = false;
 
     /** @var list<string> */
-    protected $fillable = ['day', 'archived_at', 'detail_archived_at'];
+    protected $fillable = ['day', 'archived_at', 'detail_archived_at', 'sessions_pruned_at', 'events_pruned_at'];
 
     /**
      * The key, always written as a plain date.
@@ -76,6 +79,26 @@ final class DailyArchive extends Model
         return self::lastDayOf('detail_archived_at');
     }
 
+    /**
+     * The last day whose sessions the purge has begun erasing, and the last
+     * whose named events it has · each null while it has erased none. One
+     * read for both.
+     *
+     * @return array{sessions: CarbonImmutable|null, events: CarbonImmutable|null}
+     */
+    public static function lastPrunedDays(): array
+    {
+        $row = self::query()
+            ->toBase()
+            ->selectRaw('MAX(CASE WHEN sessions_pruned_at IS NOT NULL THEN day END) as sessions, MAX(CASE WHEN events_pruned_at IS NOT NULL THEN day END) as events')
+            ->first();
+
+        $columns = $row === null ? [] : (array) $row;
+        $day = fn (mixed $value): ?CarbonImmutable => is_string($value) && $value !== '' ? CarbonImmutable::parse($value)->startOfDay() : null;
+
+        return ['sessions' => $day($columns['sessions'] ?? null), 'events' => $day($columns['events'] ?? null)];
+    }
+
     private static function lastDayOf(string $family): ?CarbonImmutable
     {
         $day = self::query()->whereNotNull($family)->max('day');
@@ -90,6 +113,8 @@ final class DailyArchive extends Model
             'day' => 'immutable_date',
             'archived_at' => 'immutable_datetime',
             'detail_archived_at' => 'immutable_datetime',
+            'sessions_pruned_at' => 'immutable_datetime',
+            'events_pruned_at' => 'immutable_datetime',
         ];
     }
 }

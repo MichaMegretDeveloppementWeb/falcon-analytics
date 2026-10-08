@@ -32,6 +32,10 @@ return new class extends Migration
             // Each family of summaries moves forward on its own · a day can be summarised for one and wait for the other.
             $table->dateTime('archived_at')->nullable();
             $table->dateTime('detail_archived_at')->nullable();
+
+            // Written before the purge erases a day's sessions or named events · the screens read that day from its totals from then on.
+            $table->dateTime('sessions_pruned_at')->nullable();
+            $table->dateTime('events_pruned_at')->nullable();
         });
     }
 

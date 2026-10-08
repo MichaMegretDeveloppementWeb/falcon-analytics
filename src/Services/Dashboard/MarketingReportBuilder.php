@@ -5,13 +5,16 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Services\Dashboard;
 
 use Falcon\Analytics\DTOs\Dashboard\Period;
+use Falcon\Analytics\DTOs\Dashboard\TaggedGroup;
 use Falcon\Analytics\DTOs\Dashboard\TaggedSessions;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Models\Ad;
 use Falcon\Analytics\Models\Campaign;
 use Falcon\Analytics\Models\Session;
+use Falcon\Analytics\Repositories\Dashboard\DailyTotalsReadRepository;
 use Falcon\Analytics\Repositories\Dashboard\MarketingReadRepository;
+use Falcon\Analytics\Services\RetentionWindow;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
@@ -23,6 +26,11 @@ use Illuminate\Database\Eloquent\Collection;
  * campaign/ad reports) live here; crediting the conversions is
  * `MarketingConversionCrediter`'s, handed the attribution. The repository only
  * reads.
+ *
+ * Days whose sessions are erased are read from their daily totals, the
+ * parameters each group of sessions arrived with letting the campaigns claim
+ * them all the same · the sessions add up, the distinct visitors and the
+ * conversions, which count people, are then unknown.
  *
  * @internal
  */
@@ -47,6 +55,9 @@ final class MarketingReportBuilder
     /** @var array<string, TaggedSessions> */
     private array $taggedSessionCache = [];
 
+    /** @var array<string, list<TaggedGroup>> */
+    private array $taggedGroupCache = [];
+
     /**
      * The collaborator defaults so a plain `new MarketingReportBuilder` still
      * works (tests, ad-hoc use); the container injects the shared services
@@ -56,6 +67,8 @@ final class MarketingReportBuilder
         private MarketingReadRepository $repository = new MarketingReadRepository,
         private AttributionResolver $attribution = new AttributionResolver,
         private MarketingConversionCrediter $crediter = new MarketingConversionCrediter,
+        private RetentionWindow $window = new RetentionWindow,
+        private DailyTotalsReadRepository $totals = new DailyTotalsReadRepository,
     ) {}
 
     /**
@@ -74,13 +87,68 @@ final class MarketingReportBuilder
     }
 
     /**
+     * The period's tagged sessions as groups · each session of the days whose
+     * rows are kept, with its visitor, and each group of the days read from
+     * their totals, with none. Read once per period and subject.
+     *
+     * @return list<TaggedGroup>
+     */
+    private function taggedGroups(Period $period, ?string $subjectType): array
+    {
+        return $this->taggedGroupCache[self::cacheKey($period, $subjectType)] ??= $this->readTaggedGroups($period, $subjectType);
+    }
+
+    /**
+     * @return list<TaggedGroup>
+     */
+    private function readTaggedGroups(Period $period, ?string $subjectType): array
+    {
+        ['totals' => $summarised, 'rows' => $detailed] = RetentionWindow::split($period, $this->window->sessionsLine());
+
+        $groups = [];
+
+        foreach ($summarised === null ? [] : $this->totals->sessionsWithParameters($summarised, $subjectType) as $group) {
+            $groups[] = new TaggedGroup($group['params'], $group['day'], null, $group['sessions']);
+        }
+
+        foreach ($detailed === null ? [] : $this->taggedSessionRows($detailed, $subjectType) as $session) {
+            $groups[] = new TaggedGroup($session->mkt_params ?? [], $session->started_at->toDateString(), $session->visitor_id, 1);
+        }
+
+        return $groups;
+    }
+
+    /**
+     * The groups one of the candidates claims, by the id of the one that does.
+     *
+     * @param  list<TaggedGroup>  $groups
+     * @param  list<Campaign>|list<Ad>  $candidates
+     * @return array<int, list<TaggedGroup>>
+     */
+    private function claimedBy(array $groups, array $candidates): array
+    {
+        $claimed = [];
+
+        foreach ($groups as $group) {
+            $winner = $this->attribution->mostSpecific($candidates, $group->params);
+
+            if ($winner !== null) {
+                $claimed[$winner->id][] = $group;
+            }
+        }
+
+        return $claimed;
+    }
+
+    /**
      * The ceiling, when the sessions this builder served for that period were
      * cut at it, or null when they were whole or never read. A screen asks it
      * after building its figures, so nothing is read for the answer.
      */
     public function truncatedAt(Period $period, ?string $subjectType): ?int
     {
-        $read = $this->taggedSessionCache[self::cacheKey($period, $subjectType)] ?? null;
+        $detailed = RetentionWindow::split($period, $this->window->sessionsLine())['rows'];
+        $read = $detailed === null ? null : $this->taggedSessionCache[self::cacheKey($detailed, $subjectType)] ?? null;
 
         return $read !== null && $read->truncated ? $read->ceiling : null;
     }
@@ -173,11 +241,11 @@ final class MarketingReportBuilder
      * campaign (not merely any tagged session), so the headline reconciles with
      * the per-campaign figures.
      *
-     * @return array{sessions: int, visitors: int}
+     * @return array{sessions: int, visitors: int|null}
      */
     public function headline(Period $period, ?string $subjectType): array
     {
-        $traffic = $this->traffic($this->matchingACampaign($period, $subjectType, $this->activeCampaigns()));
+        $traffic = TaggedTraffic::of($this->claimedByACampaign($period, $subjectType));
 
         return ['sessions' => $traffic['sessions'], 'visitors' => $traffic['visitors']];
     }
@@ -185,13 +253,23 @@ final class MarketingReportBuilder
     /**
      * Campaign-matched sessions, and their distinct visitors, per day, keyed by Y-m-d.
      *
-     * @return array{sessions: array<string, int>, visitors: array<string, int>}
+     * @return array{sessions: array<string, int>, visitors: array<string, int>|null}
      */
     public function daily(Period $period, ?string $subjectType): array
     {
-        $traffic = $this->traffic($this->matchingACampaign($period, $subjectType, $this->activeCampaigns()));
+        $traffic = TaggedTraffic::of($this->claimedByACampaign($period, $subjectType));
 
         return ['sessions' => $traffic['daily'], 'visitors' => $traffic['dailyVisitors']];
+    }
+
+    /**
+     * The period's tagged groups an active campaign claims.
+     *
+     * @return list<TaggedGroup>
+     */
+    private function claimedByACampaign(Period $period, ?string $subjectType): array
+    {
+        return array_merge(...array_values($this->claimedBy($this->taggedGroups($period, $subjectType), $this->activeCampaigns())));
     }
 
     /**
@@ -229,42 +307,15 @@ final class MarketingReportBuilder
     /**
      * Per-campaign and per-ad traffic, matched from the captured params in one pass.
      *
-     * @return array{campaigns: array<int, array{sessions: int, visitors: int}>, ads: array<int, array{sessions: int, visitors: int}>}
+     * @return array{campaigns: array<int, array{sessions: int, visitors: int|null}>, ads: array<int, array{sessions: int, visitors: int|null}>}
      */
     public function performance(Period $period, ?string $subjectType): array
     {
-        $campaigns = $this->activeCampaigns();
-        $ads = $this->activeAds();
-
-        /** @var array<int, int> $campaignSessions */
-        $campaignSessions = [];
-        /** @var array<int, array<int, true>> $campaignVisitors */
-        $campaignVisitors = [];
-        /** @var array<int, int> $adSessions */
-        $adSessions = [];
-        /** @var array<int, array<int, true>> $adVisitors */
-        $adVisitors = [];
-
-        foreach ($this->taggedSessionRows($period, $subjectType) as $session) {
-            $params = $session->mkt_params ?? [];
-            $visitor = $session->visitor_id;
-
-            $campaign = $this->attribution->mostSpecific($campaigns, $params);
-            if ($campaign instanceof Campaign) {
-                $campaignSessions[$campaign->id] = ($campaignSessions[$campaign->id] ?? 0) + 1;
-                $campaignVisitors[$campaign->id][$visitor] = true;
-            }
-
-            $ad = $this->attribution->mostSpecific($ads, $params);
-            if ($ad instanceof Ad) {
-                $adSessions[$ad->id] = ($adSessions[$ad->id] ?? 0) + 1;
-                $adVisitors[$ad->id][$visitor] = true;
-            }
-        }
+        $groups = $this->taggedGroups($period, $subjectType);
 
         return [
-            'campaigns' => $this->buildRows($campaignSessions, $campaignVisitors),
-            'ads' => $this->buildRows($adSessions, $adVisitors),
+            'campaigns' => TaggedTraffic::rows($this->claimedBy($groups, $this->activeCampaigns())),
+            'ads' => TaggedTraffic::rows($this->claimedBy($groups, $this->activeAds())),
         ];
     }
 
@@ -273,78 +324,24 @@ final class MarketingReportBuilder
      * and its per-ad breakdown, all under most-specific attribution (matching
      * the overview figures).
      *
-     * @return array{sessions: int, visitors: int, daily: array<string, int>, dailyVisitors: array<string, int>, ads: array<int, array{sessions: int, visitors: int}>}
+     * @return array{sessions: int, visitors: int|null, daily: array<string, int>, dailyVisitors: array<string, int>|null, ads: array<int, array{sessions: int, visitors: int|null}>}
      */
     public function campaignReport(Period $period, ?string $subjectType, Campaign $campaign): array
     {
-        $campaigns = $this->activeCampaigns();
-        $sessions = array_values(array_filter(
-            $this->taggedSessionRows($period, $subjectType)->all(),
-            fn (Session $session): bool => $this->attribution->mostSpecific($campaigns, $session->mkt_params ?? [])?->id === $campaign->id,
-        ));
+        $groups = $this->claimedBy($this->taggedGroups($period, $subjectType), $this->activeCampaigns())[$campaign->id] ?? [];
 
-        $ads = $this->activeAdsOf($campaign);
-        /** @var array<int, int> $adSessions */
-        $adSessions = [];
-        /** @var array<int, array<int, true>> $adVisitors */
-        $adVisitors = [];
-
-        foreach ($sessions as $session) {
-            $bestAd = $this->attribution->mostSpecific($ads, $session->mkt_params ?? []);
-            if ($bestAd instanceof Ad) {
-                $adSessions[$bestAd->id] = ($adSessions[$bestAd->id] ?? 0) + 1;
-                $adVisitors[$bestAd->id][$session->visitor_id] = true;
-            }
-        }
-
-        return [...$this->traffic($sessions), 'ads' => $this->buildRows($adSessions, $adVisitors)];
+        return [...TaggedTraffic::of($groups), 'ads' => TaggedTraffic::rows($this->claimedBy($groups, $this->activeAdsOf($campaign)))];
     }
 
     /**
      * One ad's traffic over the period, its sessions and visitors per day, under
      * most-specific attribution among all ads.
      *
-     * @return array{sessions: int, visitors: int, daily: array<string, int>, dailyVisitors: array<string, int>}
+     * @return array{sessions: int, visitors: int|null, daily: array<string, int>, dailyVisitors: array<string, int>|null}
      */
     public function adReport(Period $period, ?string $subjectType, Ad $ad): array
     {
-        $ads = $this->activeAds();
-
-        return $this->traffic(array_values(array_filter(
-            $this->taggedSessionRows($period, $subjectType)->all(),
-            fn (Session $session): bool => $this->attribution->mostSpecific($ads, $session->mkt_params ?? [])?->id === $ad->id,
-        )));
-    }
-
-    /**
-     * How many sessions, how many distinct visitors, and how many of each per
-     * day, keyed by Y-m-d.
-     *
-     * @param  list<Session>  $sessions
-     * @return array{sessions: int, visitors: int, daily: array<string, int>, dailyVisitors: array<string, int>}
-     */
-    private function traffic(array $sessions): array
-    {
-        /** @var array<int, true> $visitors */
-        $visitors = [];
-        /** @var array<string, int> $daily */
-        $daily = [];
-        /** @var array<string, array<int, true>> $visitorsByDay */
-        $visitorsByDay = [];
-
-        foreach ($sessions as $session) {
-            $day = $session->started_at->toDateString();
-            $visitors[$session->visitor_id] = true;
-            $daily[$day] = ($daily[$day] ?? 0) + 1;
-            $visitorsByDay[$day][$session->visitor_id] = true;
-        }
-
-        return [
-            'sessions' => count($sessions),
-            'visitors' => count($visitors),
-            'daily' => $daily,
-            'dailyVisitors' => array_map(count(...), $visitorsByDay),
-        ];
+        return TaggedTraffic::of($this->claimedBy($this->taggedGroups($period, $subjectType), $this->activeAds())[$ad->id] ?? []);
     }
 
     /**
@@ -352,12 +349,17 @@ final class MarketingReportBuilder
      * conversion is an ad-driven visitor who completed one of the ad's
      * objectives (a tracked event they recorded, or a funnel they completed).
      * Counts are distinct visitors, so an ad's conversions never exceed its
-     * visitors.
+     * visitors · none over a period reaching days whose sessions or named
+     * events are erased.
      *
-     * @return array{total: int, campaigns: array<int, int>, ads: array<int, int>, objectives: array<int, array<string, int>>, daily: array<string, int>, campaignDaily: array<int, array<string, int>>, adDaily: array<int, array<string, int>>}
+     * @return array{total: int, campaigns: array<int, int>, ads: array<int, int>, objectives: array<int, array<string, int>>, daily: array<string, int>, campaignDaily: array<int, array<string, int>>, adDaily: array<int, array<string, int>>}|null
      */
-    public function conversions(Period $period, ?string $subjectType, FunnelRegistry $funnels): array
+    public function conversions(Period $period, ?string $subjectType, FunnelRegistry $funnels): ?array
     {
+        if (RetentionWindow::reaches($period, $this->window->eventsLine())) {
+            return null;
+        }
+
         $ads = $this->activeAdsWithObjectives();
         $visitorAds = $this->visitorAdMap($period, $subjectType, array_values($ads->all()));
 
@@ -389,13 +391,18 @@ final class MarketingReportBuilder
     /**
      * The detailed conversion elements for a set of ads (a campaign's ads, or a
      * single ad): each objective with its conversions and, for a funnel, its
-     * per-step reach. Sorted by conversions, descending.
+     * per-step reach. Sorted by conversions, descending · none over a period
+     * reaching days whose sessions or named events are erased.
      *
      * @param  list<Ad>  $ads  active ads with their objectives loaded
-     * @return list<array{type: string, reference: string, label: string, adId: int, adName: string, conversions: int, steps: list<array{label: string, count: int}>|null}>
+     * @return list<array{type: string, reference: string, label: string, adId: int, adName: string, conversions: int, steps: list<array{label: string, count: int}>|null}>|null
      */
-    public function conversionElements(Period $period, ?string $subjectType, FunnelRegistry $funnels, EventRegistry $events, array $ads): array
+    public function conversionElements(Period $period, ?string $subjectType, FunnelRegistry $funnels, EventRegistry $events, array $ads): ?array
     {
+        if (RetentionWindow::reaches($period, $this->window->eventsLine())) {
+            return null;
+        }
+
         if ($ads === []) {
             return [];
         }
@@ -426,21 +433,5 @@ final class MarketingReportBuilder
         }
 
         return $adVisitors;
-    }
-
-    /**
-     * @param  array<int, int>  $sessions
-     * @param  array<int, array<int, true>>  $visitors
-     * @return array<int, array{sessions: int, visitors: int}>
-     */
-    private function buildRows(array $sessions, array $visitors): array
-    {
-        $rows = [];
-
-        foreach ($sessions as $id => $count) {
-            $rows[$id] = ['sessions' => $count, 'visitors' => count($visitors[$id] ?? [])];
-        }
-
-        return $rows;
     }
 }

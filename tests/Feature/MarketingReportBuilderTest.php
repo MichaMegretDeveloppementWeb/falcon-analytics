@@ -208,6 +208,7 @@ final class MarketingReportBuilderTest extends TestCase
 
         $result = (new MarketingReportBuilder)->conversions(Period::ofDays(30), null, app(FunnelRegistry::class));
 
+        $this->assertNotNull($result);
         $this->assertSame(1, $result['total']);
         $this->assertSame(1, $result['ads'][$ad->id]);
         $this->assertSame(1, $result['campaigns'][$ete->id]);
@@ -270,6 +271,7 @@ final class MarketingReportBuilderTest extends TestCase
         $funnels = app(FunnelRegistry::class);
         $result = (new MarketingReportBuilder)->conversions(Period::ofDays(30), null, $funnels);
 
+        $this->assertNotNull($result);
         $this->assertSame(1, $result['total']);
         $this->assertSame(1, $result['ads'][$ad->id]);
         $this->assertSame(1, $result['campaigns'][$ete->id]);
@@ -282,6 +284,7 @@ final class MarketingReportBuilderTest extends TestCase
             array_values(Ad::query()->with('objectives')->get()->all()),
         );
 
+        $this->assertNotNull($elements);
         $this->assertCount(1, $elements);
         $this->assertSame('funnel', $elements[0]['type']);
         $this->assertSame('sample', $elements[0]['reference']);
@@ -359,6 +362,7 @@ final class MarketingReportBuilderTest extends TestCase
             array_values(Ad::query()->with('objectives')->get()->all()),
         );
 
+        $this->assertNotNull($elements);
         $this->assertCount(1, $elements);
         $this->assertSame('event', $elements[0]['type']);
         $this->assertSame('Lead', $elements[0]['reference']);

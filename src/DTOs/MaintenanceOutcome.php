@@ -43,4 +43,14 @@ final readonly class MaintenanceOutcome
     {
         return new self(refused: false, erased: $count, said: $said);
     }
+
+    /** Several parts of one run, said in turn and counted together. */
+    public static function together(self ...$parts): self
+    {
+        return new self(
+            refused: false,
+            erased: array_sum(array_map(fn (self $part): int => $part->erased, $parts)),
+            said: implode(' ', array_map(fn (self $part): string => $part->said, $parts)),
+        );
+    }
 }

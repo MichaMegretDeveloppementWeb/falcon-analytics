@@ -9,6 +9,7 @@ use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Events\TrackedEvent;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Repositories\Concerns\ScopesSessionQueries;
+use Falcon\Analytics\Services\RetentionWindow;
 use Falcon\Analytics\Support\SubjectFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -24,6 +25,11 @@ final class EventReadRepository
 {
     use ScopesSessionQueries;
 
+    public function __construct(
+        private readonly RetentionWindow $window = new RetentionWindow,
+        private readonly DailyTotalsReadRepository $totals = new DailyTotalsReadRepository,
+    ) {}
+
     /**
      * Per-event occurrence counts and unique visitors over the period, joined with
      * the declared registry (label, value, conversion). Sorted by count, desc.
@@ -31,7 +37,10 @@ final class EventReadRepository
      * The score of an occurrence is the one it carries, and the declared one
      * for the occurrences that carry none: both are added up in the same read.
      *
-     * @return list<array{name: string, label: string, isConversion: bool, value: int|null, count: int, visitors: int, valueTotal: int, isScored: bool}>
+     * Days whose named events are erased read from their totals · the counts
+     * and scores add up, the distinct visitors do not and are left out.
+     *
+     * @return list<array{name: string, label: string, isConversion: bool, value: int|null, count: int, visitors: int|null, valueTotal: int, isScored: bool}>
      */
     public function eventBreakdown(Period $period, ?string $subjectType, EventRegistry $events): array
     {
@@ -40,28 +49,20 @@ final class EventReadRepository
             $declared[$event->name] = $event;
         }
 
-        $rows = $this->namedEvents($period, $subjectType)
-            ->selectRaw('name, COUNT(*) as total, COUNT(DISTINCT visitor_id) as visitors, SUM(value) as carried, COUNT(value) as scored')
-            ->groupBy('name')
-            ->get();
-
         $result = [];
-        foreach ($rows as $row) {
-            $name = (string) $row->getAttribute('name');
+        foreach ($this->namedEventCounts($period, $subjectType) as $name => $counts) {
             $definition = $declared[$name] ?? null;
             $value = $definition instanceof TrackedEvent ? $definition->value : null;
-            $count = (int) $row->getAttribute('total');
-            $scored = (int) $row->getAttribute('scored');
 
             $result[] = [
                 'name' => $name,
                 'label' => $definition instanceof TrackedEvent ? $definition->label : $name,
                 'isConversion' => $definition instanceof TrackedEvent && $definition->isConversion(),
                 'value' => $value,
-                'count' => $count,
-                'visitors' => (int) $row->getAttribute('visitors'),
-                'valueTotal' => (int) $row->getAttribute('carried') + ($value ?? 0) * ($count - $scored),
-                'isScored' => $value !== null || $scored > 0,
+                'count' => $counts['total'],
+                'visitors' => $counts['visitors'],
+                'valueTotal' => $counts['carried'] + ($value ?? 0) * ($counts['total'] - $counts['scored']),
+                'isScored' => $value !== null || $counts['scored'] > 0,
             ];
         }
 
@@ -84,7 +85,7 @@ final class EventReadRepository
      * Headline totals derived from an already-computed breakdown, so a caller that
      * also needs the breakdown does not pay for a second aggregation query.
      *
-     * @param  list<array{name: string, label: string, isConversion: bool, value: int|null, count: int, visitors: int, valueTotal: int, isScored: bool}>  $breakdown
+     * @param  list<array{name: string, label: string, isConversion: bool, value: int|null, count: int, visitors: int|null, valueTotal: int, isScored: bool}>  $breakdown
      * @return array{events: int, conversions: int, value: int}
      */
     public function totals(array $breakdown): array
@@ -118,6 +119,7 @@ final class EventReadRepository
             }
         }
 
+        ['totals' => $summarised, 'rows' => $detailed] = RetentionWindow::split($period, $this->window->eventsLine());
         $day = $this->dayExpression('occurred_at');
 
         $count = fn (Builder $query): array => $query
@@ -127,10 +129,53 @@ final class EventReadRepository
             ->mapWithKeys(fn (Model $row): array => [(string) $row->getAttribute('day') => (int) $row->getAttribute('total')])
             ->all();
 
+        $events = $summarised === null ? [] : $this->totals->eventsByDay($summarised, $subjectType);
+        $conversions = $summarised === null || $conversionNames === [] ? [] : $this->totals->eventsByDay($summarised, $subjectType, $conversionNames);
+
+        if ($detailed === null) {
+            return ['events' => $events, 'conversions' => $conversions];
+        }
+
         return [
-            'events' => $count($this->namedEvents($period, $subjectType)),
-            'conversions' => $conversionNames === [] ? [] : $count($this->namedEvents($period, $subjectType)->whereIn('name', $conversionNames)),
+            'events' => [...$events, ...$count($this->namedEvents($detailed, $subjectType))],
+            'conversions' => $conversionNames === [] ? [] : [...$conversions, ...$count($this->namedEvents($detailed, $subjectType)->whereIn('name', $conversionNames))],
         ];
+    }
+
+    /**
+     * Each named event's occurrences, scores and distinct visitors over the
+     * period · the visitors null when it reaches erased days.
+     *
+     * @return array<string, array{total: int, visitors: int|null, carried: int, scored: int}>
+     */
+    private function namedEventCounts(Period $period, ?string $subjectType): array
+    {
+        ['totals' => $summarised, 'rows' => $detailed] = RetentionWindow::split($period, $this->window->eventsLine());
+
+        $counts = [];
+
+        foreach ($summarised === null ? [] : $this->totals->events($summarised, $subjectType) as $name => $added) {
+            $counts[$name] = [...$added, 'visitors' => null];
+        }
+
+        $rows = $detailed === null ? [] : $this->namedEvents($detailed, $subjectType)
+            ->selectRaw('name, COUNT(*) as total, COUNT(DISTINCT visitor_id) as visitors, SUM(value) as carried, COUNT(value) as scored')
+            ->groupBy('name')
+            ->get();
+
+        foreach ($rows as $row) {
+            $name = (string) $row->getAttribute('name');
+            $before = $counts[$name] ?? null;
+
+            $counts[$name] = [
+                'total' => (int) $row->getAttribute('total') + ($before['total'] ?? 0),
+                'visitors' => $summarised === null ? (int) $row->getAttribute('visitors') : null,
+                'carried' => (int) $row->getAttribute('carried') + ($before['carried'] ?? 0),
+                'scored' => (int) $row->getAttribute('scored') + ($before['scored'] ?? 0),
+            ];
+        }
+
+        return $counts;
     }
 
     /**

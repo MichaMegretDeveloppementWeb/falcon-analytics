@@ -8,6 +8,7 @@ use Falcon\Analytics\DTOs\Dashboard\Period;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Repositories\Concerns\ScopesSessionQueries;
+use Falcon\Analytics\Services\RetentionWindow;
 use Falcon\Analytics\Services\SubjectResolver;
 use Falcon\Analytics\Support\SubjectFilter;
 use Illuminate\Database\Eloquent\Builder;
@@ -24,15 +25,24 @@ final readonly class VisitorListReadRepository
 {
     use ScopesSessionQueries;
 
+    public function __construct(private RetentionWindow $window = new RetentionWindow) {}
+
     /**
      * Raw visitor counts for the period: distinct active visitors, distinct new
      * visitors (first seen within the period) and total sessions. No derivation;
      * the calculator turns these into metrics.
      *
-     * @return array{visitors: int, new: int, sessions: int}
+     * None over a period reaching days whose sessions are erased · distinct
+     * visitors do not add up across days.
+     *
+     * @return array{visitors: int, new: int, sessions: int}|null
      */
-    public function visitorCounts(Period $period, ?string $subjectType): array
+    public function visitorCounts(Period $period, ?string $subjectType): ?array
     {
+        if (RetentionWindow::reaches($period, $this->window->sessionsLine())) {
+            return null;
+        }
+
         $totals = $this->sessionScope($period, $subjectType)
             ->toBase()
             ->selectRaw('COUNT(*) as sessions, COUNT(DISTINCT visitor_id) as visitors')
@@ -56,10 +66,16 @@ final readonly class VisitorListReadRepository
      * visitors with a real, non-bot session). No zero-fill or ratio; that is
      * the calculator's job.
      *
-     * @return array{active: array<string, array{sessions: int, visitors: int}>, new: array<string, int>}
+     * None over a period reaching days whose sessions are erased.
+     *
+     * @return array{active: array<string, array{sessions: int, visitors: int}>, new: array<string, int>}|null
      */
-    public function visitorDailyRows(Period $period, ?string $subjectType): array
+    public function visitorDailyRows(Period $period, ?string $subjectType): ?array
     {
+        if (RetentionWindow::reaches($period, $this->window->sessionsLine())) {
+            return null;
+        }
+
         $sessionDay = $this->dayExpression('started_at');
         $active = $this->sessionScope($period, $subjectType)
             ->toBase()

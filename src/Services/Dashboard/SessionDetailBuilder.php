@@ -242,7 +242,8 @@ final readonly class SessionDetailBuilder
             ->filter(fn (Event $event): bool => $event->type === EventType::Pageview || $event->type === EventType::Click)
             ->count();
 
-        return $session->pageview_count + $session->click_count > $kept;
+        return $session->pageview_count + $session->click_count > $kept
+            || $session->event_count > $events->count();
     }
 
     /** A name and its version on one line · null when both are missing. */

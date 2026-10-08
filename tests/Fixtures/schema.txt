@@ -21,7 +21,9 @@ COL falcon_analytics_campaigns.updated_at datetime null=YES def=- extra=
 COL falcon_analytics_daily_archives.archived_at datetime null=YES def=- extra=
 COL falcon_analytics_daily_archives.day date null=NO def=- extra=
 COL falcon_analytics_daily_archives.detail_archived_at datetime null=YES def=- extra=
+COL falcon_analytics_daily_archives.events_pruned_at datetime null=YES def=- extra=
 COL falcon_analytics_daily_archives.id bigint unsigned null=NO def=- extra=auto_increment
+COL falcon_analytics_daily_archives.sessions_pruned_at datetime null=YES def=- extra=
 COL falcon_analytics_daily_counts.day date null=NO def=- extra=
 COL falcon_analytics_daily_counts.id bigint unsigned null=NO def=- extra=auto_increment
 COL falcon_analytics_daily_counts.kind varchar(16) null=NO def=- extra=
@@ -161,6 +163,7 @@ IDX falcon_analytics_sessions.fa_sessions_visitor_activity_idx unique=non (visit
 IDX falcon_analytics_sessions.fa_sessions_visitor_started_idx unique=non (visitor_id,started_at)
 IDX falcon_analytics_sessions.PRIMARY unique=oui (id)
 IDX falcon_analytics_visitors.fa_visitors_first_seen_idx unique=non (first_seen_at)
+IDX falcon_analytics_visitors.fa_visitors_last_seen_idx unique=non (last_seen_at)
 IDX falcon_analytics_visitors.fa_visitors_subject_idx unique=non (subject_type,subject_id)
 IDX falcon_analytics_visitors.falcon_analytics_visitors_merged_into_id_foreign unique=non (merged_into_id)
 IDX falcon_analytics_visitors.falcon_analytics_visitors_uuid_unique unique=oui (uuid)

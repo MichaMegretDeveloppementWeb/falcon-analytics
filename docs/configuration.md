@@ -3,11 +3,11 @@
 **Cette page fait autorité.** Le `README.md` montre le minimum pour démarrer ;
 tout ce qui est réglable est ici, et rien n'est ici qui ne soit réglable.
 
-Trente-huit clés, en treize blocs. Le paquet **fonctionne sans en toucher une
+Quarante et une clés, en treize blocs. Le paquet **fonctionne sans en toucher une
 seule** · les valeurs ci-dessous sont celles qui s'appliquent tant que vous ne
 dites rien, et un essai le tient.
 
-> **Trente-huit réglages, et non quarante-huit.** Le fichier porte dix noms de
+> **Quarante et un réglages, et non cinquante et un.** Le fichier porte dix noms de
 > plus — `identity`, `admin`, `geoip`… — mais ce sont des groupes, pas des
 > valeurs · on ne règle pas `identity`, on règle ce qu'il contient.
 
@@ -227,20 +227,32 @@ groupes de routes · elles n'héritent de rien.
 
 ## La durée de vie des données
 
+Trois durées, et chacune efface une sorte de ligne. **Par défaut, seule la
+première agit** · les deux autres valent `null`, et rien d'autre ne s'efface.
+
 | Clé | Type | Défaut | Ce qu'elle fait |
 |---|---|---|---|
-| `retention_days` | nombre de jours, ou `null` | `90` | Combien de temps le **pas à pas d'une session** reste consultable. Au-delà, `analytics:prune` efface les pages vues et les clics **anonymes**, et rien d'autre. `null` n'efface jamais rien. |
+| `retention_days` | nombre de jours, ou `null` | `90` | Combien de temps le **pas à pas d'une session** reste consultable. Au-delà, `analytics:prune` efface les pages vues et les clics **anonymes**. `null` ne les efface jamais. |
+| `session_retention_days` | nombre de jours, ou `null` | `null` | Combien de temps les **sessions** sont gardées. Au-delà, elles sont effacées avec tous leurs événements, et les **profils de visiteurs** qu'elles laissent sans aucune session, vus pour la dernière fois avant cette durée, partent avec elles. `null` les garde. Au moins égale à `retention_days`. |
+| `event_retention_days` | nombre de jours, ou `null` | `null` | Combien de temps les **événements nommés** sont gardés, quand ils doivent partir avant leur session. `null` les laisse partir avec elle. Au plus égale à `session_retention_days`. |
 
 > **`0` et les nombres négatifs sont refusés.** Ils voudraient dire l'inverse de
 > ce qu'on tape en les écrivant · la commande s'arrête en le disant, et
 > `analytics:check` le signale comme bloquant. Pour ne jamais effacer, écrivez
 > `null`.
 
-### Ce que ce réglage ne touche pas
+> **Deux durées qui se contredisent sont refusées de même**, et rien n'est
+> effacé tant qu'elles le restent · des sessions gardées moins longtemps que
+> leurs pages vues, puisqu'effacer une session efface ses pages, ou des
+> événements nommés gardés plus longtemps que leurs sessions, puisqu'un
+> événement part avec la sienne. `analytics:check` dit laquelle, au point
+> « Conservation ».
 
-**Aucun chiffre d'aucun écran.** C'est le point, et il a demandé du travail ·
+### Avec `retention_days` seul · aucun chiffre ne bouge
 
-- **ce qui porte un nom n'est jamais effacé** · vos événements nommés, et donc
+C'est le réglage par défaut, et il a demandé du travail ·
+
+- **ce qui porte un nom n'est pas effacé** · vos événements nommés, et donc
   l'écran des événements, les tunnels et les conversions marketing, restent
   exacts **sans limite de profondeur** ;
 - **les pages et les clics les plus vus sont comptés d'avance**, chaque nuit, et
@@ -261,11 +273,55 @@ compteurs, ses événements nommés, et dit que le reste a été effacé.
 > **Vous pouvez donc demander deux ans sans rien fausser.** Il n'y a aucune
 > période maximale d'affichage, et il n'y en a pas besoin.
 
+### Avec les sessions et les événements nommés · ce qui reste, et ce qui se tait
+
+**Chaque jour est d'abord résumé**, et ses totaux sont gardés pour toujours ·
+ses sessions, leurs pages vues, leur durée et leurs rebonds, ventilés par
+appareil, par localité et par source, paramètres de campagne compris · et
+chacun de ses événements nommés, leur nombre et leurs valeurs. **L'effacement
+refuse un jour que ce résumé n'a pas traité.**
+
+**Les écrans lisent les lignes tant qu'elles existent, et les totaux au-delà.**
+Dans la conservation, rien ne change. Au-delà ·
+
+- **tout chiffre qui s'additionne reste exact** · la fréquentation, la durée, le
+  rebond, les sources, les appareils, les localités, les événements et leurs
+  valeurs, les conversions, les sessions venues d'une publicité ;
+- **un chiffre qui compte des personnes distinctes se tait** · Visiteurs,
+  Nouveaux, Récurrents, Sessions par visiteur, la colonne Visiteurs des
+  événements, les tunnels, les visiteurs et les conversions du marketing. Des
+  totaux par jour ne disent pas si le visiteur de lundi est celui de mardi, et
+  un chiffre calculé sur ce qui reste serait faux sans le dire. L'écran affiche
+  « Indisponible au-delà de 90 jours de conservation », et sa comparaison
+  « Comparaison indisponible » ;
+- **la fiche d'un visiteur** porte sur ses sessions gardées, et le dit · « Sur
+  ses sessions des 90 derniers jours ». « Récurrent » suit les sessions qui lui
+  restent ;
+- **le détail d'une session** dit « Détail effacé » quand ses événements sont
+  partis.
+
+> **Avec 90 jours partout, une seule différence se voit · la comparaison de la
+> vue « 90 jours ».** Sa période précédente commence avant la conservation, donc
+> les chiffres de personnes y renoncent.
+
+**La limite se lit dans ce que l'effacement a fait**, jamais dans vos réglages ·
+c'est le dernier jour qu'il a vidé. Allonger une durée après un effacement ne
+fait pas relire des lignes qui n'existent plus, et tant que rien n'a été effacé,
+les écrans sont ceux d'avant.
+
+> **Pour une mesure d'audience sans bandeau de consentement**, la CNIL demande
+> de ne pas garder les données plus de vingt-cinq mois · 760 jours sur les deux
+> durées le tiennent, les profils partant avec leurs sessions.
+
+### Ce qui vaut pour les trois
+
 **La limite, la vraie** · un tunnel ou un événement nommé **déclaré aujourd'hui
 ne peut rien dire des périodes déjà effacées**. La matière n'existe plus, et
 l'historique de cette mesure-là commence le jour où vous la déclarez. Matomo a
 exactement la même contrainte. L'attribution des campagnes, elle, **reste
-rétroactive** · elle se calcule sur les paramètres d'URL gardés sur la session.
+rétroactive** · elle se calcule sur les paramètres d'URL, gardés sur la session
+puis dans les totaux de chaque jour. Au-delà de la conservation des sessions,
+une campagne créée après coup y retrouve ses sessions, pas ses visiteurs.
 
 ### Ce qu'il faut pour que ça marche
 
@@ -273,6 +329,11 @@ Deux tâches planifiées, dans cet ordre · le résumé à 03:00, l'effacement �
 03:30. **L'effacement refuse un jour que le résumé n'a pas traité**, et c'est ce
 qui rend une panne d'ordonnanceur inoffensive · les deux s'arrêtent ensemble, et
 rien n'est perdu.
+
+Le résumé tient deux familles, chacune à son rythme · les pages vues et les
+clics, puis les sessions et les événements nommés. **La seconde part de la plus
+vieille session**, donc le premier passage après une montée résume tout votre
+historique · voir [mise-a-jour.md](mise-a-jour.md#régler-la-conservation-des-sessions-sur-un-site-qui-tourne-déjà).
 
 Le paquet les inscrit lui-même · il vous suffit que `schedule:run` tourne. Et si
 votre ordonnanceur s'arrête quand même, **ouvrir un écran d'analytique rattrape

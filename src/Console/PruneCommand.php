@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Console;
 
-use Falcon\Analytics\Services\Maintenance;
+use Falcon\Analytics\Actions\PruneAction;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -21,7 +21,7 @@ use Throwable;
  * what makes a dead scheduler harmless rather than lossy: no summary, no
  * erasing, and the backlog waits.
  *
- * The deciding lives in `Maintenance`, which the catch-up on a screen load runs
+ * The deciding lives in `PruneAction`, which the catch-up on a screen load runs
  * as well · one decision, two ways of reporting it.
  *
  * @internal
@@ -30,12 +30,12 @@ final class PruneCommand extends Command
 {
     protected $signature = 'analytics:prune';
 
-    protected $description = 'Efface les pages vues et clics anonymes au-delà de la conservation, une fois le jour résumé.';
+    protected $description = 'Efface ce que chaque conservation permet, une fois le jour résumé.';
 
-    public function handle(Maintenance $maintenance): int
+    public function handle(PruneAction $prune): int
     {
         try {
-            $outcome = $maintenance->prune();
+            $outcome = $prune->execute();
         } catch (Throwable $e) {
             Log::channel(config('analytics.log_channel'))->error('Analytics prune failed.', ['exception' => $e]);
             $this->components->error('L’effacement a échoué ; voyez le canal de journal de l’analytique.');

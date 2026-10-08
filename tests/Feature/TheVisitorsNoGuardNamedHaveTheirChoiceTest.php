@@ -117,7 +117,7 @@ final class TheVisitorsNoGuardNamedHaveTheirChoiceTest extends TestCase
             ->set('subject', 'none')
             ->assertViewHas('visitors', fn ($visitors): bool => $visitors->total() === 2);
 
-        $new = $this->app->make(VisitorListReadRepository::class)->visitorDailyRows(Period::ofDays(30), 'none')['new'];
+        $new = $this->app->make(VisitorListReadRepository::class)->visitorDailyRows(Period::ofDays(30), 'none')['new'] ?? [];
         ksort($new);
 
         $this->assertSame(['2026-07-07' => 1, '2026-07-10' => 1], $new);
@@ -169,7 +169,7 @@ final class TheVisitorsNoGuardNamedHaveTheirChoiceTest extends TestCase
         config(['analytics.funnels_path' => __DIR__.'/../Fixtures/analytics-funnels.php']);
         $this->fourVisits();
 
-        $report = $this->app->make(FunnelEvaluator::class)->evaluateAll(Period::ofDays(30), 'none')[0];
+        $report = ($this->app->make(FunnelEvaluator::class)->evaluateAll(Period::ofDays(30), 'none') ?? [])[0];
 
         $this->assertSame(2, $report->entrants);
         $this->assertSame(2, $report->steps[1]->visitors);

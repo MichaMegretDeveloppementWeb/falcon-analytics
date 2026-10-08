@@ -19,38 +19,61 @@ use Falcon\Analytics\DTOs\Dashboard\VisitorMetrics;
 final class VisitorMetricsCalculator
 {
     /**
-     * @param  array{visitors: int, new: int, sessions: int}  $current
-     * @param  array{visitors: int, new: int, sessions: int}  $previous
-     * @param  array{active: array<string, array{sessions: int, visitors: int}>, new: array<string, int>}  $daily
+     * A period reaching days whose sessions are erased has no counts · its
+     * figures are then null, and its daily lines empty.
+     *
+     * @param  array{visitors: int, new: int, sessions: int}|null  $current
+     * @param  array{visitors: int, new: int, sessions: int}|null  $previous
+     * @param  array{active: array<string, array{sessions: int, visitors: int}>, new: array<string, int>}|null  $daily
      */
-    public function compute(array $current, array $previous, array $daily, Period $period): VisitorMetrics
+    public function compute(?array $current, ?array $previous, ?array $daily, Period $period): VisitorMetrics
     {
-        $series = $this->series($daily, $period);
+        $series = $daily === null
+            ? ['visitors' => [], 'new' => [], 'returning' => [], 'sessionsPerVisitor' => []]
+            : $this->series($daily, $period);
 
         return new VisitorMetrics(
             visitors: new MetricTrend(
-                new MetricDelta((float) $current['visitors'], (float) $previous['visitors']),
+                new MetricDelta($this->visitors($current), $this->visitors($previous)),
                 $series['visitors'],
             ),
             newVisitors: new MetricTrend(
-                new MetricDelta((float) $current['new'], (float) $previous['new']),
+                new MetricDelta($this->newVisitors($current), $this->newVisitors($previous)),
                 $series['new'],
             ),
             returning: new MetricTrend(
-                new MetricDelta(
-                    (float) max(0, $current['visitors'] - $current['new']),
-                    (float) max(0, $previous['visitors'] - $previous['new']),
-                ),
+                new MetricDelta($this->returning($current), $this->returning($previous)),
                 $series['returning'],
             ),
             sessionsPerVisitor: new MetricTrend(
-                new MetricDelta(
-                    $this->ratio($current['sessions'], $current['visitors']),
-                    $this->ratio($previous['sessions'], $previous['visitors']),
-                ),
+                new MetricDelta($this->sessionsPerVisitor($current), $this->sessionsPerVisitor($previous)),
                 $series['sessionsPerVisitor'],
             ),
         );
+    }
+
+    /** @param  array{visitors: int, new: int, sessions: int}|null  $counts */
+    private function visitors(?array $counts): ?float
+    {
+        return $counts === null ? null : (float) $counts['visitors'];
+    }
+
+    /** @param  array{visitors: int, new: int, sessions: int}|null  $counts */
+    private function newVisitors(?array $counts): ?float
+    {
+        return $counts === null ? null : (float) $counts['new'];
+    }
+
+    /** @param  array{visitors: int, new: int, sessions: int}|null  $counts */
+    private function returning(?array $counts): ?float
+    {
+        return $counts === null ? null : (float) max(0, $counts['visitors'] - $counts['new']);
+    }
+
+    /** @param  array{visitors: int, new: int, sessions: int}|null  $counts */
+    private function sessionsPerVisitor(?array $counts): ?float
+    {
+        return $counts === null ? null : $this->ratio($counts['sessions'], $counts['visitors']);
     }
 
     /**

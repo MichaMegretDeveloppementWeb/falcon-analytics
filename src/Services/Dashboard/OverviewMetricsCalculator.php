@@ -15,14 +15,18 @@ use Falcon\Analytics\DTOs\Dashboard\MetricDelta;
 final class OverviewMetricsCalculator
 {
     /**
-     * Share of new visitors among the period's visitors, period over period.
+     * Share of new visitors among the period's visitors, period over period ·
+     * none for a period reaching days whose sessions are erased.
      *
-     * @param  array{new: int, returning: int}  $current
-     * @param  array{new: int, returning: int}  $previous
+     * @param  array{new: int, returning: int}|null  $current
+     * @param  array{new: int, returning: int}|null  $previous
      */
-    public function newVisitorRate(array $current, array $previous): MetricDelta
+    public function newVisitorRate(?array $current, ?array $previous): MetricDelta
     {
-        return new MetricDelta($this->rate($current), $this->rate($previous));
+        return new MetricDelta(
+            $current === null ? null : $this->rate($current),
+            $previous === null ? null : $this->rate($previous),
+        );
     }
 
     /**

@@ -6,7 +6,7 @@ namespace Falcon\Analytics\Http\Middleware;
 
 use Closure;
 use Falcon\Analytics\Actions\ArchiveClosedDaysAction;
-use Falcon\Analytics\Services\Maintenance;
+use Falcon\Analytics\Actions\PruneAction;
 use Falcon\Analytics\Support\AfterTheResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -99,7 +99,7 @@ final class CatchesUpTheMaintenance
 
             // Not through the commands: booting the console kernel in terminate() breaks the session store.
             app(ArchiveClosedDaysAction::class)->execute($days);
-            app(Maintenance::class)->prune();
+            app(PruneAction::class)->execute();
         });
     }
 }

@@ -73,4 +73,31 @@ final readonly class EventWriteRepository
 
         return $deleted;
     }
+
+    /**
+     * Erase the named events older than the cutoff, in batches · each batch one
+     * statement.
+     *
+     * @return int the number erased
+     */
+    public function pruneNamedOlderThan(CarbonImmutable $cutoff, int $batchSize = 1000): int
+    {
+        $deleted = 0;
+
+        do {
+            $ids = Event::query()
+                ->where('occurred_at', '<', $cutoff)
+                ->where('name', '<>', '')
+                ->limit($batchSize)
+                ->pluck('id');
+
+            if ($ids->isEmpty()) {
+                break;
+            }
+
+            $deleted += Event::query()->whereKey($ids->all())->delete();
+        } while ($ids->count() === $batchSize);
+
+        return $deleted;
+    }
 }

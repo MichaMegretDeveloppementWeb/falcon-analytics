@@ -99,6 +99,31 @@ final readonly class DailyDetailArchiver
         );
     }
 
+    /**
+     * Mark every summarised day before the cutoff as having its sessions
+     * erased · written before the erasing, so a screen read in between takes
+     * those days from their totals.
+     */
+    public function markSessionsErasedBefore(CarbonImmutable $cutoff): void
+    {
+        $this->markErasedBefore('sessions_pruned_at', $cutoff);
+    }
+
+    /** The same, for the named events. */
+    public function markEventsErasedBefore(CarbonImmutable $cutoff): void
+    {
+        $this->markErasedBefore('events_pruned_at', $cutoff);
+    }
+
+    private function markErasedBefore(string $column, CarbonImmutable $cutoff): void
+    {
+        DailyArchive::query()
+            ->where('day', '<', $cutoff->toDateString())
+            ->whereNotNull('detail_archived_at')
+            ->whereNull($column)
+            ->update([$column => CarbonImmutable::now()->toDateTimeString()]);
+    }
+
     /** Whether a day's sessions and named events have been summarised. */
     public function isArchived(CarbonImmutable $day): bool
     {

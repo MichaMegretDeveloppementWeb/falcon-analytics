@@ -46,6 +46,9 @@ return new class extends Migration
 
             // Range-filtered and grouped by day on the overview and the visitors list.
             $table->index('first_seen_at', 'fa_visitors_first_seen_idx');
+
+            // The purge looks for the profiles last seen before the retention.
+            $table->index('last_seen_at', 'fa_visitors_last_seen_idx');
         });
     }
 

@@ -206,6 +206,54 @@ final class AnOldSessionSaysWhatItStillKnowsTest extends TestCase
         $this->open($named)->assertDontSee('durée de conservation', false);
     }
 
+    /** The named events have their own retention, and a session that lost only them lost its whole detail. */
+    public function test_a_session_whose_named_events_were_erased_says_so(): void
+    {
+        config(['analytics.session_retention_days' => 200, 'analytics.event_retention_days' => 60]);
+
+        $day = CarbonImmutable::parse('2026-03-01');
+        $named = $this->aVisitOn($day, ['pageview_count' => 0, 'click_count' => 0, 'event_count' => 2]);
+
+        foreach ([10, 12] as $minute) {
+            Event::factory()->for($named)->custom('commande.payee')->create(['occurred_at' => $day->setTime(9, $minute)]);
+        }
+
+        $this->archiveThenPrune();
+
+        $this->assertNotNull($named->fresh(), 'The session itself is kept.');
+        $this->assertSame(0, Event::query()->where('session_id', $named->id)->count(), 'Its named events are gone.');
+
+        $this->open($named)
+            ->assertSee(__('Détail effacé'))
+            ->assertDontSee(__('Aucun événement'));
+    }
+
+    /** A page view a funnel protects survives both erasings, and the rest of the journey is said to be gone. */
+    public function test_a_journey_that_kept_a_page_but_lost_its_named_events_says_so(): void
+    {
+        config([
+            'analytics.session_retention_days' => 200,
+            'analytics.event_retention_days' => 60,
+            'analytics.funnels_path' => __DIR__.'/../Fixtures/analytics-funnels.php',
+        ]);
+        $this->app->forgetInstance(FunnelRegistry::class);
+        $this->app->forgetInstance(Maintenance::class);
+
+        $day = CarbonImmutable::parse('2026-03-01');
+        $session = $this->aVisitOn($day, ['pageview_count' => 1, 'click_count' => 0, 'event_count' => 2]);
+
+        Event::factory()->for($session)->create(['url' => 'https://exemple.test/panier', 'route' => 'home', 'occurred_at' => $day->setTime(9, 0)]);
+        Event::factory()->for($session)->custom('commande.payee')->create(['occurred_at' => $day->setTime(9, 20)]);
+
+        $this->archiveThenPrune();
+
+        $this->assertSame(1, Event::query()->where('session_id', $session->id)->count(), 'Only the protected page view is left.');
+
+        $this->open($session)
+            ->assertSee('durée de conservation', false)
+            ->assertDontSee(__('Détail effacé'));
+    }
+
     /** The erasing spares rows on a route a declared funnel steps through, so the journey is whole. */
     public function test_an_old_session_on_a_protected_route_lost_nothing(): void
     {

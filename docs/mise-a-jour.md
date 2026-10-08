@@ -87,6 +87,31 @@ votre propre habillage, et donc seulement si vous avez nommé un gabarit à vous
 
 ---
 
+## Régler la conservation des sessions sur un site qui tourne déjà
+
+`session_retention_days` et `event_retention_days` valent `null` · une montée ne
+les règle pas pour vous, et rien ne s'efface de plus tant que vous ne les écrivez
+pas. Voir [la durée de vie des données](configuration.md#la-durée-de-vie-des-données).
+
+**Le premier résumé reprend tout l'historique.** Les totaux des sessions et des
+événements nommés n'existaient pas · le premier passage d'`analytics:archive`
+après la montée les écrit pour chaque jour depuis votre plus vieille session.
+Sur un site qui a beaucoup d'historique, lancez-le une fois à la main, à une
+heure creuse, avant de régler les deux durées ·
+
+```bash
+php artisan analytics:archive
+```
+
+`--days=30` borne un passage, si vous préférez avancer par tranches · chaque
+passage reprend où le précédent s'est arrêté.
+
+**Rien n'est effacé avant que ce soit fait** · l'effacement refuse un jour que
+le résumé n'a pas traité. `analytics:check` dit combien de jours attendent, au
+point « Résumés ».
+
+---
+
 ## Ce qui compte comme rupture
 
 Ces éléments forment **le contrat public**. Leur retrait ou leur modification
