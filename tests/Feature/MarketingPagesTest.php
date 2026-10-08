@@ -13,11 +13,13 @@ use Falcon\Analytics\Livewire\Admin\CampaignForm;
 use Falcon\Analytics\Livewire\Admin\CampaignsPage;
 use Falcon\Analytics\Livewire\Admin\Widgets\AdDetailContent;
 use Falcon\Analytics\Livewire\Admin\Widgets\CampaignDetailContent;
+use Falcon\Analytics\Livewire\Admin\Widgets\MarketingDashboardContent;
 use Falcon\Analytics\Models\Ad;
 use Falcon\Analytics\Models\AdObjective;
 use Falcon\Analytics\Models\Campaign;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
+use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Tests\Fixtures\Models\TestAdmin;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -74,6 +76,27 @@ final class MarketingPagesTest extends TestCase
             ->assertDispatched('an-campaign-metrics-loaded')
             ->assertSeeText(__('Sessions'))
             ->assertSeeText(__('Taux de conversion'));
+    }
+
+    /**
+     * The line under the conversion rate reads like the rate · one person of
+     * two converted today, whatever their visits, and the line says half.
+     */
+    public function test_the_rate_line_says_what_the_rate_says(): void
+    {
+        $ad = Ad::factory()->for($this->campaign())->matching('src', 'meta')->create();
+        AdObjective::factory()->for($ad)->event('Lead')->create();
+
+        $visits = Session::factory()->count(3)->for(Visitor::factory())->state(['mkt_params' => ['src' => 'meta']])->create();
+        Event::factory()->for($visits->firstOrFail())->custom('Lead')->create();
+        Session::factory()->state(['mkt_params' => ['src' => 'meta']])->create();
+
+        $this->actingAs($this->admin, 'admin');
+
+        Livewire::test(MarketingDashboardContent::class, ['period' => 30])
+            ->call('$refresh')
+            ->assertViewHas('rateLabel', fn (string $label): bool => str_contains($label, '50,0'))
+            ->assertViewHas('rateTrend', fn (array $line): bool => end($line) === 50.0);
     }
 
     /** Read one ad at a time, the strict bench would turn the lazy load into the block's error state. */
