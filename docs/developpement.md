@@ -275,8 +275,9 @@ d'une session ; les événements **nommés** sont rares et portent l'écran des
 événements, les tunnels et les conversions marketing.
 
 ```
-DailyCountArchiver         résume un jour clos · avance depuis le dernier traité
-        ↓
+DailyCountArchiver         résume les pages vues et les clics d'un jour clos
+DailyDetailArchiver        résume ses sessions et ses événements nommés
+        ↓                  chacun avance depuis le dernier jour qu'il a traité
 ArchiveClosedDaysAction    les jours en attente, une transaction par jour
 Maintenance                l'effacement, et le refus d'un jour non résumé
         ↓                              ↑
@@ -293,6 +294,20 @@ Cinq règles tiennent l'ensemble, et chacune a son essai ·
 | **un jour résumé se lit dans son résumé, et nulle part ailleurs** | les lignes ne sont lues que pour la journée en cours, donc une période de 90 jours coûte un jour de trafic et non 90 · et un effacement interrompu au milieu ne coûte rien, le résumé tenant la journée entière |
 | **effacer ne change aucun chiffre** | `ThePurgeChangesNoFigure` mesure sept lectures, efface, remesure, et nomme le bloc qui a bougé — y compris sur un effacement interrompu |
 
+**Deux familles de résumés, deux séquences** · les pages vues et les clics
+(`daily_counts`), les sessions et les événements nommés (`daily_sessions`,
+`daily_events`). Le registre des jours, `daily_archives`, porte une colonne par
+famille · `archived_at` et `detail_archived_at`. Chacune avance sans trou depuis
+le dernier jour qu'elle a traité, et un jour prend celle des deux qui l'attend.
+**La seconde part de la plus vieille session**, donc tout l'historique se résume
+au premier passage, jours déjà résumés pour leurs pages compris · ceux-là ne
+sont pas résumés à nouveau pour leurs pages, dont les lignes anonymes sont déjà
+en partie effacées.
+
+> **Ce qu'une famille de totaux ne garde pas** · un chiffre qui compte des
+> personnes distinctes, visiteurs, nouveaux, tunnels, ne s'additionne pas d'un
+> jour à l'autre. Les totaux n'en portent donc aucun.
+
 > **Le piège de cette partie** · un jour résumé garde ses lignes — toutes tant
 > qu'il n'est pas vidé, les **nommées** ensuite — que le résumé a comptées
 > aussi. Lire les deux compterait deux fois, d'où une coupure stricte plutôt
@@ -302,7 +317,7 @@ Cinq règles tiennent l'ensemble, et chacune a son essai ·
 
 | Dossier | Ce qu'on y trouve |
 |---|---|
-| `Models/` | les dix tables, et leurs relations · huit portent vos mesures, deux la mécanique de la conservation |
+| `Models/` | les douze tables, et leurs relations · huit portent vos mesures, quatre la mécanique de la conservation |
 | `Enums/` | les types d'événement et d'objectif, et l'arbre des capacités (`Authorization/Ability`) |
 | `Funnels/` | les tunnels · déclarés par l'hôte, évalués ici |
 | `Events/` | les événements nommés, déclarés par l'hôte |

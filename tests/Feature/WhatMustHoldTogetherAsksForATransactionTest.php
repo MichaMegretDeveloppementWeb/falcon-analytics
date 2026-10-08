@@ -7,6 +7,7 @@ namespace Falcon\Analytics\Tests\Feature;
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Services\DailyCountArchiver;
+use Falcon\Analytics\Services\DailyDetailArchiver;
 use Falcon\Analytics\Services\VisitorMerger;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -37,7 +38,7 @@ final class WhatMustHoldTogetherAsksForATransactionTest extends TestCase
 
     protected function tearDown(): void
     {
-        foreach (['falcon_analytics_daily_counts', 'falcon_analytics_daily_archives'] as $table) {
+        foreach (['falcon_analytics_daily_counts', 'falcon_analytics_daily_sessions', 'falcon_analytics_daily_events', 'falcon_analytics_daily_archives'] as $table) {
             if (Schema::hasTable($table)) {
                 DB::table($table)->delete();
             }
@@ -65,5 +66,19 @@ final class WhatMustHoldTogetherAsksForATransactionTest extends TestCase
         $this->expectException(LogicException::class);
 
         app(DailyCountArchiver::class)->archive(CarbonImmutable::parse('2026-06-12'));
+    }
+
+    public function test_a_day_of_totals_refuses_to_run_outside_a_transaction(): void
+    {
+        $this->expectException(LogicException::class);
+
+        app(DailyDetailArchiver::class)->archive(CarbonImmutable::parse('2026-06-12'));
+    }
+
+    public function test_a_rehoming_refuses_to_run_outside_a_transaction(): void
+    {
+        $this->expectException(LogicException::class);
+
+        app(VisitorMerger::class)->rehomeOtherSubjects([1], null);
     }
 }

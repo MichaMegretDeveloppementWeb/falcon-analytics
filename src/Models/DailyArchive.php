@@ -10,7 +10,8 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * A day that has been summarised.
+ * A day that has been summarised, family by family · its page views and clicks
+ * (`archived_at`), its sessions and named events (`detail_archived_at`).
  *
  * The purge reads this and refuses to erase a day it does not find, which is
  * what makes a dead scheduler harmless: no archiving, no erasing.
@@ -19,7 +20,8 @@ use Illuminate\Database\Eloquent\Model;
  *
  * @property int $id
  * @property CarbonImmutable $day
- * @property CarbonImmutable $archived_at
+ * @property CarbonImmutable|null $archived_at
+ * @property CarbonImmutable|null $detail_archived_at
  */
 final class DailyArchive extends Model
 {
@@ -30,7 +32,7 @@ final class DailyArchive extends Model
     public $timestamps = false;
 
     /** @var list<string> */
-    protected $fillable = ['day', 'archived_at'];
+    protected $fillable = ['day', 'archived_at', 'detail_archived_at'];
 
     /**
      * The key, always written as a plain date.
@@ -55,7 +57,8 @@ final class DailyArchive extends Model
     }
 
     /**
-     * The last day summarised, or null while none has been.
+     * The last day whose page views and clicks are summarised, or null while
+     * none has been.
      *
      * **The reading splits here** · up to and including this day the figures
      * come from the summaries, after it from the rows themselves. Every day up
@@ -64,7 +67,18 @@ final class DailyArchive extends Model
      */
     public static function lastSummarisedDay(): ?CarbonImmutable
     {
-        $day = self::query()->max('day');
+        return self::lastDayOf('archived_at');
+    }
+
+    /** The same, for the sessions and named events. */
+    public static function lastDetailSummarisedDay(): ?CarbonImmutable
+    {
+        return self::lastDayOf('detail_archived_at');
+    }
+
+    private static function lastDayOf(string $family): ?CarbonImmutable
+    {
+        $day = self::query()->whereNotNull($family)->max('day');
 
         return is_string($day) && $day !== '' ? CarbonImmutable::parse($day)->startOfDay() : null;
     }
@@ -75,6 +89,7 @@ final class DailyArchive extends Model
         return [
             'day' => 'immutable_date',
             'archived_at' => 'immutable_datetime',
+            'detail_archived_at' => 'immutable_datetime',
         ];
     }
 }

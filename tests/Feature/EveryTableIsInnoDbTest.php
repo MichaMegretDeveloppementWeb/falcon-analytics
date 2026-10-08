@@ -40,7 +40,7 @@ final class EveryTableIsInnoDbTest extends TestCase
             $this->artisan('analytics:refresh', ['--force' => true])->run();
         }
 
-        $this->assertCount(10, $engines, 'The engine of every table was not read: this test would prove nothing.');
+        $this->assertCount(12, $engines, 'The engine of every table was not read: this test would prove nothing.');
         $this->assertSame([], array_keys(array_filter($engines, static fn (mixed $name): bool => $name !== 'InnoDB')));
     }
 

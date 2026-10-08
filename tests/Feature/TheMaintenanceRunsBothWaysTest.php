@@ -221,7 +221,8 @@ final class TheMaintenanceRunsBothWaysTest extends TestCase
         $row = DailyArchive::query()->where('day', '2026-01-05')->firstOrFail();
 
         $this->assertSame('2026-01-05', $row->day->toDateString(), 'The day itself is a date, and stays one.');
-        $this->assertSame('2026-06-15 03:30:00', $row->archived_at->toDateTimeString());
+        $this->assertSame('2026-06-15 03:30:00', $row->archived_at?->toDateTimeString());
+        $this->assertSame('2026-06-15 03:30:00', $row->detail_archived_at?->toDateTimeString());
     }
 
     /**

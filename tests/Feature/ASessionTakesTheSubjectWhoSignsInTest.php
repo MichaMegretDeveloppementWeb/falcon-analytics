@@ -7,6 +7,7 @@ namespace Falcon\Analytics\Tests\Feature;
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\Actions\ArchiveClosedDaysAction;
 use Falcon\Analytics\Models\DailyCount;
+use Falcon\Analytics\Models\DailySessionTotal;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
@@ -106,7 +107,8 @@ final class ASessionTakesTheSubjectWhoSignsInTest extends TestCase
 
     /**
      * A session that takes its subject after its first day was summarised moves
-     * that day's pages under the subject · the day is summarised again.
+     * that day's pages and session totals under the subject · the day is
+     * summarised again.
      */
     public function test_a_day_already_summarised_is_summarised_again(): void
     {
@@ -119,11 +121,23 @@ final class ASessionTakesTheSubjectWhoSignsInTest extends TestCase
         $this->travelTo(CarbonImmutable::parse('2026-06-15 01:05:00'));
         $this->app->make(ArchiveClosedDaysAction::class)->execute();
         $this->assertSame([null], $this->subjectsOfThePagesOf('2026-06-14'));
+        $this->assertSame([null], $this->subjectsOfTheSessionTotalsOf('2026-06-14'));
 
         $this->actingAs($cabinet, 'client');
         $this->send([$this->pageview('/patients')]);
 
         $this->assertSame(['client'], $this->subjectsOfThePagesOf('2026-06-14'));
+        $this->assertSame(['client'], $this->subjectsOfTheSessionTotalsOf('2026-06-14'));
+    }
+
+    /** @return list<string|null> */
+    private function subjectsOfTheSessionTotalsOf(string $day): array
+    {
+        return array_values(DailySessionTotal::query()
+            ->where('day', $day)
+            ->where('dimension', DailySessionTotal::DIMENSION_ALL)
+            ->pluck('subject_type')
+            ->all());
     }
 
     /** @return list<string|null> */

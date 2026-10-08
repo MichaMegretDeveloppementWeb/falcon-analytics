@@ -18,8 +18,9 @@ COL falcon_analytics_campaigns.match_conditions json null=YES def=- extra=
 COL falcon_analytics_campaigns.name varchar(150) null=NO def=- extra=
 COL falcon_analytics_campaigns.platform varchar(60) null=YES def=- extra=
 COL falcon_analytics_campaigns.updated_at datetime null=YES def=- extra=
-COL falcon_analytics_daily_archives.archived_at datetime null=NO def=- extra=
+COL falcon_analytics_daily_archives.archived_at datetime null=YES def=- extra=
 COL falcon_analytics_daily_archives.day date null=NO def=- extra=
+COL falcon_analytics_daily_archives.detail_archived_at datetime null=YES def=- extra=
 COL falcon_analytics_daily_archives.id bigint unsigned null=NO def=- extra=auto_increment
 COL falcon_analytics_daily_counts.day date null=NO def=- extra=
 COL falcon_analytics_daily_counts.id bigint unsigned null=NO def=- extra=auto_increment
@@ -29,6 +30,26 @@ COL falcon_analytics_daily_counts.route varchar(191) null=YES def=- extra=
 COL falcon_analytics_daily_counts.signature char(64) null=NO def=- extra=
 COL falcon_analytics_daily_counts.subject_type varchar(32) null=YES def=- extra=
 COL falcon_analytics_daily_counts.total int unsigned null=NO def=0 extra=
+COL falcon_analytics_daily_events.day date null=NO def=- extra=
+COL falcon_analytics_daily_events.id bigint unsigned null=NO def=- extra=auto_increment
+COL falcon_analytics_daily_events.name varchar(120) null=NO def=- extra=
+COL falcon_analytics_daily_events.signature char(64) null=NO def=- extra=
+COL falcon_analytics_daily_events.subject_type varchar(32) null=YES def=- extra=
+COL falcon_analytics_daily_events.total int unsigned null=NO def=0 extra=
+COL falcon_analytics_daily_events.value_count int unsigned null=NO def=0 extra=
+COL falcon_analytics_daily_events.value_sum bigint null=NO def=0 extra=
+COL falcon_analytics_daily_sessions.bounces int unsigned null=NO def=0 extra=
+COL falcon_analytics_daily_sessions.day date null=NO def=- extra=
+COL falcon_analytics_daily_sessions.dimension varchar(16) null=NO def=- extra=
+COL falcon_analytics_daily_sessions.id bigint unsigned null=NO def=- extra=auto_increment
+COL falcon_analytics_daily_sessions.key_a varchar(191) null=YES def=- extra=
+COL falcon_analytics_daily_sessions.key_b varchar(191) null=YES def=- extra=
+COL falcon_analytics_daily_sessions.mkt_params json null=YES def=- extra=
+COL falcon_analytics_daily_sessions.pageviews int unsigned null=NO def=0 extra=
+COL falcon_analytics_daily_sessions.seconds bigint null=NO def=0 extra=
+COL falcon_analytics_daily_sessions.sessions int unsigned null=NO def=0 extra=
+COL falcon_analytics_daily_sessions.signature char(64) null=NO def=- extra=
+COL falcon_analytics_daily_sessions.subject_type varchar(32) null=YES def=- extra=
 COL falcon_analytics_events.id bigint unsigned null=NO def=- extra=auto_increment
 COL falcon_analytics_events.name varchar(120) null=YES def=- extra=
 COL falcon_analytics_events.occurred_at datetime null=NO def=- extra=
@@ -115,6 +136,11 @@ IDX falcon_analytics_daily_archives.PRIMARY unique=oui (id)
 IDX falcon_analytics_daily_counts.fa_daily_counts_kind_day_idx unique=non (kind,day)
 IDX falcon_analytics_daily_counts.fa_daily_counts_unique unique=oui (day,signature)
 IDX falcon_analytics_daily_counts.PRIMARY unique=oui (id)
+IDX falcon_analytics_daily_events.fa_daily_events_unique unique=oui (day,signature)
+IDX falcon_analytics_daily_events.PRIMARY unique=oui (id)
+IDX falcon_analytics_daily_sessions.fa_daily_sessions_dimension_day_idx unique=non (dimension,day)
+IDX falcon_analytics_daily_sessions.fa_daily_sessions_unique unique=oui (day,signature)
+IDX falcon_analytics_daily_sessions.PRIMARY unique=oui (id)
 IDX falcon_analytics_events.fa_events_name_occurred_idx unique=non (name,occurred_at)
 IDX falcon_analytics_events.fa_events_occurred_idx unique=non (occurred_at)
 IDX falcon_analytics_events.fa_events_route_occurred_idx unique=non (route,occurred_at)
@@ -146,4 +172,5 @@ FK falcon_analytics_events.falcon_analytics_events_visitor_id_foreign (visitor_i
 FK falcon_analytics_sessions.falcon_analytics_sessions_visitor_id_foreign (visitor_id) -> falcon_analytics_visitors.id del=CASCADE upd=NO ACTION
 FK falcon_analytics_visitors.falcon_analytics_visitors_merged_into_id_foreign (merged_into_id) -> falcon_analytics_visitors.id del=SET NULL upd=NO ACTION
 CHK falcon_analytics_daily_counts.fa_daily_counts_kind_check
+CHK falcon_analytics_daily_sessions.fa_daily_sessions_dimension_check
 CHK falcon_analytics_events.fa_events_type_check

@@ -10,6 +10,7 @@ use Falcon\Analytics\Models\DailyArchive;
 use Falcon\Analytics\Models\DailyCount;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
+use Falcon\Analytics\Support\ClosedDays;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -38,22 +39,6 @@ final readonly class DailyCountArchiver
     private const CHUNK = 500;
 
     /**
-     * How long after midnight a day is still considered open.
-     *
-     * **A row can land after the day it belongs to has ended.** The collector
-     * stamps an event with the moment it happened and sends it a few seconds
-     * later; the endpoint writes it after the response has gone. So a visit at
-     * 23:59:58 reaches the table at 00:00:05 — and a summary written in
-     * between would never count it, while the erasing would still take it. The
-     * scheduler runs at 03:00 and is never caught by this; the catch-up on a
-     * screen load runs whenever an administrator opens one, midnight included.
-     *
-     * An hour is far beyond any delay the collector can produce, and it costs
-     * nothing · the nightly run comes later anyway.
-     */
-    private const GRACE_MINUTES = 60;
-
-    /**
      * The closed days not yet summarised, oldest first.
      *
      * It starts after the last archived day, not at the oldest unarchived one ·
@@ -61,8 +46,7 @@ final readonly class DailyCountArchiver
      * never archived it starts at the oldest event there is, so no day of
      * history is left out.
      *
-     * And it stops at the last day that is really closed · yesterday, once the
-     * grace after midnight has passed. See `GRACE_MINUTES`.
+     * And it stops at the last day that is really closed · see `ClosedDays`.
      *
      * @return list<CarbonImmutable>
      */
@@ -70,7 +54,7 @@ final readonly class DailyCountArchiver
     {
         $from = $this->firstPendingDay();
 
-        return $from === null ? [] : $this->closedDaysSince($from, $limit);
+        return $from === null ? [] : ClosedDays::since($from, $limit);
     }
 
     /**
@@ -100,7 +84,7 @@ final readonly class DailyCountArchiver
             $from = $pending;
         }
 
-        return $this->closedDaysSince($from);
+        return ClosedDays::since($from);
     }
 
     /**
@@ -137,7 +121,10 @@ final readonly class DailyCountArchiver
     /** Whether a day has been summarised · what the purge asks before erasing. */
     public function isArchived(CarbonImmutable $day): bool
     {
-        return DailyArchive::query()->where('day', $day->startOfDay()->toDateString())->exists();
+        return DailyArchive::query()
+            ->where('day', $day->startOfDay()->toDateString())
+            ->whereNotNull('archived_at')
+            ->exists();
     }
 
     /**
@@ -146,7 +133,7 @@ final readonly class DailyCountArchiver
      */
     private function firstPendingDay(): ?CarbonImmutable
     {
-        $last = DailyArchive::query()->max('day');
+        $last = DailyArchive::lastSummarisedDay()?->toDateString();
 
         if (is_string($last) && $last !== '') {
             return CarbonImmutable::parse($last)->addDay()->startOfDay();
@@ -157,28 +144,6 @@ final readonly class DailyCountArchiver
         return is_string($oldest) && $oldest !== ''
             ? CarbonImmutable::parse($oldest)->startOfDay()
             : null;
-    }
-
-    /**
-     * The days from `$from` up to the last one that is really closed ·
-     * yesterday, once the grace after midnight has passed.
-     *
-     * @return list<CarbonImmutable>
-     */
-    private function closedDaysSince(CarbonImmutable $from, ?int $limit = null): array
-    {
-        $yesterday = CarbonImmutable::now()->subMinutes(self::GRACE_MINUTES)->subDay()->startOfDay();
-        $days = [];
-
-        for ($day = $from; $day->lessThanOrEqualTo($yesterday); $day = $day->addDay()) {
-            $days[] = $day;
-
-            if ($limit !== null && count($days) >= $limit) {
-                break;
-            }
-        }
-
-        return $days;
     }
 
     /**

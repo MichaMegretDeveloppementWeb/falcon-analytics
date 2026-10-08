@@ -14,6 +14,7 @@ use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Repositories\Dashboard\OverviewReadRepository;
 use Falcon\Analytics\Services\DailyCountArchiver;
+use Falcon\Analytics\Services\DailyDetailArchiver;
 use Falcon\Analytics\Services\Dashboard\MarketingReportBuilder;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Database\Events\QueryExecuted;
@@ -50,7 +51,7 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
         $this->travelTo(CarbonImmutable::parse('2026-06-15 12:00:00'));
         $this->overview = new OverviewReadRepository(new MarketingReportBuilder);
         $this->archiver = new DailyCountArchiver;
-        $this->archiveClosedDays = new ArchiveClosedDaysAction($this->archiver);
+        $this->archiveClosedDays = new ArchiveClosedDaysAction($this->archiver, new DailyDetailArchiver);
     }
 
     private function newSession(bool $isBot = false, ?string $subjectType = null): Session
@@ -382,9 +383,10 @@ final class TheSummaryAgreesWithTheDetailTest extends TestCase
         $this->archiveClosedDays->execute();
         Event::query()->whereDate('occurred_at', '2026-06-08')->delete();
 
-        $done = $this->archiveClosedDays->executeFrom(CarbonImmutable::parse('2026-06-08'));
+        $pages = array_map(fn (CarbonImmutable $day): string => $day->toDateString(), $this->archiver->closedDaysFrom(CarbonImmutable::parse('2026-06-08')));
+        $this->archiveClosedDays->executeFrom(CarbonImmutable::parse('2026-06-08'));
 
-        $this->assertSame(['2026-06-12', '2026-06-13', '2026-06-14'], $done);
+        $this->assertSame(['2026-06-12', '2026-06-13', '2026-06-14'], $pages);
         $this->assertSame(1, (int) DailyCount::query()->where('day', '2026-06-08')->sum('total'), 'The erased day kept its summary.');
     }
 
