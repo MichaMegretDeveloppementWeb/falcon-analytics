@@ -62,7 +62,7 @@ final readonly class IngestEventsAction
 
             $session = $this->openSession($locked, $visitorUuid, $subject, $snapshot, $batch, $now);
 
-            return $this->record($session, $locked, $subject, $batch, $this->belongsTo($locked, $subject) ? $now : null)
+            return $this->record($session, $locked, $subject, $batch, $this->belongsTo($locked, $subject) ? $now : null, $subject)
                 ? $session
                 : null;
         }, attempts: 3);
@@ -123,7 +123,7 @@ final readonly class IngestEventsAction
             );
 
             if ($session !== null) {
-                $this->record($session, $locked, $context->subject(), $batch, null);
+                $this->record($session, $locked, $context->subject(), $batch, null, null);
             }
         }, attempts: 3);
     }
@@ -198,14 +198,15 @@ final readonly class IngestEventsAction
 
     /**
      * Write the batch's stored events and the activity they add to the session,
-     * and the moment the host's session vouched for its subject, when it did ·
-     * a session still without one then takes it.
+     * the moment the host's session vouched for its subject, when it did, and
+     * the subject a session still without one takes, when there is one.
      *
      * Answers whether the session took its subject on this send.
      *
-     * @param  array{type: string, id: int}|null  $subject
+     * @param  array{type: string, id: int}|null  $subject  what the events carry
+     * @param  array{type: string, id: int}|null  $takes  the subject the session takes · a live send's, whoever's browser it is
      */
-    private function record(Session $session, Visitor $visitor, ?array $subject, IncomingBatch $batch, ?CarbonImmutable $confirmedAt): bool
+    private function record(Session $session, Visitor $visitor, ?array $subject, IncomingBatch $batch, ?CarbonImmutable $confirmedAt, ?array $takes): bool
     {
         $stored = array_values(array_filter(
             $batch->events,
@@ -224,10 +225,10 @@ final readonly class IngestEventsAction
             count($kept['events']),
             $kept['lastPageviewUrl'],
             $confirmedAt,
-            $subject,
+            $takes,
         );
 
-        return $confirmedAt !== null && $subject !== null && $session->subject_type === null;
+        return $takes !== null && $session->subject_type === null;
     }
 
     /**

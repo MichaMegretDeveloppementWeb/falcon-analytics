@@ -6,6 +6,7 @@ namespace Falcon\Analytics\Tests\Feature;
 
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\Actions\ArchiveClosedDaysAction;
+use Falcon\Analytics\Facades\Analytics;
 use Falcon\Analytics\Models\DailyCount;
 use Falcon\Analytics\Models\DailySessionTotal;
 use Falcon\Analytics\Models\Event;
@@ -83,26 +84,51 @@ final class ASessionTakesTheSubjectWhoSignsInTest extends TestCase
     }
 
     /**
-     * A shared browser · the profile is someone else's, so the send vouches for
-     * nobody and the session is not named after the one who signed in on it.
+     * A shared browser · the profile is someone else's, and the one who signs
+     * in has none of their own yet · the open session takes their name all the
+     * same, and vouches for nobody · the vouching stays the profile owner's.
      */
-    public function test_a_shared_browser_never_names_the_session_after_someone_else(): void
+    public function test_a_shared_browser_names_the_open_session_after_who_signs_in(): void
     {
-        $owner = TestClient::create(['first_name' => 'Cabinet', 'last_name' => 'Rive']);
         $guest = TestClient::create(['first_name' => 'Cabinet', 'last_name' => 'Lac']);
-        $browser = (string) Str::uuid();
+        $open = $this->anOpenSessionOnSomeoneElsesBrowser($guest, CarbonImmutable::now()->subMinute());
 
-        $profile = Visitor::factory()->create(['uuid' => $browser, 'subject_type' => 'client', 'subject_id' => $owner->id]);
-        $open = Session::factory()->for($profile)->create([
-            'browser_key' => $browser,
-            'started_at' => now()->subMinute(),
-            'last_activity_at' => now()->subMinute(),
-        ]);
-
-        $this->actingAs($guest, 'client')->withSession(['fa_vid' => $browser]);
         $this->send([$this->pageview('/agenda')]);
 
-        $this->assertNull($open->fresh()?->subject_type, 'The owner\'s session took the guest.');
+        $open->refresh();
+
+        $this->assertSame(['client', $guest->id], [$open->subject_type, $open->subject_id], 'The session stayed « Non connecté » after the guest signed in.');
+        $this->assertNull($open->subject_confirmed_at, 'The guest vouched for the owner\'s browser.');
+        $this->assertSame(1, Session::count(), 'The guest\'s send opened a session of its own.');
+    }
+
+    /** The same on a shared browser · the day the session began, already summarised, is summarised again under the one who signed in. */
+    public function test_a_day_already_summarised_is_summarised_again_on_a_shared_browser(): void
+    {
+        config(['analytics.session.timeout_minutes' => 180]);
+        $this->travelTo(CarbonImmutable::parse('2026-06-15 01:05:00'));
+        $guest = TestClient::create(['first_name' => 'Cabinet', 'last_name' => 'Lac']);
+        $this->anOpenSessionOnSomeoneElsesBrowser($guest, CarbonImmutable::parse('2026-06-14 23:30:00'));
+        $this->app->make(ArchiveClosedDaysAction::class)->execute();
+        $this->assertSame([null], $this->subjectsOfTheSessionTotalsOf('2026-06-14'));
+
+        $this->send([$this->pageview('/patients')]);
+
+        $this->assertSame(['client'], $this->subjectsOfTheSessionTotalsOf('2026-06-14'));
+    }
+
+    /** The session named after the guest goes with the guest, and the owner's profile counts what it still holds. */
+    public function test_forgetting_the_guest_takes_the_session_they_signed_in_on(): void
+    {
+        $guest = TestClient::create(['first_name' => 'Cabinet', 'last_name' => 'Lac']);
+        $open = $this->anOpenSessionOnSomeoneElsesBrowser($guest, CarbonImmutable::now()->subMinute());
+        $this->send([$this->pageview('/agenda')]);
+
+        Analytics::forgetSubject('client', $guest->id);
+
+        $this->assertFalse(Session::query()->whereKey($open->id)->exists());
+        $this->assertSame(0, Event::query()->where('session_id', $open->id)->count(), 'The page seen before signing in goes too.');
+        $this->assertSame(0, Visitor::query()->where('uuid', $open->browser_key)->sole()->session_count);
     }
 
     /**
@@ -128,6 +154,30 @@ final class ASessionTakesTheSubjectWhoSignsInTest extends TestCase
 
         $this->assertSame(['client'], $this->subjectsOfThePagesOf('2026-06-14'));
         $this->assertSame(['client'], $this->subjectsOfTheSessionTotalsOf('2026-06-14'));
+    }
+
+    /**
+     * A browser whose profile is the owner's, with a session open on it since
+     * a given moment and a page seen there signed out · then the guest signs
+     * in on it.
+     */
+    private function anOpenSessionOnSomeoneElsesBrowser(TestClient $guest, CarbonImmutable $since): Session
+    {
+        $owner = TestClient::create(['first_name' => 'Cabinet', 'last_name' => 'Rive']);
+        $browser = (string) Str::uuid();
+
+        $profile = Visitor::factory()->create(['uuid' => $browser, 'subject_type' => 'client', 'subject_id' => $owner->id, 'session_count' => 1]);
+        $open = Session::factory()->for($profile)->create([
+            'browser_key' => $browser,
+            'started_at' => $since,
+            'last_activity_at' => $since,
+            'pageview_count' => 1,
+        ]);
+        Event::factory()->for($open)->create(['occurred_at' => $since, 'url' => 'https://cabinet.test/connexion', 'page' => '/connexion']);
+
+        $this->actingAs($guest, 'client')->withSession(['fa_vid' => $browser]);
+
+        return $open;
     }
 
     /** @return list<string|null> */

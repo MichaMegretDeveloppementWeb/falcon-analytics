@@ -94,13 +94,15 @@ final readonly class SessionWriteRepository
      * closure relies on. The CASE keeps last_activity_at when the incoming stamp
      * is older, so the whole write stays on the ingestion hot path as one query.
      *
-     * The subject the send vouches for is taken by a session that has none ·
-     * one opened before its visitor signed in. A session that has one keeps it.
+     * A session that has no subject takes the one passed · one opened before
+     * its visitor signed in, on their browser or on someone else's. A session
+     * that has one keeps it. Taking a subject is not vouching for it · the
+     * vouching moves on its own.
      *
      * Every value is bound and never interpolated, so the statement stays
      * literal end to end; the table name comes from `Session::TABLE`.
      *
-     * @param  array{type: string, id: int}|null  $vouchedSubject  only with `$subjectConfirmedAt`
+     * @param  array{type: string, id: int}|null  $takenSubject  the subject a session without one takes
      */
     public function recordActivity(
         Session $session,
@@ -110,12 +112,12 @@ final readonly class SessionWriteRepository
         int $eventDelta,
         ?string $lastPageviewUrl,
         ?CarbonImmutable $subjectConfirmedAt = null,
-        ?array $vouchedSubject = null,
+        ?array $takenSubject = null,
     ): void {
         $stamp = $lastActivityAt->toDateTimeString();
         $confirmed = $subjectConfirmedAt?->toDateTimeString();
-        $type = $confirmed === null ? null : ($vouchedSubject['type'] ?? null);
-        $id = $type === null ? null : ($vouchedSubject['id'] ?? null);
+        $type = $takenSubject['type'] ?? null;
+        $id = $type === null ? null : ($takenSubject['id'] ?? null);
 
         DB::update(
             'UPDATE '.Session::TABLE.' SET '
