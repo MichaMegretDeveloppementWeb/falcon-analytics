@@ -150,7 +150,7 @@ final class ThePurgeChangesNoFigureTest extends TestCase
             'en-tête des événements' => $this->events->headline($period, null, $registry),
             'tunnels' => array_map(
                 fn (object $report): array => (array) $report,
-                app(FunnelEvaluator::class)->evaluateAll($period, null),
+                app(FunnelEvaluator::class)->evaluateAll($period, null) ?? [],
             ),
             'conversions marketing' => (new MarketingReportBuilder)->conversions($period, null, app(FunnelRegistry::class)),
         ];

@@ -41,9 +41,11 @@ final class FunnelsContent extends Component
             $period = Period::ofDays($this->period);
             $subjectType = SubjectFilter::chosen($this->subject);
 
+            $previous = $evaluator->evaluateAll($period->previous(), $subjectType);
+
             return [
                 'reports' => $evaluator->evaluateAll($period, $subjectType),
-                'previousReports' => Collection::make($evaluator->evaluateAll($period->previous(), $subjectType))->keyBy('key'),
+                'previousReports' => $previous === null ? null : Collection::make($previous)->keyBy('key'),
                 'declarationsIncomplete' => $funnels->failure() !== null,
             ];
         }, fn (array $data): View => view('analytics::livewire.dashboard.widgets.funnels-content', $data));

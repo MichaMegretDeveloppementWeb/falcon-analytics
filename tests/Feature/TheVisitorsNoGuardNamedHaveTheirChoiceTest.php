@@ -169,7 +169,7 @@ final class TheVisitorsNoGuardNamedHaveTheirChoiceTest extends TestCase
         config(['analytics.funnels_path' => __DIR__.'/../Fixtures/analytics-funnels.php']);
         $this->fourVisits();
 
-        $report = $this->app->make(FunnelEvaluator::class)->evaluateAll(Period::ofDays(30), 'none')[0];
+        $report = ($this->app->make(FunnelEvaluator::class)->evaluateAll(Period::ofDays(30), 'none') ?? [])[0];
 
         $this->assertSame(2, $report->entrants);
         $this->assertSame(2, $report->steps[1]->visitors);

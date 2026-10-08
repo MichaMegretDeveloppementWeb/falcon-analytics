@@ -1,10 +1,17 @@
-@php use Falcon\Analytics\Support\NumberLabel; @endphp
+@php
+    use Falcon\Analytics\Support\NumberLabel;
+    use Falcon\Analytics\Support\RetentionLabel;
+    use Falcon\Analytics\Support\RetentionSettings;
+@endphp
 
 <x-analytics::root area="admin" class="an:grid an:grid-cols-1 an:gap-6 an:lg:grid-cols-2">
     @if ($declarationsIncomplete)
         <x-ui::alert type="warning" class="an:lg:col-span-2">{{ __('Le fichier qui déclare les tunnels du site n\'a pas pu être lu en entier : ceux déclarés après l\'erreur n\'apparaissent pas ici. Signalez-le à la personne qui maintient le site.') }}</x-ui::alert>
     @endif
 
+    @if ($reports === null)
+        <p class="an:text-[13px] an:text-muted an:lg:col-span-2">{{ RetentionLabel::unavailable(RetentionSettings::events()) }}</p>
+    @else
     @forelse ($reports as $report)
         @php
             $lastStep = $report->steps === [] ? null : $report->steps[array_key_last($report->steps)];
@@ -18,6 +25,7 @@
                     <h2 class="an:text-[13px] an:font-semibold an:text-primary">{{ $report->label }}</h2>
                     <p class="an:mt-0.5 an:text-[12px] an:text-secondary">
                         {{ $report->entrants <= 1 ? __(':count entrant', ['count' => $entrants]) : __(':count entrants', ['count' => $entrants]) }}
+                        @if ($previousReports === null) · {{ RetentionLabel::noComparison() }}@endif
                         @if ($report->entrants > 0 && $lastStep !== null)
                             <span class="an:text-muted">·</span>
                             {{ NumberLabel::percent($overallPct) }} {{ __('de conversion') }}
@@ -39,7 +47,7 @@
                             $previous = $index > 0 ? $report->steps[$index - 1] : null;
                             $lost = $previous !== null ? max(0, $previous->visitors - $step->visitors) : 0;
                             $drop = $previous !== null && $previous->visitors > 0 ? (int) round((1 - $step->conversionFromPrevious) * 100) : 0;
-                            $previousVisitors = $previousReports[$report->key]->steps[$index]->visitors ?? null;
+                            $previousVisitors = $previousReports === null ? null : $previousReports[$report->key]->steps[$index]->visitors ?? null;
                         @endphp
 
                         {{-- Loss between steps. --}}
@@ -104,4 +112,5 @@
                 :description="__('Aucun tunnel n\'est déclaré pour ce site. Pour en suivre un, adressez-vous à la personne qui maintient le site.')" />
         </div>
     @endforelse
+    @endif
 </x-analytics::root>

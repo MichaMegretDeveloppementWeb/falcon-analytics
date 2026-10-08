@@ -7,8 +7,10 @@ namespace Falcon\Analytics\Tests\Feature;
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\DTOs\Dashboard\Period;
 use Falcon\Analytics\Events\EventRegistry;
+use Falcon\Analytics\Funnels\FunnelEvaluator;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Livewire\Admin\Widgets\EventsContent;
+use Falcon\Analytics\Livewire\Admin\Widgets\FunnelsContent;
 use Falcon\Analytics\Livewire\Admin\Widgets\MarketingDashboardContent;
 use Falcon\Analytics\Livewire\Admin\Widgets\OverviewAudience;
 use Falcon\Analytics\Livewire\Admin\Widgets\OverviewHeadline;
@@ -52,8 +54,10 @@ final class ErasedSessionsChangeNoFigureThatAddsUpTest extends TestCase
         config([
             'analytics.session_retention_days' => 60,
             'analytics.events_path' => __DIR__.'/../Fixtures/analytics-events.php',
+            'analytics.funnels_path' => __DIR__.'/../Fixtures/analytics-funnels.php',
         ]);
         $this->app->forgetInstance(EventRegistry::class);
+        $this->app->forgetInstance(FunnelRegistry::class);
 
         $this->reachingBack = new Period(CarbonImmutable::parse('2026-02-01')->startOfDay(), CarbonImmutable::now(), 135);
     }
@@ -97,6 +101,7 @@ final class ErasedSessionsChangeNoFigureThatAddsUpTest extends TestCase
         $this->assertNull($marketing->performance($this->reachingBack, null)['campaigns'][$campaign->id]['visitors']);
         $this->assertNull($marketing->campaignReport($this->reachingBack, null, $campaign)['visitors']);
         $this->assertNull($marketing->conversions($this->reachingBack, null, $this->app->make(FunnelRegistry::class)));
+        $this->assertNull($this->app->make(FunnelEvaluator::class)->evaluateAll($this->reachingBack, null));
         $this->assertNull($marketing->conversionElements($this->reachingBack, null, $this->app->make(FunnelRegistry::class), $this->app->make(EventRegistry::class), $marketing->activeAdsOf($campaign)));
     }
 
@@ -133,6 +138,10 @@ final class ErasedSessionsChangeNoFigureThatAddsUpTest extends TestCase
         Livewire::test(OverviewAudience::class, ['period' => 90])->call('$refresh')
             ->assertSee('Comparaison indisponible');
 
+        Livewire::test(FunnelsContent::class, ['period' => 90])->call('$refresh')
+            ->assertSee('Comparaison indisponible')
+            ->assertDontSee('Indisponible au-delà');
+
         config(['analytics.session_retention_days' => 30, 'analytics.retention_days' => 30]);
         $this->eraseBefore(CarbonImmutable::now()->subDays(30)->startOfDay());
 
@@ -148,6 +157,9 @@ final class ErasedSessionsChangeNoFigureThatAddsUpTest extends TestCase
 
         Livewire::test(EventsContent::class, ['period' => 90])->call('$refresh')
             ->assertSee('Indisponible');
+
+        Livewire::test(FunnelsContent::class, ['period' => 90])->call('$refresh')
+            ->assertSee('Indisponible au-delà de 30 jours de conservation');
 
         Livewire::test(MarketingDashboardContent::class, ['period' => 90])->call('$refresh')
             ->assertSee('Indisponible au-delà de 30 jours de conservation')

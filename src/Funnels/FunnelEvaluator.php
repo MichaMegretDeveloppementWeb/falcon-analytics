@@ -8,6 +8,7 @@ use Falcon\Analytics\DTOs\Dashboard\FunnelReport;
 use Falcon\Analytics\DTOs\Dashboard\FunnelStepResult;
 use Falcon\Analytics\DTOs\Dashboard\Period;
 use Falcon\Analytics\Models\Event;
+use Falcon\Analytics\Services\RetentionWindow;
 
 /**
  * Evaluates code-declared funnels against the raw events, streaming them
@@ -16,6 +17,9 @@ use Falcon\Analytics\Models\Event;
  * first, so reach is monotonically decreasing and a step can never out-count
  * the one before it.
  *
+ * A funnel counts people · over a period reaching days whose sessions or named
+ * events are erased, it has no report.
+ *
  * @internal
  */
 final readonly class FunnelEvaluator
@@ -23,13 +27,18 @@ final readonly class FunnelEvaluator
     public function __construct(
         private FunnelRegistry $registry,
         private FunnelEventWalker $walker,
+        private RetentionWindow $window,
     ) {}
 
     /**
-     * @return list<FunnelReport>
+     * @return list<FunnelReport>|null
      */
-    public function evaluateAll(Period $period, ?string $subjectType): array
+    public function evaluateAll(Period $period, ?string $subjectType): ?array
     {
+        if (RetentionWindow::reaches($period, $this->window->eventsLine())) {
+            return null;
+        }
+
         return array_map(
             fn (Funnel $funnel): FunnelReport => $this->evaluate($funnel, $period, $subjectType),
             $this->registry->all(),
