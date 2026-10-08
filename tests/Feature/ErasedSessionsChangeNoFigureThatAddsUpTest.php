@@ -7,7 +7,9 @@ namespace Falcon\Analytics\Tests\Feature;
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\DTOs\Dashboard\Period;
 use Falcon\Analytics\Events\EventRegistry;
+use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Livewire\Admin\Widgets\EventsContent;
+use Falcon\Analytics\Livewire\Admin\Widgets\MarketingDashboardContent;
 use Falcon\Analytics\Livewire\Admin\Widgets\OverviewAudience;
 use Falcon\Analytics\Livewire\Admin\Widgets\OverviewHeadline;
 use Falcon\Analytics\Livewire\Admin\Widgets\VisitorsHeadline;
@@ -20,6 +22,7 @@ use Falcon\Analytics\Repositories\Dashboard\EngagementReadRepository;
 use Falcon\Analytics\Repositories\Dashboard\EventReadRepository;
 use Falcon\Analytics\Repositories\Dashboard\OverviewReadRepository;
 use Falcon\Analytics\Repositories\Dashboard\VisitorListReadRepository;
+use Falcon\Analytics\Services\Dashboard\MarketingReportBuilder;
 use Falcon\Analytics\Tests\Fixtures\Models\TestAdmin;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -85,6 +88,16 @@ final class ErasedSessionsChangeNoFigureThatAddsUpTest extends TestCase
         foreach ($this->app->make(EventReadRepository::class)->eventBreakdown($this->reachingBack, null, $this->app->make(EventRegistry::class)) as $row) {
             $this->assertNull($row['visitors'], "Les visiteurs de « {$row['name']} » ont été comptés sur des jours effacés.");
         }
+
+        $marketing = new MarketingReportBuilder;
+        $campaign = Campaign::query()->sole();
+
+        $this->assertNull($marketing->headline($this->reachingBack, null)['visitors']);
+        $this->assertNull($marketing->daily($this->reachingBack, null)['visitors']);
+        $this->assertNull($marketing->performance($this->reachingBack, null)['campaigns'][$campaign->id]['visitors']);
+        $this->assertNull($marketing->campaignReport($this->reachingBack, null, $campaign)['visitors']);
+        $this->assertNull($marketing->conversions($this->reachingBack, null, $this->app->make(FunnelRegistry::class)));
+        $this->assertNull($marketing->conversionElements($this->reachingBack, null, $this->app->make(FunnelRegistry::class), $this->app->make(EventRegistry::class), $marketing->activeAdsOf($campaign)));
     }
 
     /** A period that stays within the rows kept counts its people as before. */
@@ -96,7 +109,7 @@ final class ErasedSessionsChangeNoFigureThatAddsUpTest extends TestCase
 
         $within = Period::ofDays(30);
 
-        $this->assertSame(3, $this->app->make(EngagementReadRepository::class)->headlineCounts($within, null)['visitors']);
+        $this->assertSame(4, $this->app->make(EngagementReadRepository::class)->headlineCounts($within, null)['visitors']);
         $this->assertNotNull($this->app->make(VisitorListReadRepository::class)->visitorCounts($within, null));
     }
 
@@ -135,6 +148,14 @@ final class ErasedSessionsChangeNoFigureThatAddsUpTest extends TestCase
 
         Livewire::test(EventsContent::class, ['period' => 90])->call('$refresh')
             ->assertSee('Indisponible');
+
+        Livewire::test(MarketingDashboardContent::class, ['period' => 90])->call('$refresh')
+            ->assertSee('Indisponible au-delà de 30 jours de conservation')
+            ->assertViewHas('sessions', 4)
+            ->assertViewHas('visitors', null)
+            ->assertViewHas('conversions', null)
+            ->assertViewHas('rateLabel', '')
+            ->assertViewHas('rateDelta', fn ($rate): bool => $rate->current === null);
     }
 
     /**
@@ -149,6 +170,7 @@ final class ErasedSessionsChangeNoFigureThatAddsUpTest extends TestCase
 
         foreach ([CarbonImmutable::parse(self::ANCIENT), CarbonImmutable::parse('2026-04-20 10:00:00'), CarbonImmutable::now()->subDays(3)] as $when) {
             $claimed = $this->sessionAt($when, ['device_type' => 'mobile', 'country' => 'FR', 'city' => 'Paris', 'source' => 'social', 'mkt_params' => ['src' => 'meta'], 'pageview_count' => 3], 300);
+            $this->sessionAt($when->addMinutes(30), ['device_type' => 'mobile', 'country' => 'FR', 'city' => 'Paris', 'source' => 'social', 'mkt_params' => ['src' => 'meta'], 'pageview_count' => 1], 20);
             Event::factory()->for($claimed)->custom('sample.action')->create(['occurred_at' => $when, 'value' => 7]);
             Event::factory()->for($claimed)->custom('sample.other')->create(['occurred_at' => $when]);
 
@@ -215,6 +237,32 @@ final class ErasedSessionsChangeNoFigureThatAddsUpTest extends TestCase
             'sources' => $overview->topSources($this->reachingBack, null, 20),
             'événements' => $breakdown,
             'événements par jour' => $events->daily($this->reachingBack, null, $registry),
+            ...$this->theMarketing(),
+        ];
+    }
+
+    /**
+     * The sessions an ad brought, as each marketing screen reads them.
+     *
+     * @return array<string, mixed>
+     */
+    private function theMarketing(): array
+    {
+        $marketing = new MarketingReportBuilder;
+        $campaign = Campaign::query()->sole();
+        $ad = Ad::query()->sole();
+        $sessionsOnly = fn (array $rows): array => array_map(fn (array $row): int => $row['sessions'], $rows);
+        $report = $marketing->campaignReport($this->reachingBack, null, $campaign);
+        $daily = $marketing->daily($this->reachingBack, null)['sessions'];
+        ksort($daily);
+
+        return [
+            'marketing, en-tête' => $marketing->headline($this->reachingBack, null)['sessions'],
+            'marketing, par jour' => $daily,
+            'marketing, campagnes' => $sessionsOnly($marketing->performance($this->reachingBack, null)['campaigns']),
+            'marketing, publicités' => $sessionsOnly($marketing->performance($this->reachingBack, null)['ads']),
+            'une campagne' => [$report['sessions'], $sessionsOnly($report['ads'])],
+            'une publicité' => $marketing->adReport($this->reachingBack, null, $ad)['sessions'],
         ];
     }
 }

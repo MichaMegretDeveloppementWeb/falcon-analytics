@@ -1,4 +1,7 @@
-@php use Falcon\Analytics\Support\NumberLabel; @endphp
+@php
+    use Falcon\Analytics\Support\NumberLabel;
+    use Falcon\Analytics\Support\RetentionSettings;
+@endphp
 
 <x-analytics::root area="admin" class="an:space-y-6">
 
@@ -8,13 +11,13 @@
         <x-analytics::kpi-card :label="__('Sessions')" :value="NumberLabel::for($sessions)" icon="cursor-arrow-rays" :metric="$sessionsDelta">
             <div wire:key="c-spark-s-{{ $refId }}-{{ $period }}-{{ $subject }}" class="an:mt-3"><x-analytics::sparkline :values="$trendData" /></div>
         </x-analytics::kpi-card>
-        <x-analytics::kpi-card :label="__('Visiteurs')" :value="NumberLabel::for($visitors)" icon="users" :metric="$visitorsDelta">
+        <x-analytics::kpi-card :label="__('Visiteurs')" :value="NumberLabel::for($visitors ?? 0)" icon="users" :metric="$visitorsDelta">
             <div wire:key="c-spark-v-{{ $refId }}-{{ $period }}-{{ $subject }}" class="an:mt-3"><x-analytics::sparkline :values="$visitorsTrend" /></div>
         </x-analytics::kpi-card>
-        <x-analytics::kpi-card :label="__('Conversions')" :value="NumberLabel::for($conversions)" icon="check-circle" :metric="$conversionsDelta">
+        <x-analytics::kpi-card :label="__('Conversions')" :value="NumberLabel::for($conversions ?? 0)" icon="check-circle" :metric="$conversionsDelta" :retention="RetentionSettings::events()">
             <div wire:key="c-spark-conv-{{ $refId }}-{{ $period }}-{{ $subject }}" class="an:mt-3"><x-analytics::sparkline :values="$conversionsTrend" color="--an-conversion" /></div>
         </x-analytics::kpi-card>
-        <x-analytics::kpi-card :label="__('Taux de conversion')" :value="$rateLabel" icon="arrow-trending-up" :metric="$rateDelta">
+        <x-analytics::kpi-card :label="__('Taux de conversion')" :value="$rateLabel" icon="arrow-trending-up" :metric="$rateDelta" :retention="RetentionSettings::events()">
             <div wire:key="c-spark-rate-{{ $refId }}-{{ $period }}-{{ $subject }}" class="an:mt-3"><x-analytics::sparkline :values="$rateTrend" color="--an-conversion" /></div>
         </x-analytics::kpi-card>
     </div>

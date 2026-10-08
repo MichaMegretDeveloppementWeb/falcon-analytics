@@ -101,7 +101,7 @@
                                 </div>
                             </x-ui::table.cell>
                             <x-ui::table.cell align="right" class="an:tabular-nums">@if ($adMetrics === [])<span class="an:inline-block an:h-3 an:w-8 an:animate-pulse an:rounded an:bg-elevated an:align-middle"></span>@else{{ NumberLabel::for($adMetrics[$ad->id]['sessions'] ?? 0) }}@endif</x-ui::table.cell>
-                            <x-ui::table.cell align="right" class="an:font-medium an:tabular-nums an:text-primary">@if ($adMetrics === [])<span class="an:inline-block an:h-3 an:w-6 an:animate-pulse an:rounded an:bg-elevated an:align-middle"></span>@else{{ NumberLabel::for($adConversions[$ad->id] ?? 0) }}@endif</x-ui::table.cell>
+                            <x-ui::table.cell align="right" class="an:font-medium an:tabular-nums an:text-primary">@if ($adMetrics === [])<span class="an:inline-block an:h-3 an:w-6 an:animate-pulse an:rounded an:bg-elevated an:align-middle"></span>@elseif ($adConversions === null)<x-analytics::unavailable :retention="\Falcon\Analytics\Support\RetentionSettings::events()" />@else{{ NumberLabel::for($adConversions[$ad->id] ?? 0) }}@endif</x-ui::table.cell>
                             <x-ui::table.cell :last="true" align="right">
                                 <div class="an-row-link__above an:flex an:items-center an:justify-end an:gap-1">
                                     @if ($mayEditAd[$ad->id])

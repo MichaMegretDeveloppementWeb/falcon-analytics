@@ -48,12 +48,16 @@ final class CampaignDetailPage extends DashboardComponent
      * content widget so the inline ads table shows metrics without the page shell
      * carrying the heavy campaignReport read.
      *
-     * @var array<int, array{sessions: int, visitors: int}>
+     * @var array<int, array{sessions: int, visitors: int|null}>
      */
     public array $adMetrics = [];
 
-    /** @var array<int, int> */
-    public array $adConversions = [];
+    /**
+     * Null when the period reaches days whose rows are erased.
+     *
+     * @var array<int, int>|null
+     */
+    public ?array $adConversions = [];
 
     /** The campaign as this request read it · kept for the request, never between two. */
     private ?Campaign $read = null;
@@ -141,11 +145,11 @@ final class CampaignDetailPage extends DashboardComponent
     }
 
     /**
-     * @param  array<int, array{sessions: int, visitors: int}>  $adMetrics
-     * @param  array<int, int>  $adConversions
+     * @param  array<int, array{sessions: int, visitors: int|null}>  $adMetrics
+     * @param  array<int, int>|null  $adConversions
      */
     #[On('an-campaign-metrics-loaded')]
-    public function fillAdMetrics(array $adMetrics, array $adConversions): void
+    public function fillAdMetrics(array $adMetrics, ?array $adConversions): void
     {
         $this->adMetrics = $adMetrics;
         $this->adConversions = $adConversions;

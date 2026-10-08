@@ -1,5 +1,7 @@
 @php
     use Falcon\Analytics\Support\NumberLabel;
+    use Falcon\Analytics\Support\RetentionLabel;
+    use Falcon\Analytics\Support\RetentionSettings;
 
     $showAd = $showAd ?? true;
 @endphp
@@ -9,7 +11,9 @@
 <div>
     <x-ui::section-header :title="__('Conversions')" :description="$showAd ? __('Ce qui a converti, combien de fois, et via quelle publicité, du plus au moins converti.') : __('Ce qui a converti, combien de fois, du plus au moins converti.')" class="an:mb-4" />
 
-    @if ($conversionElements === [])
+    @if ($conversionElements === null)
+        <p class="an:text-[13px] an:text-muted">{{ RetentionLabel::unavailable(RetentionSettings::events()) }}</p>
+    @elseif ($conversionElements === [])
         <x-ui::empty-state icon="check-circle" :title="__('Aucun objectif défini')" :description="__('Définissez des objectifs sur vos publicités pour mesurer les conversions ici.')" />
     @else
         <x-ui::card padding="false">

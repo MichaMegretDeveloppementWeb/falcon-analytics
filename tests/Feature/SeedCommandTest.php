@@ -112,6 +112,7 @@ final class SeedCommandTest extends TestCase
 
         $conversions = app(MarketingReportBuilder::class)->conversions(Period::ofDays(30), null, app(FunnelRegistry::class));
 
+        $this->assertNotNull($conversions);
         $this->assertNotSame([], $conversions['campaigns'], 'a campaign credited with a conversion');
     }
 

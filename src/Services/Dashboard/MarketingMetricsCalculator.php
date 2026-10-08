@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Services\Dashboard;
 
+use Falcon\Analytics\DTOs\Dashboard\MetricDelta;
 use Falcon\Analytics\DTOs\Dashboard\Period;
 use Falcon\Analytics\Support\DateLabel;
 use Falcon\Analytics\Support\NumberLabel;
@@ -25,6 +26,40 @@ final class MarketingMetricsCalculator
         return $visitors > 0 ? $conversions / $visitors * 100 : 0.0;
     }
 
+    /**
+     * The four headline figures of a marketing screen against the previous
+     * period · sessions, visitors, conversions and their rate. Visitors and
+     * conversions count people, unknown over days whose rows are erased, and
+     * the rate with them.
+     *
+     * @param  array{sessions: int, visitors: int|null}  $traffic
+     * @param  array{sessions: int, visitors: int|null}  $trafficBefore
+     * @return array{sessionsDelta: MetricDelta, visitorsDelta: MetricDelta, conversionsDelta: MetricDelta, rate: float|null, rateDelta: MetricDelta}
+     */
+    public function headline(array $traffic, array $trafficBefore, ?int $conversions, ?int $conversionsBefore): array
+    {
+        $rate = $this->rateOf($conversions, $traffic['visitors']);
+
+        return [
+            'sessionsDelta' => new MetricDelta((float) $traffic['sessions'], (float) $trafficBefore['sessions']),
+            'visitorsDelta' => new MetricDelta($this->known($traffic['visitors']), $this->known($trafficBefore['visitors'])),
+            'conversionsDelta' => new MetricDelta($this->known($conversions), $this->known($conversionsBefore)),
+            'rate' => $rate,
+            'rateDelta' => new MetricDelta($rate, $this->rateOf($conversionsBefore, $trafficBefore['visitors'])),
+        ];
+    }
+
+    /** The rate, or null when the conversions or the visitors are unknown. */
+    public function rateOf(?int $conversions, ?int $visitors): ?float
+    {
+        return $conversions === null || $visitors === null ? null : $this->rate((float) $conversions, (float) $visitors);
+    }
+
+    private function known(?int $count): ?float
+    {
+        return $count === null ? null : (float) $count;
+    }
+
     public function rateLabel(float $rate): string
     {
         return NumberLabel::percent($rate, 1);
@@ -32,14 +67,15 @@ final class MarketingMetricsCalculator
 
     /**
      * The daily trend for the period: one entry per day (zero-filled) for the labels,
-     * sessions, visitors, conversions and the per-day conversion rate.
+     * sessions, visitors, conversions and the per-day conversion rate · the
+     * lines of what is unknown left empty rather than drawn as zeros.
      *
      * @param  array<string, int>  $dailySessions  day (Y-m-d) => sessions
-     * @param  array<string, int>  $dailyConversions  day (Y-m-d) => conversions
-     * @param  array<string, int>  $dailyVisitors  day (Y-m-d) => distinct visitors
+     * @param  array<string, int>|null  $dailyConversions  day (Y-m-d) => conversions
+     * @param  array<string, int>|null  $dailyVisitors  day (Y-m-d) => distinct visitors
      * @return array{labels: list<string>, sessions: list<int>, visitors: list<int>, conversions: list<int>, rates: list<float>}
      */
-    public function trend(Period $period, array $dailySessions, array $dailyConversions, array $dailyVisitors): array
+    public function trend(Period $period, array $dailySessions, ?array $dailyConversions, ?array $dailyVisitors): array
     {
         $labels = [];
         $sessions = [];
@@ -59,6 +95,12 @@ final class MarketingMetricsCalculator
             $rates[] = $daySessions > 0 ? round($dayConversions / $daySessions * 100, 1) : 0.0;
         }
 
-        return ['labels' => $labels, 'sessions' => $sessions, 'visitors' => $visitors, 'conversions' => $conversions, 'rates' => $rates];
+        return [
+            'labels' => $labels,
+            'sessions' => $sessions,
+            'visitors' => $dailyVisitors === null ? [] : $visitors,
+            'conversions' => $dailyConversions === null ? [] : $conversions,
+            'rates' => $dailyConversions === null ? [] : $rates,
+        ];
     }
 }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Livewire\Admin\Widgets;
 
-use Falcon\Analytics\DTOs\Dashboard\MetricDelta;
 use Falcon\Analytics\DTOs\Dashboard\Period;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
@@ -51,23 +50,22 @@ final class AdDetailContent extends Component
 
             $conversions = $marketing->conversions($period, $subjectType, $funnels);
             $conversionsPrevious = $marketing->conversions($period->previous(), $subjectType, $funnels);
-            $adConversions = $conversions['ads'][$ad->id] ?? 0;
-            $adConversionsPrevious = $conversionsPrevious['ads'][$ad->id] ?? 0;
-            $rate = $metrics->rate((float) $adConversions, (float) $report['visitors']);
-            $ratePrevious = $metrics->rate((float) $adConversionsPrevious, (float) $previous['visitors']);
+            $adConversions = $conversions === null ? null : $conversions['ads'][$ad->id] ?? 0;
+            $adConversionsPrevious = $conversionsPrevious === null ? null : $conversionsPrevious['ads'][$ad->id] ?? 0;
+            $figures = $metrics->headline($report, $previous, $adConversions, $adConversionsPrevious);
 
-            $trend = $metrics->trend($period, $report['daily'], $conversions['adDaily'][$ad->id] ?? [], $report['dailyVisitors']);
+            $trend = $metrics->trend($period, $report['daily'], $conversions === null ? null : $conversions['adDaily'][$ad->id] ?? [], $report['dailyVisitors']);
 
             return [
                 'sessions' => $report['sessions'],
                 'visitors' => $report['visitors'],
-                'sessionsDelta' => new MetricDelta((float) $report['sessions'], (float) $previous['sessions']),
-                'visitorsDelta' => new MetricDelta((float) $report['visitors'], (float) $previous['visitors']),
+                'sessionsDelta' => $figures['sessionsDelta'],
+                'visitorsDelta' => $figures['visitorsDelta'],
                 'conversions' => $adConversions,
-                'conversionsDelta' => new MetricDelta((float) $adConversions, (float) $adConversionsPrevious),
+                'conversionsDelta' => $figures['conversionsDelta'],
                 'conversionsTrend' => $trend['conversions'],
-                'rateLabel' => $metrics->rateLabel($rate),
-                'rateDelta' => new MetricDelta($rate, $ratePrevious),
+                'rateLabel' => $figures['rate'] === null ? '' : $metrics->rateLabel($figures['rate']),
+                'rateDelta' => $figures['rateDelta'],
                 'rateTrend' => $trend['rates'],
                 'conversionElements' => $marketing->conversionElements($period, $subjectType, $funnels, $events, [$ad]),
                 'trendLabels' => $trend['labels'],

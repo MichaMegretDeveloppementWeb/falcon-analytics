@@ -1,4 +1,7 @@
-@php use Falcon\Analytics\Support\NumberLabel; @endphp
+@php
+    use Falcon\Analytics\Support\NumberLabel;
+    use Falcon\Analytics\Support\RetentionSettings;
+@endphp
 
 <x-analytics::root area="admin" class="an:space-y-8">
 
@@ -11,15 +14,15 @@
                 <x-analytics::sparkline :values="$trendData" />
             </div>
         </x-analytics::kpi-card>
-        <x-analytics::kpi-card :label="__('Visiteurs issus de publicités')" :value="NumberLabel::for($visitors)" icon="users" :metric="$visitorsDelta">
+        <x-analytics::kpi-card :label="__('Visiteurs issus de publicités')" :value="NumberLabel::for($visitors ?? 0)" icon="users" :metric="$visitorsDelta">
             <div wire:key="spark-visitors-{{ $range->days }}-{{ $subject }}" class="an:mt-3">
                 <x-analytics::sparkline :values="$visitorsTrend" />
             </div>
         </x-analytics::kpi-card>
-        <x-analytics::kpi-card :label="__('Conversions')" :value="NumberLabel::for($conversions)" icon="check-circle" :metric="$conversionsDelta">
+        <x-analytics::kpi-card :label="__('Conversions')" :value="NumberLabel::for($conversions ?? 0)" icon="check-circle" :metric="$conversionsDelta" :retention="RetentionSettings::events()">
             <div wire:key="spark-conv-{{ $range->days }}-{{ $subject }}" class="an:mt-3"><x-analytics::sparkline :values="$conversionsTrend" color="--an-conversion" /></div>
         </x-analytics::kpi-card>
-        <x-analytics::kpi-card :label="__('Taux de conversion')" :value="$rateLabel" icon="arrow-trending-up" :metric="$rateDelta">
+        <x-analytics::kpi-card :label="__('Taux de conversion')" :value="$rateLabel" icon="arrow-trending-up" :metric="$rateDelta" :retention="RetentionSettings::events()">
             <div wire:key="spark-rate-{{ $range->days }}-{{ $subject }}" class="an:mt-3"><x-analytics::sparkline :values="$rateTrend" color="--an-conversion" /></div>
         </x-analytics::kpi-card>
     </div>
@@ -67,9 +70,9 @@
                                     @endif
                                 </x-ui::table.cell>
                                 <x-ui::table.cell align="right" class="an:tabular-nums">{{ NumberLabel::for($row['sessions']) }}</x-ui::table.cell>
-                                <x-ui::table.cell align="right" class="an:tabular-nums">{{ NumberLabel::for($row['visitors']) }}</x-ui::table.cell>
-                                <x-ui::table.cell align="right" class="an:font-medium an:tabular-nums an:text-primary">{{ NumberLabel::for($row['conversions']) }}</x-ui::table.cell>
-                                <x-ui::table.cell :last="true" align="right" class="an:tabular-nums an:text-secondary">{{ NumberLabel::percent($row['rate'], 1) }}</x-ui::table.cell>
+                                <x-ui::table.cell align="right" class="an:tabular-nums">@if ($row['visitors'] === null)<x-analytics::unavailable />@else{{ NumberLabel::for($row['visitors']) }}@endif</x-ui::table.cell>
+                                <x-ui::table.cell align="right" class="an:font-medium an:tabular-nums an:text-primary">@if ($row['conversions'] === null)<x-analytics::unavailable :retention="RetentionSettings::events()" />@else{{ NumberLabel::for($row['conversions']) }}@endif</x-ui::table.cell>
+                                <x-ui::table.cell :last="true" align="right" class="an:tabular-nums an:text-secondary">@if ($row['rate'] === null)<x-analytics::unavailable :retention="RetentionSettings::events()" />@else{{ NumberLabel::percent($row['rate'], 1) }}@endif</x-ui::table.cell>
                             </x-ui::table.row>
                         @endforeach
                     </x-ui::table.body>
@@ -95,7 +98,11 @@
                                 <span class="an:block an:truncate an:text-[11px] an:text-muted">{{ NumberLabel::for($row['sessions']) }} {{ $row['sessions'] < 2 ? __('session') : __('sessions') }} · {{ $row['campaign'] }}</span>
                             </span>
                         </span>
-                        <span class="an:shrink-0 an:text-right an:text-[13px] an:tabular-nums"><span class="an:font-semibold an:text-primary">{{ NumberLabel::for($row['conversions']) }}</span> <span class="an:text-[11px] an:text-muted">{{ __('conv.') }}</span></span>
+                        @if ($row['conversions'] === null)
+                            <x-analytics::unavailable :retention="RetentionSettings::events()" class="an:shrink-0 an:text-[11px]" />
+                        @else
+                            <span class="an:shrink-0 an:text-right an:text-[13px] an:tabular-nums"><span class="an:font-semibold an:text-primary">{{ NumberLabel::for($row['conversions']) }}</span> <span class="an:text-[11px] an:text-muted">{{ __('conv.') }}</span></span>
+                        @endif
                     </a>
                 @empty
                     <div class="an:px-2 an:py-6 an:text-center an:text-[12px] an:text-muted">{{ __('Aucune publicité avec du trafic sur la période.') }}</div>
