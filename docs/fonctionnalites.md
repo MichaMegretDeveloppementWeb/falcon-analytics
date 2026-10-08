@@ -915,8 +915,48 @@ faire.
   visite suivante ne le prolonge pas.
 - **Le nom d'un sujet n'est jamais stocké** · il est lu sur votre modèle au
   moment de l'affichage.
-- **L'effacement** se fait depuis le détail d'un visiteur · il supprime le
-  profil, ses sessions, ses événements et ses alias fusionnés, en une
-  transaction. Les deux classements de la vue d'ensemble — pages et clics les
-  plus vus — gardent ses visites des journées déjà résumées, en simples comptes
-  anonymes · ils lisent ces journées dans les compteurs de la nuit.
+- **Le droit à l'effacement est l'affaire de votre application** · c'est elle
+  qui sait qu'un compte disparaît. Quand elle supprime un compte, elle appelle
+  `Analytics::forgetSubject()` avec le nom du garde et l'identifiant ·
+
+  ```php
+  use Falcon\Analytics\Facades\Analytics;
+
+  $rows = Analytics::forgetSubject('web', $user->id);
+  ```
+
+  Le premier argument est le nom du garde qui identifie la personne, celui de
+  `identity.subject_guards`, ou le type que rend votre résolveur s'il en pose un.
+  **Tout ce que le paquet tient sur elle est supprimé, en une transaction** ·
+  - ses profils, celui de chaque navigateur, et les alias fusionnés ;
+  - toutes leurs sessions et leurs événements, y compris ceux d'avant sa
+    connexion ;
+  - toute ligne qui porte son sujet sur le profil de quelqu'un d'autre ·
+    elle s'est connectée sur un navigateur partagé.
+
+  **Les sessions qu'une autre personne a laissées sur ses profils ne sont
+  jamais supprimées** · elles rejoignent le profil de cette personne, créé pour
+  elles s'il n'existe pas.
+
+  **Le retour** · le nombre de lignes supprimées, zéro quand le paquet ne tenait
+  rien sur elle.
+
+  **Les refus** · un identifiant qui n'est pas un nombre entier, ou un nom de
+  garde vide, lève une `InvalidArgumentException`, et rien n'est supprimé. Un
+  nombre écrit en texte, `'42'`, est accepté.
+
+  **La trace** · chaque appel écrit `Subject.erased` sur le canal de journal du
+  paquet, au niveau `notice`, avec le garde, l'identifiant et le nombre de
+  lignes.
+
+  **Appelez-la une fois le compte supprimé.** Plus aucun envoi ne porte alors
+  son sujet. Un envoi déjà en route au même instant est jeté, jamais rattaché ·
+  il ne reconstruit pas le profil qu'on vient de supprimer.
+- **Depuis l'écran**, le détail d'un visiteur propose de le supprimer. Cela
+  supprime le profil, ses sessions, ses événements et ses alias fusionnés, en
+  une transaction. Les sessions qu'une autre personne connectée y a laissées
+  rejoignent son propre profil, comme ci-dessus.
+- **Les totaux journaliers restent, et ne nomment personne.** Les deux
+  classements de la vue d'ensemble — pages et clics les plus vus — gardent les
+  visites des journées déjà résumées, en simples comptes anonymes · ils lisent
+  ces journées dans les compteurs de la nuit.

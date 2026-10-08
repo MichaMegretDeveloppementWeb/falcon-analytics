@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Services;
 
+use Carbon\CarbonImmutable;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
+use Falcon\Analytics\Repositories\VisitorWriteRepository;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use LogicException;
 
@@ -25,6 +28,8 @@ use LogicException;
  */
 final readonly class VisitorMerger
 {
+    public function __construct(private VisitorWriteRepository $visitors) {}
+
     /**
      * Fold the alias visitor into the canonical one: move its sessions and
      * events, tombstone it (merged_into_id) and widen the canonical's seen
@@ -81,6 +86,44 @@ final readonly class VisitorMerger
 
         foreach ([$canonical->id, ...$previousVisitorIds] as $visitorId) {
             $this->recountSessions((int) $visitorId);
+        }
+    }
+
+    /**
+     * Before profiles are erased · the sessions other subjects left on them, a
+     * shared browser, move to those subjects' own profiles, made for them when
+     * they have none, so erasing one person never erases another.
+     *
+     * @param  list<int>  $profileIds
+     * @param  array{type: string, id: int}|null  $owner  whose sessions stay, to go with the profiles
+     */
+    public function rehomeOtherSubjects(array $profileIds, ?array $owner): void
+    {
+        $this->assertInsideATransaction(__FUNCTION__);
+
+        $others = Session::query()
+            ->whereIn('visitor_id', $profileIds)
+            ->whereNotNull('subject_type')
+            ->when($owner !== null, fn (Builder $query) => $query->whereNot(
+                fn (Builder $theirs) => $theirs->where('subject_type', $owner['type'] ?? null)->where('subject_id', $owner['id'] ?? null),
+            ))
+            ->groupBy('subject_type', 'subject_id')
+            ->selectRaw('subject_type, subject_id, min(started_at) as first_seen_at, max(last_activity_at) as last_seen_at')
+            ->toBase()
+            ->get();
+
+        // One pass per other subject who signed in on these browsers · a handful at most.
+        foreach ($others as $other) {
+            $subject = ['type' => (string) $other->subject_type, 'id' => (int) $other->subject_id];
+
+            $home = $this->visitors->canonicalFor($subject['type'], $subject['id'])
+                ?? $this->visitors->createFor(
+                    $subject,
+                    CarbonImmutable::parse((string) $other->first_seen_at),
+                    CarbonImmutable::parse((string) $other->last_seen_at),
+                );
+
+            $this->relocateForeignSessions($subject['type'], $subject['id'], $home);
         }
     }
 

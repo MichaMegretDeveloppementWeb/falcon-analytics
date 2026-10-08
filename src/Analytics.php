@@ -6,6 +6,7 @@ namespace Falcon\Analytics;
 
 use Carbon\CarbonImmutable;
 use Closure;
+use Falcon\Analytics\Actions\ForgetSubjectAction;
 use Falcon\Analytics\Actions\IngestEventsAction;
 use Falcon\Analytics\DTOs\IncomingBatch;
 use Falcon\Analytics\DTOs\IncomingEvent;
@@ -16,6 +17,7 @@ use Falcon\Analytics\Support\AfterTheResponse;
 use Falcon\Analytics\Support\UrlRedactor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use InvalidArgumentException;
 use Throwable;
 
 /**
@@ -111,6 +113,39 @@ final class Analytics
                 'exception' => $e,
             ]);
         }
+    }
+
+    /**
+     * Erase everything held on one subject of the host, for a right-to-erasure
+     * request · their profiles, every session and event on them, and every row
+     * that carries their subject elsewhere. The sessions another subject left
+     * on their profiles move to that subject, and the daily totals stay, naming
+     * no one. Called once the host has deleted the account, so no send carries
+     * the subject any more.
+     *
+     * Answers the number of rows erased · zero when nothing was held.
+     *
+     * @throws InvalidArgumentException when the type is empty or the id is not a whole number, which no subject carries
+     */
+    public function forgetSubject(string $type, int|string $id): int
+    {
+        if ($type === '' || (is_string($id) && ! ctype_digit($id))) {
+            throw new InvalidArgumentException(sprintf(
+                'Analytics::forgetSubject() takes a guard name and a whole-number id: "%s" #%s names no subject, and nothing was erased.',
+                $type,
+                $id,
+            ));
+        }
+
+        $erased = app(ForgetSubjectAction::class)->execute($type, (int) $id);
+
+        Log::channel(config('analytics.log_channel'))->notice('Subject.erased', [
+            'subject_type' => $type,
+            'subject_id' => (int) $id,
+            'rows' => $erased,
+        ]);
+
+        return $erased;
     }
 
     /**

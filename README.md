@@ -131,6 +131,25 @@ marquer comme conversions et de les enchaîner en tunnels. Le détail est dans
 
 ---
 
+## Supprimer ce que le paquet tient sur une personne
+
+**Le droit à l'effacement est l'affaire de votre application** · c'est elle qui
+sait qu'un compte disparaît. Quand elle en supprime un ·
+
+```php
+use Falcon\Analytics\Facades\Analytics;
+
+Analytics::forgetSubject('web', $user->id);
+```
+
+Ses profils, ses sessions et ses événements sont supprimés, où qu'ils soient.
+Les sessions qu'une autre personne a laissées sur son navigateur rejoignent le
+profil de cette personne. Les totaux journaliers restent, et ne nomment
+personne. Le détail est dans
+[fonctionnalites.md](docs/fonctionnalites.md#la-vie-privée-et-le-rgpd).
+
+---
+
 ## Les limites, dites franchement
 
 - **Un seul domaine.** Un visiteur qui passe d'un site à l'autre est deux
