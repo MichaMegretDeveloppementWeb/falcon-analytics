@@ -6,6 +6,7 @@ namespace Falcon\Analytics\Repositories;
 
 use Carbon\CarbonImmutable;
 use Falcon\Analytics\Models\Session;
+use Illuminate\Database\Eloquent\Builder;
 
 /** @internal */
 final readonly class SessionReadRepository
@@ -15,14 +16,24 @@ final readonly class SessionReadRepository
      * ended, and still active within the timeout window. Older idle sessions
      * are treated as finished. The browser key keeps the sessions of a merged
      * profile (one person, several devices) from blending into each other.
+     *
+     * An identified send never joins the session of another subject: one
+     * session, one person, whoever signs in on the browser meanwhile.
+     *
+     * @param  array{type: string, id: int}|null  $subject
      */
-    public function findOpenForVisitor(int $visitorId, CarbonImmutable $activeSince, string $browserKey): ?Session
+    public function findOpenForVisitor(int $visitorId, CarbonImmutable $activeSince, string $browserKey, ?array $subject = null): ?Session
     {
         return Session::query()
             ->where('visitor_id', $visitorId)
             ->where('browser_key', $browserKey)
             ->whereNull('ended_at')
             ->where('last_activity_at', '>=', $activeSince)
+            ->when($subject !== null, fn (Builder $query): Builder => $query->where(function (Builder $own) use ($subject): void {
+                $own->whereNull('subject_type')->orWhere(function (Builder $same) use ($subject): void {
+                    $same->where('subject_type', $subject['type'] ?? null)->where('subject_id', $subject['id'] ?? null);
+                });
+            }))
             ->latest('last_activity_at')
             ->first();
     }

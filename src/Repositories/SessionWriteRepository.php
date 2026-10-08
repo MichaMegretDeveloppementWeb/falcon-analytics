@@ -62,8 +62,13 @@ final readonly class SessionWriteRepository
      * closure relies on. The CASE keeps last_activity_at when the incoming stamp
      * is older, so the whole write stays on the ingestion hot path as one query.
      *
+     * The subject the send vouches for is taken by a session that has none ·
+     * one opened before its visitor signed in. A session that has one keeps it.
+     *
      * Every value is bound and never interpolated, so the statement stays
      * literal end to end; the table name comes from `Session::TABLE`.
+     *
+     * @param  array{type: string, id: int}|null  $vouchedSubject  only with `$subjectConfirmedAt`
      */
     public function recordActivity(
         Session $session,
@@ -73,9 +78,12 @@ final readonly class SessionWriteRepository
         int $eventDelta,
         ?string $lastPageviewUrl,
         ?CarbonImmutable $subjectConfirmedAt = null,
+        ?array $vouchedSubject = null,
     ): void {
         $stamp = $lastActivityAt->toDateTimeString();
         $confirmed = $subjectConfirmedAt?->toDateTimeString();
+        $type = $confirmed === null ? null : ($vouchedSubject['type'] ?? null);
+        $id = $type === null ? null : ($vouchedSubject['id'] ?? null);
 
         DB::update(
             'UPDATE '.Session::TABLE.' SET '
@@ -90,9 +98,13 @@ final readonly class SessionWriteRepository
 
             // Forward only, like the activity: a batch that commits late never moves it back.
             .'subject_confirmed_at = CASE WHEN ? IS NULL THEN subject_confirmed_at '
-            .'WHEN subject_confirmed_at IS NULL OR subject_confirmed_at < ? THEN ? ELSE subject_confirmed_at END '
+            .'WHEN subject_confirmed_at IS NULL OR subject_confirmed_at < ? THEN ? ELSE subject_confirmed_at END, '
+
+            // The id before the type: the engine reads, in each assignment, what the ones before it wrote.
+            .'subject_id = CASE WHEN ? IS NOT NULL AND subject_type IS NULL THEN ? ELSE subject_id END, '
+            .'subject_type = CASE WHEN ? IS NOT NULL AND subject_type IS NULL THEN ? ELSE subject_type END '
             .'WHERE id = ?',
-            [$pageviewDelta, $clickDelta, $eventDelta, $lastPageviewUrl, $stamp, $stamp, $confirmed, $confirmed, $confirmed, $session->getKey()],
+            [$pageviewDelta, $clickDelta, $eventDelta, $lastPageviewUrl, $stamp, $stamp, $confirmed, $confirmed, $confirmed, $type, $id, $type, $type, $session->getKey()],
         );
     }
 
