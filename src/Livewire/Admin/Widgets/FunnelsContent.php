@@ -8,6 +8,7 @@ use Falcon\Analytics\DTOs\Dashboard\Period;
 use Falcon\Analytics\Funnels\FunnelEvaluator;
 use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Livewire\Admin\Concerns\GuardsWidgetRead;
+use Falcon\Analytics\Support\SubjectFilter;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Lazy;
@@ -38,7 +39,7 @@ final class FunnelsContent extends Component
     {
         return $this->guardedWidget(function () use ($evaluator, $funnels): array {
             $period = Period::ofDays($this->period);
-            $subjectType = $this->subject !== '' ? $this->subject : null;
+            $subjectType = SubjectFilter::chosen($this->subject);
 
             return [
                 'reports' => $evaluator->evaluateAll($period, $subjectType),

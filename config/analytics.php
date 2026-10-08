@@ -106,6 +106,10 @@ return [
         // is used when the name columns are all empty.
         //   'client' => ['label' => 'Client', 'name' => ['first_name', 'last_name']],
         'subjects' => [],
+
+        // What the visitors filter calls the visitors no guard named, beside the
+        // guards above. Null keeps « Non connectés ».
+        'anonymous_label' => null,
     ],
 
     /*

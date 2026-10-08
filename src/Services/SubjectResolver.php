@@ -6,6 +6,7 @@ namespace Falcon\Analytics\Services;
 
 use Falcon\Analytics\DTOs\Dashboard\SubjectName;
 use Falcon\Analytics\Repositories\SubjectReadRepository;
+use Falcon\Analytics\Support\DeclaredGuards;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -42,15 +43,22 @@ final class SubjectResolver
     }
 
     /**
-     * The subject guards declared in config.
+     * The guards whose signed-in user is the tracked subject, those the host
+     * declares.
      *
      * @return list<string>
      */
     public function guards(): array
     {
-        $subjects = config('analytics.identity.subjects', []);
+        return DeclaredGuards::of('subject_guards');
+    }
 
-        return is_array($subjects) ? array_map('strval', array_keys($subjects)) : [];
+    /** What the visitors no guard named are called, in the visitors filter. */
+    public function nobodyLabel(): string
+    {
+        $label = config('analytics.identity.anonymous_label');
+
+        return is_string($label) && trim($label) !== '' ? $label : __('Non connectés');
     }
 
     /**

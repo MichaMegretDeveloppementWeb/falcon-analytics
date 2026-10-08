@@ -12,6 +12,7 @@ use Falcon\Analytics\Models\DailyCount;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Repositories\Concerns\ScopesSessionQueries;
 use Falcon\Analytics\Services\Dashboard\MarketingReportBuilder;
+use Falcon\Analytics\Support\SubjectFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -276,7 +277,7 @@ final readonly class OverviewReadRepository
         $rows = DailyCount::query()
             ->where('kind', $kind)
             ->whereBetween('day', [$period->from->toDateString(), $period->to->toDateString()])
-            ->when($subjectType !== null, fn (Builder $query): Builder => $query->where('subject_type', $subjectType))
+            ->tap(fn (Builder $query): Builder => SubjectFilter::apply($query, $subjectType))
             ->selectRaw('label, route, SUM(total) as total')
             ->groupBy('label', 'route')
             ->get()
@@ -422,7 +423,7 @@ final readonly class OverviewReadRepository
                     ->from('falcon_analytics_sessions')
                     ->whereColumn('falcon_analytics_sessions.id', 'falcon_analytics_events.session_id')
                     ->where('is_bot', false)
-                    ->when($subjectType !== null, fn (\Illuminate\Database\Query\Builder $s) => $s->where('subject_type', $subjectType));
+                    ->tap(fn (\Illuminate\Database\Query\Builder $s): \Illuminate\Database\Query\Builder => SubjectFilter::apply($s, $subjectType));
             });
     }
 }

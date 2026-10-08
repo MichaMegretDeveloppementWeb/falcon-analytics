@@ -49,7 +49,7 @@ Ce sont des paramètres de requête ordinaires, et ils s'ajoutent à l'adresse q
 | Paramètre | Où | Valeurs | Défaut |
 |---|---|---|---|
 | `period` | les huit écrans à période | **`7`, `30` ou `90`** · toute autre valeur retombe sur le défaut, sans erreur | `30` |
-| `subject` | les mêmes | un de vos gardes suivis · **vide veut dire tous**, visiteurs anonymes compris | vide |
+| `subject` | les mêmes | un de vos gardes suivis, ou `none` pour **les visiteurs qu'aucun garde n'a nommés** · **vide veut dire tous**, visiteurs anonymes compris · une valeur que le filtre ne propose pas vaut tous | vide |
 | `search` | sessions, visiteurs | texte libre | vide |
 | `device` | sessions | `desktop`, `mobile`, `tablet` · vide veut dire tous | vide |
 | `source` | sessions | une source d'acquisition · vide veut dire toutes | vide |
@@ -164,6 +164,7 @@ le vôtre · celui-ci ne décrit que ce que le paquet affiche.
 | une session dont l'adresse d'arrivée porte des paramètres | **une session arrivée par un lien qui porte des paramètres** | trafic taggé |
 | le fichier où le site déclare ses événements ou ses tunnels | **le fichier qui déclare les événements du site**, **… les tunnels du site** | son chemin, qu'un écran ne nomme jamais |
 | retirer à la main | **supprimer** · « effacer » ne désigne que la purge automatique | l'effacement d'un visiteur |
+| le choix du filtre des visiteurs pour ceux qu'aucun garde n'a nommés | **Non connectés**, ou le nom que l'hôte lui donne | sans sujet |
 | couper Search Console | **déconnecter** | annuler la connexion |
 | un classement | « les plus vues », « principaux » | Top |
 | ce que rapportent les conversions ou un tunnel | **score**, compté en **points** · **1 pt**, **12 pts** | montant, valeur · 1 pts |
@@ -198,6 +199,19 @@ session ·
 libellé, `identity.subjects.{garde}.label` · sans lui, les écrans affichent le
 nom technique du garde. Un site sans espace membre n'en déclare aucun, et le
 filtre qui les distingue disparaît.
+
+**Le filtre des visiteurs propose aussi « Non connectés »**, à côté de vos
+gardes · les visiteurs qu'aucun garde n'a nommés. Son nom se règle,
+`identity.anonymous_label`. Chaque écran le lit là où il lit déjà le filtre ·
+- **sur la session** · la vue d'ensemble, les sessions, les pages et les clics
+  les plus vus, les sessions actives du temps réel, le marketing · ce sont les
+  sessions où personne ne s'est connecté ;
+- **sur le visiteur** · les visiteurs, les événements, les tunnels, les
+  événements du temps réel · ce sont les visiteurs qu'aucun garde n'a jamais
+  nommés.
+
+Une personne connue qui revient sans se connecter compte donc parmi les sessions
+« Non connectés », mais pas parmi les visiteurs, puisque son profil la nomme.
 
 **Aucun écran ne nomme un fichier, une commande ou une variable** · celui qui
 lit les écrans ne peut rien en faire. Un écran dit ce qui manque et à qui le

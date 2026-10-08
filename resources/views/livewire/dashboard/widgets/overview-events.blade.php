@@ -1,7 +1,5 @@
 @php
     use Falcon\Analytics\Support\NumberLabel;
-
-    $conversionsTotal = array_sum(array_column($topConversions, 'count'));
 @endphp
 
 <x-analytics::root area="admin" class="an:border-t an:border-default an:pt-8">

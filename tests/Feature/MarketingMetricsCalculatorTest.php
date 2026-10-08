@@ -28,11 +28,14 @@ final class MarketingMetricsCalculatorTest extends TestCase
             Period::ofDays(7),
             ['2026-06-15' => 10],
             ['2026-06-15' => 2],
+            ['2026-06-15' => 7],
         );
 
         // One entry per day, today last with its data and its derived rate (2/10).
         $this->assertCount(count($trend['sessions']), $trend['labels']);
         $this->assertSame(10, end($trend['sessions']));
+        $this->assertSame(7, end($trend['visitors']));
+        $this->assertSame(0, $trend['visitors'][0]);
         $this->assertSame(2, end($trend['conversions']));
         $this->assertSame(20.0, end($trend['rates']));
         $this->assertSame(0, $trend['sessions'][0]);

@@ -13,7 +13,7 @@
         </x-analytics::kpi-card>
         <x-analytics::kpi-card :label="__('Visiteurs issus de publicités')" :value="NumberLabel::for($visitors)" icon="users" :metric="$visitorsDelta">
             <div wire:key="spark-visitors-{{ $range->days }}-{{ $subject }}" class="an:mt-3">
-                <x-analytics::sparkline :values="$trendData" />
+                <x-analytics::sparkline :values="$visitorsTrend" />
             </div>
         </x-analytics::kpi-card>
         <x-analytics::kpi-card :label="__('Conversions')" :value="NumberLabel::for($conversions)" icon="check-circle" :metric="$conversionsDelta">

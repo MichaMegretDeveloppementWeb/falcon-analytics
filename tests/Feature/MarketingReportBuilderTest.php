@@ -137,7 +137,7 @@ final class MarketingReportBuilderTest extends TestCase
 
         // The whole of it first · every session a campaign claims, and no other.
         $this->assertSame(['sessions' => 5, 'visitors' => 4], $builder->headline($period, null));
-        $daily = $builder->dailySessions($period, null);
+        $daily = $builder->daily($period, null)['sessions'];
         ksort($daily);
         $this->assertSame(['2026-06-10' => 1, '2026-06-11' => 2, '2026-06-12' => 2], $daily);
         $sources = $builder->matchedSessionSources($period, null);
@@ -148,6 +148,7 @@ final class MarketingReportBuilderTest extends TestCase
             'sessions' => 4,
             'visitors' => 3,
             'daily' => ['2026-06-10' => 1, '2026-06-11' => 2, '2026-06-12' => 1],
+            'dailyVisitors' => ['2026-06-10' => 1, '2026-06-11' => 2, '2026-06-12' => 1],
             'ads' => [
                 $generic->id => ['sessions' => 2, 'visitors' => 2],
                 $cabrio->id => ['sessions' => 2, 'visitors' => 1],
@@ -158,16 +159,17 @@ final class MarketingReportBuilderTest extends TestCase
             'sessions' => 1,
             'visitors' => 1,
             'daily' => ['2026-06-12' => 1],
+            'dailyVisitors' => ['2026-06-12' => 1],
             'ads' => [$neige->id => ['sessions' => 1, 'visitors' => 1]],
         ], $this->sortedReport($builder->campaignReport($period, null, $hiver)));
 
         $this->assertSame(
-            ['sessions' => 2, 'visitors' => 1, 'daily' => ['2026-06-10' => 1, '2026-06-11' => 1]],
+            ['sessions' => 2, 'visitors' => 1, 'daily' => ['2026-06-10' => 1, '2026-06-11' => 1], 'dailyVisitors' => ['2026-06-10' => 1, '2026-06-11' => 1]],
             $this->sortedReport($builder->adReport($period, null, $cabrio)),
         );
 
         $this->assertSame(
-            ['sessions' => 2, 'visitors' => 2, 'daily' => ['2026-06-11' => 1, '2026-06-12' => 1]],
+            ['sessions' => 2, 'visitors' => 2, 'daily' => ['2026-06-11' => 1, '2026-06-12' => 1], 'dailyVisitors' => ['2026-06-11' => 1, '2026-06-12' => 1]],
             $this->sortedReport($builder->adReport($period, null, $generic)),
         );
     }
@@ -180,7 +182,7 @@ final class MarketingReportBuilderTest extends TestCase
      */
     private function sortedReport(array $report): array
     {
-        foreach (['daily', 'ads'] as $list) {
+        foreach (['daily', 'dailyVisitors', 'ads'] as $list) {
             if (is_array($report[$list] ?? null)) {
                 ksort($report[$list]);
             }

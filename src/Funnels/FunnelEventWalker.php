@@ -7,6 +7,7 @@ namespace Falcon\Analytics\Funnels;
 use Falcon\Analytics\DTOs\Dashboard\Period;
 use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Models\Event;
+use Falcon\Analytics\Support\SubjectFilter;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
@@ -99,7 +100,7 @@ final readonly class FunnelEventWalker
             })
             ->when($subjectType !== null, fn (Builder $query): Builder => $query->whereHas(
                 'visitor',
-                fn (Builder $visitor): Builder => $visitor->where('subject_type', $subjectType),
+                fn (Builder $visitor): Builder => SubjectFilter::apply($visitor, $subjectType),
             ))
             ->orderBy('visitor_id')
             ->orderBy('occurred_at')

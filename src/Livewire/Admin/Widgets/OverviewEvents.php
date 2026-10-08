@@ -9,6 +9,7 @@ use Falcon\Analytics\Enums\Authorization\Ability;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Livewire\Admin\Concerns\GuardsWidgetRead;
 use Falcon\Analytics\Repositories\Dashboard\EventReadRepository;
+use Falcon\Analytics\Support\SubjectFilter;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Lazy;
@@ -38,12 +39,13 @@ final class OverviewEvents extends Component
     {
         return $this->guardedWidget(function () use ($repository, $events): array {
             $range = Period::ofDays($this->period);
-            $subjectType = $this->subject !== '' ? $this->subject : null;
+            $subjectType = SubjectFilter::chosen($this->subject);
 
             $breakdown = $repository->eventBreakdown($range, $subjectType, $events);
             $conversions = array_values(array_filter($breakdown, fn (array $row): bool => $row['isConversion']));
 
             return [
+                'conversionsTotal' => array_sum(array_column($conversions, 'count')),
                 'topConversions' => array_slice($conversions, 0, 6),
                 'topEvents' => array_slice($breakdown, 0, 6),
                 'eventsRoute' => Gate::allows(Ability::Events) ? route('analytics.admin.events') : null,

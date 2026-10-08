@@ -11,6 +11,7 @@ use Falcon\Analytics\Funnels\FunnelRegistry;
 use Falcon\Analytics\Livewire\Admin\Concerns\GuardsWidgetRead;
 use Falcon\Analytics\Services\Dashboard\MarketingMetricsCalculator;
 use Falcon\Analytics\Services\Dashboard\MarketingReportBuilder;
+use Falcon\Analytics\Support\SubjectFilter;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Lazy;
 use Livewire\Component;
@@ -43,7 +44,7 @@ final class AdDetailContent extends Component
         return $this->guardedWidget(function () use ($funnels, $events, $marketing, $metrics): array {
             $ad = $marketing->adWithObjectives($this->refId);
             $period = Period::ofDays($this->period);
-            $subjectType = $this->subject !== '' ? $this->subject : null;
+            $subjectType = SubjectFilter::chosen($this->subject);
 
             $report = $marketing->adReport($period, $subjectType, $ad);
             $previous = $marketing->adReport($period->previous(), $subjectType, $ad);
@@ -55,7 +56,7 @@ final class AdDetailContent extends Component
             $rate = $metrics->rate((float) $adConversions, (float) $report['visitors']);
             $ratePrevious = $metrics->rate((float) $adConversionsPrevious, (float) $previous['visitors']);
 
-            $trend = $metrics->trend($period, $report['daily'], $conversions['adDaily'][$ad->id] ?? []);
+            $trend = $metrics->trend($period, $report['daily'], $conversions['adDaily'][$ad->id] ?? [], $report['dailyVisitors']);
 
             return [
                 'sessions' => $report['sessions'],
@@ -71,6 +72,7 @@ final class AdDetailContent extends Component
                 'conversionElements' => $marketing->conversionElements($period, $subjectType, $funnels, $events, [$ad]),
                 'trendLabels' => $trend['labels'],
                 'trendData' => $trend['sessions'],
+                'visitorsTrend' => $trend['visitors'],
                 'truncatedAt' => $marketing->truncatedAt($period, $subjectType) ?? $marketing->truncatedAt($period->previous(), $subjectType),
             ];
         }, fn (array $data): View => view('analytics::livewire.dashboard.widgets.ad-detail-content', $data));

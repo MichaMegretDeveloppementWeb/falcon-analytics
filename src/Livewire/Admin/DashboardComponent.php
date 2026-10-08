@@ -7,6 +7,7 @@ namespace Falcon\Analytics\Livewire\Admin;
 use Falcon\Analytics\DTOs\Dashboard\Period;
 use Falcon\Analytics\Livewire\Admin\Concerns\RecoversFromReadFailure;
 use Falcon\Analytics\Services\SubjectResolver;
+use Falcon\Analytics\Support\SubjectFilter;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 
@@ -38,7 +39,7 @@ abstract class DashboardComponent extends Component
 
     protected function subjectType(): ?string
     {
-        return $this->subject !== '' ? $this->subject : null;
+        return SubjectFilter::chosen($this->subject);
     }
 
     /**
@@ -71,23 +72,27 @@ abstract class DashboardComponent extends Component
     }
 
     /**
-     * Subject filter options, derived from the host's tracked guards. The blank
-     * value means "all subjects", including anonymous visitors.
+     * Subject filter options, derived from the host's tracked guards · the blank
+     * value means every visitor, and the visitors no guard named have their own
+     * choice beside the guards.
      *
      * @return array<string, string>
      */
     protected function subjectOptions(): array
     {
-        $options = ['' => __('Tous')];
-
-        /** @var list<string> $guards */
-        $guards = config('analytics.identity.subject_guards', []);
         $subjects = app(SubjectResolver::class);
+        $guards = $subjects->guards();
+
+        if ($guards === []) {
+            return ['' => __('Tous')];
+        }
+
+        $options = ['' => __('Tous')];
 
         foreach ($guards as $guard) {
             $options[$guard] = $subjects->label($guard);
         }
 
-        return $options;
+        return [...$options, SubjectFilter::NOBODY => $subjects->nobodyLabel()];
     }
 }
