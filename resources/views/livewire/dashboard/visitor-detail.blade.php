@@ -161,7 +161,7 @@
         </div>
 
         <x-ui::modal name="forget-visitor" variant="confirm" :title="__('Supprimer ce visiteur ?')">
-            {{ $detail->sessionCount < 2 ? __("Cette action est irréversible\u{00A0}: le visiteur, sa session et tous ses événements seront définitivement supprimés.") : __('Cette action est irréversible : le visiteur, ses :count sessions et tous leurs événements seront définitivement supprimés.', ['count' => $detail->sessionCount]) }}
+            {{ $detail->erasureWarning }}
             <x-slot:actions>
                 <x-ui::button variant="ghost" @click="$dispatch('ui-close-modal', 'forget-visitor')">{{ __('Annuler') }}</x-ui::button>
                 <x-ui::button variant="danger" wire:click="forget" @click="$dispatch('ui-close-modal', 'forget-visitor')">{{ __('Supprimer définitivement') }}</x-ui::button>

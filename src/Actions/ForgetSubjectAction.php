@@ -6,6 +6,7 @@ namespace Falcon\Analytics\Actions;
 
 use Falcon\Analytics\Repositories\ErasureRepository;
 use Falcon\Analytics\Repositories\VisitorWriteRepository;
+use Falcon\Analytics\Services\ErasedDaysArchiver;
 use Falcon\Analytics\Services\VisitorLocks;
 use Falcon\Analytics\Services\VisitorMerger;
 use Illuminate\Support\Facades\DB;
@@ -15,8 +16,9 @@ use RuntimeException;
  * Erase everything held on one subject of the host · their profiles and the
  * aliases folded into them, every session and event on those, and every row
  * that carries their subject on another profile. The sessions other subjects
- * left on their profiles move to those subjects' own profiles first. The daily
- * totals stay, and name no one.
+ * left on their profiles move to those subjects' own profiles first. The days
+ * still read from their rows are summarised again in the same transaction · the
+ * older totals keep the person, naming no one.
  *
  * @internal
  */
@@ -30,6 +32,7 @@ final readonly class ForgetSubjectAction
         private VisitorLocks $locks,
         private VisitorMerger $merges,
         private VisitorWriteRepository $visitors,
+        private ErasedDaysArchiver $summaries,
     ) {}
 
     /** Answers the number of rows erased. */
@@ -62,9 +65,12 @@ final readonly class ForgetSubjectAction
             return null;
         }
 
+        $days = $this->erasure->daysOfSubject($type, $id, $profiles['own']);
+
         $this->merges->rehomeOtherSubjects($profiles['own'], ['type' => $type, 'id' => $id]);
         $erased = $this->erasure->eraseSubject($type, $id, $profiles['own']);
         $this->visitors->recountSessions($profiles['hosts']);
+        $this->summaries->summariseAgain($days);
 
         return $erased;
     }

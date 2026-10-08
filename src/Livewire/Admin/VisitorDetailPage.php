@@ -10,6 +10,7 @@ use Falcon\Analytics\Livewire\Admin\Concerns\AsksTheScreenAbility;
 use Falcon\Analytics\Livewire\Admin\Concerns\RecoversFromReadFailure;
 use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Repositories\Dashboard\VisitorProfileReadRepository;
+use Falcon\Analytics\Repositories\ErasureRepository;
 use Falcon\Analytics\Services\Dashboard\VisitorDetailBuilder;
 use Falcon\Analytics\Support\RetentionSettings;
 use Illuminate\Contracts\View\View;
@@ -85,11 +86,15 @@ final class VisitorDetailPage extends Component
         $this->redirect(route('analytics.admin.visitors'));
     }
 
-    public function render(VisitorDetailBuilder $details, VisitorProfileReadRepository $repository): View
+    public function render(VisitorDetailBuilder $details, VisitorProfileReadRepository $repository, ErasureRepository $erasure): View
     {
         return $this->guardedRender(
             fn (): array => [
-                'detail' => $details->build($this->visitor(), $repository->engagement($this->visitorId)),
+                'detail' => $details->build(
+                    $this->visitor(),
+                    $repository->engagement($this->visitorId),
+                    $erasure->sessionsGoingWith($this->visitor()),
+                ),
                 'sessions' => $details->sessions($repository->paginateSessions($this->visitorId, self::PER_PAGE)),
                 'keptDays' => RetentionSettings::sessionsErased(),
                 'mayDelete' => Gate::allows(Ability::VisitorsDelete, $this->visitor()),
