@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Falcon\Analytics\Tests\Feature;
 
+use Carbon\CarbonImmutable;
 use Falcon\Analytics\Enums\Authorization\Ability;
 use Falcon\Analytics\Events\EventRegistry;
 use Falcon\Analytics\Funnels\FunnelRegistry;
@@ -479,6 +480,41 @@ final class TheDiagnosticSpeaksTest extends TestCase
         $this->artisan('analytics:check')
             ->expectsOutputToContain('Conservation')
             ->assertFailed();
+    }
+
+    /** Sessions kept less long than the page views they hold block the erasing, and the diagnostic says why. */
+    public function test_it_blocks_on_durations_that_contradict(): void
+    {
+        config(['analytics.retention_days' => 90, 'analytics.session_retention_days' => 60]);
+
+        $this->assertSame(1, Artisan::call('analytics:check'));
+        $row = $this->rowOf('Conservation');
+
+        $this->assertStringContainsString('KO', $row);
+        $this->assertStringContainsString('est plus court que', $row);
+    }
+
+    /** The totals of sessions waiting to be written count among the days behind. */
+    public function test_it_counts_the_days_whose_sessions_wait_for_their_totals(): void
+    {
+        Session::factory()->at(CarbonImmutable::now()->subDays(5))->create();
+
+        Artisan::call('analytics:check');
+
+        $this->assertStringContainsString('À voir', $this->rowOf('Résumés'));
+    }
+
+    /** The three durations, said together. */
+    public function test_it_says_the_three_durations(): void
+    {
+        config(['analytics.retention_days' => 90, 'analytics.session_retention_days' => 760, 'analytics.event_retention_days' => 400]);
+
+        Artisan::call('analytics:check');
+        $row = $this->rowOf('Conservation');
+
+        $this->assertStringContainsString('OK', $row);
+        $this->assertStringContainsString('760 jours', $row);
+        $this->assertStringContainsString('400 jours', $row);
     }
 
     /** A ceiling that means nothing stops the marketing screens. */

@@ -25,6 +25,12 @@ final class RetentionSettings
         return self::days('session_retention_days');
     }
 
+    /** The named events' own duration, or null when they leave with their sessions. */
+    public static function namedEvents(): ?int
+    {
+        return self::days('event_retention_days');
+    }
+
     /** Days the named events are kept, or null to keep them · never past their session's. */
     public static function events(): ?int
     {

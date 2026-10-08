@@ -79,6 +79,25 @@ final class ErasedSessionsChangeNoFigureThatAddsUpTest extends TestCase
         }
     }
 
+    /** The purge itself, as the scheduler runs it · the same figures, not one of them moved. */
+    public function test_the_purge_itself_changes_no_figure_that_adds_up(): void
+    {
+        config(['analytics.retention_days' => 30, 'analytics.session_retention_days' => 60, 'analytics.event_retention_days' => 45]);
+        $this->aHistory();
+        $this->artisan('analytics:archive')->assertSuccessful();
+        $before = $this->everythingThatAddsUp();
+
+        $this->artisan('analytics:prune')->assertSuccessful();
+
+        $this->assertSame(0, Session::query()->where('started_at', '<', '2026-04-01')->count(), 'Nothing was erased, so nothing is being proved.');
+        $this->app->forgetScopedInstances();
+        $after = $this->everythingThatAddsUp();
+
+        foreach ($before as $block => $figures) {
+            $this->assertEquals($figures, $after[$block], "Le bloc « {$block} » a bougé après la purge.");
+        }
+    }
+
     public function test_every_figure_that_counts_people_says_it_is_unavailable(): void
     {
         $this->aHistory();

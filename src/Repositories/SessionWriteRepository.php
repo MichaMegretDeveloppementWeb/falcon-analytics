@@ -13,6 +13,38 @@ use Illuminate\Support\Facades\DB;
 /** @internal */
 final readonly class SessionWriteRepository
 {
+    /**
+     * Erase the sessions last active before the cutoff, in batches, their
+     * events going with them by the foreign key · and answer how many, with
+     * the profiles they were on, whose count of sessions has to be read again.
+     *
+     * @return array{deleted: int, visitors: list<int>}
+     */
+    public function pruneLastActiveBefore(CarbonImmutable $cutoff, int $batchSize = 1000): array
+    {
+        $deleted = 0;
+        $visitors = [];
+
+        do {
+            $rows = Session::query()
+                ->where('last_activity_at', '<', $cutoff)
+                ->limit($batchSize)
+                ->get(['id', 'visitor_id']);
+
+            if ($rows->isEmpty()) {
+                break;
+            }
+
+            foreach ($rows as $row) {
+                $visitors[$row->visitor_id] = true;
+            }
+
+            $deleted += Session::query()->whereKey($rows->modelKeys())->delete();
+        } while ($rows->count() === $batchSize);
+
+        return ['deleted' => $deleted, 'visitors' => array_keys($visitors)];
+    }
+
     /** How many sessions one sweep statement closes at a time. */
     private const SWEEP_BATCH = 500;
 
