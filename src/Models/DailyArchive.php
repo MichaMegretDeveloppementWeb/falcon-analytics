@@ -11,7 +11,8 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * A day that has been summarised, family by family · its page views and clicks
- * (`archived_at`), its sessions and named events (`detail_archived_at`).
+ * (`archived_at`), its sessions and named events (`detail_archived_at`) · and
+ * whether the purge has begun erasing its sessions or its named events.
  *
  * The purge reads this and refuses to erase a day it does not find, which is
  * what makes a dead scheduler harmless: no archiving, no erasing.
@@ -22,6 +23,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property CarbonImmutable $day
  * @property CarbonImmutable|null $archived_at
  * @property CarbonImmutable|null $detail_archived_at
+ * @property CarbonImmutable|null $sessions_pruned_at
+ * @property CarbonImmutable|null $events_pruned_at
  */
 final class DailyArchive extends Model
 {
@@ -32,7 +35,7 @@ final class DailyArchive extends Model
     public $timestamps = false;
 
     /** @var list<string> */
-    protected $fillable = ['day', 'archived_at', 'detail_archived_at'];
+    protected $fillable = ['day', 'archived_at', 'detail_archived_at', 'sessions_pruned_at', 'events_pruned_at'];
 
     /**
      * The key, always written as a plain date.
@@ -76,6 +79,18 @@ final class DailyArchive extends Model
         return self::lastDayOf('detail_archived_at');
     }
 
+    /** The last day whose sessions the purge has begun erasing, or null while it has erased none. */
+    public static function lastSessionsPrunedDay(): ?CarbonImmutable
+    {
+        return self::lastDayOf('sessions_pruned_at');
+    }
+
+    /** The same, for the named events. */
+    public static function lastEventsPrunedDay(): ?CarbonImmutable
+    {
+        return self::lastDayOf('events_pruned_at');
+    }
+
     private static function lastDayOf(string $family): ?CarbonImmutable
     {
         $day = self::query()->whereNotNull($family)->max('day');
@@ -90,6 +105,8 @@ final class DailyArchive extends Model
             'day' => 'immutable_date',
             'archived_at' => 'immutable_datetime',
             'detail_archived_at' => 'immutable_datetime',
+            'sessions_pruned_at' => 'immutable_datetime',
+            'events_pruned_at' => 'immutable_datetime',
         ];
     }
 }

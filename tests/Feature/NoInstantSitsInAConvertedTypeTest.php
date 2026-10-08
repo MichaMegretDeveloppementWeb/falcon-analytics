@@ -47,7 +47,7 @@ final class NoInstantSitsInAConvertedTypeTest extends TestCase
         $this->assertContains('falcon_analytics_events.occurred_at', $seen);
         $this->assertContains('falcon_analytics_sessions.subject_confirmed_at', $seen);
         $this->assertContains('falcon_analytics_daily_archives.detail_archived_at', $seen);
-        $this->assertCount(19, $seen, 'Le paquet porte dix-neuf instants, sur huit tables.');
+        $this->assertCount(21, $seen, 'Le paquet porte vingt et un instants, sur huit tables.');
     }
 
     /**
