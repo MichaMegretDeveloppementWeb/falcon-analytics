@@ -382,15 +382,15 @@ final class DashboardPagesTest extends TestCase
         $this->actingAs($this->admin, 'admin');
         $visitor = Visitor::factory()->create();
 
-        // Fixed plan: the visitor, engagement, devices, sources, then one page of sessions
-        // (count + rows) = 6. The visitor itself is read by the screen now that no route binding
-        // hands it over.
+        // Fixed plan: the visitor, engagement, devices, sources, the sessions an erasure would
+        // take, then one page of sessions (count + rows) = 7. The visitor itself is read by the
+        // screen now that no route binding hands it over.
         $budget = $this->assertCostIsFlat(
             fn () => Session::factory()->for($visitor)->create(),
             fn () => Livewire::test(VisitorDetailPage::class, ['visitorId' => $visitor->id]),
         );
 
-        $this->assertLessThanOrEqual(6, $budget['count']);
+        $this->assertLessThanOrEqual(7, $budget['count']);
     }
 
     public function test_it_recomputes_the_overview_metrics_when_the_period_changes(): void

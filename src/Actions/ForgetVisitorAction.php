@@ -6,6 +6,7 @@ namespace Falcon\Analytics\Actions;
 
 use Falcon\Analytics\Models\Visitor;
 use Falcon\Analytics\Repositories\ErasureRepository;
+use Falcon\Analytics\Services\ErasedDaysArchiver;
 use Falcon\Analytics\Services\VisitorLocks;
 use Falcon\Analytics\Services\VisitorMerger;
 use Illuminate\Support\Facades\DB;
@@ -14,8 +15,9 @@ use RuntimeException;
 /**
  * Erase a visitor and everything attached to them (sessions, events, merged
  * aliases), for a GDPR right-to-erasure request. The sessions another subject
- * left on the profile move to that subject's own profile first. Deletes
- * explicitly, so it behaves the same whatever the foreign-key cascades.
+ * left on the profile move to that subject's own profile first, and the days
+ * still read from their rows are summarised again in the same transaction.
+ * Deletes explicitly, so it behaves the same whatever the foreign-key cascades.
  *
  * @internal
  */
@@ -28,6 +30,7 @@ final readonly class ForgetVisitorAction
         private ErasureRepository $erasure,
         private VisitorLocks $locks,
         private VisitorMerger $merges,
+        private ErasedDaysArchiver $summaries,
     ) {}
 
     public function execute(Visitor $visitor): void
@@ -57,8 +60,11 @@ final readonly class ForgetVisitorAction
             return false;
         }
 
+        $days = $this->erasure->daysOfProfiles($profiles);
+
         $this->merges->rehomeOtherSubjects($profiles, $this->subjectOf($locked[$visitorId] ?? null));
         $this->erasure->eraseProfiles($profiles);
+        $this->summaries->summariseAgain($days);
 
         return true;
     }

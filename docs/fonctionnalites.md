@@ -412,8 +412,10 @@ garde, **ou ne pas les proposer du tout**.
 | **paramètres** | aucun |
 
 La performance des campagnes et des publicités sur la période · portée,
-conversions et taux de conversion. **Les dépenses ne sont pas suivies** · le
-paquet n'appelle aucune régie.
+conversions et taux de conversion. **Le taux compte des personnes** · celles
+qui ont converti sur celles venues d'une publicité, et sa courbe, jour par jour,
+de même · une personne venue trois fois compte une fois. **Les dépenses ne sont
+pas suivies** · le paquet n'appelle aucune régie.
 
 ### Campagnes · **écriture**
 
@@ -619,12 +621,14 @@ Ce qu'il faut en savoir concrètement ·
   de navigateur, donc « deux appareils » reste lisible sous un seul profil ;
 - **une session ouverte avant la connexion prend le sujet** · la page vue en
   arrivant, puis celles d'après la connexion, font une seule session, au nom de
-  la personne. Le jour de cette session, s'il est déjà résumé, l'est à nouveau ·
-  ses pages et ses clics passent sous ce sujet ;
+  la personne · **sur son navigateur comme sur celui de quelqu'un d'autre**. Le
+  jour de cette session, s'il est déjà résumé, l'est à nouveau · ses pages et
+  ses clics passent sous ce sujet ;
 - **une session ne change jamais de sujet** · quelqu'un d'autre qui se connecte
-  sur le même navigateur ouvre la sienne, et la session ouverte sur le
-  navigateur de quelqu'un d'autre n'est jamais nommée d'après la personne qui
-  s'y connecte.
+  sur le même navigateur ouvre la sienne ;
+- **une personne qui a déjà un profil et se connecte sur le navigateur de
+  quelqu'un d'autre** poursuit sur son profil · les pages vues sur ce navigateur
+  avant sa connexion y restent sans nom.
 
 > **Rien de tout cela ne concerne les visiteurs anonymes.** Deux navigateurs sans
 > personne derrière restent deux visiteurs · le paquet ne rapproche jamais deux
@@ -981,13 +985,17 @@ faire.
 - **Depuis l'écran**, le détail d'un visiteur propose de le supprimer. Cela
   supprime le profil, ses sessions, ses événements et ses alias fusionnés, en
   une transaction. Les sessions qu'une autre personne connectée y a laissées
-  rejoignent son propre profil, comme ci-dessus.
-- **Les totaux journaliers restent, et ne nomment personne.** Les deux
-  classements de la vue d'ensemble — pages et clics les plus vus — gardent les
-  visites des journées déjà résumées, en simples comptes anonymes · ils lisent
-  ces journées dans les compteurs de la nuit. Les totaux des sessions et des
-  événements nommés de même · ils ne portent l'identifiant d'aucun visiteur ni
-  d'aucune personne.
+  rejoignent son propre profil, comme ci-dessus, et la confirmation n'annonce
+  que celles qui partent.
+- **Les journées encore lues ligne à ligne sont résumées à nouveau, sans
+  elle**, dans la même transaction que la suppression · une journée dont les
+  sessions, les événements nommés ou les pages vues sont gardés se lit donc
+  pareil avant et après le jour où elle passe dans ses totaux. Une personne
+  venue quatre-vingt-dix jours coûte de l'ordre d'une demi-seconde, une fois.
+- **Les totaux des journées plus anciennes restent, et ne nomment personne.**
+  Leurs lignes sont déjà effacées, et ce sont eux qui répondent · ils gardent la
+  personne en simple compte, sans l'identifiant d'aucun visiteur ni d'aucune
+  personne.
 - **La durée de conservation est la vôtre.** Pour une mesure d'audience sans
   bandeau de consentement, la CNIL demande de ne pas garder les données plus de
   vingt-cinq mois · `session_retention_days` et `event_retention_days` à 760

@@ -121,8 +121,14 @@ final class AForgottenSubjectLeavesNothingBehindTest extends TestCase
         $this->assertSame(2, Event::query()->where('visitor_id', $home->id)->count());
     }
 
-    public function test_the_daily_totals_stay(): void
+    /**
+     * A day whose page views are no longer kept is read from its totals, and
+     * keeps them, naming no one · the days still read from their rows are
+     * `AnErasureLeavesNoFigureToJumpTest`'s.
+     */
+    public function test_the_totals_of_a_day_past_the_line_stay(): void
     {
+        config(['analytics.retention_days' => 3]);
         $main = $this->profile(self::CABINET);
         $session = $this->visit($main, self::CABINET, events: 0, at: '2026-07-05 10:00:00');
         Event::factory()->for($session)->count(3)->create([

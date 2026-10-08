@@ -30,8 +30,9 @@ final readonly class VisitorDetailBuilder
 
     /**
      * @param  array{sessions: int, pageviews: int, seconds: int, devices: array<string, int>, sources: array<string, int>}  $engagement
+     * @param  int  $sessionsGoing  the sessions an erasure would take
      */
-    public function build(Visitor $visitor, array $engagement): VisitorDetail
+    public function build(Visitor $visitor, array $engagement, int $sessionsGoing): VisitorDetail
     {
         $sessions = $engagement['sessions'];
         [$name, $kind] = $this->identity($visitor);
@@ -45,6 +46,7 @@ final readonly class VisitorDetailBuilder
             isReturning: $visitor->session_count > 1,
             firstSeenAt: $visitor->first_seen_at,
             sessionCount: $visitor->session_count,
+            erasureWarning: self::erasureWarning($sessionsGoing),
             pageviewCount: $engagement['pageviews'],
             averageDuration: DurationLabel::for($sessions > 0 ? (int) round($engagement['seconds'] / $sessions) : 0),
             pagesPerSession: NumberLabel::for($sessions > 0 ? $engagement['pageviews'] / $sessions : 0, 1),
@@ -92,6 +94,15 @@ final readonly class VisitorDetailBuilder
         $subject = $this->subjects->shownNames([[$type, $id]])[$type.':'.$id];
 
         return [$subject->name, $subject->label];
+    }
+
+    private static function erasureWarning(int $sessions): string
+    {
+        return match (true) {
+            $sessions === 0 => __("Cette action est irréversible\u{00A0}: le visiteur sera définitivement supprimé."),
+            $sessions === 1 => __("Cette action est irréversible\u{00A0}: le visiteur, sa session et tous ses événements seront définitivement supprimés."),
+            default => __("Cette action est irréversible\u{00A0}: le visiteur, ses :count sessions et tous leurs événements seront définitivement supprimés.", ['count' => $sessions]),
+        };
     }
 
     private static function isIdentified(Visitor $visitor): bool

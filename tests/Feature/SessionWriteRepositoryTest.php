@@ -94,8 +94,8 @@ final class SessionWriteRepositoryTest extends TestCase
         $this->assertSame('2026-06-30 09:08:00', $fresh->last_activity_at->toDateTimeString());
     }
 
-    /** The subject a vouched send carries is taken whole · the type and the id, in one statement. */
-    public function test_a_session_without_a_subject_takes_the_one_vouched_for(): void
+    /** The subject a send passes is taken whole · the type and the id, in one statement. */
+    public function test_a_session_without_a_subject_takes_the_one_passed(): void
     {
         $session = $this->anonymousSession();
 
@@ -104,14 +104,26 @@ final class SessionWriteRepositoryTest extends TestCase
         $this->assertSame(['client', 7], $this->subjectOf($session));
     }
 
-    /** Without a vouching the send names nobody, whatever subject it carries. */
-    public function test_an_unvouched_send_names_nobody(): void
+    /** Taking a subject and vouching for it are two things · a shared browser takes the name and vouches for nobody. */
+    public function test_the_subject_is_taken_without_being_vouched_for(): void
     {
         $session = $this->anonymousSession();
 
         $this->record($session, null, ['type' => 'client', 'id' => 7]);
 
+        $this->assertSame(['client', 7], $this->subjectOf($session));
+        $this->assertNull($session->fresh()?->subject_confirmed_at);
+    }
+
+    /** A vouching alone names nobody · a leftover never names a session. */
+    public function test_a_vouching_alone_names_nobody(): void
+    {
+        $session = $this->anonymousSession();
+
+        $this->record($session, CarbonImmutable::parse('2026-06-30 09:05:00'), null);
+
         $this->assertSame([null, null], $this->subjectOf($session));
+        $this->assertNotNull($session->fresh()?->subject_confirmed_at);
     }
 
     /** A session that has a subject never changes it. */
@@ -132,8 +144,8 @@ final class SessionWriteRepositoryTest extends TestCase
         return (new SessionWriteRepository)->start($visitor, new IngestionContext, CarbonImmutable::parse('2026-06-30 09:00:00'), $visitor->uuid);
     }
 
-    /** @param  array{type: string, id: int}  $subject */
-    private function record(Session $session, ?CarbonImmutable $confirmedAt, array $subject): void
+    /** @param  array{type: string, id: int}|null  $subject */
+    private function record(Session $session, ?CarbonImmutable $confirmedAt, ?array $subject): void
     {
         (new SessionWriteRepository)->recordActivity($session, CarbonImmutable::parse('2026-06-30 09:05:00'), 1, 0, 1, null, $confirmedAt, $subject);
     }

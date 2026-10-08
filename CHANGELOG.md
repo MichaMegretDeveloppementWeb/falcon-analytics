@@ -32,11 +32,13 @@ architecture qui n'existe plus.
   comme conversions ;
 - **des tunnels**, y compris à branches parallèles, évalués sur ces événements ;
 - **l'attribution publicitaire** au rapport, sur les paramètres d'URL capturés à
-  l'arrivée · une campagne créée après coup retrouve ses sessions ;
+  l'arrivée · une campagne créée après coup retrouve ses sessions · le taux de
+  conversion compte des personnes, et sa courbe jour par jour de même ;
 - **l'identité de vos visiteurs** · le paquet lit vos gardes d'authentification,
   donc un visiteur est *ce client-là*, ce qu'aucun outil externe ne peut faire ·
-  une session ouverte avant la connexion prend le sujet de la personne, et une
-  session ne change jamais de sujet ;
+  une session ouverte avant la connexion prend le sujet de la personne, sur son
+  navigateur comme sur celui de quelqu'un d'autre, et une session ne change
+  jamais de sujet ;
 - **un filtre des visiteurs à trois choix** · tous, ceux d'un de vos gardes, et
   « Non connectés », ceux qu'aucun garde n'a nommés, dont vous réglez le nom
   par `identity.anonymous_label`. Le choix n'apparaît qu'à côté d'un garde
@@ -46,9 +48,12 @@ architecture qui n'existe plus.
   tient sur la personne part en une transaction · ses profils, leurs sessions
   et leurs événements, et toute ligne qui porte son sujet ailleurs. Les sessions
   d'une autre personne posées sur son navigateur rejoignent le profil de cette
-  personne, et les totaux journaliers restent, anonymes. **« Supprimer les
-  données de ce visiteur », à l'écran, épargne de même les sessions d'une autre
-  personne** ;
+  personne. Les journées que les écrans lisent encore ligne à ligne sont résumées
+  à nouveau sans elle, dans la même transaction, donc aucun chiffre ne bouge
+  quand elles passent ensuite dans leurs totaux · les journées plus anciennes la
+  gardent dans leurs totaux, anonyme. **« Supprimer les données de ce
+  visiteur », à l'écran, épargne de même les sessions d'une autre personne, et
+  n'annonce que celles qu'il supprime** ;
 - **Google Search Console**, pour les vraies requêtes organiques ;
 - **la géolocalisation locale**, par base MaxMind téléchargée chez vous ;
 - **treize commandes** · installation, diagnostic, une qui dessine l'arbre des
@@ -89,8 +94,9 @@ architecture qui n'existe plus.
   plus vus lisent chaque journée close dans les compteurs de la nuit, et seule
   la journée en cours se compte visite par visite. Sur un site à 10 000 pages
   vues par jour, le bloc des pages passe ainsi de plusieurs secondes à une
-  fraction de seconde. Une journée y reste comptée telle que la nuit l'a
-  comptée · un visiteur effacé ensuite y demeure, anonymement ;
+  fraction de seconde. Un visiteur effacé en sort tant que les pages vues de
+  la journée sont gardées, et demeure, anonyme, dans les journées plus
+  anciennes ;
 - **quarante et un réglages**, tous facultatifs · le paquet fonctionne sans qu'on en
   touche un seul, et un essai le tient ;
 - **des fichiers déjà compilés** · aucun Node n'est requis chez l'hôte. Le

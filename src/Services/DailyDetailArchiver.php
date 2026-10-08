@@ -78,25 +78,34 @@ final readonly class DailyDetailArchiver
      */
     public function archive(CarbonImmutable $day): void
     {
-        if (DB::transactionLevel() === 0) {
-            throw new LogicException(self::class.'::archive() replaces a whole day: call it inside the caller\'s transaction.');
-        }
+        $this->assertInsideATransaction(__FUNCTION__);
 
-        $date = $day->toDateString();
-        $start = $day->startOfDay();
-        $end = $day->endOfDay();
-
-        DB::table(DailySessionTotal::TABLE)->where('day', $date)->delete();
-        DB::table(DailyEventTotal::TABLE)->where('day', $date)->delete();
-
-        $this->write(DailySessionTotal::TABLE, $this->sessionRows($date, $start, $end));
-        $this->write(DailyEventTotal::TABLE, $this->eventRows($date, $start, $end));
+        $this->replaceSessions($day);
+        $this->replaceEvents($day);
 
         DailyArchive::query()->upsert(
-            [['day' => $date, 'detail_archived_at' => CarbonImmutable::now()->toDateTimeString()]],
+            [['day' => $day->toDateString(), 'detail_archived_at' => CarbonImmutable::now()->toDateTimeString()]],
             ['day'],
             ['detail_archived_at'],
         );
+    }
+
+    /**
+     * Summarise again the sessions of a day already summarised, for a writer
+     * that took some of them away while the others are still whole · the
+     * register is left as it is.
+     */
+    public function summariseSessionsAgain(CarbonImmutable $day): void
+    {
+        $this->assertInsideATransaction(__FUNCTION__);
+        $this->replaceSessions($day);
+    }
+
+    /** The same, for the named events. */
+    public function summariseEventsAgain(CarbonImmutable $day): void
+    {
+        $this->assertInsideATransaction(__FUNCTION__);
+        $this->replaceEvents($day);
     }
 
     /**
@@ -147,6 +156,29 @@ final readonly class DailyDetailArchiver
         );
 
         return $oldest === [] ? null : CarbonImmutable::parse(min($oldest))->startOfDay();
+    }
+
+    private function assertInsideATransaction(string $method): void
+    {
+        if (DB::transactionLevel() === 0) {
+            throw new LogicException(self::class."::{$method}() replaces a whole day: call it inside the caller's transaction.");
+        }
+    }
+
+    private function replaceSessions(CarbonImmutable $day): void
+    {
+        $date = $day->toDateString();
+
+        DB::table(DailySessionTotal::TABLE)->where('day', $date)->delete();
+        $this->write(DailySessionTotal::TABLE, $this->sessionRows($date, $day->startOfDay(), $day->endOfDay()));
+    }
+
+    private function replaceEvents(CarbonImmutable $day): void
+    {
+        $date = $day->toDateString();
+
+        DB::table(DailyEventTotal::TABLE)->where('day', $date)->delete();
+        $this->write(DailyEventTotal::TABLE, $this->eventRows($date, $day->startOfDay(), $day->endOfDay()));
     }
 
     /**

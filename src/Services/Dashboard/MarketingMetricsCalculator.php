@@ -70,6 +70,9 @@ final class MarketingMetricsCalculator
      * sessions, visitors, conversions and the per-day conversion rate · the
      * lines of what is unknown left empty rather than drawn as zeros.
      *
+     * A day's rate divides people by people, like the headline rate · its
+     * converting visitors over its visitors, never over its sessions.
+     *
      * @param  array<string, int>  $dailySessions  day (Y-m-d) => sessions
      * @param  array<string, int>|null  $dailyConversions  day (Y-m-d) => conversions
      * @param  array<string, int>|null  $dailyVisitors  day (Y-m-d) => distinct visitors
@@ -85,14 +88,14 @@ final class MarketingMetricsCalculator
 
         foreach ($period->eachDay() as $day) {
             $key = $day->toDateString();
-            $daySessions = $dailySessions[$key] ?? 0;
             $dayConversions = $dailyConversions[$key] ?? 0;
+            $dayVisitors = $dailyVisitors[$key] ?? 0;
 
             $labels[] = DateLabel::for($day, 'j M');
-            $sessions[] = $daySessions;
-            $visitors[] = $dailyVisitors[$key] ?? 0;
+            $sessions[] = $dailySessions[$key] ?? 0;
+            $visitors[] = $dayVisitors;
             $conversions[] = $dayConversions;
-            $rates[] = $daySessions > 0 ? round($dayConversions / $daySessions * 100, 1) : 0.0;
+            $rates[] = round($this->rate((float) $dayConversions, (float) $dayVisitors), 1);
         }
 
         return [
@@ -100,7 +103,7 @@ final class MarketingMetricsCalculator
             'sessions' => $sessions,
             'visitors' => $dailyVisitors === null ? [] : $visitors,
             'conversions' => $dailyConversions === null ? [] : $conversions,
-            'rates' => $dailyConversions === null ? [] : $rates,
+            'rates' => $dailyConversions === null || $dailyVisitors === null ? [] : $rates,
         ];
     }
 }

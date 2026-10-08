@@ -17,6 +17,7 @@ final readonly class VisitorDetail
     /**
      * @param  string  $kind  the kind of account behind the visitor, or that they are anonymous
      * @param  bool  $isIdentified  the visitor is tied to an account of the host
+     * @param  string  $erasureWarning  what erasing the visitor takes, said in the confirmation
      * @param  int  $deviceSessions  the sessions the device split counts
      * @param  list<DeviceShare>  $devices  empty when no session counts
      * @param  list<SourceShare>  $sources  empty when no session counts
@@ -30,6 +31,7 @@ final readonly class VisitorDetail
         public bool $isReturning,
         public CarbonImmutable $firstSeenAt,
         public int $sessionCount,
+        public string $erasureWarning,
         public int $pageviewCount,
         public string $averageDuration,
         public string $pagesPerSession,

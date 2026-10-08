@@ -150,7 +150,7 @@ final readonly class DailyCountArchiver
      * The oldest day the purge leaves whole, or null when nothing is erased ·
      * no retention, or one the purge refuses.
      */
-    private function firstDayKept(): ?CarbonImmutable
+    public function firstDayKept(): ?CarbonImmutable
     {
         $days = config('analytics.retention_days');
 
