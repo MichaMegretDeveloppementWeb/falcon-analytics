@@ -37,6 +37,14 @@ architecture qui n'existe plus.
   donc un visiteur est *ce client-là*, ce qu'aucun outil externe ne peut faire ·
   une session ouverte avant la connexion prend le sujet de la personne, et une
   session ne change jamais de sujet ;
+- **`Analytics::forgetSubject()`**, pour le droit à l'effacement · votre
+  application l'appelle quand elle supprime un compte, et tout ce que le paquet
+  tient sur la personne part en une transaction · ses profils, leurs sessions
+  et leurs événements, et toute ligne qui porte son sujet ailleurs. Les sessions
+  d'une autre personne posées sur son navigateur rejoignent le profil de cette
+  personne, et les totaux journaliers restent, anonymes. **« Supprimer les
+  données de ce visiteur », à l'écran, épargne de même les sessions d'une autre
+  personne** ;
 - **Google Search Console**, pour les vraies requêtes organiques ;
 - **la géolocalisation locale**, par base MaxMind téléchargée chez vous ;
 - **treize commandes** · installation, diagnostic, une qui dessine l'arbre des

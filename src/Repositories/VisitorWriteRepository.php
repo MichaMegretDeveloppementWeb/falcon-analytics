@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Falcon\Analytics\Repositories;
 
 use Carbon\CarbonImmutable;
+use Falcon\Analytics\Models\Session;
 use Falcon\Analytics\Models\Visitor;
+use Illuminate\Support\Str;
 
 /** @internal */
 final readonly class VisitorWriteRepository
@@ -31,6 +33,42 @@ final readonly class VisitorWriteRepository
     public function incrementSessionCount(Visitor $visitor): void
     {
         $visitor->increment('session_count');
+    }
+
+    /**
+     * Count again the sessions each of these profiles holds, in one statement.
+     *
+     * @param  list<int>  $ids
+     */
+    public function recountSessions(array $ids): void
+    {
+        if ($ids === []) {
+            return;
+        }
+
+        Visitor::query()->whereIn('id', $ids)->update([
+            'session_count' => Session::query()
+                ->selectRaw('count(*)')
+                ->whereColumn('falcon_analytics_sessions.visitor_id', 'falcon_analytics_visitors.id'),
+        ]);
+    }
+
+    /**
+     * A profile of the subject's own that no browser holds, for sessions that
+     * must leave a profile about to be erased.
+     *
+     * @param  array{type: string, id: int}  $subject
+     */
+    public function createFor(array $subject, CarbonImmutable $firstSeenAt, CarbonImmutable $lastSeenAt): Visitor
+    {
+        return Visitor::query()->create([
+            'uuid' => (string) Str::uuid(),
+            'first_seen_at' => $firstSeenAt,
+            'last_seen_at' => $lastSeenAt,
+            'session_count' => 0,
+            'subject_type' => $subject['type'],
+            'subject_id' => $subject['id'],
+        ]);
     }
 
     /**

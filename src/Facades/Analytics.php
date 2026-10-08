@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static bool hasConsent()
  * @method static bool isExcluded()
  * @method static void record(string $name, ?int $value = null, array<string, scalar|null> $props = [])
+ * @method static int forgetSubject(string $type, int|string $id)
  *
  * @see \Falcon\Analytics\Analytics
  */

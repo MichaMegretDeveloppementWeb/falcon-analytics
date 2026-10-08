@@ -18,6 +18,7 @@ use Falcon\Analytics\Repositories\SessionWriteRepository;
 use Falcon\Analytics\Repositories\VisitorWriteRepository;
 use Falcon\Analytics\Services\DailyCountArchiver;
 use Falcon\Analytics\Services\SessionContextEnricher;
+use Falcon\Analytics\Services\VisitorLocks;
 use Falcon\Analytics\Services\VisitorProfileResolver;
 use Falcon\Analytics\Support\PropsEncoder;
 use Falcon\Analytics\Support\StoredUrl;
@@ -36,6 +37,7 @@ final readonly class IngestEventsAction
         private PropsEncoder $propsEncoder,
         private DailyCountArchiver $archiver,
         private ArchiveClosedDaysAction $summarise,
+        private VisitorLocks $locks,
     ) {}
 
     /**
@@ -49,7 +51,12 @@ final readonly class IngestEventsAction
         $named = DB::transaction(function () use ($visitorUuid, $subject, $snapshot, $batch, $visitor, $now): ?Session {
             // Serialize concurrent beacons for this visitor so two tabs cannot each
             // start a session (which would duplicate sessions and inflate counts).
-            $locked = $visitor->newQuery()->whereKey($visitor->getKey())->lockForUpdate()->firstOrFail();
+            $locked = $this->locks->one($visitor->id);
+
+            // Erased between its resolution and this lock · the send goes with it.
+            if ($locked === null) {
+                return null;
+            }
 
             $session = $this->openSession($locked, $visitorUuid, $subject, $snapshot, $batch, $now);
 
@@ -99,7 +106,7 @@ final readonly class IngestEventsAction
         $now = CarbonImmutable::now();
 
         DB::transaction(function () use ($profile, $context, $batch, $now): void {
-            $locked = $profile->newQuery()->whereKey($profile->getKey())->lockForUpdate()->first();
+            $locked = $this->locks->one($profile->id);
 
             if ($locked === null || $locked->merged_into_id !== null || ! $this->belongsTo($locked, $context->subject())) {
                 return;

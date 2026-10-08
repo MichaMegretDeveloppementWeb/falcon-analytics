@@ -55,6 +55,9 @@ return new class extends Migration
             // Funnels and marketing match page views by route, and walk a visitor's journey in time order.
             $table->index(['route', 'occurred_at'], 'fa_events_route_occurred_idx');
             $table->index(['visitor_id', 'occurred_at'], 'fa_events_visitor_occurred_idx');
+
+            // Erasing a subject finds the events that carry them on any profile.
+            $table->index(['subject_type', 'subject_id'], 'fa_events_subject_idx');
         });
 
         // Mirrors `EventType::isStored()`; named so a refusal names the rule.

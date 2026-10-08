@@ -18,6 +18,7 @@ use Falcon\Analytics\Services\VisitorMerger;
 use Falcon\Analytics\Tests\Fixtures\Models\TestAdmin;
 use Falcon\Analytics\Tests\TestCase;
 use Illuminate\Database\Events\QueryExecuted;
+use Illuminate\Database\Events\TransactionBeginning;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -236,6 +237,83 @@ final class VisitorIdentityMergeTest extends TestCase
         app(ForgetVisitorAction::class)->execute($canonical);
 
         $this->assertSame(0, Visitor::query()->count());
+    }
+
+    /** Erasing one visitor never erases another: what another subject left on the profile moves to them. */
+    public function test_forgetting_a_visitor_moves_another_subjects_sessions_to_them(): void
+    {
+        $shared = $this->visitor('uuid-a', ['type' => 'client', 'id' => 7]);
+        $this->sessionRow($shared, '2026-07-05 10:00:00', ['type' => 'client', 'id' => 7], withEvent: true);
+        $theirs = $this->sessionRow($shared, '2026-07-06 10:00:00', ['type' => 'client', 'id' => 8], withEvent: true);
+        $anonymous = $this->sessionRow($shared, '2026-07-07 10:00:00', withEvent: true);
+
+        app(ForgetVisitorAction::class)->execute($shared);
+
+        $home = Visitor::query()->sole();
+
+        $this->assertSame(['client', 8], [$home->subject_type, $home->subject_id]);
+        $this->assertSame($home->id, $theirs->refresh()->visitor_id);
+        $this->assertSame(1, Event::query()->where('visitor_id', $home->id)->count());
+        $this->assertNull(Session::query()->find($anonymous->id), 'The visitor\'s own anonymous browsing goes with them.');
+        $this->assertSame(1, Session::query()->count());
+    }
+
+    /** The sessions of the person forgotten go with the profile, even when another of their profiles remains. */
+    public function test_forgetting_a_visitor_erases_their_own_sessions_rather_than_moving_them(): void
+    {
+        $older = $this->visitor('uuid-a', ['type' => 'client', 'id' => 7], '2026-06-01 10:00:00');
+        $forgotten = $this->visitor('uuid-b', ['type' => 'client', 'id' => 7]);
+        $this->sessionRow($forgotten, '2026-07-05 10:00:00', ['type' => 'client', 'id' => 7], withEvent: true);
+
+        app(ForgetVisitorAction::class)->execute($forgotten);
+
+        $this->assertSame([$older->id], Visitor::query()->pluck('id')->all());
+        $this->assertSame(0, Session::query()->count());
+        $this->assertSame(0, Event::query()->count());
+    }
+
+    public function test_forgetting_a_visitor_takes_the_lock_first(): void
+    {
+        $canonical = $this->visitor('uuid-a', ['type' => 'client', 'id' => 7]);
+        $this->visitor('uuid-b')->update(['merged_into_id' => $canonical->id]);
+        $this->sessionRow($canonical, '2026-07-05 10:00:00', ['type' => 'client', 'id' => 7], withEvent: true);
+        $open = false;
+        $queries = [];
+
+        $this->app->make('events')->listen(TransactionBeginning::class, function () use (&$open): void {
+            $open = true;
+        });
+        DB::listen(function (QueryExecuted $query) use (&$open, &$queries): void {
+            if ($open) {
+                $queries[] = $query->sql;
+            }
+        });
+
+        app(ForgetVisitorAction::class)->execute($canonical);
+
+        $this->assertStringContainsString('for update', $queries[0] ?? '');
+        $this->assertSame(0, Visitor::query()->count());
+    }
+
+    /** A send whose profile was erased between its resolution and its lock goes with it, and builds nothing back. */
+    public function test_a_send_whose_profile_was_erased_meanwhile_goes_with_it(): void
+    {
+        $this->ingest('uuid-a', null);
+        $profile = Visitor::query()->sole();
+        $erased = false;
+
+        DB::connection()->beforeExecuting(function (string $query) use ($profile, &$erased): void {
+            if (! $erased && str_contains($query, 'for update')) {
+                $erased = true;
+                DB::table('falcon_analytics_visitors')->where('id', $profile->id)->delete();
+            }
+        });
+
+        $this->ingest('uuid-a', null);
+
+        $this->assertTrue($erased);
+        $this->assertSame(0, Visitor::query()->count());
+        $this->assertSame(0, Event::query()->count());
     }
 
     public function test_it_redirects_the_detail_of_a_folded_profile_to_the_canonical_one(): void
