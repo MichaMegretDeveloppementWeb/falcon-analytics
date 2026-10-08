@@ -9,9 +9,12 @@ use Falcon\Analytics\Enums\EventType;
 use Falcon\Analytics\Models\Campaign;
 use Falcon\Analytics\Models\DailyArchive;
 use Falcon\Analytics\Models\DailyCount;
+use Falcon\Analytics\Models\DailySessionTotal;
 use Falcon\Analytics\Models\Event;
 use Falcon\Analytics\Repositories\Concerns\ScopesSessionQueries;
+use Falcon\Analytics\Services\Dashboard\AttributionResolver;
 use Falcon\Analytics\Services\Dashboard\MarketingReportBuilder;
+use Falcon\Analytics\Services\RetentionWindow;
 use Falcon\Analytics\Support\SubjectFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -28,15 +31,26 @@ final readonly class OverviewReadRepository
 {
     use ScopesSessionQueries;
 
-    public function __construct(private MarketingReportBuilder $marketing) {}
+    public function __construct(
+        private MarketingReportBuilder $marketing,
+        private RetentionWindow $window = new RetentionWindow,
+        private DailyTotalsReadRepository $totals = new DailyTotalsReadRepository,
+        private AttributionResolver $attribution = new AttributionResolver,
+    ) {}
 
     /**
-     * New (first ever seen within the period) vs returning visitor counts.
+     * New (first ever seen within the period) vs returning visitor counts ·
+     * none over a period reaching days whose sessions are erased, distinct
+     * visitors not adding up across days.
      *
-     * @return array{new: int, returning: int}
+     * @return array{new: int, returning: int}|null
      */
-    public function newVsReturning(Period $period, ?string $subjectType): array
+    public function newVsReturning(Period $period, ?string $subjectType): ?array
     {
+        if (RetentionWindow::reaches($period, $this->window->sessionsLine())) {
+            return null;
+        }
+
         $total = $this->sessionScope($period, $subjectType)->distinct()->count('visitor_id');
 
         $new = $this->sessionScope($period, $subjectType)
@@ -54,15 +68,25 @@ final readonly class OverviewReadRepository
      */
     public function sessionsByDevice(Period $period, ?string $subjectType): array
     {
-        return $this->sessionScope($period, $subjectType)
+        ['totals' => $summarised, 'rows' => $detailed] = RetentionWindow::split($period, $this->window->sessionsLine());
+
+        $devices = $summarised === null ? [] : $this->totals->sessionsByKey(DailySessionTotal::DIMENSION_DEVICE, $summarised, $subjectType);
+
+        $read = $detailed === null ? [] : $this->sessionScope($detailed, $subjectType)
             ->toBase()
             ->whereNotNull('device_type')
             ->selectRaw('device_type, COUNT(*) as total')
             ->groupBy('device_type')
-            ->orderByDesc('total')
             ->pluck('total', 'device_type')
-            ->map(fn ($total): int => (int) $total)
             ->all();
+
+        foreach ($read as $device => $total) {
+            $devices[(string) $device] = ($devices[(string) $device] ?? 0) + (int) $total;
+        }
+
+        arsort($devices);
+
+        return $devices;
     }
 
     /**
@@ -72,6 +96,22 @@ final readonly class OverviewReadRepository
      * @return array<string, array{sessions: int, pageviews: int}>
      */
     public function trendRows(Period $period, ?string $subjectType): array
+    {
+        ['totals' => $summarised, 'rows' => $detailed] = RetentionWindow::split($period, $this->window->sessionsLine());
+
+        $days = [];
+
+        foreach ($summarised === null ? [] : $this->totals->engagementByDay($summarised, $subjectType) as $day => $row) {
+            $days[$day] = ['sessions' => $row['sessions'], 'pageviews' => $row['pageviews']];
+        }
+
+        return $detailed === null ? $days : [...$days, ...$this->trendRowsRead($detailed, $subjectType)];
+    }
+
+    /**
+     * @return array<string, array{sessions: int, pageviews: int}>
+     */
+    private function trendRowsRead(Period $period, ?string $subjectType): array
     {
         $day = $this->dayExpression('started_at');
 
@@ -108,17 +148,21 @@ final readonly class OverviewReadRepository
 
     /**
      * Session counts per acquisition channel: the raw source, with every
-     * campaign-matched session reclassified as paid.
+     * campaign-matched session reclassified as paid · the days whose sessions
+     * are erased read from their totals, where the parameters each group of
+     * sessions arrived with let the campaigns claim them all the same.
      *
      * @param  list<Campaign>  $campaigns
      * @return Collection<string, int>
      */
     private function channelCounts(Period $period, ?string $subjectType, array $campaigns): Collection
     {
-        /** @var array<string, int> $counts */
-        $counts = [];
+        ['totals' => $summarised, 'rows' => $detailed] = RetentionWindow::split($period, $this->window->sessionsLine());
 
-        $raw = $this->sessionScope($period, $subjectType)
+        /** @var array<string, int> $counts */
+        $counts = $summarised === null ? [] : $this->totals->sessionsByKey(DailySessionTotal::DIMENSION_SOURCE, $summarised, $subjectType);
+
+        $raw = $detailed === null ? [] : $this->sessionScope($detailed, $subjectType)
             ->toBase()
             ->whereNotNull('source')
             ->selectRaw('source as label, COUNT(*) as total')
@@ -126,23 +170,32 @@ final readonly class OverviewReadRepository
             ->pluck('total', 'label');
 
         foreach ($raw as $source => $total) {
-            $counts[(string) $source] = (int) $total;
+            $counts[(string) $source] = ($counts[(string) $source] ?? 0) + (int) $total;
         }
 
         if ($campaigns === []) {
             return collect($counts);
         }
 
-        foreach ($this->marketing->matchedSessionSources($period, $subjectType, $campaigns) as $source) {
+        $claimed = $detailed === null ? [] : array_count_values($this->marketing->matchedSessionSources($detailed, $subjectType, $campaigns));
+
+        foreach ($summarised === null ? [] : $this->totals->sessionsWithParameters($summarised, $subjectType) as $group) {
+            if ($this->attribution->mostSpecific($campaigns, $group['params']) !== null) {
+                $source = $group['source'] ?? 'direct';
+                $claimed[$source] = ($claimed[$source] ?? 0) + $group['sessions'];
+            }
+        }
+
+        foreach ($claimed as $source => $sessions) {
             if ($source === 'paid') {
                 continue;
             }
 
-            $counts[$source] = max(0, ($counts[$source] ?? 0) - 1);
+            $counts[$source] = max(0, ($counts[$source] ?? 0) - $sessions);
             if ($counts[$source] === 0) {
                 unset($counts[$source]);
             }
-            $counts['paid'] = ($counts['paid'] ?? 0) + 1;
+            $counts['paid'] = ($counts['paid'] ?? 0) + $sessions;
         }
 
         return collect($counts);
@@ -154,8 +207,18 @@ final readonly class OverviewReadRepository
      */
     public function attributionTruncatedAt(Period $period, ?string $subjectType): ?int
     {
-        return $this->marketing->truncatedAt($period, $subjectType)
-            ?? $this->marketing->truncatedAt($period->previous(), $subjectType);
+        $line = $this->window->sessionsLine();
+
+        foreach ([$period, $period->previous()] as $window) {
+            $detailed = RetentionWindow::split($window, $line)['rows'];
+            $ceiling = $detailed === null ? null : $this->marketing->truncatedAt($detailed, $subjectType);
+
+            if ($ceiling !== null) {
+                return $ceiling;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -165,27 +228,50 @@ final readonly class OverviewReadRepository
      */
     public function topLocalities(Period $period, ?string $subjectType, int $limit = 6): array
     {
-        $counts = fn (Period $window): Collection => $this->sessionScope($window, $subjectType)
+        $previous = $this->localityCounts($period->previous(), $subjectType);
+
+        // `array_values` only to carry the `list` type: the keys already run from zero.
+        return array_values(collect($this->localityCounts($period, $subjectType))
+            ->sortDesc()
+            ->take($limit)
+            ->map(function (int $total, string $key) use ($previous): array {
+                [$country, $city] = explode('|', $key, 2);
+
+                return [
+                    'country' => $country,
+                    'city' => $city !== '' ? $city : null,
+                    'total' => $total,
+                    'previous' => $previous[$key] ?? 0,
+                ];
+            })
+            ->all());
+    }
+
+    /**
+     * Sessions by locality, keyed `country|city` · the days whose sessions are
+     * erased read from their totals.
+     *
+     * @return array<string, int>
+     */
+    private function localityCounts(Period $period, ?string $subjectType): array
+    {
+        ['totals' => $summarised, 'rows' => $detailed] = RetentionWindow::split($period, $this->window->sessionsLine());
+
+        $counts = $summarised === null ? [] : $this->totals->sessionsByLocality($summarised, $subjectType);
+
+        $read = $detailed === null ? [] : $this->sessionScope($detailed, $subjectType)
             ->toBase()
             ->whereNotNull('country')
             ->selectRaw('country, city, COUNT(*) as total')
             ->groupBy('country', 'city')
-            ->get()
-            ->keyBy(fn (object $row): string => $row->country.'|'.($row->city ?? ''));
+            ->get();
 
-        $previous = $counts($period->previous());
+        foreach ($read as $row) {
+            $key = $row->country.'|'.($row->city ?? '');
+            $counts[$key] = ($counts[$key] ?? 0) + (int) $row->total;
+        }
 
-        // `array_values` only to carry the `list` type: the keys already run from zero.
-        return array_values($counts($period)
-            ->sortByDesc(fn (object $row): int => (int) $row->total)
-            ->take($limit)
-            ->map(fn (object $row): array => [
-                'country' => (string) $row->country,
-                'city' => ($row->city !== null && $row->city !== '') ? (string) $row->city : null,
-                'total' => (int) $row->total,
-                'previous' => (int) ($previous[$row->country.'|'.($row->city ?? '')]->total ?? 0),
-            ])
-            ->all());
+        return $counts;
     }
 
     /**

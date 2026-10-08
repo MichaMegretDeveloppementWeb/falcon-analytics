@@ -2,8 +2,10 @@
     use Falcon\Analytics\Support\ChartPalette;
     use Falcon\Analytics\Support\DeviceLabel;
     use Falcon\Analytics\Support\NumberLabel;
+    use Falcon\Analytics\Support\RetentionLabel;
+    use Falcon\Analytics\Support\RetentionSettings;
 
-    $newTotal = $newVsReturning['new'] + $newVsReturning['returning'];
+    $newTotal = $newVsReturning === null ? 0 : $newVsReturning['new'] + $newVsReturning['returning'];
     $newPct = $newTotal > 0 ? (int) round($newVsReturning['new'] / $newTotal * 100) : 0;
     $deviceTotal = array_sum($devices);
     // Every other step of the ramp: four device kinds read better with a gap
@@ -26,9 +28,13 @@
         <div class="an:pb-5 an:lg:pb-0 an:lg:pr-8">
             <div class="an:mb-4 an:flex an:items-center an:justify-between an:gap-2">
                 <x-ui::section-header :title="__('Nouveaux vs récurrents')" />
-                <span class="an:flex an:items-center an:gap-1.5 an:text-[11px] an:text-muted">{{ __('Nouveaux') }} @include('analytics::livewire.dashboard.partials.delta', ['current' => $newVisitorRate->current, 'previous' => $newVisitorRate->previous])</span>
+                @if ($newVisitorRate->isAvailable())
+                    <span class="an:flex an:items-center an:gap-1.5 an:text-[11px] an:text-muted">{{ __('Nouveaux') }} @include('analytics::livewire.dashboard.partials.delta', ['current' => $newVisitorRate->current, 'previous' => $newVisitorRate->previous])</span>
+                @endif
             </div>
-            @if ($newTotal > 0)
+            @if ($newVsReturning === null)
+                <p class="an:text-[13px] an:text-muted">{{ RetentionLabel::unavailable(RetentionSettings::sessions()) }}</p>
+            @elseif ($newTotal > 0)
                 <div class="an:flex an:items-center an:gap-6">
                     <div wire:key="donut-audience-{{ $period }}-{{ $subject }}">
                         <x-analytics::donut

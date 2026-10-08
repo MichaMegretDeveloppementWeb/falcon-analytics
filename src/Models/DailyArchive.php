@@ -79,16 +79,24 @@ final class DailyArchive extends Model
         return self::lastDayOf('detail_archived_at');
     }
 
-    /** The last day whose sessions the purge has begun erasing, or null while it has erased none. */
-    public static function lastSessionsPrunedDay(): ?CarbonImmutable
+    /**
+     * The last day whose sessions the purge has begun erasing, and the last
+     * whose named events it has · each null while it has erased none. One
+     * read for both.
+     *
+     * @return array{sessions: CarbonImmutable|null, events: CarbonImmutable|null}
+     */
+    public static function lastPrunedDays(): array
     {
-        return self::lastDayOf('sessions_pruned_at');
-    }
+        $row = self::query()
+            ->toBase()
+            ->selectRaw('MAX(CASE WHEN sessions_pruned_at IS NOT NULL THEN day END) as sessions, MAX(CASE WHEN events_pruned_at IS NOT NULL THEN day END) as events')
+            ->first();
 
-    /** The same, for the named events. */
-    public static function lastEventsPrunedDay(): ?CarbonImmutable
-    {
-        return self::lastDayOf('events_pruned_at');
+        $columns = $row === null ? [] : (array) $row;
+        $day = fn (mixed $value): ?CarbonImmutable => is_string($value) && $value !== '' ? CarbonImmutable::parse($value)->startOfDay() : null;
+
+        return ['sessions' => $day($columns['sessions'] ?? null), 'events' => $day($columns['events'] ?? null)];
     }
 
     private static function lastDayOf(string $family): ?CarbonImmutable

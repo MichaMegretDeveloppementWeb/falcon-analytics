@@ -504,6 +504,9 @@ abstract class TestCase extends Orchestra
      */
     protected function statementsFor(callable $run): array
     {
+        // Each measurement is a request of its own · what a request reads once, it reads in each.
+        $this->app->forgetScopedInstances();
+
         DB::enableQueryLog();
         DB::flushQueryLog();
 

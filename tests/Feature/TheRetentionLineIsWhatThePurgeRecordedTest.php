@@ -124,9 +124,9 @@ final class TheRetentionLineIsWhatThePurgeRecordedTest extends TestCase
         $this->assertSame('2026-04-10', $window->eventsLine()?->toDateString());
 
         $this->mark('2026-04-20', sessions: true, events: false);
-        $line = $window->eventsLine();
+        $line = (new RetentionWindow)->eventsLine();
 
-        $this->assertSame('2026-04-20', $line->toDateString(), 'Its sessions gone, a day has no event left either.');
+        $this->assertSame('2026-04-20', $line?->toDateString(), 'Its sessions gone, a day has no event left either.');
     }
 
     public function test_a_period_is_split_at_the_end_of_the_line(): void

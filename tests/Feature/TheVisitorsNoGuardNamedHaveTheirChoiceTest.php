@@ -117,7 +117,7 @@ final class TheVisitorsNoGuardNamedHaveTheirChoiceTest extends TestCase
             ->set('subject', 'none')
             ->assertViewHas('visitors', fn ($visitors): bool => $visitors->total() === 2);
 
-        $new = $this->app->make(VisitorListReadRepository::class)->visitorDailyRows(Period::ofDays(30), 'none')['new'];
+        $new = $this->app->make(VisitorListReadRepository::class)->visitorDailyRows(Period::ofDays(30), 'none')['new'] ?? [];
         ksort($new);
 
         $this->assertSame(['2026-07-07' => 1, '2026-07-10' => 1], $new);

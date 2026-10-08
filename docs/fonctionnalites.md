@@ -165,6 +165,7 @@ le vôtre · celui-ci ne décrit que ce que le paquet affiche.
 | le fichier où le site déclare ses événements ou ses tunnels | **le fichier qui déclare les événements du site**, **… les tunnels du site** | son chemin, qu'un écran ne nomme jamais |
 | retirer à la main | **supprimer** · « effacer » ne désigne que la purge automatique | l'effacement d'un visiteur |
 | le choix du filtre des visiteurs pour ceux qu'aucun garde n'a nommés | **Non connectés**, ou le nom que l'hôte lui donne | sans sujet |
+| un chiffre qui compte des personnes distinctes, sur des jours dont les sessions ou les événements nommés sont effacés | « Indisponible au-delà de 90 jours de conservation » · dans une colonne, « Indisponible », la phrase entière au survol · sa comparaison seule, « Comparaison indisponible » | un 0, un chiffre calculé sur ce qui reste, Non disponible |
 | couper Search Console | **déconnecter** | annuler la connexion |
 | un classement | « les plus vues », « principaux » | Top |
 | ce que rapportent les conversions ou un tunnel | **score**, compté en **points** · **1 pt**, **12 pts** | montant, valeur · 1 pts |

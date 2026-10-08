@@ -1,9 +1,13 @@
 @php
     use Falcon\Analytics\Support\NumberLabel;
+    use Falcon\Analytics\Support\RetentionLabel;
 
     // Params: $current, $previous, optional $inverse (true when lower is better).
     // Arrow follows the value's direction, colour follows whether it is good. An
     // "up from an empty previous period" reads as +100 %. Hidden on a genuine 0 %.
+    // A previous value of null is a period reaching erased days: it says so.
+    $deltaComparable = $previous !== null;
+    $previous ??= 0.0;
     $deltaInverse = $inverse ?? false;
     $deltaHasBaseline = ((float) $previous) != 0.0;
     $deltaUp = $current > $previous;
@@ -18,7 +22,9 @@
     $deltaGood = $deltaInverse ? ! $deltaUp : $deltaUp;
 @endphp
 
-@if ($deltaPct !== 0)
+@if (! $deltaComparable)
+    <span class="an:text-[11px] an:text-muted">{{ RetentionLabel::noComparison() }}</span>
+@elseif ($deltaPct !== 0)
     <span @class([
         'an:inline-flex an:items-center an:gap-x-0.5 an:rounded-full an:px-1.5 an:py-0.5 an:text-[11px] an:font-medium',
         'an:bg-emerald-50 an:text-emerald-700 an:dark:bg-emerald-500/10 an:dark:text-emerald-400' => $deltaGood,

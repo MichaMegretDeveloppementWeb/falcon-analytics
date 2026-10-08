@@ -24,23 +24,38 @@ use Falcon\Analytics\Models\DailyArchive;
  */
 final class RetentionWindow
 {
+    /**
+     * Read once for the request · every block of a screen splits on the same
+     * line, and asks for it.
+     *
+     * @var array{sessions: CarbonImmutable|null, events: CarbonImmutable|null}|null
+     */
+    private ?array $lines = null;
+
     /** The last day whose sessions are read from the totals, or null. */
     public function sessionsLine(): ?CarbonImmutable
     {
-        return DailyArchive::lastSessionsPrunedDay();
+        return $this->lines()['sessions'];
     }
 
     /** The same for named events · a session erased takes its events with it. */
     public function eventsLine(): ?CarbonImmutable
     {
-        $sessions = $this->sessionsLine();
-        $events = DailyArchive::lastEventsPrunedDay();
+        ['sessions' => $sessions, 'events' => $events] = $this->lines();
 
         if ($sessions === null || $events === null) {
             return $sessions ?? $events;
         }
 
         return $sessions->max($events);
+    }
+
+    /**
+     * @return array{sessions: CarbonImmutable|null, events: CarbonImmutable|null}
+     */
+    private function lines(): array
+    {
+        return $this->lines ??= DailyArchive::lastPrunedDays();
     }
 
     /** Whether a period reaches back to the line, so its rows are not all there. */
